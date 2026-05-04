@@ -27,6 +27,14 @@ class PedidopisosListView(ListView):
             Pedidospisos.objects
             .using(self.banco)
             .filter(pedi_data__gte=data_min)
+            .only(
+                "pedi_nume",
+                "pedi_clie",
+                "pedi_vend",
+                "pedi_data",
+                "pedi_tota",
+                "pedi_stat",
+            )
             .order_by("-pedi_nume")
         )
 
@@ -55,9 +63,10 @@ class PedidopisosListView(ListView):
 
             qs = qs.filter(pedi_vend__in=list(vendedores_ids))
 
+        rows = list(qs)
         entidades_ids = set()
 
-        for p in qs:
+        for p in rows:
             if p.pedi_clie:
                 entidades_ids.add(p.pedi_clie)
             if p.pedi_vend:
@@ -72,12 +81,12 @@ class PedidopisosListView(ListView):
             for e in entidades
         }
 
-        for p in qs:
+        for p in rows:
             p.cliente_nome = nomes.get(p.pedi_clie, "")
             p.vendedor_nome = nomes.get(p.pedi_vend, "")
             p.status_nome = self.status_nome.get(p.pedi_stat, "")
 
-        return qs
+        return rows
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

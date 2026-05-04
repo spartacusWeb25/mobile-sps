@@ -173,7 +173,7 @@
             <th class="pe-4"></th>
           </tr>
         </thead>
-        <tbody>
+        <tbody id="itens-lista">
           {% for o in orcamentos %}
           <tr>
             <td class="ps-4 fw-semibold text-success">#{{ o.orca_nume }}</td>
@@ -225,7 +225,7 @@
     <ul class="pagination justify-content-center d-none">
       {% if page_obj.has_next %}
       <li class="page-item">
-        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Próxima</a>
+        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value|urlencode }}{% endif %}{% endfor %}">Próxima</a>
       </li>
       {% endif %}
     </ul>
