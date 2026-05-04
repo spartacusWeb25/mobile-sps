@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
 
 from core.utils import get_db_from_slug
+from core.mixins.vendedor_mixin import VendedorEntidadeMixin
 from Pisos.models import Itensorcapisos, Orcamentopisos
 from Pisos.services.orcamento_atualizar_service import OrcamentoAtualizarService
 from Pisos.services.orcamento_exportar_service import OrcamentoExportarPedidoService
@@ -15,7 +16,10 @@ logger = logging.getLogger(__name__)
 
 def editar_orcamento_pisos(request, slug, pk):
     banco = get_db_from_slug(slug)
-    orcamento = get_object_or_404(Orcamentopisos.objects.using(banco), orca_nume=pk)
+    mix = VendedorEntidadeMixin()
+    mix.request = request
+    qs = mix.filter_por_vendedor(Orcamentopisos.objects.using(banco), 'orca_vend')
+    orcamento = get_object_or_404(qs, orca_nume=pk)
 
     initial_itens = []
     if request.method != "POST":

@@ -18,6 +18,23 @@
     --warning: #f59e0b;
   }
 
+  [data-bs-theme="light"] {
+    --bg: #f4f7fa;
+    --bg2: #ffffff;
+    --bg3: #f8f9fa;
+    --panel: #ffffff;
+    --border: #dee2e6;
+    --border2: #ced4da;
+    --accent: #0d6efd;
+    --accent-glow: rgba(13, 110, 253, 0.15);
+    --text: #212529;
+    --muted: #6c757d;
+    --input-bg: #ffffff;
+    --success: #198754;
+    --danger: #dc3545;
+    --warning: #f59e0b;
+  }
+
   .pedido-wrapper {
     max-width: calc(100vw - 48px);
     margin: 18px auto;
@@ -153,7 +170,7 @@
   .itens-table-wrap {
     border: 1px solid var(--border);
     border-radius: 8px;
-    max-height: 520px;
+    height: clamp(560px, calc(100vh - 320px), 860px);
     overflow: auto;
   }
 
@@ -221,6 +238,11 @@
     left: 0;
   }
 
+  .autocomplete-box.dropup {
+    top: auto;
+    bottom: calc(100% + 2px);
+  }
+
   .autocomplete-box .list-group-item {
     background: transparent;
     border-color: #2c355f;
@@ -232,6 +254,32 @@
   .autocomplete-box .list-group-item:hover {
     background: var(--bg3);
     color: var(--accent);
+  }
+
+  [data-bs-theme="light"] .calc-field {
+    background: #f1f3f5 !important;
+    border-color: #ced4da !important;
+    color: #198754 !important;
+  }
+
+  [data-bs-theme="light"] .totais-bar {
+    background: #f8f9fa;
+  }
+
+  [data-bs-theme="light"] .badge-caix {
+    background: #eef2ff;
+    border-color: #c7d2fe;
+    color: #1d4ed8;
+  }
+
+  [data-bs-theme="light"] .autocomplete-box {
+    background: #ffffff;
+    border-color: #ced4da;
+  }
+
+  [data-bs-theme="light"] .autocomplete-box .list-group-item {
+    border-color: #e9ecef;
+    color: #212529;
   }
 
   .totais-bar {
@@ -399,6 +447,13 @@
 
             <div id="tab-financeiro" class="tab-content active">
               <div class="row g-2">
+                <div class="col-12">
+                  <label>Condição de Preço</label>
+                  <select id="preco-condicao" class="form-control">
+                    <option value="0" selected>À Vista</option>
+                    <option value="1">A Prazo</option>
+                  </select>
+                </div>
                 <div class="col-4"><label>Desconto (R$)</label>{{ form.orca_desc }}</div>
                 <div class="col-4"><label>Frete (R$)</label>{{ form.orca_fret }}</div>
                 <div class="col-4"><label>Total</label>{{ form.orca_tota }}</div>
@@ -619,10 +674,34 @@
     let debounceTimer;
 
     function positionBox() {
-      const top = input.offsetTop + input.offsetHeight + 2;
-      box.style.top = `${top}px`;
+      const inputRect = input.getBoundingClientRect();
+      const scrollWrap = input.closest('.itens-table-wrap');
+      let spaceAbove = 0;
+      let spaceBelow = 0;
+      if (scrollWrap) {
+        const wrapRect = scrollWrap.getBoundingClientRect();
+        spaceAbove = inputRect.top - wrapRect.top;
+        spaceBelow = wrapRect.bottom - inputRect.bottom;
+      } else {
+        spaceAbove = inputRect.top;
+        spaceBelow = window.innerHeight - inputRect.bottom;
+      }
+
+      const dropup = spaceBelow < 180 && spaceAbove > spaceBelow;
+      box.classList.toggle('dropup', dropup);
       box.style.left = `${input.offsetLeft}px`;
       box.style.width = `${input.offsetWidth}px`;
+      const maxH = Math.max(120, Math.min(240, (dropup ? spaceAbove : spaceBelow) - 12));
+      box.style.maxHeight = `${maxH}px`;
+
+      const parentH = input.parentElement ? input.parentElement.offsetHeight : 0;
+      if (dropup) {
+        box.style.top = 'auto';
+        box.style.bottom = `${(parentH - input.offsetTop) + 2}px`;
+      } else {
+        box.style.bottom = 'auto';
+        box.style.top = `${input.offsetTop + input.offsetHeight + 2}px`;
+      }
     }
 
     positionBox();
@@ -648,6 +727,7 @@
             btn.textContent = item.label || item.text || item.value || '';
             box.appendChild(btn);
           });
+          positionBox();
           box.classList.toggle('d-none', data.length === 0);
           [...box.children].forEach((btn, idx) => {
             btn.addEventListener('click', () => {
@@ -714,6 +794,12 @@
 
   const calcTimers = {};
 
+  function getPrecoCondicao() {
+    const sel = document.getElementById('preco-condicao');
+    const v = sel ? String(sel.value || '').trim() : '';
+    return v || '0';
+  }
+
   async function calcularItem(index) {
     const prodInput = document.getElementById(`id_itens-${index}-item_prod`);
     const m2Input = document.getElementById(`m2-${index}`);
@@ -726,7 +812,11 @@
     const unit = parseNumberBR(unitInput?.value);
     const queb = parseNumberBR(quebInput?.value);
 
-    if (!prod_id || m2 <= 0) return;
+    if (!prod_id) return;
+
+    const precisaPreco = unit <= 0;
+    if (m2 <= 0 && !precisaPreco) return;
+    const condicao = getPrecoCondicao();
 
     if (spinner) spinner.style.display = 'block';
     try {
@@ -736,7 +826,7 @@
           'Content-Type': 'application/json',
           'X-CSRFToken': CSRF,
         },
-        body: JSON.stringify({ item_prod: prod_id, item_m2: m2, item_unit: unit, item_queb: queb }),
+        body: JSON.stringify({ item_prod: prod_id, item_m2: m2, item_unit: unit, item_queb: queb, condicao }),
       });
       if (!res.ok) throw new Error('Erro HTTP ' + res.status);
       const data = await res.json();
@@ -746,12 +836,18 @@
       const sutoInput = document.getElementById(`suto-${index}`);
       const hiddenCaix = document.querySelector(`#itens-table tr[data-index="${index}"] input[name$="-item_caix"]`);
       const hiddenQuan = document.querySelector(`#id_itens-${index}-item_quan`);
+      const hiddenUnit = document.getElementById(`id_itens-${index}-item_unit`);
 
       if (badgeCaix) badgeCaix.textContent = data.caixas || '—';
       if (quanInput) quanInput.value = data.quantidade || '';
       if (sutoInput) sutoInput.value = parseFloat(data.total || 0).toFixed(2);
       if (hiddenCaix) hiddenCaix.value = data.caixas || '';
       if (hiddenQuan) hiddenQuan.value = data.quantidade || '';
+      if (precisaPreco && unitInput && data.preco_unitario) {
+        unitInput.value = String(data.preco_unitario).replace(',', '.');
+        unitInput.dataset.autoPrice = '1';
+        if (hiddenUnit) hiddenUnit.value = normalizeNumberBR(unitInput.value);
+      }
 
       atualizarTotais();
     } finally {
@@ -797,6 +893,9 @@
       const el = document.getElementById(`${tipo}-${index}`);
       if (!el) return;
       el.addEventListener('input', () => debounceCalc(index));
+      if (tipo === 'unit') {
+        el.addEventListener('input', () => { delete el.dataset.autoPrice; });
+      }
       el.addEventListener('change', () => {
         const hiddenMap = { m2: 'item_m2', unit: 'item_unit', queb: 'item_queb' };
         const hidden = document.getElementById(`id_itens-${index}-${hiddenMap[tipo]}`);
@@ -929,9 +1028,32 @@
     });
   }
 
+  function bindPrecoCondicao() {
+    const sel = document.getElementById('preco-condicao');
+    if (!sel) return;
+    sel.addEventListener('change', () => {
+      document.querySelectorAll('#itens-tbody tr').forEach(tr => {
+        const index = tr.dataset.index;
+        const del = document.getElementById(`id_itens-${index}-DELETE`);
+        if (del && del.value === 'on') return;
+        const prod_id = document.getElementById(`id_itens-${index}-item_prod`)?.value;
+        const m2 = parseNumberBR(document.getElementById(`m2-${index}`)?.value);
+        if (!prod_id || m2 <= 0) return;
+        const unitEl = document.getElementById(`unit-${index}`);
+        if (unitEl && unitEl.dataset.autoPrice === '1') {
+          unitEl.value = '';
+          const hiddenUnit = document.getElementById(`id_itens-${index}-item_unit`);
+          if (hiddenUnit) hiddenUnit.value = '';
+          calcularItem(index);
+        }
+      });
+    });
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     bindTabs();
     validateBeforeSubmit();
+    bindPrecoCondicao();
 
     const URL_AUTO_CLIENTES = "{% url 'PisosWeb:autocomplete_clientes' slug=slug %}";
     const URL_AUTO_VENDEDORES = "{% url 'PisosWeb:autocomplete_vendedores' slug=slug %}";

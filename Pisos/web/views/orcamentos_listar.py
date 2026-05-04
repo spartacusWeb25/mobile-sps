@@ -4,11 +4,12 @@ from django.db.models import Sum
 from django.views.generic import ListView
 
 from core.utils import get_db_from_slug
+from core.mixins.vendedor_mixin import VendedorEntidadeMixin
 from Pisos.models import Orcamentopisos
 from Entidades.models import Entidades
 
 
-class OrcamentoPisosListView(ListView):
+class OrcamentoPisosListView(VendedorEntidadeMixin, ListView):
     model = Orcamentopisos
     template_name = "Pisos/orcamentos_listar.html"
     context_object_name = "orcamentos"
@@ -24,6 +25,7 @@ class OrcamentoPisosListView(ListView):
             .filter(orca_data__gte=data_min)
             .order_by("-orca_nume")
         )
+        qs = self.filter_por_vendedor(qs, 'orca_vend')
         
         numero = self.request.GET.get("orca_nume")
         cliente_nome = self.request.GET.get("cliente_nome")
@@ -78,6 +80,7 @@ class OrcamentoPisosListView(ListView):
         data_min = date(2020, 1, 1)
 
         base_qs = Orcamentopisos.objects.using(self.banco).filter(orca_data__gte=data_min)
+        base_qs = self.filter_por_vendedor(base_qs, 'orca_vend')
 
         context["slug"] = self.kwargs["slug"]
         context["metricas"] = {

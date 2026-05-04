@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect
 
 from core.utils import get_db_from_slug
+from core.mixins.vendedor_mixin import VendedorEntidadeMixin
 from Pisos.models import Orcamentopisos
 from Pisos.services.orcamento_exportar_service import OrcamentoExportarPedidoService
 
@@ -14,10 +15,10 @@ logger = logging.getLogger(__name__)
 def exportar_orcamento_pedido(request, slug, numero):
     banco = get_db_from_slug(slug)
 
-    orcamento = get_object_or_404(
-        Orcamentopisos.objects.using(banco),
-        orca_nume=numero,
-    )
+    mix = VendedorEntidadeMixin()
+    mix.request = request
+    qs = mix.filter_por_vendedor(Orcamentopisos.objects.using(banco), 'orca_vend')
+    orcamento = get_object_or_404(qs, orca_nume=numero)
 
     try:
         pedido_numero = OrcamentoExportarPedidoService().executar(

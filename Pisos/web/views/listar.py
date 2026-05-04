@@ -4,11 +4,12 @@ from django.db.models import Sum
 from django.views.generic import ListView
 
 from core.utils import get_db_from_slug
+from core.mixins.vendedor_mixin import VendedorEntidadeMixin
 from Pisos.models import Pedidospisos
 from Entidades.models import Entidades
 
 
-class PedidopisosListView(ListView):
+class PedidopisosListView(VendedorEntidadeMixin, ListView):
     template_name = "Pisos/listar.html"
     context_object_name = "pedidos"
     paginate_by = 50
@@ -37,6 +38,7 @@ class PedidopisosListView(ListView):
             )
             .order_by("-pedi_nume")
         )
+        qs = self.filter_por_vendedor(qs, 'pedi_vend')
 
         numero = self.request.GET.get("pedi_nume")
         cliente_nome = self.request.GET.get("cliente_nome")
@@ -93,6 +95,7 @@ class PedidopisosListView(ListView):
         data_min = date(2020, 1, 1)
 
         base_qs = Pedidospisos.objects.using(self.banco).filter(pedi_data__gte=data_min)
+        base_qs = self.filter_por_vendedor(base_qs, 'pedi_vend')
 
         context["slug"] = self.kwargs["slug"]
 
