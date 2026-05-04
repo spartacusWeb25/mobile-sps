@@ -1,67 +1,548 @@
 {% load humanize %}
+{% load finance_tags %}
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
   <meta charset="UTF-8" />
   <title>Pedido {{ pedido.pedi_nume }}</title>
   <style>
-    @page { size: A4; margin: 6mm; }
-    body{font-family:Arial,Helvetica,sans-serif;background:#efefef;margin:0}
-    .sheet{width:198mm;min-height:285mm;background:#fff;margin:6mm auto;padding:8mm;border-top:8px solid #2f2f2f}
-    .top{display:grid;grid-template-columns:1fr 1.5fr .8fr;border:1px solid #222}
-    .logo{border-right:1px solid #222;padding:4px}.logo h1{margin:0;font-size:44px;font-weight:300}
-    .empresa{padding:4px;font-size:13px;border-right:1px solid #222}.pedido-box{padding:10px;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center}
-    .row{display:grid;grid-template-columns:1fr 1fr;border:1px solid #222;border-top:none}.row div{padding:4px;font-size:12px;border-right:1px solid #222}.row div:last-child{border-right:none}
-    table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #222;padding:3px}th{background:#f0f0f0}
-    .totais{width:280px;margin-left:auto;margin-top:6px;font-size:12px}.totais div{display:flex;justify-content:space-between;padding:2px 0}.total-geral{font-size:18px;font-weight:700;border-top:2px solid #222;margin-top:4px;padding-top:4px}
-    .assin{margin-top:28mm;display:grid;grid-template-columns:1fr 1fr;gap:18mm}.linha{border-top:1px solid #444;padding-top:4px;font-size:12px}
-    .termos{margin-top:8px;border:1px solid #222;padding:8px;font-size:11px;line-height:1.35}
-    .print-btn{position:fixed;right:20px;top:20px}
-    @media print {.print-btn{display:none} body{background:#fff} .sheet{margin:0;border-top:6px solid #2f2f2f}}
+    @page {
+      size: A4;
+      margin: 8mm;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #000;
+    }
+
+    .print-btn {
+      position: fixed;
+      right: 16px;
+      top: 16px;
+      background: #222;
+      color: #fff;
+      border: 0;
+      padding: 8px 18px;
+      font-size: 12px;
+      cursor: pointer;
+      border-radius: 2px;
+      z-index: 10;
+    }
+
+    @media print {
+      .print-btn {
+        display: none;
+      }
+    }
+
+    .page {
+      page-break-after: always;
+    }
+
+    .page:last-child {
+      page-break-after: auto;
+    }
+
+    .top-header {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 10px;
+    }
+
+    .top-header td {
+      border: 1px solid #000;
+      vertical-align: top;
+      padding: 4px 6px;
+    }
+
+    .top-header .logo {
+      width: 170px;
+      padding: 0;
+    }
+
+    .top-header .logo img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .top-header .empresa {
+      font-size: 10px;
+      line-height: 1.25;
+    }
+
+    .top-header .pedido {
+      width: 160px;
+      text-align: right;
+      font-weight: 700;
+    }
+
+    .top-header .fl {
+      text-align: right;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .dados {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 10px;
+    }
+
+    .dados th,
+    .dados td {
+      border: 1px solid #000;
+      padding: 3px 4px;
+    }
+
+    .dados th {
+      text-align: left;
+      font-weight: 700;
+    }
+
+    .dados .lbl {
+      width: 110px;
+    }
+
+    .dados .val {
+      width: 260px;
+    }
+
+    .dados .lbl2 {
+      width: 110px;
+    }
+
+    .dados .val2 {
+      width: auto;
+    }
+
+    .tbl-itens {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 10px;
+    }
+
+    .tbl-itens th,
+    .tbl-itens td {
+      border: 1px solid #000;
+      padding: 3px 4px;
+    }
+
+    .tbl-itens th {
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .tbl-itens td {
+      vertical-align: top;
+    }
+
+    .tbl-itens .cen {
+      text-align: center;
+    }
+
+    .tbl-itens .num {
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .tbl-itens .grupo td {
+      background: #d0d3d6;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .totais {
+      width: 240px;
+      margin-left: auto;
+      margin-top: 6px;
+      font-size: 10px;
+    }
+
+    .totais .linha {
+      display: flex;
+      justify-content: space-between;
+      margin: 2px 0;
+    }
+
+    .obs-box {
+      border: 1px solid #000;
+      margin-top: 10px;
+      padding: 4px 6px;
+      font-size: 10px;
+      min-height: 44px;
+    }
+
+    .obs-box .titulo {
+      font-weight: 700;
+    }
+
+    .fin-box {
+      border: 1px solid #000;
+      margin-top: 10px;
+      padding: 4px 6px;
+      font-size: 9px;
+    }
+
+    .fin-box .titulo {
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .fin-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .fin-linha {
+      white-space: nowrap;
+    }
+
+    .assin-area {
+      margin-top: 16px;
+      font-size: 9px;
+    }
+
+    .assin-area .decl {
+      margin-top: 8px;
+    }
+
+    .assin-area .data {
+      margin-top: 6px;
+    }
+
+    .assin-area .linhas {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      margin-top: 16px;
+      align-items: end;
+    }
+
+    .assin-area .linha {
+      border-top: 1px solid #777;
+      padding-top: 4px;
+    }
+
+    .assin-area .site {
+      text-align: center;
+      font-weight: 700;
+      margin-top: 6px;
+    }
+
+    .termos-box {
+      border: 1px solid #000;
+      padding: 10px;
+      font-size: 8px;
+      line-height: 1.25;
+      min-height: 277mm;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .termos-box .titulo {
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .termos-box .intro {
+      margin: 0 0 8px;
+    }
+
+    .t {
+      margin: 0 0 5px;
+    }
+
+    .t .n {
+      font-weight: 700;
+    }
+
+    .termos-footer {
+      margin-top: auto;
+    }
   </style>
 </head>
+
 <body>
-<button class="print-btn" onclick="window.print()">Imprimir</button>
-<div class="sheet">
-  <div class="top">
-    <div class="logo"><h1>PG Pisos</h1></div>
-    <div class="empresa">PG PISOS<br>AVENIDA DOUTOR FRANCISCO BURZIO - 934<br>CENTRO - PONTA GROSSA/PR</div>
-    <div class="pedido-box">Pedido: {{ pedido.pedi_nume }}</div>
-  </div>
-  <div class="row"><div><b>Cliente:</b> {{ cliente.enti_nome|default:pedido.pedi_clie }}</div><div><b>Data:</b> {{ pedido.pedi_data|date:'d/m/Y' }}</div></div>
-  <div class="row"><div><b>CPF/CNPJ:</b> {{ cliente.enti_cpfcnpj|default:'-' }}</div><div><b>Vendedor:</b> {{ vendedor.enti_nome|default:pedido.pedi_vend }}</div></div>
+  <button class="print-btn" onclick="window.print()">Imprimir</button>
 
-  <table style="margin-top:8px">
-    <thead><tr><th>Qtde</th><th>Código</th><th>Descrição</th><th>Amb.</th><th>Unit.</th><th>Total</th></tr></thead>
-    <tbody>
-      {% for i in itens %}
-      <tr><td>{{ i.item_quan }}</td><td>{{ i.item_prod }}</td><td>{{ i.item_prod_nome|default:i.item_prod }}</td><td>{{ i.item_nome_ambi|default:i.item_ambi }}</td><td>{{ i.item_unit|floatformat:2 }}</td><td>{{ i.item_suto|floatformat:2 }}</td></tr>
-      {% empty %}<tr><td colspan="6">Sem itens</td></tr>{% endfor %}
-    </tbody>
-  </table>
-  <div class="totais">
-    <div><span>Subtotal</span><span>{{ pedido.pedi_tota|floatformat:2 }}</span></div>
-    <div><span>Desconto</span><span>{{ pedido.pedi_desc|default:0|floatformat:2 }}</span></div>
-    <div><span>Frete</span><span>{{ pedido.pedi_fret|default:0|floatformat:2 }}</span></div>
-    <div class="total-geral"><span>Total</span><span>{{ pedido.pedi_tota|floatformat:2 }}</span></div>
+  <div class="page">
+    <table class="top-header">
+      <tr>
+        <td class="logo" rowspan="2"><img src="data:image/png;base64,{{ logo_pedido_b64 }}" alt="PG Pisos"></td>
+        <td class="empresa" rowspan="2">
+          <div>PG PISOS</div>
+          <div>AVENIDA DOUTOR FRANCISCO BURZIO - 934 -</div>
+          <div>CENTRO</div>
+          <div>PONTA GROSSA, PR - Fone: (42)3223-9577</div>
+        </td>
+        <td class="pedido">Pedido: {{ pedido.pedi_nume }}</td>
+      </tr>
+      <tr>
+        <td class="fl">FL. 1</td>
+      </tr>
+    </table>
+
+    <table class="dados">
+      <tr>
+        <th colspan="2">Dados do Cliente:</th>
+        <th colspan="2" style="text-align:center;">Data: {{ pedido.pedi_data|date:'d/m/Y' }}</th>
+      </tr>
+      <tr>
+        <td class="lbl">Nome:</td>
+        <td class="val">{{ cliente.enti_nome|default:pedido.pedi_clie }}</td>
+        <td class="lbl2">Telefones:</td>
+        <td class="val2">{{ cliente.enti_fone|default:cliente.enti_celu|default:"" }}</td>
+      </tr>
+      <tr>
+        <td class="lbl">Endereço:</td>
+        <td class="val">{% if cliente.enti_ende %}{{ cliente.enti_ende }}, Nº {{ cliente.enti_nume }}{% endif %}{% if cliente.enti_bair %}<br>{{ cliente.enti_bair }}{% endif %}</td>
+        <td class="lbl2">CNPJ/ CPF:</td>
+        <td class="val2">{% if cliente.enti_cnpj %}{{ cliente.enti_cnpj }}{% else %}{{ cliente.enti_cpf }}{% endif %}
+        </td>
+      </tr>
+      <tr>
+        <td class="lbl">Cidade/Estado:</td>
+        <td class="val">{% if cliente.enti_cida %}{{ cliente.enti_cida }}{% endif %}{% if cliente.enti_esta %}/{ cliente.enti_esta }}{% endif %}</td>   
+        <td class="lbl2">I.E ou R.G.:</td>
+        <td class="val2">{{ cliente.enti_insc_esta|default:"" }}</td>
+      </tr>
+      <tr>
+        <td class="lbl">CEP:</td>
+        <td class="val">{{ cliente.enti_cep|default:"" }}</td>
+        <td class="lbl2">Email:</td>
+        <td class="val2">{{ cliente.enti_emai|default:"" }}</td>
+      </tr>
+      <tr>
+        <td class="lbl"></td>
+        <td class="val"></td>
+        <td class="lbl2">Vendedor:</td>
+        <td class="val2">{{ vendedor.enti_nome|default:pedido.pedi_vend }}</td>
+      </tr>
+    </table>
+
+    <table class="tbl-itens">
+      <thead>
+        <tr>
+          <th style="width:46px">Qtde.</th>
+          <th style="width:64px">Código</th>
+          <th>Descrição</th>
+          <th style="width:52px">Caixas</th>
+          <th style="width:66px">Marca</th>
+          <th style="width:44px">U.M</th>
+          <th style="width:72px">Valor Unit.</th>
+          <th style="width:72px">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for grupo in grupos %}
+        <tr class="grupo">
+          <td colspan="8">{{ grupo.nome }}</td>
+        </tr>
+        {% for i in grupo.itens %}
+        <tr>
+          <td class="num">{{ i.item_quan|numbr:"auto" }}</td>
+          <td class="cen">{{ i.item_prod }}</td>
+          <td>{{ i.item_prod_nome|default:i.item_prod }}{% if i.item_obse %}<br>{{ i.item_obse|linebreaksbr }}{% endif %}</td>
+          <td class="cen">{{ i.item_caixas|default:0 }}</td>
+          <td class="cen">{{ i.item_marc|default:"" }}</td>
+          <td class="cen">{{ i.item_unid|default:"" }}</td>
+          <td class="num">{{ i.item_unit|numbr }}</td>
+          <td class="num">{{ i.item_suto|numbr }}</td>
+        </tr>
+        {% endfor %}
+        <tr>
+          <td colspan="6"></td>
+          <td class="num"><b>Total Amb:</b></td>
+          <td class="num"><b>{{ grupo.total|numbr }}</b></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="totais">
+      <div class="linha"><span>SubTotal</span><span>{{ subtotal|numbr }}</span></div>
+      <div class="linha"><span>Descontos</span><span>{{ pedido.pedi_desc|default:0|numbr }}</span></div>
+      <div class="linha"><span>Crédito</span><span>{{ pedido.pedi_cred|default:0|numbr }}</span></div>
+      <div class="linha"><span>Frete</span><span>{{ pedido.pedi_fret|default:0|numbr }}</span></div>
+      <div class="linha"><span><b>Total</b></span><span><b>{{ pedido.pedi_tota|numbr }}</b></span></div>
+    </div>
+
+    <div class="obs-box">
+      <div class="titulo">Observação:</div>
+      <div>{{ pedido.pedi_obse|default:"" }}</div>
+    </div>
+
+    {% if financeiro_colunas %}
+    <div class="fin-box">
+      <div class="titulo">Financeiro:</div>
+      <div class="fin-grid">
+        <div>
+          {% for left, right in financeiro_colunas %}
+          {% if left %}
+          <div class="fin-linha">{{ left.seq|stringformat:"03d" }} {{ left.obj.fina_venc|date:'d/m/Y' }} {{ left.obj.fina_valo|brl }} {{ left.obj.fina_form|default:'' }}</div>
+          {% endif %}
+          {% endfor %}
+        </div>
+        <div>
+          {% for left, right in financeiro_colunas %}
+          {% if right %}
+          <div class="fin-linha">{{ right.seq|stringformat:"03d" }} {{ right.obj.fina_venc|date:'d/m/Y' }} {{
+            right.obj.fina_valo|brl }} {{ right.obj.fina_form|default:'' }}</div>
+          {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="assin-area">
+      <div class="decl">Declaro estar ciente das informações acima prestadas pela loja Pg Pisos.</div>
+      <div class="data">{{ data_hoje_extenso }}</div>
+      <div class="linhas">
+        <div class="linha">
+          Cliente:&nbsp;&nbsp;&nbsp;&nbsp;{{ cliente.enti_nome|default:pedido.pedi_clie }}<br>
+          CPF/CNPJ:&nbsp;&nbsp;{% if cliente.enti_cnpj %}{{ cliente.enti_cnpj }}{% else %}{{ cliente.enti_cpf }}{% endif %}
+        </div>
+        <div class="linha">
+          Vendedor:&nbsp;&nbsp;&nbsp;{{ vendedor.enti_nome|default:pedido.pedi_vend }}<br>
+          PG Pisos&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;09.583.163/0001-19
+        </div>
+      </div>
+      <div class="site">www.spartacus.com.br</div>
+    </div>
   </div>
 
-  <div class="termos">
-    <b>INFORMAÇÕES AOS CLIENTES PG PISOS</b><br>
-    1. As quantidades devem ser conferidas pelo cliente no ato da entrega.<br>
-    2. Horário de entrega: segunda a sexta-feira, 08:00 às 18:00.<br>
-    3. Não será admitido cancelamento/devolução de itens sob encomenda.<br>
-    4. Após o recebimento, não serão aceitas reclamações por ausência de material entregue.<br>
-    5. Produtos naturais podem apresentar variações de tonalidade, veios e granulações.<br>
-    6. A responsabilidade de instalação e preparação de base é do cliente/profissional contratado.<br>
-    7. Em relação a pisos laminados, deve-se avaliar a umidade do ambiente antes da instalação.<br>
-    8. Custos não previstos no orçamento inicial são de responsabilidade do cliente.<br>
+  <div class="page">
+    <div class="termos-box">
+      <div class="titulo">INFORMAÇÕES AOS CLIENTES PG PISOS</div>
+      <div class="intro">Para formalização da venda discriminada no PEDIDO nº {{ pedido.pedi_nume }} , o cliente abaixo
+        identificado está ciente e de acordo com as seguintes informações fornecidas pela PG Pisos:</div>
+      <div class="t"><span class="n">1.</span> As quantidades e a descrição anotadas na nota fiscal de venda (PEDIDO nº
+        {{ pedido.pedi_nume }}) deverão ser conferidas pelo cliente no momento da recepção e vistoria do pedido, não
+        cabendo alegar, após a conferência, os artigos 18 e 51, ambos da Lei nº 8078/90, exceto por vícios redibitórios.
+      </div>
+      <div class="t"><span class="n">2.</span> Horário de entrega dos materiais: segunda à sexta-feira, das 08:00 às
+        18:00.</div>
+      <div class="t"><span class="n">3.</span> As cores das amostras expostas em loja são apenas referências, podendo
+        haver variações leves de tonalidade nas que serão entregues.</div>
+      <div class="t"><span class="n">4.</span> Não será admitido o cancelamento, devolução ou troca dos pedidos feitos
+        sob encomenda.</div>
+      <div class="t"><span class="n">5.</span> Serão admitidas reclamações por defeito na peça/material somente com
+        relação àquelas que ainda não foram assentadas no local, por se tratar de produto aceito pelo cliente na
+        entrega. Nesse caso, o cliente deverá aguardar a visita de um técnico a ser enviado pelo fabricante do material
+        instalado, o qual emitirá laudo pericial para atestar a necessidade de troca, que, nesse caso, cumprirá o prazo
+        de entrega do pedido inicial.</div>
+      <div class="t"><span class="n">6.</span> Após o recebimento do material e aceite por escrito do cliente, não serão
+        admitidas reclamações por quebra ou ausência do material entregue, sendo obrigatória a conferência no ato da
+        recepção pelo cliente.</div>
+      <div class="t"><span class="n">6.1.</span> Será do cliente a responsabilidade por quaisquer danos, riscos e quebra
+        do material/produto aceito e entregue a este.</div>
+      <div class="t"><span class="n">6.2.</span> Poderá haver divergências entre as medidas da planta baixa com as
+        medidas finais do imóvel, o que poderá resultar na falta ou sobra de materiais, cuja responsabilidade será do
+        cliente e a PG Pisos não aceitará devolução ou troca dos produtos.</div>
+      <div class="t"><span class="n">7.</span> Os pedidos adicionais poderão sofrer alteração de cor, lote e tamanho
+        (milímetros) por mais ou para menos), e cumprirá o prazo de entrega e frete estabelecidos pelo fabricante, bem
+        como a ordem de agenda de instalação da empresa.</div>
+      <div class="t"><span class="n">8.</span> As instruções que constam na embalagem do produto deverão ser observadas
+        antes da instalação dos materiais adquiridos pelo cliente, pois a instalação incorreta acarretará em perda de
+        garantia.</div>
+      <div class="t"><span class="n">8.1.</span> Caso o assentador/instalador verifique qualquer problema nas peças,
+        deverá notificar a PG Pisos antes da instalação do produto danificado, pois todo produto assentado é considerado
+        aceite pelo cliente.</div>
+      <div class="t"><span class="n">8.2.</span> Alguns porcelanatos e pastilhas possuem 84 peças/85 em suas embalagens
+        ou mesmo nas próprias peças, indicando a posição correta para instalação, as quais deverão ser seguidas pelo
+        profissional, sob pena de interferir no resultado final esperado pelo cliente.</div>
+      <div class="t"><span class="n">9.</span> Sendo constatada a necessidade de troca dos produtos instalados, o
+        cliente ficará responsável por retirar todo e qualquer móvel, equipamento, utensílios diversos ou outros
+        empecilhos físicos que estiverem na superfície do material danificado, e que possam dificultar a sua retirada,
+        de modo que a PG Pisos arcará responsável apenas pela troca do material/peça da fábrica.</div>
+      <div class="t"><span class="n">9.1.</span> A depender da disponibilidade dos materiais/peças na respectiva
+        fábrica, o novo pedido poderá sofrer alterações de cor, lote e tamanho, além de ficar estabelecido desde já a
+        observância do prazo de entrega e frete estabelecidos pelo fabricante, bem como na agenda de instalação da
+        empresa.</div>
+      <div class="t"><span class="n">10.</span> Para que se tenha o melhor resultado após a instalação dos produtos
+        fornecidos pela PG Pisos, a responsabilidade pelo ambiente e/ou pelo contrapiso do local é integralmente do
+        cliente.</div>
+      <div class="t"><span class="n">10.1.</span> Na hipótese de umidade ascendente proveniente do contrapiso e paredes,
+        a PG Pisos não se responsabiliza pelos danos ocasionados nos materiais/peças instalados, pois estes decorrem de
+        problemas oriundos da obra civil, inexistindo qualquer garantia do produto e da instalação.</div>
+      <div class="t"><span class="n">10.2.</span> Será cabível ao cliente acionar os decoros de engenharia civil
+        responsável pela obra/reforma do imóvel, nos exatos termos do artigo 12 do Código de Defesa do Consumidor (CDC).
+      </div>
+      <div class="t"><span class="n">10.3.</span> A umidade ascendente, pois o termo utilizado na construção civil para
+        indicar infiltrações por capilaridade da água presente no solo em pisos e paredes.</div>
+      <div class="t"><span class="n">11.</span> Com relação aos pisos laminados, cuja matéria prima é a madeira, a
+        responsabilidade pela averiguação da umidade do ambiente em que o material será instalado é do próprio cliente,
+        pois os pisos laminados são muito sensíveis à umidade do local. A instalação correta do material adquirido
+        também depende de teste de umidade realizado pela PG Pisos.</div>
+      <div class="t"><span class="n">12.</span> Os cortes específicos que não constam no orçamento inicial são de
+        responsabilidade solidária do cliente e do respectivo arquiteto.</div>
+      <div class="t"><span class="n">13.</span> Ainda que dentro do mesmo lote de fabricação, os produtos cerâmicos
+        podem apresentar variações de espessura e tonalidade por serem fabricados com matéria prima natural.</div>
+      <div class="t"><span class="n">14.</span> As amostras de mármore são apenas referências, tratando-se de
+        características normais as variações de tonalidade, veios e granulações (cor, tamanho e textura), pois, como
+        sabido, o mármore é de origem natural. As pastilhas de vidro com mármores também possuem a mesma variação acima
+        mencionada, pois muitas amostras são de mármore anticatto, as quais possuem irregularidades em seu formato e,
+        por isso, tendem a apresentar tamanhos diferentes no entorno da peça.</div>
+      <div class="t"><span class="n">15.</span> Após o assentamento, as pastilhas de vidro de cor branca podem ficar
+        levemente esverdeadas ou azuladas devido a cor do próprio vidro.</div>
+      <div class="t"><span class="n">16.</span> Após a instalação do material adquirido, de o qualquer obra/reforma
+        (pintura, alvenaria, entre outros) deverá seguir os padrões de impermeabilização indicados pelo profissional
+        responsável do projeto arquitetônico, isentando a PG Pisos de qualquer evento danoso proveniente deste motivo.
+        Caso não exista profissional identificado no projeto, a responsabilidade será do cliente.</div>
+      <div class="t"><span class="n">17.</span> Após a conclusão de toda reforma/obra, é essencial realizar
+        imediatamente após do cliente, eliminar resíduos de rejunte, cimento e cera utilizados na instalação dos
+        materiais. Para tanto, existem produtos próprios para essa finalidade, cuja escolha fica a cargo do cliente.
+      </div>
+      <div class="t"><span class="n">17.1.</span> Caso o cliente tenha interesse na compra desses produtos, deverá ser
+        verificada junto ao fabricante do próprio material, qual a marca indicada para realizar a sua limpeza.</div>
+    </div>
   </div>
 
-  <div class="assin">
-    <div class="linha">Cliente: {{ cliente.enti_nome|default:pedido.pedi_clie }}</div>
-    <div class="linha">Vendedor: {{ vendedor.enti_nome|default:pedido.pedi_vend }}</div>
+  <div class="page">
+    <div class="termos-box">
+      <div>
+        <div class="t"><span class="n">17.2.</span> A PG Pisos não se responsabiliza pela limpeza do local e
+          fornecimento dos referidos produtos.</div>
+        <div class="t"><span class="n">18.</span> Os produtos de limpeza da marca &amp;4Outros não são indicados para
+          porcelanatos de cor preta. A limpeza pós-obra e removedor de cimento não podem ter contato com mármores e
+          metais, podendo ocasionar corrosão e manchas nas peças instaladas.</div>
+        <div class="t"><span class="n">19.</span> Em virtude do seu comprimento, as barras de rodapé de PU (Poliuretano)
+          têm empenamento normal de fabricação, o que deve ser acertado no momento da instalação do material, conforme
+          mando do fabricante.</div>
+        <div class="t"><span class="n">20.</span> Com relação aos materiais vendidos diretamente da fábrica ao cliente
+          final, a PG Pisos é apenas a representante comercial desta negociação, cabendo aos fabricantes o dever de
+          sanar qualquer divergência, garantias e possíveis reposições.</div>
+      </div>
+      <div class="termos-footer">
+        <div class="assin-area">
+          <div class="data">{{ data_hoje_extenso }}</div>
+          <div class="linhas">
+            <div class="linha">
+              Cliente:&nbsp;&nbsp;&nbsp;&nbsp;{{ cliente.enti_nome|default:pedido.pedi_clie }}<br>
+              CPF/CNPJ:&nbsp;&nbsp;{% if cliente.enti_cnpj %}{{ cliente.enti_cnpj }}{% else %}{{ cliente.enti_cpf }}{% endif %}
+            </div>
+            <div class="linha">
+              Vendedor:&nbsp;&nbsp;&nbsp;{{ vendedor.enti_nome|default:pedido.pedi_vend }}<br>
+              PG Pisos&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;09.583.163/0001-19
+            </div>
+          </div>
+          <div class="site">www.spartacus.com.br</div>
+        </div>
+      </div>
+    </div>
   </div>
-</div>
 </body>
+
 </html>

@@ -11,6 +11,20 @@ def _format_brl(value: Decimal) -> str:
     return f"R$ {s}"
 
 
+def _to_decimal(value) -> Decimal:
+    if value is None:
+        return Decimal("0")
+    try:
+        return Decimal(value)
+    except Exception:
+        return Decimal(str(value).replace(",", "."))
+
+
+def _format_numbr(value: Decimal, places: int) -> str:
+    s = f"{value:,.{places}f}"
+    return s.replace(",", "X").replace(".", ",").replace("X", ".")
+
+
 @register.filter(name="brl")
 def brl(value) -> str:
     """Formata números para moeda BRL sem depender de locale do SO.
@@ -19,11 +33,29 @@ def brl(value) -> str:
     if value is None:
         return "R$ 0,00"
     try:
-        val = Decimal(value)
+        val = _to_decimal(value)
     except Exception:
-        try:
-            val = Decimal(str(value).replace(',', '.'))
-        except Exception:
-            return "R$ 0,00"
+        return "R$ 0,00"
     return _format_brl(val)
+
+
+@register.filter(name="numbr")
+def numbr(value, places="2") -> str:
+    try:
+        val = _to_decimal(value)
+    except Exception:
+        return "0,00"
+
+    p = str(places or "2").strip().lower()
+    if p == "auto":
+        s = _format_numbr(val, 2)
+        if "," in s:
+            s = s.rstrip("0").rstrip(",")
+        return s
+
+    try:
+        n = int(p)
+    except Exception:
+        n = 2
+    return _format_numbr(val, n)
 
