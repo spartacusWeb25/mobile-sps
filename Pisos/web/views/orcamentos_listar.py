@@ -1,3 +1,5 @@
+from datetime import date
+
 from django.db.models import Sum
 from django.views.generic import ListView
 
@@ -14,11 +16,12 @@ class OrcamentoPisosListView(ListView):
 
     def get_queryset(self):
         self.banco = get_db_from_slug(self.kwargs["slug"])
+        data_min = date(2020, 1, 1)
 
         qs = (
             Orcamentopisos.objects
             .using(self.banco)
-            .all()
+            .filter(orca_data__gte=data_min)
             .order_by("-orca_nume")
         )
         
@@ -72,8 +75,9 @@ class OrcamentoPisosListView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        data_min = date(2020, 1, 1)
 
-        base_qs = Orcamentopisos.objects.using(self.banco).all()
+        base_qs = Orcamentopisos.objects.using(self.banco).filter(orca_data__gte=data_min)
 
         context["slug"] = self.kwargs["slug"]
         context["metricas"] = {

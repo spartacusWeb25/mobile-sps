@@ -153,7 +153,7 @@ Copie o conteúdo de SPARTACUS.pem.pub e cole no servidor em: ~/.ssh/authorized_
 Conectar:
 
 Bash
-ssh -i SPARTACUS.pem ubuntu@168.75.73.117 3. Configuração do Ambiente de Produção
+ssh -i SPARTACUS.pem ubuntu@168.75.73.117. Configuração do Ambiente de Produção
 3.1 Gunicorn (Systemd)
 O serviço do Gunicorn gerencia a aplicação Django.
 Arquivo: /etc/systemd/system/gunicorn.service
