@@ -12,6 +12,7 @@ from Pisos.web.views.calcular_item_view import api_calcular_item
 from Pisos.web.views.impressao import imprimir_pedido_pisos, imprimir_orcamento_pisos
 
 from Pisos.web.views.utils import autocomplete_clientes, autocomplete_vendedores, autocomplete_produtos
+from Pisos.web.views.comissao_view import ComissaoVendedorView
 
 app_name = "PisosWeb"
 
@@ -31,4 +32,5 @@ urlpatterns = [
     path("orcamentos-pisos/<int:pk>/imprimir/", imprimir_orcamento_pisos, name="orcamentos_pisos_imprimir"),
     path("orcamentos-pisos/<int:numero>/exportar/", exportar_orcamento_pedido, name="orcamentos_pisos_exportar"),
     path("calcular-item/", api_calcular_item, name="api_calcular_item"),
+    path("comissoes-vendedores/", ComissaoVendedorView.as_view(), name="comissoes_vendedores"),
 ]

@@ -137,6 +137,10 @@ class GrupoProduto(models.Model):
         db_column='grup_desc', 
         verbose_name='Descrição'
     )
+    grup_comi_vend = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True, verbose_name='Comissão de Venda')
+
+
+
 
     class Meta:
         db_table = 'gruposprodutos'
@@ -203,6 +207,7 @@ class Marca(models.Model):
         db_column='marc_nome', 
         verbose_name='Nome'
     )
+    comissao = models.DecimalField(db_column='marc_comi', max_digits=6, decimal_places=2, null=True, blank=True, verbose_name='Comissão de Venda')
 
     class Meta:
         db_table = 'marca'

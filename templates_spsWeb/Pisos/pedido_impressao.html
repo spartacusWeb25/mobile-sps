@@ -313,7 +313,7 @@
       </tr>
       <tr>
         <td class="lbl">Cidade/Estado:</td>
-        <td class="val">{% if cliente.enti_cida %}{{ cliente.enti_cida }}{% endif %}{% if cliente.enti_esta %}/{ cliente.enti_esta }}{% endif %}</td>   
+        <td class="val">{% if cliente.enti_cida %}{{ cliente.enti_cida }}{% endif %}{% if cliente.enti_esta %}/{{  cliente.enti_esta }}{% endif %}</td>   
         <td class="lbl2">I.E ou R.G.:</td>
         <td class="val2">{{ cliente.enti_insc_esta|default:"" }}</td>
       </tr>

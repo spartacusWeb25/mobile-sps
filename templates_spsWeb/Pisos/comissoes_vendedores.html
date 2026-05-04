@@ -1,0 +1,385 @@
+{% extends "base.html" %}
+{% load static %}
+{% load finance_tags %}
+
+{% block content %}
+<div class="container">
+
+  <div class="d-flex align-items-start mb-4">
+    <div class="flex-grow-1 text-center">
+      <h3 class="mb-1"><i class="bi bi-person-gear me-1"></i> Comissões de Vendedores</h3>
+      <small class="text-muted">Análise por pedidos, grupos, produtos, datas e vendedores</small>
+    </div>
+    <div class="ms-3">
+      <a href="?export=xlsx" class="btn btn-outline-success btn-sm">
+        <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+      </a>
+    </div>
+  </div>
+
+  <!-- FILTROS -->
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+      <strong>Filtros</strong>
+      <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#filtrosCollapse" aria-expanded="true" aria-controls="filtrosCollapse">
+        <i class="bi bi-funnel"></i> Mostrar/ocultar
+      </button>
+    </div>
+    <div id="filtrosCollapse" class="collapse show">
+      <div class="card-body">
+        <form method="get" class="row g-3">
+
+          <div class="col-md-2">
+            <label class="form-label">Empresa</label>
+            <select name="empresa" class="form-select">
+              <option value="">(Sessão)</option>
+              <option value="all" {% if filtros.empresa == "all" %}selected{% endif %}>Todas</option>
+              {% for e in empresas_list %}
+                <option value="{{ e.empr_codi }}"
+                  {% if filtros.empresa == e.empr_codi|stringformat:"s" %}selected{% endif %}>
+                  {{ e.empr_nome }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-2">
+            <label class="form-label">Filial</label>
+            <select name="filial" class="form-select">
+              <option value="">(Sessão)</option>
+              <option value="all" {% if filtros.filial == "all" %}selected{% endif %}>Todas</option>
+              {% for f in filiais_list %}
+                <option value="{{ f.empr_empr }}"
+                  {% if filtros.filial == f.empr_empr|stringformat:"s" %}selected{% endif %}>
+                  {{ f.empr_nome }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-2">
+            <label class="form-label">Data inicial</label>
+            <input type="date" name="data_inicial" class="form-control"
+                   value="{{ filtros.data_inicial }}">
+          </div>
+
+          <div class="col-md-2">
+            <label class="form-label">Data final</label>
+            <input type="date" name="data_final" class="form-control"
+                   value="{{ filtros.data_final }}">
+          </div>
+
+          <div class="col-md-2">
+            <label class="form-label">Vendedor</label>
+            <select name="vendedor" class="form-select">
+              <option value="">Todos</option>
+              {% for vendedor in vendedores %}
+                <option value="{{ vendedor.enti_clie }}"
+                  {% if filtros.vendedor == vendedor.enti_clie|stringformat:"s" %}selected{% endif %}>
+                  {{ vendedor.enti_nome }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-2">
+            <label class="form-label">Grupo</label>
+            <select name="grupo" class="form-select">
+              <option value="">Todos</option>
+              {% for grupo in grupos %}
+                <option value="{{ grupo.codigo }}"
+                  {% if filtros.grupo == grupo.codigo|stringformat:"s" %}selected{% endif %}>
+                  {{ grupo.descricao }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-2">
+            <label class="form-label">Agrupar por</label>
+            <select name="agrupar_por" class="form-select">
+              <option value="vendedor" {% if filtros.agrupar_por == "vendedor" %}selected{% endif %}>Vendedor</option>
+              <option value="grupo" {% if filtros.agrupar_por == "grupo" %}selected{% endif %}>Grupo</option>
+              <option value="produto" {% if filtros.agrupar_por == "produto" %}selected{% endif %}>Produto</option>
+              <option value="pedido" {% if filtros.agrupar_por == "pedido" %}selected{% endif %}>Pedido</option>
+              <option value="data" {% if filtros.agrupar_por == "data" %}selected{% endif %}>Data</option>
+            </select>
+          </div>
+
+          <div class="col-md-2">
+            <label class="form-label">Status</label>
+            <select name="status" class="form-select">
+              <option value="">Todos</option>
+              <option value="0" {% if filtros.status == "0" %}selected{% endif %}>Aberto</option>
+              <option value="1" {% if filtros.status == "1" %}selected{% endif %}>Cancelado</option>
+              <option value="2" {% if filtros.status == "2" %}selected{% endif %}>Fechado</option>
+            </select>
+          </div>
+
+          <div class="col-12 d-flex gap-2 justify-content-end">
+            <a href="?" class="btn btn-outline-secondary"><i class="bi bi-eraser"></i> Limpar</a>
+            <button class="btn btn-outline-primary">
+              <i class="bi bi-search"></i> Filtrar
+            </button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MÉTRICAS -->
+  <div class="row g-3 mb-4">
+
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <small class="text-muted">Total vendido</small>
+          <h4 class="mb-0">{{ metricas.total_vendido|brl }}</h4>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <small class="text-muted">Total comissão</small>
+          <h4 class="mb-0">{{ metricas.total_comissao|brl }}</h4>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <small class="text-muted">Pedidos</small>
+          <h4 class="mb-0">{{ metricas.quantidade_pedidos }}</h4>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <small class="text-muted">Itens vendidos</small>
+          <h4 class="mb-0">{{ metricas.quantidade_itens }}</h4>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- GRÁFICOS -->
+  <div class="row g-3 mb-4">
+
+    <div class="col-md-7">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-transparent fw-semibold">
+          Comissão por agrupamento
+        </div>
+        <div class="card-body">
+          <canvas id="graficoComissao" height="120"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-5">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-transparent fw-semibold">
+          Total vendido por agrupamento
+        </div>
+        <div class="card-body">
+          <canvas id="graficoVendas" height="170"></canvas>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- TABELA -->
+  <div class="card border-0 shadow-sm">
+    <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+      <strong>Resultado das comissões</strong>
+      <span class="badge">
+        {{ comissoes|length }} registros
+      </span>
+    </div>
+
+    <div class="table-responsive" style="max-height: 60vh; overflow: auto;">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-responsive" style="position: sticky; top: 0; z-index: 1;">
+          <tr>
+            <th>Agrupamento</th>
+            <th>Vendedor</th>
+            <th>Grupo</th>
+            <th>Produto</th>
+            <th>Pedido</th>
+            <th>Data</th>
+            <th class="text-end">Itens</th>
+            <th class="text-end">Total vendido</th>
+            <th class="text-end">% Comissão</th>
+            <th class="text-end">Comissão</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for item in comissoes %}
+            <tr>
+              <td>
+                <strong>{{ item.agrupamento }}</strong>
+              </td>
+
+              <td>
+                {{ item.vendedor_nome|default:"-" }}
+                {% if item.vendedor_codigo %}
+                  <br>
+                  <small class="text-muted">Cód. {{ item.vendedor_codigo }}</small>
+                {% endif %}
+              </td>
+
+              <td>
+                {% if item.comissao_origem == "marca" %}
+                  {{ item.marca_nome|default:"-" }}
+                {% else %}
+                  {{ item.grupo_descricao|default:"-" }}
+                {% endif %}
+              </td>
+
+              <td>
+                {{ item.produto_nome|default:"-" }}
+                {% if item.produto_codigo %}
+                  <br>
+                  <small class="text-muted">{{ item.produto_codigo }}</small>
+                {% endif %}
+              </td>
+
+              <td>
+                {% if item.pedido_numero %}
+                  #{{ item.pedido_numero }}
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+
+              <td>
+                {% if item.data %}
+                  {{ item.data|date:"d/m/Y" }}
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+
+              <td class="text-end">
+                {{ item.quantidade_itens }}
+              </td>
+
+              <td class="text-end">
+                {{ item.total_vendido|brl }}
+              </td>
+
+              <td class="text-end">
+                {{ item.percentual|floatformat:2 }}%
+              </td>
+
+              <td class="text-end fw-semibold text-success">
+                {{ item.valor_comissao|brl }}
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="10" class="text-center py-5 text-muted">
+                Nenhuma comissão encontrada para os filtros selecionados.
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+
+        <tfoot class="table-responsive">
+          <tr>
+            <th colspan="7" class="text-end">Totais</th>
+            <th class="text-end">{{ metricas.total_vendido|brl }}</th>
+            <th></th>
+            <th class="text-end text-success">{{ metricas.total_comissao|brl }}</th>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+  const labels = {{ chart.labels|safe }};
+  const valoresComissao = {{ chart.comissoes|safe }};
+  const valoresVenda = {{ chart.vendas|safe }};
+
+  const moeda = (valor) => {
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL"
+    }).format(valor || 0);
+  };
+
+  new Chart(document.getElementById("graficoComissao"), {
+    type: "bar",
+    data: {
+      labels: labels,
+      datasets: [{
+        label: "Comissão",
+        data: valoresComissao,
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return moeda(context.raw);
+            }
+          }
+        },
+        legend: {
+          display: false
+        }
+      },
+      scales: {
+        y: {
+          ticks: {
+            callback: function(value) {
+              return moeda(value);
+            }
+          }
+        }
+      }
+    }
+  });
+
+  new Chart(document.getElementById("graficoVendas"), {
+    type: "doughnut",
+    data: {
+      labels: labels,
+      datasets: [{
+        label: "Total vendido",
+        data: valoresVenda,
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return `${context.label}: ${moeda(context.raw)}`;
+            }
+          }
+        }
+      }
+    }
+  });
+</script>
+{% endblock %}
