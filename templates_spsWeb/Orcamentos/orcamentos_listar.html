@@ -128,6 +128,8 @@
               href="{% url 'OrcamentosWeb:orcamento_detalhe' slug=slug pk=o.pk %}">Detalhes</a>
             <a class="btn btn-sm btn-outline-secondary"
               href="{% url 'OrcamentosWeb:orcamento_editar' slug=slug pk=o.pk %}">Editar</a>
+            <a class="btn btn-sm btn-outline-dark" target="_blank"
+              href="{% url 'OrcamentosWeb:orcamento_impressao' slug=slug pk=o.pk %}">Imprimir</a>
 
             {% if not o.pedi_nume_pedi %}
             <form method="post" action="{% url 'OrcamentosWeb:orcamento_transformar' slug=slug pk=o.pk %}"
@@ -171,6 +173,8 @@
             href="{% url 'OrcamentosWeb:orcamento_detalhe' slug=slug pk=o.pk %}">Detalhes</a>
           <a class="btn btn-sm btn-outline-secondary"
             href="{% url 'OrcamentosWeb:orcamento_editar' slug=slug pk=o.pk %}">Editar</a>
+          <a class="btn btn-sm btn-outline-dark" target="_blank"
+            href="{% url 'OrcamentosWeb:orcamento_impressao' slug=slug pk=o.pk %}">Imprimir</a>
           <button type="button" class="btn btn-sm btn-outline-info js-rentabilidade-orcamento rounded-circle p-0"
             data-bs-toggle="tooltip" title="Rentabilidade"
             style="width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center"
