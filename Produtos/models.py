@@ -292,9 +292,23 @@ class Produtos(models.Model):
     prod_coba = models.CharField(max_length=50, db_column='prod_coba', blank= True, null= True)
     prod_foto = models.BinaryField(db_column='prod_foto', blank=True, null=True) 
     prod_url = models.CharField(max_length=255, db_column='prod_url', blank= True, null= True)
+    
+    
+    #dados de pisos
     prod_cera_m2cx = models.DecimalField(max_digits=15, decimal_places=2, db_column='prod_cera_m2cx', blank=True, null=True)
     prod_cera_pccx = models.DecimalField(max_digits=15, decimal_places=2, db_column='prod_cera_pccx', blank=True, null=True)
     prod_cera_kgcx = models.DecimalField(max_digits=15, decimal_places=2, db_column='prod_cera_kgcx', blank=True, null=True)
+    prod_cera_form = models.CharField(max_length=50, db_column='prod_cera_form', blank=True, null=True)
+    prod_cera_espe = models.CharField(max_length=50, db_column='prod_cera_espe', blank=True, null=True)
+    prod_cera_cor = models.CharField(max_length=50, db_column='prod_cera_cor', blank=True, null=True)
+    prod_cera_cole = models.CharField(max_length=50, db_column='prod_cera_cole', blank=True, null=True)
+    prod_cera_tipo = models.CharField(max_length=50, db_column='prod_cera_tipo', blank=True, null=True)
+    prod_cera_esti = models.CharField(max_length=50, db_column='prod_cera_esti', blank=True, null=True)
+    prod_cera_espe = models.CharField(max_length=50, db_column='prod_cera_espe', blank=True, null=True)
+    prod_cera_m2pallet = models.DecimalField(max_digits=15, decimal_places=2, db_column='prod_cera_m2pallet', blank=True, null=True)
+    
+    
+    
     #prod_lote = models.CharField(max_length=50, blank=True, null=True, help_text="Lote de produção")
     #prod_lote_venc = models.DateField(blank=True, null=True, help_text="Data de vencimento do lote")
     prod_orig_merc = models.CharField(max_length=1, db_column='prod_orig_merc', blank=True, null=True, default='0')

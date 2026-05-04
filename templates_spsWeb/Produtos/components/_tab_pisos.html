@@ -1,0 +1,96 @@
+<div class="tab-pane fade" id="pisos">
+  <div class="container">
+    <h3 style="font-size: 24px; font-weight: bold; margin-bottom: 16px; color: #343a40; text-align: center;">Pisos</h3>
+    <div class="card">
+      <div class="card-header text-center"
+        style="background-image: linear-gradient(to right, #9f84ff5e, #5741a55b, transparent, transparent);">
+        <span class="form-section-title" style="font-size: 18px; color: #696363;">
+          Derivações para inserção nos produtos, que constarão no módulo de pisos
+        </span>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-3">
+            <label for="{{ form.prod_cera_m2cx.id_for_label }}">{{ form.prod_cera_m2cx.label }}</label>
+            {{ form.prod_cera_m2cx }}
+            {% if form.prod_cera_m2cx.errors %}
+            <div class="alert alert-danger mt-1">{{ form.prod_cera_m2cx.errors|striptags }}</div>
+            {% endif %}
+          </div>
+
+          <div class="col-md-3">
+            <label for="{{ form.prod_cera_pccx.id_for_label }}">{{ form.prod_cera_pccx.label }}</label>
+            {{ form.prod_cera_pccx }}
+            {% if form.prod_cera_pccx.errors %}
+            <div class="alert alert-danger mt-1">{{ form.prod_cera_pccx.errors|striptags }}</div>
+            {% endif %}
+          </div>
+
+          <div class="col-md-3">
+            <label for="{{ form.prod_cera_kgcx.id_for_label }}">{{ form.prod_cera_kgcx.label }}</label>
+            {{ form.prod_cera_kgcx }}
+            {% if form.prod_cera_kgcx.errors %}
+            <div class="alert alert-danger mt-1">{{ form.prod_cera_kgcx.errors|striptags }}</div>
+            {% endif %}
+          </div>
+
+          <div class="col-md-3">
+            <label for="{{ form.prod_cera_m2pallet.id_for_label }}">{{ form.prod_cera_m2pallet.label }}</label>
+            {{ form.prod_cera_m2pallet }}
+            {% if form.prod_cera_m2pallet.errors %}
+            <div class="alert alert-danger mt-1">{{ form.prod_cera_m2pallet.errors|striptags }}</div>
+            {% endif %}
+          </div>
+
+          <div class="col-md-4">
+            <label for="{{ form.prod_cera_form.id_for_label }}">{{ form.prod_cera_form.label }}</label>
+            {{ form.prod_cera_form }}
+            {% if form.prod_cera_form.errors %}
+            <div class="alert alert-danger mt-1">{{ form.prod_cera_form.errors|striptags }}</div>
+            {% endif %}
+          </div>
+
+          <div class="col-md-4">
+            <label for="{{ form.prod_cera_espe.id_for_label }}">{{ form.prod_cera_espe.label }}</label>
+            {{ form.prod_cera_espe }}
+            {% if form.prod_cera_espe.errors %}
+            <div class="alert alert-danger mt-1">{{ form.prod_cera_espe.errors|striptags }}</div>
+            {% endif %}
+          </div>
+
+          <div class="col-md-4">
+            <label for="{{ form.prod_cera_cor.id_for_label }}">{{ form.prod_cera_cor.label }}</label>
+            {{ form.prod_cera_cor }}
+            {% if form.prod_cera_cor.errors %}
+            <div class="alert alert-danger mt-1">{{ form.prod_cera_cor.errors|striptags }}</div>
+            {% endif %}
+          </div>
+
+          <div class="col-md-4">
+            <label for="{{ form.prod_cera_cole.id_for_label }}">{{ form.prod_cera_cole.label }}</label>
+            {{ form.prod_cera_cole }}
+            {% if form.prod_cera_cole.errors %}
+            <div class="alert alert-danger mt-1">{{ form.prod_cera_cole.errors|striptags }}</div>
+            {% endif %}
+          </div>
+
+          <div class="col-md-4">
+            <label for="{{ form.prod_cera_tipo.id_for_label }}">{{ form.prod_cera_tipo.label }}</label>
+            {{ form.prod_cera_tipo }}
+            {% if form.prod_cera_tipo.errors %}
+            <div class="alert alert-danger mt-1">{{ form.prod_cera_tipo.errors|striptags }}</div>
+            {% endif %}
+          </div>
+
+          <div class="col-md-4">
+            <label for="{{ form.prod_cera_esti.id_for_label }}">{{ form.prod_cera_esti.label }}</label>
+            {{ form.prod_cera_esti }}
+            {% if form.prod_cera_esti.errors %}
+            <div class="alert alert-danger mt-1">{{ form.prod_cera_esti.errors|striptags }}</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

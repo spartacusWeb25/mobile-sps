@@ -94,7 +94,10 @@ class ProdutosForm(forms.ModelForm):
         model = Produtos
         fields = [
             'prod_codi', 'prod_nome', 'prod_unme', 'prod_grup', 'prod_sugr',
-            'prod_fami', 'prod_loca', 'prod_ncm', 'prod_marc', 'prod_gtin'
+            'prod_fami', 'prod_loca', 'prod_ncm', 'prod_marc', 'prod_gtin',
+            'prod_cera_m2cx', 'prod_cera_pccx', 'prod_cera_kgcx', 'prod_cera_m2pallet',
+            'prod_cera_form', 'prod_cera_espe', 'prod_cera_cor', 'prod_cera_cole',
+            'prod_cera_tipo', 'prod_cera_esti',
         ]
         widgets = {
             'prod_codi': forms.TextInput(attrs={
@@ -133,7 +136,30 @@ class ProdutosForm(forms.ModelForm):
                 'class': 'form-control', 
                 'placeholder': 'GTIN'
             }),
+            'prod_cera_m2cx': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'inputmode': 'decimal', 'placeholder': 'm² por caixa'}),
+            'prod_cera_pccx': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'inputmode': 'decimal', 'placeholder': 'peças por caixa'}),
+            'prod_cera_kgcx': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'inputmode': 'decimal', 'placeholder': 'kg por caixa'}),
+            'prod_cera_m2pallet': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'inputmode': 'decimal', 'placeholder': 'm² por pallet'}),
+            'prod_cera_form': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Formato'}),
+            'prod_cera_espe': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Espessura'}),
+            'prod_cera_cor': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Cor'}),
+            'prod_cera_cole': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Coletânea'}),
+            'prod_cera_tipo': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Tipo'}),
+            'prod_cera_esti': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Estilo'}),
           
+        }
+        
+        labels = {
+            'prod_cera_m2cx': 'm² por caixa',
+            'prod_cera_pccx': 'peças por caixa',
+            'prod_cera_kgcx': 'kg por caixa',
+            'prod_cera_m2pallet': 'm² por pallet',
+            'prod_cera_form': 'Formato',
+            'prod_cera_espe': 'Espessura',
+            'prod_cera_cor': 'Cor',
+            'prod_cera_cole': 'Coletânea',
+            'prod_cera_tipo': 'Tipo',
+            'prod_cera_esti': 'Estilo',
         }
     
     def __init__(self, *args, **kwargs):
