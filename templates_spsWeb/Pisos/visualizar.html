@@ -83,6 +83,7 @@
       <a class="btn btn-outline-secondary btn-sm" href="{% url 'PisosWeb:pedidos_pisos_listar' slug=slug %}">Listar</a>
       <a class="btn btn-outline-primary btn-sm"
         href="{% url 'PisosWeb:pedidos_pisos_editar' slug=slug pk=pedido.pedi_nume %}">Editar</a>
+      <a class="btn btn-outline-dark btn-sm" target="_blank" href="{% url 'PisosWeb:pedidos_pisos_imprimir' slug=slug pk=pedido.pedi_nume %}">Imprimir</a>
     </div>
   </div>
 

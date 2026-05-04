@@ -198,6 +198,10 @@
                   href="{% url 'PisosWeb:orcamentos_pisos_visualizar' slug=slug pk=o.orca_nume %}">
                   <i class="bi bi-eye"></i> Abrir
                 </a>
+                <a class="btn btn-sm btn-outline-dark d-flex align-items-center gap-1" target="_blank"
+                  href="{% url 'PisosWeb:orcamentos_pisos_imprimir' slug=slug pk=o.orca_nume %}">
+                  <i class="bi bi-printer"></i> Imprimir
+                </a>
                 {% if o.orca_stat != 2 %}
                 <a class="btn btn-sm btn-outline-warning"
                   href="{% url 'PisosWeb:orcamentos_pisos_exportar' slug=slug numero=o.orca_nume %}">
@@ -241,6 +245,10 @@
           <a class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1"
             href="{% url 'PisosWeb:orcamentos_pisos_visualizar' slug=slug pk=o.orca_nume %}">
             <i class="bi bi-eye"></i> Abrir
+          </a>
+          <a class="btn btn-sm btn-outline-dark" target="_blank"
+            href="{% url 'PisosWeb:orcamentos_pisos_imprimir' slug=slug pk=o.orca_nume %}">
+            <i class="bi bi-printer"></i> Imprimir
           </a>
           {% if o.orca_stat != 2 %}
           <a class="btn btn-sm btn-outline-warning"
