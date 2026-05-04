@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head><meta charset="UTF-8" /><title>Orçamento Pisos #{{ orcamento.orca_nume }}</title>
+<style>body{font-family:Arial,sans-serif;font-size:12px;color:#222} table{width:100%;border-collapse:collapse} th,td{border:1px solid #ccc;padding:4px} .text-end{text-align:right} @media print {.no-print{display:none}}</style>
+</head>
+<body>
+<div class="no-print"><button onclick="window.print()">Imprimir</button></div>
+<h2>Orçamento Pisos #{{ orcamento.orca_nume }}</h2>
+<p><b>Data:</b> {{ orcamento.orca_data }} | <b>Cliente:</b> {{ cliente.enti_nome|default:orcamento.orca_clie }} | <b>Vendedor:</b> {{ vendedor.enti_nome|default:orcamento.orca_vend }}</p>
+<p><b>Observação:</b> {{ orcamento.orca_obse|default:'-' }}</p>
+<table>
+<thead><tr><th>Produto</th><th>Amb.</th><th class="text-end">Qtd</th><th class="text-end">Unit</th><th class="text-end">Total</th></tr></thead>
+<tbody>{% for i in itens %}<tr><td>{{ i.item_prod }}</td><td>{{ i.item_nome_ambi|default:i.item_ambi }}</td><td class="text-end">{{ i.item_quan }}</td><td class="text-end">{{ i.item_unit }}</td><td class="text-end">{{ i.item_suto }}</td></tr>{% empty %}<tr><td colspan="5">Sem itens</td></tr>{% endfor %}</tbody>
+</table>
+<h3 class="text-end">Total: {{ orcamento.orca_tota }}</h3>
+</body></html>

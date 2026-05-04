@@ -173,6 +173,10 @@
                 href="{% url 'PisosWeb:pedidos_pisos_visualizar' slug=slug pk=p.pedi_nume %}">
                 <i class="bi bi-eye"></i> Abrir
               </a>
+              <a class="btn btn-sm btn-outline-dark d-inline-flex align-items-center gap-1" target="_blank"
+                href="{% url 'PisosWeb:pedidos_pisos_imprimir' slug=slug pk=p.pedi_nume %}">
+                <i class="bi bi-printer"></i> Imprimir
+              </a>
             </td>
           </tr>
           {% empty %}
@@ -209,6 +213,10 @@
           <a class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1"
             href="{% url 'PisosWeb:pedidos_pisos_visualizar' slug=slug pk=p.pedi_nume %}">
             <i class="bi bi-eye"></i> Abrir
+          </a>
+          <a class="btn btn-sm btn-outline-dark d-inline-flex align-items-center gap-1" target="_blank"
+            href="{% url 'PisosWeb:pedidos_pisos_imprimir' slug=slug pk=p.pedi_nume %}">
+            <i class="bi bi-printer"></i> Imprimir
           </a>
         </div>
       </div>

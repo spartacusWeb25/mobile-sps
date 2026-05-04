@@ -8,6 +8,7 @@
                 href="{% url 'PisosWeb:orcamentos_pisos_listar' slug=slug %}"><i class="bi bi-list"></i> Listar</a>
             <a class="btn btn-outline-primary"
                 href="{% url 'PisosWeb:orcamentos_pisos_editar' slug=slug pk=orcamento.orca_nume %}"><i class="bi bi-pencil"></i> Editar</a>
+            <a class="btn btn-outline-dark" target="_blank" href="{% url 'PisosWeb:orcamentos_pisos_imprimir' slug=slug pk=orcamento.orca_nume %}"><i class="bi bi-printer"></i> Imprimir</a>
             {% if orcamento.orca_stat != 2 %}
             <a class="btn btn-outline-success"
                 href="{% url 'PisosWeb:orcamentos_pisos_exportar' slug=slug numero=orcamento.orca_nume %}">Exportar para Pedido</a>

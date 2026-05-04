@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>Pedido Pisos #{{ pedido.pedi_nume }}</title>
+  <style>
+    body{font-family:Arial,sans-serif;font-size:12px;color:#222} table{width:100%;border-collapse:collapse} th,td{border:1px solid #ccc;padding:4px} .text-end{text-align:right}
+    @media print {.no-print{display:none}}
+  </style>
+</head>
+<body>
+  <div class="no-print"><button onclick="window.print()">Imprimir</button></div>
+  <h2>Pedido Pisos #{{ pedido.pedi_nume }}</h2>
+  <p><b>Data:</b> {{ pedido.pedi_data }} | <b>Cliente:</b> {{ cliente.enti_nome|default:pedido.pedi_clie }} | <b>Vendedor:</b> {{ vendedor.enti_nome|default:pedido.pedi_vend }}</p>
+  <p><b>Observação:</b> {{ pedido.pedi_obse|default:'-' }}</p>
+  <table>
+    <thead><tr><th>Produto</th><th>Amb.</th><th class="text-end">Qtd</th><th class="text-end">Unit</th><th class="text-end">Total</th></tr></thead>
+    <tbody>
+      {% for i in itens %}
+      <tr><td>{{ i.item_prod }}</td><td>{{ i.item_nome_ambi|default:i.item_ambi }}</td><td class="text-end">{{ i.item_quan }}</td><td class="text-end">{{ i.item_unit }}</td><td class="text-end">{{ i.item_suto }}</td></tr>
+      {% empty %}<tr><td colspan="5">Sem itens</td></tr>{% endfor %}
+    </tbody>
+  </table>
+  <h3 class="text-end">Total: {{ pedido.pedi_tota }}</h3>
+</body>
+</html>
