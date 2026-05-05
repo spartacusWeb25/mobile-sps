@@ -1,0 +1,8 @@
+[
+{"unid_codi": "UN", "unid_desc": "UNIDADES", "unid_obse": "", "_log_data": null, "_log_time": null, "unid_empr": "04023617000183"},
+{"unid_codi": "KG", "unid_desc": "QUILOGRAMA", "unid_obse": "", "_log_data": null, "_log_time": null, "unid_empr": "04023617000183"},
+{"unid_codi": "PCT", "unid_desc": "PACOTE", "unid_obse": "", "_log_data": null, "_log_time": null, "unid_empr": "04023617000183"},
+{"unid_codi": "CAR", "unid_desc": "CARTELA", "unid_obse": "", "_log_data": null, "_log_time": null, "unid_empr": "04023617000183"},
+{"unid_codi": "MT", "unid_desc": "METROS", "unid_obse": "", "_log_data": null, "_log_time": null, "unid_empr": "04023617000183"},
+{"unid_codi": "CX", "unid_desc": "CAIXA", "unid_obse": "", "_log_data": null, "_log_time": null, "unid_empr": "04023617000183"}
+]

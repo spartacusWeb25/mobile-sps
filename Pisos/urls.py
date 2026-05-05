@@ -4,7 +4,8 @@ from .views import (
     PedidospisosViewSet,
     ItensorcapisosViewSet,
     ItenspedidospisosViewSet,
-    ProdutosPisosViewSet
+    ProdutosPisosViewSet,
+    CreditoTrocaPisosViewSet,
 )
 from django.urls import path
 
@@ -14,6 +15,7 @@ router.register(r'pedidos-pisos', PedidospisosViewSet, basename='pedidos-pisos')
 router.register(r'itens-orcamentos-pisos', ItensorcapisosViewSet, basename='itens-orcamentos-pisos')
 router.register(r'itens-pedidos-pisos', ItenspedidospisosViewSet, basename='itens-pedidos-pisos')
 router.register(r'produtos-pisos', ProdutosPisosViewSet, basename='produtos-pisos')
+router.register(r'credito-troca', CreditoTrocaPisosViewSet, basename='credito-troca')
 
 # URLs customizadas para chave composta
 custom_patterns = [

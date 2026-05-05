@@ -1086,6 +1086,17 @@ def setup_tenant(db_config, alias='default'):
     except Exception as e:
         print(f"⚠️ [{alias}] Falha ao criar views: {e}\n")
 
+    try:
+        slug_alvo = alias.replace("tenant_", "", 1) if alias.startswith("tenant_") else None
+        if slug_alvo:
+            call_command("campo_tabelaprecos_promocional", slug=slug_alvo, tenant=slug_alvo, verbosity=0)
+            call_command("campo_tabelaprecos_tabe_id", slug=slug_alvo, tenant=slug_alvo, verbosity=0)
+            call_command("update_pedidos_geral_view", slug=slug_alvo, tenant=slug_alvo, verbosity=0)
+            from perfilweb.sync import bootstrap_inicial
+            bootstrap_inicial(banco=alias)
+    except Exception as e:
+        print(f"⚠️ [{alias}] Pós-setup (tabe_id/pedidos_geral) falhou: {e}")
+
     # Popular parâmetros
     print(f"📊 [{alias}] Populando parâmetros iniciais...")
     try:

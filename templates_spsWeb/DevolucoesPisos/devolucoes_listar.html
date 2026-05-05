@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block title %}Trocas/Devoluções (Pisos){% endblock %}
+{% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/list.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container page-container">
+  <div class="page-header-custom">
+    <div class="container geral align-items-center">
+      <h2 class="page-title">Trocas/Devoluções (Pisos)</h2>
+      <a class="btn btn-outline-success" style="margin-left: auto;" href="{% url 'DevolucoesPisosWeb:devolucao_pisos_criar' slug=slug %}">Nova Troca/Devolução</a>
+    </div>
+  </div>
+
+  <form method="get" class="row g-2 mb-3">
+    <div class="col-12 col-md-4">
+      <input class="form-control" type="number" name="devo_pedi" placeholder="Pedido" value="{{ filtros.devo_pedi }}">
+    </div>
+    <div class="col-12 col-md-2">
+      <button class="btn btn-outline-primary w-100" type="submit">Filtrar</button>
+    </div>
+  </form>
+
+  <div class="row g-3 card-list">
+    {% for d in devolucoes %}
+    <div class="col-12 col-md-6 col-lg-4">
+      <div class="card h-100 position-relative">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start">
+            <span class="fw-semibold">Pedido #{{ d.devo_pedi }}</span>
+          </div>
+          <div class="small mt-2">
+            <i class="bi bi-calendar3 me-1"></i> {{ d.devo_data|date:'d/m/Y' }}
+          </div>
+          <div class="small mt-1">
+            <i class="bi bi-person me-1"></i> Cliente: {{ d.cliente_nome|default:'' }}
+          </div>
+          <div class="small mt-1">
+            <i class="bi bi-cash-coin me-1"></i> Crédito: R$ {{ d.credito_valor|default_if_none:"0,00" }}
+          </div>
+          <div class="mt-3 d-flex justify-content-end gap-2">
+            <a class="btn btn-sm btn-outline-primary" href="{% url 'DevolucoesPisosWeb:devolucao_pisos_editar' slug=slug pk=d.devo_pedi %}">Editar</a>
+          </div>
+          <a href="{% url 'DevolucoesPisosWeb:devolucao_pisos_editar' slug=slug pk=d.devo_pedi %}" class="stretched-link" aria-label="Editar troca/devolução do pedido #{{ d.devo_pedi }}"></a>
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+      <div class="text-center text-muted py-4">Nenhuma troca/devolução encontrada.</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+

@@ -4,6 +4,7 @@ from django.db import transaction
 from Pisos.models import Pedidospisos, Itenspedidospisos
 from Pisos.services.utils_service import parse_decimal, arredondar
 from Pisos.services.cliente_service import ClienteEnderecoService
+from Pisos.services.credito_troca_service import CreditoTrocaPisosService
 
 
 class PedidoCriarService:
@@ -12,6 +13,7 @@ class PedidoCriarService:
             raise ValueError("Itens do pedido são obrigatórios.")
 
         with transaction.atomic(using=banco):
+            parametros = (dados or {}).get("parametros") or {}
             pedido = self._criar_pedido(
                 banco=banco,
                 dados=dados,
@@ -23,8 +25,32 @@ class PedidoCriarService:
                 itens=itens,
             )
 
-            pedido.pedi_tota = arredondar(total)
-            pedido.save(using=banco, update_fields=["pedi_tota"])
+            desconto = parse_decimal(getattr(pedido, "pedi_desc", 0))
+            frete = parse_decimal(getattr(pedido, "pedi_fret", 0))
+            total_liquido_sem_credito = total - desconto + frete
+
+            usar_credito = parametros.get("usar_credito")
+            if usar_credito in (None, ""):
+                usar_credito = parse_decimal(getattr(pedido, "pedi_cred", 0)) > 0
+
+            credito_desejado = parametros.get("valor_credito")
+            if credito_desejado in (None, ""):
+                credito_desejado = getattr(pedido, "pedi_cred", None)
+
+            credito_aplicado = Decimal("0.00")
+            if usar_credito and getattr(pedido, "pedi_clie", None):
+                credito_aplicado = CreditoTrocaPisosService.calcular_credito_aplicado(
+                    banco=banco,
+                    empresa=pedido.pedi_empr,
+                    filial=pedido.pedi_fili,
+                    cliente_id=pedido.pedi_clie,
+                    total_liquido_sem_credito=total_liquido_sem_credito,
+                    valor_desejado=credito_desejado,
+                )
+
+            pedido.pedi_cred = credito_aplicado
+            pedido.pedi_tota = arredondar(total_liquido_sem_credito - credito_aplicado)
+            pedido.save(using=banco, update_fields=["pedi_tota", "pedi_cred"])
 
             return pedido
 
@@ -45,6 +71,8 @@ class PedidoCriarService:
         dados_pedido.pop("itens_input", None)
         dados_pedido.pop("itens", None)
         dados_pedido.pop("parametros", None)
+        dados_pedido.pop("usar_credito", None)
+        dados_pedido.pop("valor_credito", None)
 
         dados_pedido["pedi_nume"] = proximo_numero
         dados_pedido["pedi_tota"] = Decimal("0.00")

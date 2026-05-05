@@ -80,13 +80,6 @@ def empresa_filial_names(request: HttpRequest) -> Dict[str, Any]:
 def auth_menu_flags(request: HttpRequest) -> Dict[str, Any]:
     can_view_admin_menus = False
     try:
-        user = getattr(request, "user", None)
-        is_auth = user is not None and getattr(user, "is_authenticated", False)
-
-        # Sem autenticação, nem tenta — evita False negativo por sessão vazia
-        if not is_auth:
-            return {"can_view_admin_menus": False}
-
         if usuario_privilegiado:
             can_view_admin_menus = usuario_privilegiado(request)
     except Exception:

@@ -46,6 +46,7 @@ urlpatterns = [
     path("<slug>/parametros-admin/", include("parametros_admin.urls")),
     path("<slug>/controledevisitas/", include("controledevisitas.urls")),
     path("<slug>/pisos/", include("Pisos.urls")),
+    path("<slug>/devolucoes-pisos/", include("devolucoes_pisos.urls")),
     path("<slug>/mcp-agent/", include("mcp_agent_db.urls")),
     path("<slug>/coletaestoque/", include("coletaestoque.REST.urls")),
     path("<slug>/Floresta/", include("Floresta.urls")),

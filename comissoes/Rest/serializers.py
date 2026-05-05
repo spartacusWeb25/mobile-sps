@@ -78,9 +78,10 @@ class PagamentoComissaoSerializer(serializers.ModelSerializer):
     beneficiario = serializers.IntegerField(source="pagc_bene", label=PagamentoComissao._meta.get_field("pagc_bene").verbose_name)
     valor = serializers.DecimalField(source="pagc_valo", max_digits=14, decimal_places=2, label=PagamentoComissao._meta.get_field("pagc_valo").verbose_name)
     observacao = serializers.CharField(source="pagc_obse", allow_blank=True, allow_null=True, required=False, label=PagamentoComissao._meta.get_field("pagc_obse").verbose_name)
-    itens = PagamentoComissaoItemSerializer(source="itens", many=True, read_only=True)
     cento_custo = serializers.IntegerField(source="pagc_cecu", label=PagamentoComissao._meta.get_field("pagc_cecu").verbose_name)
-    
+
+    itens = PagamentoComissaoItemSerializer(many=True, read_only=True)
+
     class Meta:
         model = PagamentoComissao
         fields = [
@@ -91,6 +92,6 @@ class PagamentoComissaoSerializer(serializers.ModelSerializer):
             "beneficiario",
             "valor",
             "observacao",
-            "cento_custo",  
+            "cento_custo",
             "itens",
         ]

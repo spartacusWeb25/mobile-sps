@@ -4,6 +4,7 @@ from django.db import transaction
 from Pisos.models import Orcamentopisos, Itensorcapisos
 from Pisos.services.utils_service import parse_decimal, arredondar
 from Pisos.services.cliente_service import ClienteEnderecoService
+from Pisos.services.credito_troca_service import CreditoTrocaPisosService
 
 
 class OrcamentoCriarService:
@@ -12,6 +13,7 @@ class OrcamentoCriarService:
             raise ValueError("Itens do orçamento são obrigatórios.")
 
         with transaction.atomic(using=banco):
+            parametros = (dados or {}).get("parametros") or {}
             orcamento = self._criar_orcamento(
                 banco=banco,
                 dados=dados,
@@ -23,8 +25,32 @@ class OrcamentoCriarService:
                 itens=itens,
             )
 
-            orcamento.orca_tota = arredondar(total)
-            orcamento.save(using=banco, update_fields=["orca_tota"])
+            desconto = parse_decimal(getattr(orcamento, "orca_desc", 0))
+            frete = parse_decimal(getattr(orcamento, "orca_fret", 0))
+            total_liquido_sem_credito = total - desconto + frete
+
+            usar_credito = parametros.get("usar_credito")
+            if usar_credito in (None, ""):
+                usar_credito = parse_decimal(getattr(orcamento, "orca_cred", 0)) > 0
+
+            credito_desejado = parametros.get("valor_credito")
+            if credito_desejado in (None, ""):
+                credito_desejado = getattr(orcamento, "orca_cred", None)
+
+            credito_aplicado = Decimal("0.00")
+            if usar_credito and getattr(orcamento, "orca_clie", None):
+                credito_aplicado = CreditoTrocaPisosService.calcular_credito_aplicado(
+                    banco=banco,
+                    empresa=orcamento.orca_empr,
+                    filial=orcamento.orca_fili,
+                    cliente_id=orcamento.orca_clie,
+                    total_liquido_sem_credito=total_liquido_sem_credito,
+                    valor_desejado=credito_desejado,
+                )
+
+            orcamento.orca_cred = credito_aplicado
+            orcamento.orca_tota = arredondar(total_liquido_sem_credito - credito_aplicado)
+            orcamento.save(using=banco, update_fields=["orca_tota", "orca_cred"])
 
             return orcamento
 
@@ -45,6 +71,8 @@ class OrcamentoCriarService:
         dados_orcamento.pop("itens_input", None)
         dados_orcamento.pop("itens", None)
         dados_orcamento.pop("parametros", None)
+        dados_orcamento.pop("usar_credito", None)
+        dados_orcamento.pop("valor_credito", None)
 
         dados_orcamento["orca_nume"] = proximo_numero
         dados_orcamento["orca_tota"] = Decimal("0.00")

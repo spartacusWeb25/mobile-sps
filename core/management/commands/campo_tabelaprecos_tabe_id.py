@@ -25,21 +25,31 @@ def _alter_table(alias: str):
             alter table tabelaprecos
             alter column tabe_id set default nextval(pg_get_serial_sequence('tabelaprecos', 'tabe_id'));
 
-            alter table tabelaprecos_promocional
-            add column if not exists tabe_id bigserial;
+            do $$
+            begin
+                if exists (
+                    select 1
+                    from information_schema.tables
+                    where table_schema = 'public'
+                      and table_name = 'tabelaprecos_promocional'
+                ) then
+                    alter table tabelaprecos_promocional
+                    add column if not exists tabe_id bigserial;
 
-            update tabelaprecos_promocional
-            set tabe_id = nextval(pg_get_serial_sequence('tabelaprecos_promocional', 'tabe_id'))
-            where tabe_id is null;
+                    update tabelaprecos_promocional
+                    set tabe_id = nextval(pg_get_serial_sequence('tabelaprecos_promocional', 'tabe_id'))
+                    where tabe_id is null;
 
-            alter table tabelaprecos_promocional
-            alter column tabe_id set not null;
+                    alter table tabelaprecos_promocional
+                    alter column tabe_id set not null;
 
-            create unique index if not exists tabelaprecos_promocional_tabe_id_uq
-            on tabelaprecos_promocional (tabe_id);
+                    create unique index if not exists tabelaprecos_promocional_tabe_id_uq
+                    on tabelaprecos_promocional (tabe_id);
 
-            alter table tabelaprecos_promocional
-            alter column tabe_id set default nextval(pg_get_serial_sequence('tabelaprecos_promocional', 'tabe_id'));
+                    alter table tabelaprecos_promocional
+                    alter column tabe_id set default nextval(pg_get_serial_sequence('tabelaprecos_promocional', 'tabe_id'));
+                end if;
+            end $$;
             """
         )
 

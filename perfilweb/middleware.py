@@ -17,6 +17,7 @@ from core.middleware import set_licenca_slug
 from core.utils import get_db_from_slug
 from django.conf import settings
 from Licencas.models import Usuarios
+from Licencas.permissions import usuario_privilegiado, get_nome_usuario
 import jwt
 from core.licenca_context import get_licencas_map
 from django.contrib import messages
@@ -85,7 +86,12 @@ class PerfilPermissionMiddleware:
         except Exception:
             pass
 
-        if p.startswith('/api/licencas/mapa/') or '/api/selecionar-empresa/' in p or '/api/entidades-login/' in p:
+        if (
+            p.startswith('/api/licencas/mapa/')
+            or p.startswith('/api/planos/signup/trial/')
+            or '/api/selecionar-empresa/' in p
+            or '/api/entidades-login/' in p
+        ):
             return self.get_response(request)
         
         # Ignorar rota de login de entidades com slug
@@ -114,6 +120,16 @@ class PerfilPermissionMiddleware:
             session_id = request.headers.get('X-Session-ID') or request.GET.get('session_id')
             if session_id:
                 return self.get_response(request)
+
+        if not usuario and request.path.startswith('/web/'):
+            try:
+                slug_ctx = get_licenca_slug()
+                banco_ctx = get_db_from_slug(slug_ctx) if slug_ctx else None
+                uname = get_nome_usuario(request)
+                if banco_ctx and uname:
+                    usuario = Usuarios.objects.using(banco_ctx).filter(usua_nome__iexact=uname).first()
+            except Exception:
+                pass
 
         if not usuario and request.path.startswith('/api/'):
             auth = request.headers.get('Authorization', '')
@@ -174,14 +190,29 @@ class PerfilPermissionMiddleware:
         # evita indisponibilidade de apps já em produção até finalizar o vínculo de perfis.
         if usuario and not perfil_snap:
             try:
-                self.logger.warning(
-                    "[perfil_mw] compat_allow_sem_perfil usuario=%s path=%s",
-                    getattr(usuario, 'usua_nome', None),
-                    request.path,
-                )
+                slug = get_licenca_slug()
+                banco = get_db_from_slug(slug)
+                if banco and banco not in EXCLUDED_DBS and usuario_privilegiado(request):
+                    from django.core.cache import cache
+                    from perfilweb.sync import bootstrap_inicial
+
+                    bootstrap_key = f"perfil_bootstrap_ok_{banco}"
+                    if not cache.get(bootstrap_key):
+                        bootstrap_inicial(banco=banco)
+                        cache.set(bootstrap_key, 1, 3600)
+                    perfil_snap = get_perfil_ativo(usuario)
             except Exception:
                 pass
-            return self.get_response(request)
+            if not perfil_snap:
+                try:
+                    self.logger.warning(
+                        "[perfil_mw] compat_allow_sem_perfil usuario=%s path=%s",
+                        getattr(usuario, 'usua_nome', None),
+                        request.path,
+                    )
+                except Exception:
+                    pass
+                return self.get_response(request)
 
         try:
             slug = get_licenca_slug()

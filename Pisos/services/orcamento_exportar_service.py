@@ -33,6 +33,7 @@ class OrcamentoExportarPedidoService:
             pedi_vend=orcamento.orca_vend,
             pedi_desc=orcamento.orca_desc,
             pedi_fret=orcamento.orca_fret,
+            pedi_cred=orcamento.orca_cred,
             pedi_ende=orcamento.orca_ende,
             pedi_nume_ende=orcamento.orca_nume_ende,
             pedi_comp=orcamento.orca_comp,

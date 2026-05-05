@@ -10,7 +10,7 @@ class PedidoPisosForm(forms.ModelForm):
         fields = [
             "pedi_empr", "pedi_fili", "pedi_clie", "pedi_forn", "pedi_vend", "pedi_data",
             "pedi_data_prev_entr", "pedi_data_inst", "pedi_data_entr_inst", "pedi_orca", "pedi_stat",
-            "pedi_form_paga", "pedi_desc", "pedi_fret", "pedi_tota", "pedi_obse", "pedi_croq_info",
+            "pedi_form_paga", "pedi_desc", "pedi_fret", "pedi_cred", "pedi_tota", "pedi_obse", "pedi_croq_info",
             "pedi_mode_piso", "pedi_mode_alum", "pedi_mode_roda", "pedi_mode_port", "pedi_mode_outr",
             "pedi_sent_piso", "pedi_ajus_port", "pedi_degr_esca", "pedi_obra_habi", "pedi_movi_mobi",
             "pedi_remo_roda", "pedi_remo_carp",
@@ -26,6 +26,10 @@ class PedidoPisosForm(forms.ModelForm):
         for _, field in self.fields.items():
             css = "form-check-input" if isinstance(field.widget, forms.CheckboxInput) else "form-control"
             field.widget.attrs.setdefault("class", css)
+        if "pedi_tota" in self.fields:
+            self.fields["pedi_tota"].widget.attrs.setdefault("readonly", True)
+        if "pedi_cred" in self.fields:
+            self.fields["pedi_cred"].widget.attrs.setdefault("readonly", True)
 
 
 class ItemPedidoPisosForm(forms.Form):
@@ -52,7 +56,7 @@ class OrcamentoPisosForm(forms.ModelForm):
         fields = [
             "orca_empr", "orca_fili", "orca_clie", "orca_vend", "orca_data",
             "orca_data_prev_entr", "orca_data_inst", "orca_data_entr_inst",
-            "orca_desc", "orca_fret", "orca_tota", "orca_obse", "orca_croq_info",
+            "orca_desc", "orca_fret", "orca_cred", "orca_tota", "orca_obse", "orca_croq_info",
             "orca_mode_piso", "orca_mode_alum", "orca_mode_roda", "orca_mode_port", "orca_mode_outr",
             "orca_sent_piso", "orca_ajus_port", "orca_degr_esca", "orca_obra_habi", "orca_movi_mobi",
             "orca_remo_roda", "orca_remo_carp", "orca_stat",
@@ -72,6 +76,8 @@ class OrcamentoPisosForm(forms.ModelForm):
             field.widget.attrs.setdefault("class", css)
         if "orca_tota" in self.fields:
             self.fields["orca_tota"].widget.attrs.setdefault("readonly", True)
+        if "orca_cred" in self.fields:
+            self.fields["orca_cred"].widget.attrs.setdefault("readonly", True)
 
 
 class ItemOrcamentoPisosForm(forms.Form):

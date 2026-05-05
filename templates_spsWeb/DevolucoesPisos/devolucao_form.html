@@ -1,0 +1,494 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/form.css' %}">
+<style>
+  .form-section-header {
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .form-section-header .chevron {
+    transition: transform .4s;
+  }
+
+  .form-section-header.collapsed .chevron {
+    transform: rotate(-90deg);
+  }
+</style>
+<div class="container page-container py-4">
+  <div class="card">
+    <div class="card-header">
+      <div class="page-header-custom w-100 d-flex justify-content-between align-items-center">
+        <h4 class="mb-0 page-title"><i class="bi bi-credit-card me-1"></i>{{ titulo }}</h4>
+        <div class="small text-muted">Empresa: {{ empresa }} • Filial: {{ filial }}</div>
+      </div>
+    </div>
+    <div class="card-body">
+      {% if itens_existentes %}{{ itens_existentes|json_script:"itens-existentes-data" }}{% endif %}
+      {% if itens_json %}{{ itens_json|json_script:"itens-postados-data" }}{% endif %}
+      <form method="post" id="form-devolucao-pisos">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <div class="form-section p-3">
+          <div class="form-section-header mt-3 mb-3" data-bs-toggle="collapse" data-bs-target="#collapse-gerais"
+            aria-expanded="true" aria-controls="collapse-gerais" style="font-size: 1.2rem; text-align: center;">
+            <i class="bi bi-list-check"></i> Dados gerais
+            <i class="bi bi-chevron-down float-end chevron"></i>
+          </div>
+          <div class="collapse show" id="collapse-gerais">
+            <div class="row g-3 align-items-end">
+              <div class="col-md-3">
+                <label class="form-label" for="{{ form.devo_pedi.id_for_label }}">Pedido</label>
+                {{ form.devo_pedi }}
+              </div>
+              <div class="col-md-3">
+                <label class="form-label d-block">&nbsp;</label>
+                <button class="btn btn-outline-primary w-100" type="button" id="btn-carregar-pedido"><i
+                    class="bi bi-arrow-repeat me-1"></i>Carregar Pedido</button>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label" for="{{ form.tipo.id_for_label }}">Tipo</label>
+                {{ form.tipo }}
+              </div>
+              <div class="col-md-3">
+                <label class="form-label" for="{{ form.devo_data.id_for_label }}">Data</label>
+                {{ form.devo_data }}
+              </div>
+              <div class="col-md-3">
+                <label class="form-label" for="{{ form.devo_desc.id_for_label }}">Desconto (R$)</label>
+                {{ form.devo_desc }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section p-3">
+          <div class="form-section-header" data-bs-toggle="collapse" data-bs-target="#collapse-itens"
+            aria-expanded="true" aria-controls="collapse-itens">
+            <i class="bi bi-box-seam"></i> Itens
+            <i class="bi bi-chevron-down float-end chevron"></i>
+          </div>
+          <div class="collapse show" id="collapse-itens">
+            <div class="table-responsive">
+              <table class="table table-sm align-middle" id="tabela-itens">
+                <thead>
+                  <tr>
+                    <th style="width: 50px;">Sel.</th>
+                    <th>Amb.</th>
+                    <th>Cód.</th>
+                    <th>Produto</th>
+                    <th class="text-end">Qtd</th>
+                    <th class="text-end">Unit</th>
+                    <th class="text-end">Desc</th>
+                    <th class="text-end">Subtotal</th>
+                    <th class="col-repo" style="width: 140px;">Reposição</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <input type="hidden" name="itens_json" id="itens_json">
+
+        <div class="form-section p-3">
+          <div class="form-section-header" data-bs-toggle="collapse" data-bs-target="#collapse-totais"
+            aria-expanded="true" aria-controls="collapse-totais">
+            <i class="bi bi-calculator"></i> Totais
+            <i class="bi bi-chevron-down float-end chevron"></i>
+          </div>
+          <div class="collapse show" id="collapse-totais">
+            <div class="row g-3 mt-1">
+              <div class="col-md-3">
+                <label class="form-label">Total devolução</label>
+                <input class="form-control" id="total_devolucao" readonly>
+              </div>
+              <div class="col-md-3 col-repo">
+                <label class="form-label">Total reposição</label>
+                <input class="form-control" id="total_reposicao" readonly>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Crédito</label>
+                <input class="form-control" id="total_credito" readonly>
+              </div>
+              <div class="col-md-3 col-repo">
+                <label class="form-label">Diferença a receber</label>
+                <input class="form-control" id="total_diferenca" readonly>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4 d-flex justify-content-end gap-2 form-actions">
+          <a class="btn btn-outline-secondary"
+            href="{% url 'DevolucoesPisosWeb:devolucoes_pisos_listar' slug=slug %}">Cancelar</a>
+          <button type="submit" class="btn btn-primary">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll('.collapse').forEach(collapseEl => {
+    collapseEl.addEventListener('show.bs.collapse', () => {
+      const header = document.querySelector(`[data-bs-target="#${collapseEl.id}"]`);
+      if (header) { header.classList.remove('collapsed'); header.setAttribute('aria-expanded', 'true'); }
+    });
+    collapseEl.addEventListener('hide.bs.collapse', () => {
+      const header = document.querySelector(`[data-bs-target="#${collapseEl.id}"]`);
+      if (header) { header.classList.add('collapsed'); header.setAttribute('aria-expanded', 'false'); }
+    });
+  });
+
+  const slug = "{{ slug|escapejs }}";
+  window.EMPRESA = {{ empresa|default:"1" }};
+  window.FILIAL = {{ filial|default:"1" }};
+
+  const tipoSelect = document.getElementById('id_tipo');
+  const pedidoInput = document.getElementById('id_devo_pedi');
+  const descontoInput = document.getElementById('id_devo_desc');
+  const btnCarregar = document.getElementById('btn-carregar-pedido');
+  const tabelaBody = document.querySelector('#tabela-itens tbody');
+  const itensJsonEl = document.getElementById('itens_json');
+
+  const itensExistentesEl = document.getElementById('itens-existentes-data');
+  const itensPostadosEl = document.getElementById('itens-postados-data');
+  const itensExistentes = itensExistentesEl ? JSON.parse(itensExistentesEl.textContent) : null;
+  const itensPostados = itensPostadosEl ? JSON.parse(itensPostadosEl.textContent) : null;
+
+  const fetchSameOrigin = (url, options = {}) => {
+    const headers = Object.assign({ 'X-Requested-With': 'XMLHttpRequest' }, options.headers || {});
+    return fetch(url, Object.assign({}, options, { headers, credentials: 'same-origin' }));
+  };
+
+  function parseNum(v) {
+    const s = String(v ?? '').replace(',', '.').trim();
+    const n = parseFloat(s);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  function fmt(v) {
+    try { return (parseNum(v)).toFixed(2); } catch (e) { return '0.00'; }
+  }
+
+  function toggleReposicaoCols() {
+    const isTroca = (tipoSelect && tipoSelect.value === 'TROC');
+    document.querySelectorAll('.col-repo').forEach(el => el.style.display = isTroca ? '' : 'none');
+    tabelaBody.querySelectorAll('.rep-row').forEach(tr => tr.style.display = isTroca ? '' : 'none');
+    if (!isTroca) {
+      tabelaBody.querySelectorAll('.rep-row .collapse.show').forEach(el => el.classList.remove('show'));
+    }
+    const difEl = document.getElementById('total_diferenca');
+    if (difEl && !isTroca) difEl.value = fmt(0);
+  }
+
+  function linhaItemHTML(it, idx) {
+    const sel = (it.selecionado === false || it.selecionado === '0' || it.selecionado === 0) ? '' : 'checked';
+    const ambi = it.item_ambi ?? '';
+    const prod = it.item_prod ?? '';
+    const prodNome = it.item_prod_nome || it.produto_nome || '';
+    const qtd = it.item_quan ?? 0;
+    const unit = it.item_unit ?? 0;
+    const desc = it.item_desc ?? 0;
+    const suto = it.item_suto ?? (parseNum(qtd) * parseNum(unit));
+    const rProd = it.repo_prod ?? '';
+    const rDesc = it.repo_desc ?? '';
+    const rQtd = it.repo_quan ?? 0;
+    const rUnit = it.repo_unit ?? 0;
+    const rTotal = it.repo_total ?? (parseNum(rQtd) * parseNum(rUnit));
+    const repId = `rep-${idx}`;
+    return `
+      <tr class="item-row" data-idx="${idx}">
+        <td class="text-center"><input type="checkbox" class="form-check-input it-sel" ${sel}></td>
+        <td><input class="form-control form-control-sm it-ambi" type="number" min="0" value="${ambi}"></td>
+        <td><input class="form-control form-control-sm it-prod" type="text" value="${prod}"></td>
+        <td><div class="small text-muted it-prod-nome">${prodNome}</div></td>
+        <td><input class="form-control form-control-sm text-end it-qtd" type="number" step="0.0001" value="${parseNum(qtd)}"></td>
+        <td><input class="form-control form-control-sm text-end it-unit" type="number" step="0.0001" value="${parseNum(unit)}"></td>
+        <td><input class="form-control form-control-sm text-end it-desc" type="number" step="0.0001" value="${parseNum(desc)}"></td>
+        <td><input class="form-control form-control-sm text-end it-suto" type="number" step="0.0001" value="${parseNum(suto)}" readonly></td>
+        <td class="col-repo">
+          <button type="button"
+                  class="btn btn-sm btn-outline-secondary w-100 btn-rep"
+                  data-bs-toggle="collapse"
+                  data-bs-target="#${repId}"
+                  aria-expanded="false"
+                  aria-controls="${repId}">
+            <i class="bi bi-chevron-down me-1"></i> Reposição
+          </button>
+        </td>
+      </tr>
+      <tr class="rep-row" data-idx="${idx}">
+        <td colspan="9" class="p-0">
+          <div class="collapse" id="${repId}">
+            <div class="p-3 border-top">
+              <div class="row g-3 align-items-end">
+                <div class="col-12 col-lg-3 position-relative">
+                  <label class="form-label mb-1">Produto reposição</label>
+                  <input class="form-control form-control-sm rp-prod" type="text" value="${rProd}">
+                </div>
+                <div class="col-12 col-lg-4">
+                  <label class="form-label mb-1">Descrição</label>
+                  <div class="form-control form-control-sm bg-body-secondary rp-desc" style="height: 31px; overflow: hidden;">${rDesc}</div>
+                </div>
+                <div class="col-12 col-lg-2">
+                  <label class="form-label mb-1">Qtd reposição</label>
+                  <input class="form-control form-control-sm text-end rp-qtd" type="number" step="0.0001" value="${parseNum(rQtd)}">
+                </div>
+                <div class="col-12 col-lg-1">
+                  <label class="form-label mb-1">Unit.</label>
+                  <input class="form-control form-control-sm text-end rp-unit" type="number" step="0.0001" value="${parseNum(rUnit)}">
+                </div>
+                <div class="col-12 col-lg-2">
+                  <label class="form-label mb-1">Total</label>
+                  <input class="form-control form-control-sm text-end rp-total" type="number" step="0.0001" value="${parseNum(rTotal)}" readonly>
+                </div>
+              </div>
+            </div>
+          </div>
+        </td>
+      </tr>
+    `;
+  }
+
+  function lerItens() {
+    const rows = Array.from(tabelaBody.querySelectorAll('tr.item-row'));
+    return rows.map(tr => {
+      const selecionado = !!tr.querySelector('.it-sel')?.checked;
+      const item_ambi = parseInt(tr.querySelector('.it-ambi')?.value || '0', 10) || 0;
+      const item_prod = (tr.querySelector('.it-prod')?.value || '').trim();
+      const item_quan = parseNum(tr.querySelector('.it-qtd')?.value);
+      const item_unit = parseNum(tr.querySelector('.it-unit')?.value);
+      const item_desc = parseNum(tr.querySelector('.it-desc')?.value);
+      const item_suto = parseNum(tr.querySelector('.it-suto')?.value);
+
+      const repTr = tr.nextElementSibling && tr.nextElementSibling.classList.contains('rep-row') ? tr.nextElementSibling : null;
+      const repo_prod = (repTr?.querySelector('.rp-prod')?.value || '').trim();
+      const repo_desc = (repTr?.querySelector('.rp-desc')?.textContent || '').trim();
+      const repo_quan = parseNum(repTr?.querySelector('.rp-qtd')?.value);
+      const repo_unit = parseNum(repTr?.querySelector('.rp-unit')?.value);
+      const repo_total = parseNum(repTr?.querySelector('.rp-total')?.value);
+
+      return {
+        selecionado,
+        item_ambi,
+        item_prod,
+        item_quan,
+        item_unit,
+        item_desc,
+        item_suto,
+        repo_prod,
+        repo_desc,
+        repo_quan,
+        repo_unit,
+        repo_total,
+      };
+    }).filter(it => it.item_prod);
+  }
+
+  function recomputarTotais() {
+    const itens = lerItens();
+    const tipo = (tipoSelect?.value || 'DEVO');
+    let totalDevo = 0;
+    let totalRepo = 0;
+    let totalDif = 0;
+
+    tabelaBody.querySelectorAll('tr.item-row').forEach((tr) => {
+      const repTr = tr.nextElementSibling && tr.nextElementSibling.classList.contains('rep-row') ? tr.nextElementSibling : null;
+
+      const qtd = parseNum(tr.querySelector('.it-qtd')?.value);
+      const unit = parseNum(tr.querySelector('.it-unit')?.value);
+      const suto = qtd * unit;
+      const sutoEl = tr.querySelector('.it-suto');
+      if (sutoEl) sutoEl.value = fmt(suto);
+
+      if (repTr) {
+        const rq = parseNum(repTr.querySelector('.rp-qtd')?.value);
+        const ru = parseNum(repTr.querySelector('.rp-unit')?.value);
+        const rt = rq * ru;
+        const rtEl = repTr.querySelector('.rp-total');
+        if (rtEl) rtEl.value = fmt(rt);
+      }
+    });
+
+    itens.forEach(it => {
+      if (!it.selecionado) return;
+      totalDevo += (parseNum(it.item_suto) - parseNum(it.item_desc));
+      if (tipo === 'TROC') totalRepo += parseNum(it.repo_total);
+    });
+    const descCab = parseNum(descontoInput?.value);
+    let credito = totalDevo - (tipo === 'TROC' ? totalRepo : 0) - descCab;
+    if (credito < 0) credito = 0;
+    if (tipo === 'TROC') {
+      totalDif = (totalRepo + descCab) - totalDevo;
+      if (totalDif < 0) totalDif = 0;
+    }
+
+    document.getElementById('total_devolucao').value = fmt(totalDevo);
+    const repoEl = document.getElementById('total_reposicao');
+    if (repoEl) repoEl.value = fmt(totalRepo);
+    document.getElementById('total_credito').value = fmt(credito);
+    const difEl = document.getElementById('total_diferenca');
+    if (difEl) difEl.value = fmt(totalDif);
+
+    itensJsonEl.value = JSON.stringify(itens);
+  }
+
+  function bindRow(tr) {
+    tr.querySelectorAll('input').forEach(inp => {
+      inp.addEventListener('input', recomputarTotais);
+      inp.addEventListener('change', recomputarTotais);
+    });
+  }
+
+  function setRows(itens) {
+    tabelaBody.innerHTML = '';
+    (itens || []).forEach((it, idx) => {
+      tabelaBody.insertAdjacentHTML('beforeend', linhaItemHTML(it, idx));
+      const repTr = tabelaBody.lastElementChild;
+      const itemTr = repTr ? repTr.previousElementSibling : null;
+      if (itemTr) bindRow(itemTr);
+      if (repTr) bindRow(repTr);
+    });
+    toggleReposicaoCols();
+    recomputarTotais();
+  }
+
+  async function carregarPedido() {
+    const numero = parseInt(pedidoInput?.value || '0', 10);
+    if (!numero) return;
+
+    const pedidoResp = await fetchSameOrigin(`/api/${slug}/pisos/pedidos-pisos/${encodeURIComponent(numero)}/`);
+    if (!pedidoResp.ok) throw new Error('Pedido não encontrado');
+    const pedido = await pedidoResp.json();
+
+    const urlItens = `/api/${slug}/pisos/itens-pedidos-pisos/?item_empr=${encodeURIComponent(pedido.pedi_empr)}&item_fili=${encodeURIComponent(pedido.pedi_fili)}&item_pedi=${encodeURIComponent(pedido.pedi_nume)}`;
+    const itensResp = await fetchSameOrigin(urlItens);
+    if (!itensResp.ok) throw new Error('Falha ao buscar itens do pedido');
+    const payload = await itensResp.json();
+    const itens = Array.isArray(payload) ? payload : (payload.results || []);
+
+    const mapped = itens.map(it => {
+      const qtd = parseNum(it.item_quan);
+      const unit = parseNum(it.item_unit);
+      return {
+        selecionado: true,
+        item_ambi: it.item_ambi,
+        item_prod: it.item_prod,
+        item_prod_nome: it.produto_nome || it.item_prod_nome || '',
+        item_quan: it.item_quan,
+        item_unit: it.item_unit,
+        item_desc: it.item_desc || 0,
+        item_suto: it.item_suto || (qtd * unit),
+        repo_prod: '',
+        repo_desc: '',
+        repo_quan: it.item_quan || 0,
+        repo_unit: 0,
+        repo_total: 0,
+      };
+    });
+    setRows(mapped);
+  }
+
+  function initReposicaoAutocomplete() {
+    function attach(tr) {
+      const input = tr.querySelector('.rp-prod');
+      const descEl = tr.querySelector('.rp-desc');
+      const unitEl = tr.querySelector('.rp-unit');
+      const totalEl = tr.querySelector('.rp-total');
+      const qtdEl = tr.querySelector('.rp-qtd');
+      if (!input) return;
+      let dd;
+      input.addEventListener('input', async (e) => {
+        const term = (e.target.value || '').trim();
+        if (dd) dd.remove();
+        if (term.length < 2) return;
+        dd = document.createElement('div');
+        dd.className = 'list-group position-absolute w-100';
+        dd.style.zIndex = '1000';
+        input.parentElement.appendChild(dd);
+        try {
+          const url = `/api/${slug}/produtos/produtos/busca?empresa=${encodeURIComponent(window.EMPRESA)}&q=${encodeURIComponent(term)}`;
+          const resp = await fetchSameOrigin(url);
+          const arr = await resp.json();
+          const items = Array.isArray(arr) ? arr : [];
+          dd.innerHTML = '';
+          items.slice(0, 10).forEach(p => {
+            const preco = parseFloat(p.preco_principal || 0);
+            const label = `${p.prod_codi} - ${p.prod_nome}${preco ? ' - R$ ' + preco.toFixed(2) : ''}`;
+            const a = document.createElement('a');
+            a.href = '#';
+            a.className = 'list-group-item list-group-item-action';
+            a.textContent = label;
+            a.addEventListener('click', ev => {
+              ev.preventDefault();
+              input.value = p.prod_codi;
+              if (descEl) descEl.textContent = p.prod_nome || '';
+              if (unitEl && preco) unitEl.value = preco.toFixed(2);
+              const q = parseFloat(qtdEl?.value || 0) || 0;
+              const u = parseFloat(unitEl?.value || 0) || 0;
+              if (totalEl) totalEl.value = (q * u).toFixed(2);
+              if (dd) dd.remove();
+              recomputarTotais();
+            });
+            dd.appendChild(a);
+          });
+          if (!dd.children.length) {
+            const div = document.createElement('div');
+            div.className = 'list-group-item text-muted';
+            div.textContent = 'Nenhum resultado';
+            dd.appendChild(div);
+          }
+        } catch (e) { if (dd) dd.remove(); }
+      });
+      document.addEventListener('click', (evt) => {
+        if (dd && !input.parentElement.contains(evt.target)) dd.remove();
+      });
+    }
+    tabelaBody.querySelectorAll('tr.rep-row').forEach(attach);
+    const observer = new MutationObserver(() => {
+      tabelaBody.querySelectorAll('tr.rep-row').forEach(attach);
+    });
+    observer.observe(tabelaBody, { childList: true, subtree: true });
+  }
+
+  if (tipoSelect) {
+    tipoSelect.addEventListener('change', () => {
+      toggleReposicaoCols();
+      recomputarTotais();
+    });
+  }
+  if (descontoInput) {
+    descontoInput.addEventListener('input', recomputarTotais);
+    descontoInput.addEventListener('change', recomputarTotais);
+  }
+  if (btnCarregar) {
+    btnCarregar.addEventListener('click', async () => {
+      try {
+        await carregarPedido();
+      } catch (e) {
+        window.alert(e?.message || 'Erro ao carregar pedido');
+      }
+    });
+  }
+
+  initReposicaoAutocomplete();
+  if (Array.isArray(itensExistentes) && itensExistentes.length) {
+    setRows(itensExistentes);
+  } else if (Array.isArray(itensPostados) && itensPostados.length) {
+    setRows(itensPostados);
+  } else {
+    toggleReposicaoCols();
+    recomputarTotais();
+  }
+</script>
+{% endblock %}

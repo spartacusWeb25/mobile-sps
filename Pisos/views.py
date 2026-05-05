@@ -26,6 +26,7 @@ from Produtos.models import Produtos, Tabelaprecos
 from Entidades.models import Entidades
 from Pisos.services.orcamento_exportar_service import OrcamentoExportarPedidoService
 from Pisos.services.metragem_service import MetragemProdutoService
+from Pisos.services.credito_troca_service import CreditoTrocaPisosService
 from rest_framework.authentication import SessionAuthentication, BaseAuthentication
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from core.utils import get_db_from_slug
@@ -544,6 +545,51 @@ class ProdutosPisosViewSet(BaseMultiDBModelViewSet):
     def get_queryset(self):
         banco = self.get_banco()
         return Produtos.objects.using(banco).all().order_by('prod_nome')
+
+
+class CreditoTrocaPisosViewSet(ModuloRequeridoMixin, viewsets.ViewSet):
+    modulo_necessario = 'Pisos'
+    authentication_classes = [SessionAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get_banco(self):
+        banco = get_licenca_db_config(self.request)
+        if not banco:
+            raise NotFound("Banco de dados não encontrado.")
+        return banco
+
+    def list(self, request, *args, **kwargs):
+        banco = self.get_banco()
+
+        cliente_id = (request.query_params.get("cliente") or "").strip()
+        empresa = (request.query_params.get("empresa") or "").strip()
+        filial = (request.query_params.get("filial") or "").strip()
+        excluir_pedido = (request.query_params.get("excluir_pedido") or "").strip() or None
+        excluir_orcamento = (request.query_params.get("excluir_orcamento") or "").strip() or None
+
+        if not cliente_id or not empresa or not filial:
+            raise ValidationError("Parâmetros obrigatórios: cliente, empresa, filial.")
+
+        resumo = CreditoTrocaPisosService.calcular_resumo(
+            banco=banco,
+            empresa=int(empresa),
+            filial=int(filial),
+            cliente_id=int(cliente_id),
+            excluir_pedido=int(excluir_pedido) if excluir_pedido else None,
+            excluir_orcamento=int(excluir_orcamento) if excluir_orcamento else None,
+        )
+
+        return Response(
+            {
+                "cliente": int(cliente_id),
+                "empresa": int(empresa),
+                "filial": int(filial),
+                "total_creditos": str(resumo["total_creditos"]),
+                "total_usado_pedidos": str(resumo["total_usado_pedidos"]),
+                "total_usado_orcamentos": str(resumo["total_usado_orcamentos"]),
+                "total_disponivel": str(resumo["total_disponivel"]),
+            }
+        )
     
     def get_serializer_class(self):
         # Usar o serializer de produtos existente

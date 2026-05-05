@@ -330,6 +330,28 @@
       "database": "saveweb002",
       "username": "postgres",
       "password": "@spartacus201@"
+    },
+    {
+      "ssh": "Disabled",
+      "previewLimit": 50,
+      "server": "base.rtalmeida.com.br",
+      "port": 5432,
+      "driver": "PostgreSQL",
+      "name": "nfce",
+      "database": "savexml348",
+      "username": "savexml348",
+      "password": "brasil@2014@"
+    },
+    {
+      "ssh": "Disabled",
+      "previewLimit": 50,
+      "server": "64.181.163.190",
+      "port": 5432,
+      "driver": "PostgreSQL",
+      "name": "ipe pesca",
+      "database": "saveweb006",
+      "username": "postgres",
+      "password": "@spartacus201@"
     }
   ],
   "liveServer.settings.port": 5501

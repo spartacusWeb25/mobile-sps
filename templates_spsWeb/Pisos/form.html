@@ -504,6 +504,13 @@
                 </div>
                 <div class="col-4"><label>Desconto (R$)</label>{{ form.pedi_desc }}</div>
                 <div class="col-4"><label>Frete (R$)</label>{{ form.pedi_fret }}</div>
+                <div class="col-4"><label>Crédito</label>{{ form.pedi_cred }}</div>
+                <div class="col-12 d-flex align-items-center gap-2 mt-1">
+                  <input type="checkbox" class="form-check-input" id="usar-credito">
+                  <label for="usar-credito" style="margin:0">Usar crédito disponível</label>
+                  <span class="ms-auto" style="font-size:11px;color:#93c5fd">Disponível: <b
+                      id="credito-disponivel-label">R$ 0,00</b></span>
+                </div>
                 <div class="col-4"><label>Total Líquido</label>{{ form.pedi_tota }}</div>
                 <div class="col-6"><label>Entrada (R$)</label><input id="fin-entrada" class="form-control" type="number"
                     step="0.01" value="0"></div>
@@ -688,6 +695,10 @@
                 <span>Frete</span>
                 <span id="total-fret" style="color:#93c5fd">R$ 0,00</span>
               </div>
+              <div class="total-item">
+                <span>Crédito</span>
+                <span id="total-cred" style="color:#34d399">R$ 0,00</span>
+              </div>
               <div class="total-item" style="margin-left:auto">
                 <span>Total Geral</span>
                 <span id="total-geral" style="font-size:16px">R$ 0,00</span>
@@ -717,6 +728,7 @@
   const URL_AUTO_CLIENTES = "{% url 'PisosWeb:autocomplete_clientes' slug=slug %}";
   const URL_AUTO_VENDEDORES = "{% url 'PisosWeb:autocomplete_vendedores' slug=slug %}";
   const URL_AUTO_PRODUTOS = "{% url 'PisosWeb:autocomplete_produtos' slug=slug %}";
+  const URL_CREDITO = `/api/${SLUG}/pisos/credito-troca/`;
 
   /* ── Utilitários ── */
   function fmtBRL(v) {
@@ -931,6 +943,53 @@
     }
   }
 
+  let creditoDisponivel = 0;
+
+  async function carregarCreditoCliente() {
+    const clie = (document.getElementById('id_pedi_clie')?.value || '').trim();
+    const empresa = (document.getElementById('id_pedi_empr')?.value || '').trim();
+    const filial = (document.getElementById('id_pedi_fili')?.value || '').trim();
+    if (!clie || !empresa || !filial) {
+      creditoDisponivel = 0;
+      const lbl0 = document.getElementById('credito-disponivel-label');
+      if (lbl0) lbl0.textContent = fmtBRL(0);
+      return;
+    }
+    try {
+      const qs = new URLSearchParams({ cliente: clie, empresa, filial });
+      const resp = await fetch(`${URL_CREDITO}?${qs.toString()}`, { headers: { 'Accept': 'application/json' } });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const data = await resp.json();
+      creditoDisponivel = parseNumberBR(data.total_disponivel);
+      const lbl = document.getElementById('credito-disponivel-label');
+      if (lbl) lbl.textContent = fmtBRL(creditoDisponivel);
+    } catch (e) {
+      creditoDisponivel = 0;
+      const lbl = document.getElementById('credito-disponivel-label');
+      if (lbl) lbl.textContent = fmtBRL(0);
+    }
+  }
+
+  function aplicarCreditoAuto() {
+    const credEl = document.getElementById('id_pedi_cred');
+    const chk = document.getElementById('usar-credito');
+    if (!credEl || !chk) return;
+
+    if (!chk.checked) {
+      credEl.value = '0';
+      atualizarTotais();
+      return;
+    }
+
+    const subtotal = parseNumberBR(document.getElementById('total-itens')?.textContent);
+    const desc = parseNumberBR(document.getElementById('id_pedi_desc')?.value);
+    const fret = parseNumberBR(document.getElementById('id_pedi_fret')?.value);
+    const totalSemCred = Math.max(subtotal - desc + fret, 0);
+    const aplicar = Math.min(creditoDisponivel || 0, totalSemCred);
+    credEl.value = aplicar.toFixed(2);
+    atualizarTotais();
+  }
+
   /* ── Cálculo via service (AJAX) ── */
   const calcTimers = {};
 
@@ -1056,11 +1115,13 @@
 
     const desc = parseNumberBR(document.getElementById('id_pedi_desc')?.value);
     const fret = parseNumberBR(document.getElementById('id_pedi_fret')?.value);
-    const total = subtotal - desc + fret;
+    const credito = parseNumberBR(document.getElementById('id_pedi_cred')?.value);
+    const total = Math.max(subtotal - desc - credito + fret, 0);
 
     document.getElementById('total-itens').textContent = fmtBRL(subtotal);
     document.getElementById('total-desc').textContent = fmtBRL(desc);
     document.getElementById('total-fret').textContent = fmtBRL(fret);
+    document.getElementById('total-cred').textContent = fmtBRL(credito);
     document.getElementById('total-geral').textContent = fmtBRL(total);
 
     const totalField = document.getElementById('id_pedi_tota');
@@ -1287,8 +1348,17 @@
 
 
     // Cliente e vendedor ainda usam prefill (buscam por label, funcionam)
-    setupAutocomplete('cliente_nome', 'id_pedi_clie', URL_AUTO_CLIENTES);
-    prefillAutocomplete('cliente_nome', 'id_pedi_clie', URL_AUTO_CLIENTES);
+    setupAutocomplete('cliente_nome', 'id_pedi_clie', URL_AUTO_CLIENTES, async () => {
+      await carregarCreditoCliente();
+      aplicarCreditoAuto();
+    });
+    prefillAutocomplete('cliente_nome', 'id_pedi_clie', URL_AUTO_CLIENTES, async () => {
+      await carregarCreditoCliente();
+      const credAtual = parseNumberBR(document.getElementById('id_pedi_cred')?.value);
+      const chk = document.getElementById('usar-credito');
+      if (chk) chk.checked = credAtual > 0;
+      aplicarCreditoAuto();
+    });
 
     setupAutocomplete('vendedor_nome', 'id_pedi_vend', URL_AUTO_VENDEDORES);
     prefillAutocomplete('vendedor_nome', 'id_pedi_vend', URL_AUTO_VENDEDORES);
@@ -1327,11 +1397,26 @@
 
     // Bind nos campos desc/fret para atualizar totais
     ['id_pedi_desc', 'id_pedi_fret'].forEach(id => {
-      document.getElementById(id)?.addEventListener('input', atualizarTotais);
+      document.getElementById(id)?.addEventListener('input', () => {
+        if (document.getElementById('usar-credito')?.checked) {
+          aplicarCreditoAuto();
+        } else {
+          atualizarTotais();
+        }
+      });
     });
+
+    document.getElementById('usar-credito')?.addEventListener('change', () => aplicarCreditoAuto());
 
     setupAddItem();
     atualizarTotais();
+    carregarCreditoCliente().then(() => {
+      const credAtual = parseNumberBR(document.getElementById('id_pedi_cred')?.value);
+      const chk = document.getElementById('usar-credito');
+      if (chk) chk.checked = credAtual > 0;
+      if (chk && chk.checked) aplicarCreditoAuto();
+      atualizarTotais();
+    });
     bindRemoveButtons();
     {% if form.errors or formset.errors or formset.non_form_errors %}
     showToast('O formulário voltou com erros. Revise os campos destacados.', 'danger');

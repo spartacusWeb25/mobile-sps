@@ -1,6 +1,7 @@
 from django.contrib.contenttypes.models import ContentType
 from django.apps import apps
 from django.db import IntegrityError, connections
+from django.core.cache import cache
 from .constants import ACOES_PADRAO, PERFIS_PADRAO, DEFAULT_PERMISSOES_POR_PERFIL
 from .models import Perfil, PermissaoPerfil, PerfilHeranca, UsuarioPerfil
 from Licencas.models import Usuarios
@@ -40,8 +41,8 @@ def get_content_types_validos(banco=None):
         raise e
 
 
-def listar_recursos():
-    banco = get_db_from_slug(get_licenca_slug())
+def listar_recursos(*, banco=None):
+    banco = banco or get_db_from_slug(get_licenca_slug())
     recursos = []
     for ct in get_content_types_validos(banco=banco):
         recursos.append({
@@ -53,8 +54,8 @@ def listar_recursos():
     return recursos
 
 
-def sincronizar_permissoes_padrao():
-    banco = get_db_from_slug(get_licenca_slug())
+def sincronizar_permissoes_padrao(*, banco=None):
+    banco = banco or get_db_from_slug(get_licenca_slug())
     perfil = Perfil.objects.using(banco).filter(perf_nome='superadmin').first()
     if not perfil:
         return 0
@@ -73,8 +74,8 @@ def sincronizar_permissoes_padrao():
     return criados
 
 
-def criar_perfis_padrao():
-    banco = get_db_from_slug(get_licenca_slug())
+def criar_perfis_padrao(*, banco=None):
+    banco = banco or get_db_from_slug(get_licenca_slug())
     criados = 0
     perfis = []
     for nome in PERFIS_PADRAO:
@@ -85,8 +86,8 @@ def criar_perfis_padrao():
     return criados, perfis
 
 
-def aplicar_permissoes_padrao_por_perfil(perfil):
-    banco = get_db_from_slug(get_licenca_slug())
+def aplicar_permissoes_padrao_por_perfil(perfil, *, banco=None):
+    banco = banco or get_db_from_slug(get_licenca_slug())
     regras = DEFAULT_PERMISSOES_POR_PERFIL.get(perfil.perf_nome, {})
     if not regras:
         return 0
@@ -108,8 +109,8 @@ def aplicar_permissoes_padrao_por_perfil(perfil):
     return criados
 
 
-def vincular_usuarios_padrao():
-    banco = get_db_from_slug(get_licenca_slug())
+def vincular_usuarios_padrao(*, banco=None):
+    banco = banco or get_db_from_slug(get_licenca_slug())
     perf_super = Perfil.objects.using(banco).filter(perf_nome='superadmin').first()
     perf_assist = Perfil.objects.using(banco).filter(perf_nome='assistentes').first()
     if not perf_super or not perf_assist:
@@ -123,21 +124,26 @@ def vincular_usuarios_padrao():
             perf_perf=destino,
             defaults={'perf_ativ': True}
         )
+        try:
+            cache.delete(f'perfil_ativo_{banco}_{u.usua_codi}')
+        except Exception:
+            pass
         if created:
             vinculos += 1
     return {'vinculos': vinculos}
 
 
-def bootstrap_inicial():
-    criados_count, perfis = criar_perfis_padrao()
+def bootstrap_inicial(*, banco=None):
+    banco = banco or get_db_from_slug(get_licenca_slug())
+    criados_count, perfis = criar_perfis_padrao(banco=banco)
     aplicados = 0
     for p in perfis:
-        aplicados += aplicar_permissoes_padrao_por_perfil(p)
-    vinc = vincular_usuarios_padrao()
+        aplicados += aplicar_permissoes_padrao_por_perfil(p, banco=banco)
+    vinc = vincular_usuarios_padrao(banco=banco)
     return {'perfis_criados': criados_count, 'permissoes_criadas': aplicados, **vinc}
 
 
-def sincronizar_perfis_e_permissoes():
+def sincronizar_perfis_e_permissoes(*, banco=None):
     """
     Sincronização completa de perfis:
     1. Garante perfis padrão;
@@ -145,12 +151,13 @@ def sincronizar_perfis_e_permissoes():
     3. Sincroniza permissões globais do superadmin;
     4. Vincula usuários padrão quando não houver vínculo.
     """
-    criados_count, perfis = criar_perfis_padrao()
+    banco = banco or get_db_from_slug(get_licenca_slug())
+    criados_count, perfis = criar_perfis_padrao(banco=banco)
     aplicados_por_perfil = {}
     for p in perfis:
-        aplicados_por_perfil[p.perf_nome] = aplicar_permissoes_padrao_por_perfil(p)
-    superadmin_novas = sincronizar_permissoes_padrao()
-    vinculos = vincular_usuarios_padrao().get('vinculos', 0)
+        aplicados_por_perfil[p.perf_nome] = aplicar_permissoes_padrao_por_perfil(p, banco=banco)
+    superadmin_novas = sincronizar_permissoes_padrao(banco=banco)
+    vinculos = vincular_usuarios_padrao(banco=banco).get('vinculos', 0)
     return {
         'perfis_criados': criados_count,
         'permissoes_aplicadas_por_perfil': aplicados_por_perfil,

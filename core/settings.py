@@ -125,6 +125,7 @@ INSTALLED_APPS = [
     'mcp_agent_db',  
     'controledevisitas',
     'Pisos',
+    'devolucoes_pisos',
     'drf_spectacular',
     'coletaestoque',
     'Floresta',
