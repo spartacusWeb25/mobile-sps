@@ -5,80 +5,562 @@
 <link rel="stylesheet" href="{% static 'css/ui.css' %}">
 <link rel="stylesheet" href="{% static 'css/form.css' %}?v=20260313">
 
-<div class="container page-container">
-  <div class="page-header-custom" style="position: relative; justify-content: center;">
-    <h2 class="page-title"><i class="bi bi-pencil-square"></i> Editar Nota Fiscal</h2>
-    <div class="page-actions d-flex gap-2" style="position: absolute; right: 0; top: 50%; transform: translateY(-50%);">
-      <a class="btn btn-outline-secondary" href="/web/{{ slug }}/notas-fiscais/">Voltar</a>
+<style>
+  :root {
+    --nf-bg: #0d1117;
+    --nf-surface: #161b22;
+    --nf-surface2: #1c2128;
+    --nf-border: rgba(255, 255, 255, 0.08);
+    --nf-border-strong: rgba(255, 255, 255, 0.14);
+    --nf-text: #e6edf3;
+    --nf-muted: #7d8590;
+    --nf-accent: #388bfd;
+    --nf-accent-dim: rgba(56, 139, 253, 0.15);
+    --nf-success: #3fb950;
+    --nf-warning: #d29922;
+    --nf-danger: #f85149;
+    --nf-label: 10px;
+    --nf-input-h: 28px;
+    --nf-radius: 6px;
+  }
+
+ 
+
+  .nf-wrap {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-size: 13px;
+    color: var(--nf-text);
+    padding: 0;
+  }
+
+  .nf-topbar {
+    background: var(--nf-surface);
+    border-bottom: 1px solid var(--nf-border);
+    padding: 8px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .nf-topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .nf-topbar-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--nf-text);
+  }
+
+  .nf-topbar-title i {
+    color: var(--nf-accent);
+    margin-right: 5px;
+  }
+
+  .nf-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    border: 1px solid;
+    font-weight: 500;
+  }
+
+  .nf-chip-draft {
+    color: var(--nf-warning);
+    border-color: rgba(210, 153, 34, 0.3);
+    background: rgba(210, 153, 34, 0.08);
+  }
+
+  .nf-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 12px;
+    border-radius: var(--nf-radius);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid;
+    transition: opacity 0.15s, transform 0.1s;
+    line-height: 1.4;
+    text-decoration: none;
+  }
+
+  .nf-btn:active {
+    transform: scale(0.97);
+  }
+
+  .nf-btn-ghost {
+    background: transparent;
+    color: var(--nf-muted);
+    border-color: var(--nf-border-strong);
+  }
+
+  .nf-btn-ghost:hover {
+    color: var(--nf-text);
+    border-color: var(--nf-border-strong);
+    background: var(--nf-surface2);
+  }
+
+  .nf-btn-primary {
+    background: var(--nf-accent);
+    color: #fff;
+    border-color: transparent;
+  }
+
+  .nf-btn-primary:hover {
+    opacity: 0.88;
+  }
+
+  .nf-btn-success {
+    background: rgba(63, 185, 80, 0.12);
+    color: var(--nf-success);
+    border-color: rgba(63, 185, 80, 0.3);
+  }
+
+  .nf-btn-success:hover {
+    background: rgba(63, 185, 80, 0.2);
+  }
+
+  .nf-btn-warning {
+    background: rgba(210, 153, 34, 0.12);
+    color: var(--nf-warning);
+    border-color: rgba(210, 153, 34, 0.3);
+  }
+
+  .nf-btn-warning:hover {
+    background: rgba(210, 153, 34, 0.2);
+  }
+
+  .nf-btn-danger {
+    background: rgba(248, 81, 73, 0.1);
+    color: var(--nf-danger);
+    border-color: rgba(248, 81, 73, 0.25);
+  }
+
+  .nf-btn-danger:hover {
+    background: rgba(248, 81, 73, 0.18);
+  }
+
+  .nf-btn-sm {
+    padding: 2px 8px;
+    font-size: 11px;
+  }
+
+  .nf-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .nf-body {
+    padding: 12px 16px;
+  }
+
+  .nf-panel {
+    background: var(--nf-surface);
+    border: 1px solid var(--nf-border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+
+  .nf-section-hdr {
+    padding: 6px 14px;
+    background: var(--nf-surface2);
+    border-bottom: 1px solid var(--nf-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .nf-section-hdr span {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    color: var(--nf-muted);
+  }
+
+  .nf-fields {
+    display: grid;
+    gap: 5px 10px;
+    padding: 10px 14px;
+  }
+
+  .nf-field {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .nf-field label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--nf-muted);
+  }
+
+  .nf-field input,
+  .nf-field select,
+  .nf-field textarea {
+    background: var(--nf-surface2);
+    border: 1px solid var(--nf-border-strong);
+    border-radius: var(--nf-radius);
+    color: var(--nf-text);
+    font-size: 12px;
+    height: var(--nf-input-h);
+    padding: 0 8px;
+    width: 100%;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+
+  .nf-field input:focus,
+  .nf-field select:focus {
+    border-color: var(--nf-accent);
+    box-shadow: 0 0 0 3px rgba(56, 139, 253, 0.12);
+  }
+
+  .nf-field input[readonly] {
+    color: var(--nf-muted);
+    cursor: default;
+  }
+
+  .nf-field select option {
+    background: #1c2128;
+  }
+
+  .nf-field .nf-hint {
+    font-size: 10px;
+    color: var(--nf-muted);
+    margin-top: 1px;
+  }
+
+  .nf-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--nf-border);
+    padding: 0 14px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .nf-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nf-tab {
+    padding: 7px 12px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--nf-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: color 0.15s;
+  }
+
+  .nf-tab:hover {
+    color: var(--nf-text);
+  }
+
+  .nf-tab.active {
+    color: var(--nf-accent);
+    border-bottom-color: var(--nf-accent);
+  }
+
+  .nf-action-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: var(--nf-surface);
+    border-top: 1px solid var(--nf-border);
+    position: sticky;
+    bottom: 0;
+    z-index: 99;
+  }
+
+  .nf-action-bar .spacer {
+    flex: 1;
+  }
+
+  .list-group {
+    z-index: 1000;
+    background: var(--nf-surface2) !important;
+    border: 1px solid var(--nf-border-strong) !important;
+    border-radius: var(--nf-radius);
+    max-height: 200px;
+    overflow-y: auto;
+  }
+
+  .list-group-item {
+    background: transparent !important;
+    color: var(--nf-text) !important;
+    border-color: var(--nf-border) !important;
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+
+  .list-group-item:hover {
+    background: var(--nf-accent-dim) !important;
+  }
+
+  input.form-control,
+  textarea.form-control,
+  select.form-select,
+  select.form-control {
+    background: var(--nf-surface2) !important;
+    border: 1px solid var(--nf-border-strong) !important;
+    border-radius: var(--nf-radius) !important;
+    color: var(--nf-text) !important;
+    font-size: 12px !important;
+    height: var(--nf-input-h) !important;
+  }
+
+  input.form-control:focus,
+  textarea.form-control:focus,
+  select.form-select:focus,
+  select.form-control:focus {
+    border-color: var(--nf-accent) !important;
+    box-shadow: 0 0 0 3px rgba(56, 139, 253, 0.12) !important;
+  }
+
+  .nav-tabs {
+    border-bottom: 1px solid var(--nf-border);
+    padding: 0 14px;
+    background: transparent;
+  }
+
+  .nav-tabs .nav-link {
+    border: 0;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    padding: 7px 12px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--nf-muted);
+    margin-bottom: -1px;
+    background: transparent;
+  }
+
+  .nav-tabs .nav-link:hover {
+    color: var(--nf-text);
+  }
+
+  .nav-tabs .nav-link.active {
+    color: var(--nf-accent);
+    border-bottom-color: var(--nf-accent);
+    background: transparent;
+  }
+
+  .tab-content {
+    padding: 0;
+  }
+
+  .tab-pane {
+    padding: 10px 14px;
+  }
+
+  .nf-table-wrap {
+    overflow-x: auto;
+  }
+
+  .nf-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+  }
+
+  .nf-table th {
+    text-align: left;
+    padding: 5px 10px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--nf-muted);
+    border-bottom: 1px solid var(--nf-border);
+    white-space: nowrap;
+  }
+
+  .nf-table th.r,
+  .nf-table td.r {
+    text-align: right;
+  }
+
+  .nf-table td {
+    padding: 5px 10px;
+    border-bottom: 1px solid var(--nf-border);
+    color: var(--nf-text);
+    vertical-align: middle;
+  }
+
+  .nf-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  .nf-table tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  .nf-tributos {
+    padding: 10px 14px;
+  }
+
+  .nf-tributos-grid {
+    display: grid;
+    gap: 5px 10px;
+  }
+
+  .g2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .g3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .g4 {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .g5 {
+    grid-template-columns: repeat(5, 1fr);
+  }
+
+  .g6 {
+    grid-template-columns: repeat(6, 1fr);
+  }
+
+  .g7 {
+    grid-template-columns: repeat(7, 1fr);
+  }
+
+  .nf-divider {
+    height: 1px;
+    background: var(--nf-border);
+    margin: 8px 0;
+  }
+
+  .spinner-border-sm {
+    width: 12px;
+    height: 12px;
+    border-width: 2px;
+  }
+
+  .card,
+  .card-body,
+  .card-header {
+    background: transparent;
+    color: var(--nf-text);
+  }
+
+  .text-muted {
+    color: var(--nf-muted) !important;
+  }
+</style>
+
+<div class="container">
+  <div class="nf-wrap">
+    <div class="nf-topbar">
+      <div class="nf-topbar-left">
+        <span class="nf-topbar-title"><i class="bi bi-pencil-square"></i>Editar Nota Fiscal</span>
+        <span class="nf-chip nf-chip-draft">● Edição</span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <a class="nf-btn nf-btn-ghost" href="/web/{{ slug }}/notas-fiscais/">← Voltar</a>
+      </div>
     </div>
-  </div>
 
-  <form method="post" class="card p-0 bg-body">
-    {% csrf_token %}
-    <div class="d-none">{{ form.ambiente }}</div>
-    <ul class="nav nav-tabs" id="nota-tabs" role="tablist">
-      <li class="nav-item" role="presentation">
-        <button class="nav-link active" id="tab-dados-btn" data-bs-toggle="tab" data-bs-target="#tab-dados"
-          type="button" role="tab" aria-controls="tab-dados" aria-selected="true">Dados</button>
-      </li>
-      <li class="nav-item" role="presentation">
-        <button class="nav-link" id="tab-itens-btn" data-bs-toggle="tab" data-bs-target="#tab-itens" type="button"
-          role="tab" aria-controls="tab-itens" aria-selected="false">Itens</button>
-      </li>
-      <li class="nav-item" role="presentation">
-        <button class="nav-link" id="tab-transporte-btn" data-bs-toggle="tab" data-bs-target="#tab-transporte"
-          type="button" role="tab" aria-controls="tab-transporte" aria-selected="false">Transporte</button>
-      </li>
-      <li class="nav-item" role="presentation">
-        <button class="nav-link" id="tab-totais-btn" data-bs-toggle="tab" data-bs-target="#tab-totais" type="button"
-          role="tab" aria-controls="tab-totais" aria-selected="false">Totais</button>
-      </li>
-      <li class="nav-item" role="presentation">
-        <button class="nav-link" id="tab-financeiro-btn" data-bs-toggle="tab" data-bs-target="#tab-financeiro"
-          type="button" role="tab" aria-controls="tab-financeiro" aria-selected="false">Financeiro</button>
-      </li>
-    </ul>
+    <div class="nf-body">
+      <form method="post" id="edit-form">
+        {% csrf_token %}
+        <div class="d-none">{{ form.ambiente }}</div>
 
-    <div class="tab-content pt-3 gap-3">
-      {% include 'notas/edicao/tab_dados.html' %}
-      {% include 'notas/edicao/tab_itens.html' %}
-      {% include 'notas/edicao/tab_transporte.html' %}
-      {% include 'notas/edicao/tab_totais.html' %}
-      {% include 'notas/financeiroAba.html' %}
+        <div class="nf-panel">
+          <ul class="nav nav-tabs" id="nota-tabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="tab-dados-btn" data-bs-toggle="tab" data-bs-target="#tab-dados"
+                type="button" role="tab" aria-controls="tab-dados" aria-selected="true">Dados</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="tab-itens-btn" data-bs-toggle="tab" data-bs-target="#tab-itens" type="button"
+                role="tab" aria-controls="tab-itens" aria-selected="false">Itens</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="tab-transporte-btn" data-bs-toggle="tab" data-bs-target="#tab-transporte"
+                type="button" role="tab" aria-controls="tab-transporte" aria-selected="false">Transporte</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="tab-totais-btn" data-bs-toggle="tab" data-bs-target="#tab-totais"
+                type="button" role="tab" aria-controls="tab-totais" aria-selected="false">Totais</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="tab-financeiro-btn" data-bs-toggle="tab" data-bs-target="#tab-financeiro"
+                type="button" role="tab" aria-controls="tab-financeiro" aria-selected="false">Financeiro</button>
+            </li>
+          </ul>
+
+          <div class="tab-content">
+            {% include 'notas/edicao/tab_dados.html' %}
+            {% include 'notas/edicao/tab_itens.html' %}
+            {% include 'notas/edicao/tab_transporte.html' %}
+            {% include 'notas/edicao/tab_totais.html' %}
+            {% include 'notas/financeiroAba.html' %}
+          </div>
+        </div>
+      </form>
     </div>
 
-    <div class="d-flex justify-content-between align-items-center gap-5 m-5 flex-wrap">
+    <div class="nf-action-bar">
+      <a class="nf-btn nf-btn-ghost" href="/web/{{ slug }}/notas-fiscais/">← Voltar</a>
+      <div class="spacer"></div>
+
       <div class="d-flex align-items-center gap-3 d-none" id="totais-bar">
         <div class="d-flex align-items-center gap-2">
-          <span class="fw-semibold">Total Produtos</span>
+          <span style="font-size:11px;color:var(--nf-muted);">Total Produtos</span>
           <input type="text" id="total-produtos-bar" class="form-control form-control-sm text-end" readonly
             style="width: 140px;">
         </div>
         <div class="d-flex align-items-center gap-2">
-          <span class="fw-semibold">Desconto</span>
+          <span style="font-size:11px;color:var(--nf-muted);">Desconto</span>
           <input type="text" id="total-descontos-bar" class="form-control form-control-sm text-end" readonly
             style="width: 140px;">
         </div>
       </div>
-      <div class="d-flex justify-content-end gap-2">
-        <a class="btn btn-outline-secondary" href="/web/{{ slug }}/notas-fiscais/">Voltar</a>
-        <button class="btn btn-outline-info" type="submit" name="btn_calcular" value="true" id="btn-calcular"><i
-            class="bi bi-calculator"></i> Calcular
-          Impostos</button>
-        <button class="btn btn-outline-primary" type="submit" name="btn_gravar" value="true" id="btn-gravar"><span
-            class="spinner-border spinner-border-sm me-1 d-none" aria-hidden="true"></span> <i class="bi bi-save"></i>
-          Gravar</button>
-        <button class="btn btn-outline-success" type="submit"><span class="spinner-border spinner-border-sm me-1 d-none"
-            aria-hidden="true"></span> <i class="bi bi-check2"></i> Salvar</button>
-      </div>
-    </div>
-  </form>
 
-  {% if nota %}
-  <div class="mt-3">
-    <small class="text-muted">Status: {{ nota.get_status_display }}</small>
+      <button class="nf-btn nf-btn-warning" type="submit" name="btn_calcular" value="true" id="btn-calcular"
+        form="edit-form">
+        <i class="bi bi-calculator"></i> Calcular Impostos
+      </button>
+      <button class="nf-btn nf-btn-primary" type="submit" name="btn_gravar" value="true" id="btn-gravar"
+        form="edit-form">
+        <span class="spinner-border spinner-border-sm me-1 d-none" aria-hidden="true"></span>
+        <i class="bi bi-save"></i> Gravar
+      </button>
+      <button class="nf-btn nf-btn-success" type="submit" form="edit-form">
+        <span class="spinner-border spinner-border-sm me-1 d-none" aria-hidden="true"></span>
+        <i class="bi bi-check2"></i> Salvar
+      </button>
+    </div>
+
+    {% if nota %}
+    <div class="mt-2">
+      <small class="text-muted">Status: {{ nota.get_status_display }}</small>
+    </div>
+    {% endif %}
   </div>
-  {% endif %}
 </div>
 
 <script>
@@ -197,7 +679,7 @@
         });
       } catch { }
     };
-    const formMain = document.querySelector('form.card');
+    const formMain = document.getElementById('edit-form');
     if (formMain) {
       formMain.addEventListener('submit', () => {
         const fd = new FormData(formMain);
@@ -364,61 +846,28 @@
       mountAutocomplete(transpText, (q) => `/web/${slug}/notas-fiscais/transportadoras-autocomplete/?q=${encodeURIComponent(q)}`, (it) => { transpText.value = it.label; transpField.value = it.value; }, transpList);
     }
     const totalsContainer = document.createElement('div');
-    totalsContainer.className = 'card mt-3 p-3 bg-body';
+    totalsContainer.className = '';
     totalsContainer.innerHTML = `
-      <h5>Totais</h5>
-      <div class="row g-3">
-        <div class="col-md-3">
-          <label class="form-label">Total Produtos</label>
-          <input type="text" class="form-control" id="total" readonly />
-        </div>
-        <div class="col-md-3">
-          <label class="form-label">Desconto</label>
-          <input type="text" class="form-control" id="total-desconto" readonly />
-        </div>
-        <div class="col-md-3">
-          <label class="form-label">Tributos</label>
-          <input type="text" class="form-control" id="total-tributos" readonly />
-        </div>
-        <div class="col-md-3">
-          <label class="form-label">Total Nota</label>
-          <input type="text" class="form-control" id="total-nota" readonly />
-        </div>
+      <div class="nf-tributos-grid g4" style="margin-bottom:8px;">
+        <div class="nf-field"><label>Total Produtos</label><input type="text" id="total" readonly /></div>
+        <div class="nf-field"><label>Desconto</label><input type="text" id="total-desconto" readonly /></div>
+        <div class="nf-field"><label>Tributos</label><input type="text" id="total-tributos" readonly /></div>
+        <div class="nf-field"><label>Total Nota</label><input type="text" id="total-nota" readonly /></div>
       </div>
-      <div class="row g-3 mt-1">
-        <div class="col-md-2">
-          <label class="form-label">ICMS</label>
-          <input type="text" class="form-control" id="total-icms" readonly />
-        </div>
-        <div class="col-md-2">
-          <label class="form-label">ICMS ST</label>
-          <input type="text" class="form-control" id="total-icms-st" readonly />
-        </div>
-        <div class="col-md-2">
-          <label class="form-label">IPI</label>
-          <input type="text" class="form-control" id="total-ipi" readonly />
-        </div>
-        <div class="col-md-2">
-          <label class="form-label">PIS</label>
-          <input type="text" class="form-control" id="total-pis" readonly />
-        </div>
-        <div class="col-md-2">
-          <label class="form-label">COFINS</label>
-          <input type="text" class="form-control" id="total-cofins" readonly />
-        </div>
-        <div class="col-md-2">
-          <label class="form-label">CBS</label>
-          <input type="text" class="form-control" id="total-cbs" readonly />
-        </div>
-        <div class="col-md-2">
-          <label class="form-label">IBS</label>
-          <input type="text" class="form-control" id="total-ibs" readonly />
-        </div>
+      <div class="nf-divider"></div>
+      <div class="nf-tributos-grid g7">
+        <div class="nf-field"><label>ICMS</label><input type="text" id="total-icms" readonly /></div>
+        <div class="nf-field"><label>ICMS ST</label><input type="text" id="total-icms-st" readonly /></div>
+        <div class="nf-field"><label>IPI</label><input type="text" id="total-ipi" readonly /></div>
+        <div class="nf-field"><label>PIS</label><input type="text" id="total-pis" readonly /></div>
+        <div class="nf-field"><label>COFINS</label><input type="text" id="total-cofins" readonly /></div>
+        <div class="nf-field"><label>CBS</label><input type="text" id="total-cbs" readonly /></div>
+        <div class="nf-field"><label>IBS</label><input type="text" id="total-ibs" readonly /></div>
       </div>`;
     const hostTotais = document.getElementById('totais-container-host');
     if (hostTotais) hostTotais.appendChild(totalsContainer);
     else {
-      const formEl = document.querySelector('form.card');
+      const formEl = document.getElementById('edit-form');
       if (formEl) formEl.appendChild(totalsContainer);
     }
     const setTotaisBarVisible = (visible) => {

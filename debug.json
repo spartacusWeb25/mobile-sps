@@ -1,39 +1,39 @@
 {
-  "debug_id": "7b72c54e-6816-4171-a4b8-477bbbb09d26",
-  "timestamp_inicio": "2026-03-26T17:18:59.136943Z",
+  "debug_id": "5a4128c1-5b90-4199-bc2e-ae5f9bc73fe2",
+  "timestamp_inicio": "2026-05-04T23:55:03.212809Z",
   "ambiente": {
-    "debug": true,
+    "debug": false,
     "database_alias": "saveweb001"
   },
   "tabelas_tributacao": {
     "versao": "Padrão"
   },
   "nota": {
-    "id": 97,
-    "modelo": "65",
+    "id": 100,
+    "modelo": "55",
     "serie": "005",
-    "numero": "10",
+    "numero": "24",
     "empresa": "1",
     "filial": "1",
-    "destinatario_id": "5",
+    "destinatario_id": "21",
     "uf_origem": "PR",
     "uf_destino": "PR",
     "regime": "1"
   },
   "itens": [
     {
-      "id": 113,
+      "id": 116,
       "produto_id": "3",
       "descricao_produto": "CANECA DE TESTES",
       "ncm_produto": "8419****",
       "cfop_inicial": "5102",
       "quantidade": "1.0000",
-      "unitario": "25.0000",
-      "desconto": "0.0000",
+      "unitario": "120.0000",
+      "desconto": "20.0000",
       "logs": [
         {
-          "id": "64e1f504-cd33-420d-895c-20e202ad9704",
-          "timestamp": "2026-03-26T17:18:59.260392Z",
+          "id": "2ddb46a3-14c9-499d-a752-f2d5617778ac",
+          "timestamp": "2026-05-04T23:55:03.884472Z",
           "tipo": "antes_calculo_item",
           "mensagem": "Início do cálculo de impostos para o item.",
           "dados": {
@@ -56,7 +56,7 @@
       },
       "ncm_resolvido": "8419****",
       "bases": {
-        "raiz": "25.00",
+        "raiz": "100.00",
         "icms": null,
         "st": null
       },
@@ -101,8 +101,8 @@
   ],
   "logs": [
     {
-      "id": "5cb5b8e6-e756-4182-830e-dfc8efd0baa8",
-      "timestamp": "2026-03-26T17:18:59.235376Z",
+      "id": "f618e2e4-f4ed-4422-ab3c-c4e6fb0624da",
+      "timestamp": "2026-05-04T23:55:03.671335Z",
       "tipo": "contexto_nota",
       "mensagem": "Contexto fiscal inicial da nota.",
       "dados": {
@@ -110,5 +110,5 @@
       }
     }
   ],
-  "timestamp_fim": "2026-03-26T17:18:59.616365Z"
+  "timestamp_fim": "2026-05-04T23:55:05.225395Z"
 }
