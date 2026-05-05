@@ -616,23 +616,12 @@
 
                     <!-- Produto autocomplete -->
                     <td class="position-relative">
-                      {#
-                      FIX: value preenchido com item_prod_nome (nome salvo), NÃO com item_prod (ID).
-                      Isso garante que na edição o campo de busca já aparece com o nome do produto,
-                      sem precisar de prefillAutocomplete que sobrescrevia e bugava.
-                      #}
                       <input id="produto_busca_{{ forloop.counter0 }}" class="form-control form-control-sm"
                         placeholder="Buscar produto" data-index="{{ forloop.counter0 }}"
                         value="{{ f.item_prod_nome.value|default:'' }}">
                       <div class="d-none">{{ f.item_prod }}</div>
                     </td>
 
-                    {#
-                    FIX: campo item_prod_nome renderizado com form-control para ter id="id_itens-N-item_prod_nome"
-                    acessível via getElementById no JS. Antes era {{ f.item_prod_nome }} sem classe,
-                    gerando input sem estilo consistente mas isso não era o bug — o bug era no seletor JS
-                    que usava querySelector por name em vez de getElementById por id.
-                    #}
                     <td>{{ f.item_prod_nome }}</td>
 
                     <!-- Quant. (calculado pelo service) -->
@@ -1369,14 +1358,6 @@
 
       bindCalcInputs(index);
 
-      /*
-       * FIX PRINCIPAL:
-       * 1. onSelectProduto agora usa getElementById(`id_itens-${index}-item_prod_nome`)
-       *    em vez de querySelector por name — garante que encontra o campo em todos os casos.
-       * 2. prefillAutocomplete para produtos foi REMOVIDO — o value do campo de busca
-       *    já vem preenchido com f.item_prod_nome.value direto no template HTML,
-       *    chamar prefill sobrescrevia com busca por ID numérico que retornava vazio.
-       */
       const onSelectProduto = (selected) => {
         const nomeInput = document.getElementById(`id_itens-${index}-item_prod_nome`);
         if (nomeInput) nomeInput.value = selected.label || selected.text || '';
@@ -1390,7 +1371,12 @@
         onSelectProduto
       );
 
-      // NÃO chama prefillAutocomplete para produtos — campo já preenchido pelo template
+      prefillAutocomplete(
+        input.id,
+        `id_itens-${index}-item_prod`,
+        URL_AUTO_PRODUTOS,
+        onSelectProduto
+      );
 
       maybeInitialCalc(index);
     });
