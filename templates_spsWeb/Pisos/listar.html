@@ -50,6 +50,20 @@
     display: flex; align-items: center; justify-content: center; gap: .5rem;
   }
   .page-title i { color: #7c3aed; font-size: 1.2rem; }
+
+  .btn-sm {
+    padding: .3rem .45rem;
+  }
+  #btn-imprimir { margin-top: 1rem; margin-bottom: 1rem; border-radius: 8px;  border-color: #a4a9aa;}
+  #btn-abrir { margin-top: 1rem; margin-bottom: 1rem; border-radius: 8px;  border-color: #62b9c7;}
+
+  @media screen and (max-width: 768px) {
+  .metric-label { font-size: .45rem; }
+  .metric-value { font-size: .5rem; }
+  #pedido-card { border: 3px solid #122733; margin-bottom: 0.40rem; }
+  #btn-imprimir { margin-top: 1rem; margin-bottom: 1rem; border-radius: 8px;  border-color: #a4a9aa;}
+  #btn-abrir { margin-top: 1rem; margin-bottom: 1rem; border-radius: 8px;  border-color: #62b9c7;}
+  }
 </style>
 
 <div class="container py-4">
@@ -63,7 +77,7 @@
 
   <!-- Metric Cards -->
   <div class="row g-3 mb-3">
-    <div class="col-12 col-sm-4">
+    <div class="col-4 col-sm-4">
       <div class="metric-card">
         <div class="metric-icon" style="background:#f3eeff; color:#7c3aed;">
           <i class="bi bi-cart3"></i>
@@ -74,7 +88,7 @@
         </div>
       </div>
     </div>
-    <div class="col-12 col-sm-4">
+    <div class="col-4 col-sm-4">
       <div class="metric-card">
         <div class="metric-icon" style="background:#e6fbf5; color:#10b981;">
           <i class="bi bi-currency-dollar"></i>
@@ -85,14 +99,14 @@
         </div>
       </div>
     </div>
-    <div class="col-12 col-sm-4">
+    <div class="col-4 col-sm-4">
       <div class="metric-card">
         <div class="metric-icon" style="background:#fff0f6; color:#e11d1d;">
           <i class="bi bi-lock-fill"></i>
         </div>
         <div>
-          <div class="metric-label">Fechados</div>
-          <div class="metric-value" style="color:#e11d1d;">{{ metricas.total_fechados }}</div>
+          <div class="metric-label">Concluídos(Compra Efetuada)</div>
+          <div class="metric-value" style="color:#e11d1d;">{{ metricas.total_concluidos }}</div>
         </div>
       </div>
     </div>
@@ -107,28 +121,40 @@
   </div>
 
   <!-- Filtros -->
+<div class="mb-2">
+  <button class="btn btn-outline-primary w-full"
+          data-bs-toggle="collapse"
+          data-bs-target="#filtrosCollapse">
+    <i class="bi bi-funnel"></i> Filtros
+  </button>
+</div>
+<div class="collapse show" id="filtrosCollapse">
   <form method="get" class="card border-0 shadow-sm rounded-3 mb-3">
     <div class="card-body">
       <div class="row g-2 align-items-end">
-        <div class="col-12 col-md-2">
+        <div class="col-3 col-md-2">
           <label class="form-label">Nº Pedido</label>
           <input type="number" name="pedi_nume" class="form-control" value="{{ filtros.pedi_nume }}">
         </div>
-        <div class="col-12 col-md-3">
+        <div class="col-3 col-md-3">
           <label class="form-label">Cliente</label>
           <input type="text" name="cliente_nome" class="form-control" value="{{ filtros.cliente_nome }}">
         </div>
-        <div class="col-12 col-md-3">
+        <div class="col-3 col-md-3">
           <label class="form-label">Vendedor</label>
           <input type="text" name="vendedor_nome" class="form-control" value="{{ filtros.vendedor_nome }}">
         </div>
-        <div class="col-12 col-md-2">
+        <div class="col-3 col-md-2">
           <label class="form-label">Status</label>
           <select name="pedi_stat" class="form-select">
             <option value="">Todos</option>
-            <option value="0" {% if filtros.pedi_stat == "0" %}selected{% endif %}>Aberto</option>
-            <option value="1" {% if filtros.pedi_stat == "1" %}selected{% endif %}>Cancelado</option>
-            <option value="2" {% if filtros.pedi_stat == "2" %}selected{% endif %}>Fechado</option>
+            <option value="0" {% if filtros.pedi_stat == "0" %}selected{% endif %}>Aguardando Financeiro</option>
+            <option value="1" {% if filtros.pedi_stat == "1" %}selected{% endif %}>Aguardando Compras</option>
+            <option value="2" {% if filtros.pedi_stat == "2" %}selected{% endif %}>Compra Efetuada</option>
+            <option value="3" {% if filtros.pedi_stat == "3" %}selected{% endif %}>Material Disponível</option>
+            <option value="4" {% if filtros.pedi_stat == "4" %}selected{% endif %}>Logística</option>
+            <option value="5" {% if filtros.pedi_stat == "5" %}selected{% endif %}>Cancelado</option>
+            <option value="6" {% if filtros.pedi_stat == "6" %}selected{% endif %}>Concluído</option>
           </select>
         </div>
         <div class="col-12 col-md-2 d-flex gap-2">
@@ -143,9 +169,10 @@
       </div>
     </div>
   </form>
+</div>
 
   <!-- Desktop Table -->
-  <div class="card border-0 shadow-sm rounded-3 d-none d-md-block">
+  <div class="card border-0 shadow-sm rounded-3 d-none d-md-block" >
     <div class="card-body p-0">
       <table class="table table-hover mb-0">
         <thead>
@@ -173,7 +200,8 @@
                 href="{% url 'PisosWeb:pedidos_pisos_visualizar' slug=slug pk=p.pedi_nume %}">
                 <i class="bi bi-eye"></i> Abrir
               </a>
-              <a class="btn btn-sm btn-outline-dark d-inline-flex align-items-center gap-1" target="_blank"
+              <a class="btn btn-sm btn-outline-info d-inline-flex align-items-center gap-1" target="_blank"
+                id="btn-imprimir"
                 href="{% url 'PisosWeb:pedidos_pisos_imprimir' slug=slug pk=p.pedi_nume %}">
                 <i class="bi bi-printer"></i> Imprimir
               </a>
@@ -195,10 +223,10 @@
 
 
   <!-- Mobile Cards -->
-  <div class="d-md-none">
+  <div class="d-md-none" id="pedidos-cards">
     {% for p in pedidos %}
-    <div class="card border-0 shadow-sm rounded-3 mb-2">
-      <div class="card-body">
+    <div class="card border-0 shadow-sm rounded-3 mb-2" >
+      <div class="card-body" id="pedido-card">
         <div class="d-flex justify-content-between align-items-center">
           <div class="fw-semibold text-primary">Pedido #{{ p.pedi_nume }}</div>
           <div class="small text-muted">{{ p.pedi_data }}</div>
@@ -211,10 +239,12 @@
         </div>
         <div class="mt-3 d-flex justify-content-end">
           <a class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1"
+            id="btn-abrir"
             href="{% url 'PisosWeb:pedidos_pisos_visualizar' slug=slug pk=p.pedi_nume %}">
             <i class="bi bi-eye"></i> Abrir
           </a>
-          <a class="btn btn-sm btn-outline-dark d-inline-flex align-items-center gap-1" target="_blank"
+          <a class="btn btn-sm btn-outline-info d-inline-flex align-items-center gap-1" target="_blank"
+            id="btn-imprimir"
             href="{% url 'PisosWeb:pedidos_pisos_imprimir' slug=slug pk=p.pedi_nume %}">
             <i class="bi bi-printer"></i> Imprimir
           </a>

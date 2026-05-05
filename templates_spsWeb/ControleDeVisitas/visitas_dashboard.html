@@ -128,9 +128,9 @@
 <div class="container cv-dark py-2">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <div class="container">
-      <h4 class="text-center dash-title mb-4 mt-4">Dashboard de Visitas</h4>
+      <h4 class="text-center dash-title mb-4 mt-4"><i class="bi bi-people-fill"></i> Dashboard de Visitas</h4>
     </div>
-    <a href="/web/{{ slug }}/controle-de-visitas/" class="btn btn-outline-secondary">Voltar</a>
+
   </div>
 
   <div class="d-flex justify-content-end mb-2">
@@ -138,22 +138,23 @@
       data-bs-target="#filtrosDashboard" aria-expanded="true" aria-controls="filtrosDashboard">
       <span class="me-1" aria-hidden="true">⛭</span> Filtros
     </button>
+    <a href="/web/{{ slug }}/controle-de-visitas/" class="btn btn-outline-secondary">Voltar</a>
   </div>
   <div class="collapse show" id="filtrosDashboard">
     <div class="card mb-3">
       <div class="card-body">
         <form class="row g-2" method="get">
-          <div class="col-md-2"><input type="text" name="cliente" value="{{ filtros.cliente }}" placeholder="Cliente"
+          <div class="col-4 col-md-2"><input type="text" name="cliente" value="{{ filtros.cliente }}" placeholder="Cliente"
               class="form-control" /></div>
-          <div class="col-md-2"><input type="text" name="vendedor" value="{{ filtros.vendedor }}" placeholder="Vendedor"
+          <div class="col-4 col-md-2"><input type="text" name="vendedor" value="{{ filtros.vendedor }}" placeholder="Vendedor"
               class="form-control" /></div>
-          <div class="col-md-2"><input type="text" name="etapa" value="{{ filtros.etapa }}" placeholder="Etapa"
+          <div class="col-4 col-md-2"><input type="text" name="etapa" value="{{ filtros.etapa }}" placeholder="Etapa"
               class="form-control" /></div>
-          <div class="col-md-2"><input type="date" name="data_inicio" value="{{ filtros.data_inicio }}"
+          <div class="col-4 col-md-2"><input type="date" name="data_inicio" value="{{ filtros.data_inicio }}"
               placeholder="Data Início" class="form-control" /></div>
-          <div class="col-md-2"><input type="date" name="data_fim" value="{{ filtros.data_fim }}" placeholder="Data Fim"
+          <div class="col-4 col-md-2"><input type="date" name="data_fim" value="{{ filtros.data_fim }}" placeholder="Data Fim"
               class="form-control" /></div>
-          <div class="col-md-2"><button class="btn btn-outline-primary w-100"><span class="me-1"
+          <div class="col-4 col-md-2"><button class="btn btn-outline-primary w-100"><span class="me-1"
                 aria-hidden="true">🔎</span>Filtrar</button></div>
         </form>
       </div>

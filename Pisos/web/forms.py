@@ -4,6 +4,17 @@ from django.forms import formset_factory
 from Pisos.models import Pedidospisos, Orcamentopisos
 
 
+PEDIDO_STATUS_CHOICES = (
+    (0, "Aguardando Financeiro"),
+    (1, "Aguardando Compras"),
+    (2, "Compra Efetuada"),
+    (3, "Material Disponível"),
+    (4, "Logística"),
+    (5, "Cancelado"),
+    (6, "Concluído"),
+)
+
+
 class PedidoPisosForm(forms.ModelForm):
     class Meta:
         model = Pedidospisos
@@ -26,6 +37,11 @@ class PedidoPisosForm(forms.ModelForm):
         for _, field in self.fields.items():
             css = "form-check-input" if isinstance(field.widget, forms.CheckboxInput) else "form-control"
             field.widget.attrs.setdefault("class", css)
+        if "pedi_stat" in self.fields:
+            self.fields["pedi_stat"].widget = forms.Select(
+                choices=[("", "Selecione")] + list(PEDIDO_STATUS_CHOICES),
+                attrs={"class": "form-control status-select"},
+            )
         if "pedi_tota" in self.fields:
             self.fields["pedi_tota"].widget.attrs.setdefault("readonly", True)
         if "pedi_cred" in self.fields:

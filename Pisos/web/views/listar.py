@@ -15,9 +15,13 @@ class PedidopisosListView(VendedorEntidadeMixin, ListView):
     paginate_by = 50
 
     status_nome = {
-        0: "Aberto",
-        1: "Cancelado",
-        2: "Fechado",
+        0: "Aguardando Financeiro",
+        1: "Aguardando Compras",
+        2: "Compra Efetuada",
+        3: "Material Disponível",
+        4: "Logística",
+        5: "Cancelado",
+        6: "Concluído",
     }
 
     def get_queryset(self):
@@ -102,7 +106,7 @@ class PedidopisosListView(VendedorEntidadeMixin, ListView):
         context["metricas"] = {
             "total_pedidos": base_qs.count(),
             "total_valor": base_qs.aggregate(total=Sum("pedi_tota")).get("total") or 0,
-            "total_fechados": base_qs.filter(pedi_stat=2).count(),
+            "total_concluidos": base_qs.filter(pedi_stat=2).count(),
             "total_abertos": base_qs.filter(pedi_stat=0).count(),
         }
 

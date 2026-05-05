@@ -62,6 +62,16 @@
   .btn-outline-warning:hover {
     background-color: #f8dc9e; color: #000; border-color: #fff7e6;
   }
+
+  @media screen and (max-width: 768px) {
+  .metric-label { font-size: .45rem; }
+  .metric-value { font-size: .5rem; }
+
+  #pedido-card { border: 2px solid #121c33; margin-bottom: 1rem; }
+  #btn-imprimir { margin-top: 1rem; margin-bottom: 1rem; border-radius: 8px;  border-color: #0d7d8b;}
+  #btn-exportar { margin-top: 1rem; margin-bottom: 1rem; border-radius: 8px;  border-color: #c4a775;}
+  #btn-abrir { margin-top: 1rem; margin-bottom: 1rem; border-radius: 8px;  border-color: #0d7d8b;}
+  }
 </style>
 
 <div class="container py-4">
@@ -75,7 +85,7 @@
 
   <!-- Metric Cards -->
   <div class="row g-3 mb-3">
-    <div class="col-12 col-sm-4">
+    <div class="col-4 col-sm-4">
       <div class="metric-card">
         <div class="metric-icon" style="background:#eef2ff; color:#4361ee;">
           <i class="bi bi-file-earmark-text"></i>
@@ -86,7 +96,7 @@
         </div>
       </div>
     </div>
-    <div class="col-12 col-sm-4">
+    <div class="col-4 col-sm-4">
       <div class="metric-card">
         <div class="metric-icon" style="background:#e6fbf5; color:#10b981;">
           <i class="bi bi-currency-dollar"></i>
@@ -97,7 +107,7 @@
         </div>
       </div>
     </div>
-    <div class="col-12 col-sm-4">
+    <div class="col-4 col-sm-4">
       <div class="metric-card">
         <div class="metric-icon" style="background:#fff7e6; color:#f59e0b;">
           <i class="bi bi-box-arrow-up-right"></i>
@@ -118,23 +128,31 @@
     </a>
   </div>
 
+<div class="mb-2">
+  <button class="btn btn-outline-primary w-full"
+          data-bs-toggle="collapse"
+          data-bs-target="#filtrosCollapse">
+    <i class="bi bi-funnel"></i> Filtros
+  </button>
+</div>
+<div class="collapse show" id="filtrosCollapse">
   <!-- Filtros -->
   <form method="get" class="card border-0 shadow-sm rounded-3 mb-3">
     <div class="card-body">
       <div class="row g-2 align-items-end">
-        <div class="col-12 col-md-2">
+        <div class="col-3 col-md-2">
           <label class="form-label">Nº Orçamento</label>
           <input type="number" name="orca_nume" class="form-control" value="{{ filtros.orca_nume }}">
         </div>
-        <div class="col-12 col-md-3">
+        <div class="col-3 col-md-3">
           <label class="form-label">Cliente</label>
           <input type="text" name="cliente_nome" class="form-control" value="{{ filtros.cliente_nome }}">
         </div>
-        <div class="col-12 col-md-3">
+        <div class="col-3 col-md-3">
           <label class="form-label">Vendedor</label>
           <input type="text" name="vendedor_nome" class="form-control" value="{{ filtros.vendedor_nome }}">
         </div>
-        <div class="col-12 col-md-2">
+        <div class="col-3 col-md-2">
           <label class="form-label">Status</label>
           <select name="orca_stat" class="form-select">
             <option value="">Todos</option>
@@ -155,7 +173,8 @@
       </div>
     </div>
   </form>
-
+</div>
+  
   <!-- Desktop Table -->
   <div class="card border-0 shadow-sm rounded-3 d-none d-md-block">
     <div class="card-body p-0">
@@ -198,7 +217,9 @@
                   href="{% url 'PisosWeb:orcamentos_pisos_visualizar' slug=slug pk=o.orca_nume %}">
                   <i class="bi bi-eye"></i> Abrir
                 </a>
-                <a class="btn btn-sm btn-outline-dark d-flex align-items-center gap-1" target="_blank"
+                <a class="btn btn-sm btn-outline-info d-inline-flex align-items-center gap-1"
+                  target="_blank"
+                  id="btn-imprimir"
                   href="{% url 'PisosWeb:orcamentos_pisos_imprimir' slug=slug pk=o.orca_nume %}">
                   <i class="bi bi-printer"></i> Imprimir
                 </a>
@@ -243,15 +264,19 @@
         </div>
         <div class="mt-3 d-flex gap-2 justify-content-end">
           <a class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1"
+            id="btn-abrir"
             href="{% url 'PisosWeb:orcamentos_pisos_visualizar' slug=slug pk=o.orca_nume %}">
             <i class="bi bi-eye"></i> Abrir
           </a>
-          <a class="btn btn-sm btn-outline-dark" target="_blank"
+          <a class="btn btn-sm btn-outline-info d-inline-flex align-items-center gap-1"
+            target="_blank"
+            id="btn-imprimir"
             href="{% url 'PisosWeb:orcamentos_pisos_imprimir' slug=slug pk=o.orca_nume %}">
             <i class="bi bi-printer"></i> Imprimir
           </a>
           {% if o.orca_stat != 2 %}
           <a class="btn btn-sm btn-outline-warning"
+            id="btn-exportar"
             href="{% url 'PisosWeb:orcamentos_pisos_exportar' slug=slug numero=o.orca_nume %}">
             <i class="bi bi-file-earmark-arrow-down"></i> Exportar
           </a>
