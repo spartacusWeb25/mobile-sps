@@ -113,7 +113,8 @@
                                     {% for remetente, total in total_por_remetente.items %}
                                     <li class="d-flex justify-content-between align-items-center mb-1 border-bottom border-light pb-1"
                                         style="border-opacity: 0.2;">
-                                        <span class="text-truncate me-2" title="{{ remetente.nome }}">{{ remetente.nome }}</span>
+                                        <span class="text-truncate me-2" title="{{ remetente.nome }}">{{ remetente.nome
+                                            }}</span>
                                         <span class="badge bg-light text-dark rounded-pill">{{ total }}</span>
                                     </li>
                                     {% empty %}
@@ -171,7 +172,8 @@
                                 {% for remetente, total in total_por_remetente.items %}
                                 <li class="d-flex justify-content-between align-items-center mb-1 border-bottom border-light pb-1"
                                     style="border-opacity: 0.2;">
-                                    <span class="text-truncate me-2" title="{{ remetente.nome }}">{{ remetente.nome }}</span>
+                                    <span class="text-truncate me-2" title="{{ remetente.nome }}">{{ remetente.nome
+                                        }}</span>
                                     <span class="badge bg-light text-dark rounded-pill">{{ total }}</span>
                                 </li>
                                 {% empty %}
@@ -212,7 +214,7 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-start gap-2">
                                 <div class="fw-bold">
-                                    CT-e {{ cte.numero|default:cte.id }}
+                                    CT-e {{ cte.numero|floatformat:0|default:cte.id }}
                                 </div>
                                 <span
                                     class="badge {% if cte.status == 'AUT' %}bg-success{% elif cte.status == 'REJ' %}bg-danger{% elif cte.status == 'RAS' %}bg-warning{% else %}bg-secondary{% endif %}"
@@ -293,8 +295,8 @@
                 <tbody>
                     {% for cte in ctes %}
                     <tr>
-                        <td>{{ cte.id }}</td>
-                        <td>{{ cte.numero|default:"-" }}</td>
+                        <td>{{ cte.numero|floatformat:0|default:cte.id }}</td>
+                        <td>{{ cte.numero|floatformat:0|default:"-" }}</td>
                         <td>
                             <span
                                 class="badge {% if cte.status == 'AUT' %}bg-success{% elif cte.status == 'REJ' %}bg-danger{% elif cte.status == 'RAS' %}bg-warning{% else %}bg-secondary{% endif %}"

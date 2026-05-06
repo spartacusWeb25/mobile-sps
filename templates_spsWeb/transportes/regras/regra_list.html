@@ -16,8 +16,102 @@
         </div>
     </div>
     <div class="card-body p-0">
+        <div class="d-none">
+            {% for row in rows %}
+                {% with pk_str=row.regra.pk|stringformat:"s" %}
+                    {% with resumo_id="regra_resumo_"|add:pk_str completo_id="regra_completo_"|add:pk_str %}
+                        {{ row.resumo|json_script:resumo_id }}
+                        {{ row.completo|json_script:completo_id }}
+                    {% endwith %}
+                {% endwith %}
+            {% endfor %}
+        </div>
+
+        <div class="d-md-none p-3">
+            <div class="row g-2">
+                {% for row in rows %}
+                {% with regra=row.regra %}
+                {% with pk_str=regra.pk|stringformat:"s" %}
+                {% with resumo_id="regra_resumo_"|add:pk_str completo_id="regra_completo_"|add:pk_str %}
+                <div class="col-12">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start gap-2">
+                                <div class="fw-bold">
+                                    <span class="badge bg-secondary">{{ regra.uf_origem }}</span>
+                                    <i class="fas fa-arrow-right mx-1 text-muted"></i>
+                                    <span class="badge bg-primary">{{ regra.uf_destino }}</span>
+                                </div>
+                                <div class="text-muted small">{{ row.cfop_display }}</div>
+                            </div>
+
+                            <div class="mt-2 small text-body-secondary">
+                                <div><strong>Contribuinte:</strong> {% if regra.contribuinte %}Sim{% else %}Não{% endif %}</div>
+                                <div><strong>Simples:</strong> {% if regra.simples_nacional %}Sim{% else %}Não{% endif %}</div>
+                                <div><strong>ICMS:</strong> {{ regra.aliquota }}% {% if regra.reducao_base %}(Red: {{ regra.reducao_base }}%){% endif %}</div>
+                                <div><strong>ST:</strong> {% if regra.aliquota_st %}{{ regra.aliquota_st }}% (MVA: {{ regra.mva_st }}%){% else %}-{% endif %}</div>
+                                <div><strong>DIFAL:</strong> {% if regra.aliquota_destino %}{{ regra.aliquota_destino }}%{% else %}-{% endif %}</div>
+                                <div><strong>PIS/COFINS:</strong>
+                                    {% if row.pis %}
+                                        {{ row.pis.pis_cst }}/{{ row.pis.cofins_cst }} ({{ row.pis.pis_aliquota }}%/{{ row.pis.cofins_aliquota }}%)
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </div>
+                                <div><strong>IBS/CBS:</strong>
+                                    {% if row.ibs %}
+                                        {{ row.ibs.cst }} (CBS: {{ row.ibs.aliquota_cbs }}%)
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card-footer d-flex flex-wrap gap-2">
+                            <button type="button"
+                                class="btn btn-sm btn-outline-secondary"
+                                data-bs-toggle="modal"
+                                data-bs-target="#regraResumoModal"
+                                data-summary-id="{{ resumo_id }}">
+                                <i class="fas fa-eye"></i> Resumo
+                            </button>
+                            <button type="button"
+                                class="btn btn-sm btn-outline-dark"
+                                data-bs-toggle="modal"
+                                data-bs-target="#regraCompletaModal"
+                                data-full-id="{{ completo_id }}">
+                                <i class="fas fa-list"></i> Ver tudo
+                            </button>
+                            <a href="{% url 'transportes:regra_update' slug=slug pk=regra.pk %}"
+                                class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-edit"></i> Editar
+                            </a>
+                            <a href="{% url 'transportes:regra_delete' slug=slug pk=regra.pk %}"
+                                class="btn btn-sm btn-outline-danger">
+                                <i class="fas fa-trash"></i> Excluir
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endwith %}
+                {% endwith %}
+                {% endwith %}
+                {% empty %}
+                <div class="col-12">
+                    <div class="text-center text-muted py-4">
+                        Nenhuma regra de ICMS cadastrada.<br>
+                        <a href="{% url 'transportes:regra_create' slug=slug %}" class="btn btn-primary btn-sm mt-2">
+                            Cadastrar Primeira Regra
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
         <div class="table-responsive">
-            <table class="table table-striped table-hover mb-0 align-middle">
+            <table class="table table-striped table-hover mb-0 align-middle d-none d-md-table">
                 <thead class="table-responsive">
                     <tr>
                         <th>Origem</th>
@@ -28,11 +122,14 @@
                         <th>Aliq. ICMS</th>
                         <th>ST</th>
                         <th>DIFAL</th>
+                        <th>PIS/COFINS</th>
+                        <th>IBS/CBS</th>
                         <th class="text-end">Ações</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for regra in regras %}
+                    {% for row in rows %}
+                    {% with regra=row.regra %}
                     <tr>
                         <td><span class="badge bg-secondary">{{ regra.uf_origem }}</span></td>
                         <td><span class="badge bg-primary">{{ regra.uf_destino }}</span></td>
@@ -50,7 +147,7 @@
                             <span class="badge bg-light text-dark border">Não</span>
                             {% endif %}
                         </td>
-                        <td>{% if regra.cfop %}{{ regra.cfop_display }}{% else %}Todos{% endif %}</td>
+                        <td>{{ row.cfop_display }}</td>
                         <td>
                             {{ regra.aliquota }}%
                             {% if regra.reducao_base %}
@@ -72,8 +169,48 @@
                             -
                             {% endif %}
                         </td>
+                        <td>
+                            {% if row.pis %}
+                                <div class="small">
+                                    <div>{{ row.pis.pis_cst }} / {{ row.pis.cofins_cst }}</div>
+                                    <div class="text-muted">{{ row.pis.pis_aliquota }}% / {{ row.pis.cofins_aliquota }}%</div>
+                                </div>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if row.ibs %}
+                                <div class="small">
+                                    <div>{{ row.ibs.cst }}</div>
+                                    <div class="text-muted">CBS: {{ row.ibs.aliquota_cbs }}%</div>
+                                </div>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
                         <td class="text-end">
                             <div class="btn-group">
+                                {% with pk_str=regra.pk|stringformat:"s" %}
+                                {% with resumo_id="regra_resumo_"|add:pk_str completo_id="regra_completo_"|add:pk_str %}
+                                <button type="button"
+                                    class="btn btn-sm btn-outline-secondary"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#regraResumoModal"
+                                    data-summary-id="{{ resumo_id }}"
+                                    title="Resumo">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button type="button"
+                                    class="btn btn-sm btn-outline-dark"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#regraCompletaModal"
+                                    data-full-id="{{ completo_id }}"
+                                    title="Ver tudo">
+                                    <i class="fas fa-list"></i>
+                                </button>
+                                {% endwith %}
+                                {% endwith %}
                                 <a href="{% url 'transportes:regra_update' slug=slug pk=regra.pk %}"
                                     class="btn btn-sm btn-outline-primary" title="Editar">
                                     <i class="fas fa-edit"></i>
@@ -85,9 +222,10 @@
                             </div>
                         </td>
                     </tr>
+                    {% endwith %}
                     {% empty %}
                     <tr>
-                        <td colspan="9" class="text-center py-5 text-muted">
+                        <td colspan="11" class="text-center py-5 text-muted">
                             <i class="fas fa-info-circle fa-2x mb-3"></i><br>
                             Nenhuma regra de ICMS cadastrada.<br>
                             <a href="{% url 'transportes:regra_create' slug=slug %}"
@@ -102,4 +240,85 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="regraResumoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Resumo da Regra</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <div id="regraResumoConteudo"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="regraCompletaModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Dados Completos da Regra</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <div id="regraCompletaConteudo"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function renderKeyValueList(targetEl, data) {
+        if (!targetEl) return;
+        targetEl.innerHTML = "";
+        const dl = document.createElement("dl");
+        dl.className = "row mb-0";
+
+        Object.entries(data || {}).forEach(([k, v]) => {
+            const dt = document.createElement("dt");
+            dt.className = "col-sm-5 text-muted";
+            dt.textContent = k;
+
+            const dd = document.createElement("dd");
+            dd.className = "col-sm-7";
+            dd.textContent = (v === null || v === undefined || v === "") ? "-" : String(v);
+
+            dl.appendChild(dt);
+            dl.appendChild(dd);
+        });
+
+        targetEl.appendChild(dl);
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const resumoModal = document.getElementById("regraResumoModal");
+        const completaModal = document.getElementById("regraCompletaModal");
+
+        if (resumoModal) {
+            resumoModal.addEventListener("show.bs.modal", function (event) {
+                const button = event.relatedTarget;
+                const scriptId = button ? button.getAttribute("data-summary-id") : null;
+                const scriptEl = scriptId ? document.getElementById(scriptId) : null;
+                const raw = scriptEl ? scriptEl.textContent : "{}";
+                let data = {};
+                try { data = JSON.parse(raw || "{}"); } catch (e) { data = {}; }
+                renderKeyValueList(document.getElementById("regraResumoConteudo"), data);
+            });
+        }
+
+        if (completaModal) {
+            completaModal.addEventListener("show.bs.modal", function (event) {
+                const button = event.relatedTarget;
+                const scriptId = button ? button.getAttribute("data-full-id") : null;
+                const scriptEl = scriptId ? document.getElementById(scriptId) : null;
+                const raw = scriptEl ? scriptEl.textContent : "{}";
+                let data = {};
+                try { data = JSON.parse(raw || "{}"); } catch (e) { data = {}; }
+                renderKeyValueList(document.getElementById("regraCompletaConteudo"), data);
+            });
+        }
+    });
+</script>
 {% endblock %}

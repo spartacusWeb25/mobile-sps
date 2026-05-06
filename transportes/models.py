@@ -406,7 +406,6 @@ class RegraICMS(models.Model):
     simples_nacional = models.BooleanField()
 
     cfop = models.CharField(max_length=4, null=True, blank=True)
-    # opcional: regra específica por CFOP
 
     aliquota = models.DecimalField(max_digits=5, decimal_places=2)
     aliquota_destino = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, verbose_name="Alíquota Interna Destino (DIFAL)")
@@ -422,7 +421,54 @@ class RegraICMS(models.Model):
 
     diferimento = models.BooleanField(default=False)
     isento = models.BooleanField(default=False)
+    
+    class Meta:
+        managed = True
+        db_table = 'regra_icms'
 
+
+class RegraPISCOFINS(models.Model):
+    empresa = models.IntegerField()
+    uf_origem = models.CharField(max_length=2, null=True, blank=True)
+    uf_destino = models.CharField(max_length=2, null=True, blank=True)
+    simples_nacional = models.BooleanField(default=False)
+    cfop = models.CharField(max_length=4, null=True, blank=True)
+
+    pis_cst = models.CharField(max_length=2)
+    pis_aliquota = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+
+    cofins_cst = models.CharField(max_length=2)
+    cofins_aliquota = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+
+    ativo = models.BooleanField(default=True)
+
+    class Meta:
+        managed = True
+        db_table = "regra_pis_cofins"
+
+
+class RegraIBSCBS(models.Model):
+    empresa = models.IntegerField()
+    uf_origem = models.CharField(max_length=2, null=True, blank=True)
+    uf_destino = models.CharField(max_length=2, null=True, blank=True)
+    cfop = models.CharField(max_length=4, null=True, blank=True)
+
+    cst = models.CharField(max_length=3)
+    cclasstrib = models.CharField(max_length=6)
+
+    aliquota_cbs = models.DecimalField(max_digits=7, decimal_places=4, default=0)
+    aliquota_ibs_uf = models.DecimalField(max_digits=7, decimal_places=4, default=0)
+    aliquota_ibs_mun = models.DecimalField(max_digits=7, decimal_places=4, default=0)
+
+    reducao_cbs = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    reducao_ibs_uf = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    reducao_ibs_mun = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+
+    ativo = models.BooleanField(default=True)
+
+    class Meta:
+        managed = True
+        db_table = "regra_ibs_cbs"
 
 TIPO_EMITENTE = (
     ('1', 'Transportadora'),

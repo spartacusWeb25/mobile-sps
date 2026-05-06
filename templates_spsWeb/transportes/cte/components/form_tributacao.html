@@ -132,6 +132,96 @@
     </div>
 </div>
 
+<!-- IBS / CBS -->
+<h5 class="mb-3 border-bottom pb-2 mt-4"><i class="fas fa-landmark"></i> IBS / CBS</h5>
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card bg-transparent border-0">
+            <div class="card-body pt-2 ps-0">
+                <h6 class="card-title text-muted mb-3">CBS</h6>
+                <div class="row g-2">
+                    <div class="col-md-3">
+                        <label class="form-label small">Base</label>
+                        {{ form.ibscbs_vbc }}
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small">Alíq. CBS</label>
+                        {{ form.cbs_pcbs }}
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small">Redução</label>
+                        {{ form.cbs_pred }}
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small">Alíq. Efetiva</label>
+                        {{ form.cbs_paliqefet }}
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small">Valor CBS</label>
+                        {{ form.cbs_vcbs }}
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small">CST IBS/CBS</label>
+                        {{ form.ibscbs_cst }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small">Classif. Tributária</label>
+                        {{ form.ibscbs_cclasstrib }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card bg-transparent border-0">
+            <div class="card-body pt-2 ps-0">
+                <h6 class="card-title text-muted mb-3">IBS</h6>
+                <div class="row g-2">
+                    <div class="col-md-3">
+                        <label class="form-label small">Alíq. UF</label>
+                        {{ form.ibs_pibsuf }}
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small">Red. UF</label>
+                        {{ form.ibs_preduf }}
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small">Alíq. Efetiva UF</label>
+                        {{ form.ibs_paliqefetuf }}
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small">Valor UF</label>
+                        {{ form.ibs_vibsuf }}
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label small">Alíq. Mun.</label>
+                        {{ form.ibs_pibsmun }}
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small">Red. Mun.</label>
+                        {{ form.ibs_predmun }}
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small">Alíq. Efetiva Mun.</label>
+                        {{ form.ibs_paliqefetmun }}
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small">Valor Mun.</label>
+                        {{ form.ibs_vibsmun }}
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label small">Valor IBS</label>
+                        {{ form.ibs_vibs }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         const cfopSelect = document.getElementById('{{ form.cfop.auto_id }}');
@@ -139,9 +229,12 @@
         const cteId = "{{ object.pk }}";
 
         // Função para formatar valores monetários/decimais para o input
-        function formatValue(value) {
+        function formatValue(value, decimals) {
             if (value === null || value === undefined) return '';
-            return parseFloat(value).toFixed(2);
+            const d = (decimals === null || decimals === undefined) ? 2 : decimals;
+            const n = parseFloat(value);
+            if (isNaN(n)) return '';
+            return n.toFixed(d);
         }
 
         // Trigger manual do cálculo
@@ -190,9 +283,14 @@
                     }
 
                     // Helper para setar valor com formatação
-                    const setVal = (fieldId, val) => {
+                    const setVal = (fieldId, val, decimals) => {
                         const el = document.getElementById(fieldId);
-                        if (el) el.value = formatValue(val);
+                        if (el) el.value = formatValue(val, decimals);
+                    };
+
+                    const setStr = (fieldId, val) => {
+                        const el = document.getElementById(fieldId);
+                        if (el) el.value = (val === null || val === undefined) ? '' : String(val);
                     };
 
                     // ICMS
@@ -200,23 +298,55 @@
                         const el = document.getElementById('{{ form.cst_icms.auto_id }}');
                         if (el) el.value = data.cst_icms; // CST é string/int, não float
                     }
-                    if (data.base_icms !== undefined) setVal('{{ form.base_icms.auto_id }}', data.base_icms);
-                    if (data.aliq_icms !== undefined) setVal('{{ form.aliq_icms.auto_id }}', data.aliq_icms);
-                    if (data.reducao_icms !== undefined) setVal('{{ form.reducao_icms.auto_id }}', data.reducao_icms);
-                    if (data.valor_icms !== undefined) setVal('{{ form.valor_icms.auto_id }}', data.valor_icms);
+                    if (data.base_icms !== undefined) setVal('{{ form.base_icms.auto_id }}', data.base_icms, 2);
+                    if (data.aliq_icms !== undefined) setVal('{{ form.aliq_icms.auto_id }}', data.aliq_icms, 2);
+                    if (data.reducao_icms !== undefined) setVal('{{ form.reducao_icms.auto_id }}', data.reducao_icms, 2);
+                    if (data.valor_icms !== undefined) setVal('{{ form.valor_icms.auto_id }}', data.valor_icms, 2);
 
                     // ST
-                    if (data.base_icms_st !== undefined) setVal('{{ form.base_icms_st.auto_id }}', data.base_icms_st);
-                    if (data.margem_valor_adicionado_st !== undefined) setVal('{{ form.margem_valor_adicionado_st.auto_id }}', data.margem_valor_adicionado_st);
-                    if (data.reducao_base_icms_st !== undefined) setVal('{{ form.reducao_base_icms_st.auto_id }}', data.reducao_base_icms_st);
-                    if (data.aliquota_icms_st !== undefined) setVal('{{ form.aliquota_icms_st.auto_id }}', data.aliquota_icms_st);
-                    if (data.valor_icms_st !== undefined) setVal('{{ form.valor_icms_st.auto_id }}', data.valor_icms_st);
+                    if (data.base_icms_st !== undefined) setVal('{{ form.base_icms_st.auto_id }}', data.base_icms_st, 2);
+                    if (data.margem_valor_adicionado_st !== undefined) setVal('{{ form.margem_valor_adicionado_st.auto_id }}', data.margem_valor_adicionado_st, 2);
+                    if (data.reducao_base_icms_st !== undefined) setVal('{{ form.reducao_base_icms_st.auto_id }}', data.reducao_base_icms_st, 2);
+                    if (data.aliquota_icms_st !== undefined) setVal('{{ form.aliquota_icms_st.auto_id }}', data.aliquota_icms_st, 2);
+                    if (data.valor_icms_st !== undefined) setVal('{{ form.valor_icms_st.auto_id }}', data.valor_icms_st, 2);
 
                     // DIFAL
-                    if (data.valor_bc_uf_dest !== undefined) setVal('{{ form.valor_bc_uf_dest.auto_id }}', data.valor_bc_uf_dest);
-                    if (data.aliquota_interna_dest !== undefined) setVal('{{ form.aliquota_interna_dest.auto_id }}', data.aliquota_interna_dest);
-                    if (data.aliquota_interestadual !== undefined) setVal('{{ form.aliquota_interestadual.auto_id }}', data.aliquota_interestadual);
-                    if (data.valor_icms_uf_dest !== undefined) setVal('{{ form.valor_icms_uf_dest.auto_id }}', data.valor_icms_uf_dest);
+                    if (data.valor_bc_uf_dest !== undefined) setVal('{{ form.valor_bc_uf_dest.auto_id }}', data.valor_bc_uf_dest, 2);
+                    if (data.aliquota_interna_dest !== undefined) setVal('{{ form.aliquota_interna_dest.auto_id }}', data.aliquota_interna_dest, 2);
+                    if (data.aliquota_interestadual !== undefined) setVal('{{ form.aliquota_interestadual.auto_id }}', data.aliquota_interestadual, 2);
+                    if (data.valor_icms_uf_dest !== undefined) setVal('{{ form.valor_icms_uf_dest.auto_id }}', data.valor_icms_uf_dest, 2);
+
+                    // PIS / COFINS
+                    if (data.cst_pis !== undefined) setStr('{{ form.cst_pis.auto_id }}', data.cst_pis);
+                    if (data.base_pis !== undefined) setVal('{{ form.base_pis.auto_id }}', data.base_pis, 2);
+                    if (data.aliquota_pis !== undefined) setVal('{{ form.aliquota_pis.auto_id }}', data.aliquota_pis, 2);
+                    if (data.valor_pis !== undefined) setVal('{{ form.valor_pis.auto_id }}', data.valor_pis, 2);
+
+                    if (data.cst_cofins !== undefined) setStr('{{ form.cst_cofins.auto_id }}', data.cst_cofins);
+                    if (data.base_cofins !== undefined) setVal('{{ form.base_cofins.auto_id }}', data.base_cofins, 2);
+                    if (data.aliquota_cofins !== undefined) setVal('{{ form.aliquota_cofins.auto_id }}', data.aliquota_cofins, 2);
+                    if (data.valor_cofins !== undefined) setVal('{{ form.valor_cofins.auto_id }}', data.valor_cofins, 2);
+
+                    // IBS / CBS
+                    if (data.ibscbs_vbc !== undefined) setVal('{{ form.ibscbs_vbc.auto_id }}', data.ibscbs_vbc, 2);
+                    if (data.ibscbs_cst !== undefined) setStr('{{ form.ibscbs_cst.auto_id }}', data.ibscbs_cst);
+                    if (data.ibscbs_cclasstrib !== undefined) setStr('{{ form.ibscbs_cclasstrib.auto_id }}', data.ibscbs_cclasstrib);
+
+                    if (data.cbs_pcbs !== undefined) setVal('{{ form.cbs_pcbs.auto_id }}', data.cbs_pcbs, 2);
+                    if (data.cbs_pred !== undefined) setVal('{{ form.cbs_pred.auto_id }}', data.cbs_pred, 2);
+                    if (data.cbs_paliqefet !== undefined) setVal('{{ form.cbs_paliqefet.auto_id }}', data.cbs_paliqefet, 2);
+                    if (data.cbs_vcbs !== undefined) setVal('{{ form.cbs_vcbs.auto_id }}', data.cbs_vcbs, 2);
+
+                    if (data.ibs_pibsuf !== undefined) setVal('{{ form.ibs_pibsuf.auto_id }}', data.ibs_pibsuf, 2);
+                    if (data.ibs_preduf !== undefined) setVal('{{ form.ibs_preduf.auto_id }}', data.ibs_preduf, 2);
+                    if (data.ibs_paliqefetuf !== undefined) setVal('{{ form.ibs_paliqefetuf.auto_id }}', data.ibs_paliqefetuf, 2);
+                    if (data.ibs_vibsuf !== undefined) setVal('{{ form.ibs_vibsuf.auto_id }}', data.ibs_vibsuf, 2);
+
+                    if (data.ibs_pibsmun !== undefined) setVal('{{ form.ibs_pibsmun.auto_id }}', data.ibs_pibsmun, 2);
+                    if (data.ibs_predmun !== undefined) setVal('{{ form.ibs_predmun.auto_id }}', data.ibs_predmun, 2);
+                    if (data.ibs_paliqefetmun !== undefined) setVal('{{ form.ibs_paliqefetmun.auto_id }}', data.ibs_paliqefetmun, 2);
+                    if (data.ibs_vibsmun !== undefined) setVal('{{ form.ibs_vibsmun.auto_id }}', data.ibs_vibsmun, 2);
+                    if (data.ibs_vibs !== undefined) setVal('{{ form.ibs_vibs.auto_id }}', data.ibs_vibs, 2);
 
                 })
                 .catch(error => {

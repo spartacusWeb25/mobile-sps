@@ -6,5 +6,5 @@ class CteRotaSerializer(serializers.ModelSerializer):
         model = Cte
         fields = [
             'id', 'cidade_coleta', 'cidade_entrega', 'pedagio', 'peso_total',
-            'tarifa', 'frete_peso', 'frete_valor', 'outras_observacoes'
+            'tarifa', 'frete_peso', 'frete_valor', 'observacoes'
         ]

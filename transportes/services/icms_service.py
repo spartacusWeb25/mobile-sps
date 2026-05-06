@@ -1,6 +1,9 @@
 from transportes.models import RegraICMS
 from CFOP.models import CFOP
 from decimal import Decimal
+import logging
+
+logger = logging.getLogger(__name__)
 
 class ICMSCalculationService:
 
@@ -9,7 +12,7 @@ class ICMSCalculationService:
         self.operacao = operacao
 
     def calcular(self, base_calculo, cfop: CFOP):
-        if not cfop or not cfop.cfop_exig_icms:
+        if not cfop:
             return None
 
         regra = self._buscar_regra(cfop)
@@ -50,25 +53,51 @@ class ICMSCalculationService:
         # Garante uso do banco correto
         db_alias = self.empresa._state.db or 'default'
         
-        # 1. Tenta regra específica para o CFOP
-        qs = RegraICMS.objects.using(db_alias).filter(
-            uf_origem=self.operacao.uf_origem,
-            uf_destino=self.operacao.uf_destino,
-            contribuinte=self.operacao.contribuinte,
-            simples_nacional=self.empresa.simples_nacional,
+        uf_origem = getattr(self.operacao, "uf_origem", None)
+        uf_destino = getattr(self.operacao, "uf_destino", None)
+        contribuinte = bool(getattr(self.operacao, "contribuinte", False))
+        simples = bool(getattr(self.empresa, "simples_nacional", False))
+
+        base_qs = RegraICMS.objects.using(db_alias).filter(
+            uf_origem=uf_origem,
+            uf_destino=uf_destino,
         )
-        
-        # Tenta achar com CFOP específico
-        regra_cfop = qs.filter(cfop=cfop.cfop_codi).first()
-        if regra_cfop:
-            return regra_cfop
-            
-        # 2. Tenta regra geral (sem CFOP)
-        regra_geral = qs.filter(cfop__isnull=True).first()
-        if regra_geral:
-            return regra_geral
-            
-        # 3. Tenta regra geral (CFOP vazio string)
-        regra_geral_vazio = qs.filter(cfop='').first()
-        
-        return regra_geral_vazio
+
+        def pick(qs):
+            obj = qs.filter(cfop=cfop.cfop_codi).first()
+            if obj:
+                return obj
+            obj = qs.filter(cfop__isnull=True).first()
+            if obj:
+                return obj
+            return qs.filter(cfop="").first()
+
+        # 1) Match exato (contribuinte + simples)
+        r = pick(base_qs.filter(contribuinte=contribuinte, simples_nacional=simples))
+        if r:
+            return r
+
+        # 2) Fallback ignorando contribuinte (mantém simples)
+        r = pick(base_qs.filter(simples_nacional=simples))
+        if r:
+            return r
+
+        # 3) Fallback ignorando simples (mantém contribuinte)
+        r = pick(base_qs.filter(contribuinte=contribuinte))
+        if r:
+            return r
+
+        # 4) Fallback geral (somente UF)
+        r = pick(base_qs)
+        if r:
+            return r
+
+        logger.info(
+            "ICMSCalculationService.regra_nao_encontrada cfop=%s uf=%s->%s contrib=%s simples=%s",
+            getattr(cfop, "cfop_codi", None),
+            uf_origem,
+            uf_destino,
+            contribuinte,
+            simples,
+        )
+        return None

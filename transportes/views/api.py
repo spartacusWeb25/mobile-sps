@@ -15,6 +15,7 @@ from transportes.services.icms_service import ICMSCalculationService
 from transportes.services.st_service import STService
 from transportes.services.difal_service import DIFALService
 from transportes.services.emissao_service import EmissaoService
+from transportes.services.fiscal_cte_service import FiscalCTeService
 from transportes.services.mdfe_emissao_service import MdfeEmissaoService
 from transportes.services.mdfe_encerramento_service import MdfeEncerramentoService
 from transportes.services.numeracao_service import NumeracaoMdfeService
@@ -287,8 +288,24 @@ def calcular_impostos_cte(request, pk, slug=None):
     """
     Calcula impostos do CTe baseado no CFOP informado.
     """
+    import time
+
     slug = get_licenca_db_config(request)
-    cte = get_object_or_404(Cte.objects.using(slug), pk=pk)
+    cte = get_object_or_404(
+        Cte.objects.using(slug).only(
+            "id",
+            "empresa",
+            "filial",
+            "remetente",
+            "destinatario",
+            "cidade_coleta",
+            "cidade_entrega",
+            "frete_valor",
+            "total_valor",
+            "cfop",
+        ),
+        pk=pk,
+    )
     
     cfop_id = request.GET.get('cfop')
     if not cfop_id:
@@ -302,6 +319,7 @@ def calcular_impostos_cte(request, pk, slug=None):
 
     # Prepara dados para cálculo
     try:
+        t0 = time.perf_counter()
         # Adapters (Reutilizados do Form/Serializer logic)
         class ServiceEmpresaAdapter:
             def __init__(self, simples, db_alias='default'):
@@ -315,11 +333,22 @@ def calcular_impostos_cte(request, pk, slug=None):
                 self.contribuinte = contrib
 
         # Busca dados necessários
-        filial = Filiais.objects.using(slug).filter(pk=cte.filial).first()
+        t_fetch = time.perf_counter()
+        filial = Filiais.objects.using(slug).filter(empr_empr=cte.empresa, empr_codi=cte.filial).first()
         simples_nacional = str(filial.empr_regi_trib) == '1' if filial else False
         
-        remetente = Entidades.objects.using(slug).filter(pk=cte.remetente).first()
-        destinatario = Entidades.objects.using(slug).filter(pk=cte.destinatario).first()
+        remetente = (
+            Entidades.objects.using(slug)
+            .only("enti_esta", "enti_nome")
+            .filter(pk=cte.remetente)
+            .first()
+        )
+        destinatario = (
+            Entidades.objects.using(slug)
+            .only("enti_esta", "enti_nome", "enti_insc_esta")
+            .filter(pk=cte.destinatario)
+            .first()
+        )
         
         # Mapeamento de Código IBGE para UF
         CODIGO_UF_PARA_SIGLA = {
@@ -368,59 +397,19 @@ def calcular_impostos_cte(request, pk, slug=None):
         empresa_adapter = ServiceEmpresaAdapter(simples_nacional, slug)
         operacao_adapter = ServiceOperacaoAdapter(uf_origem, uf_destino, contribuinte)
         
-        # Base de Cálculo (Total do Serviço)
-        # Prioriza frete_valor, fallback para total_valor
-        base_calculo = cte.frete_valor or cte.total_valor or Decimal('0.00')
+        base_calculo = cte.total_valor or cte.frete_valor or Decimal('0.00')
         logger.info(f"Base Cálculo: {base_calculo}")
-        
-        response_data = {}
-        
-        # 1. ICMS
-        icms_calculado_valor = Decimal('0.00')
-        if cfop.cfop_exig_icms:
-            icms_service = ICMSCalculationService(empresa_adapter, operacao_adapter)
-            res_icms = icms_service.calcular(base_calculo, cfop)
-            
-            logger.info(f"Resultado ICMS: {res_icms}")
+        calc = FiscalCTeService(cte=cte, empresa=empresa_adapter, operacao=operacao_adapter, slug=slug, db_alias=slug)
+        response_data = calc.calcular(cfop=cfop)
 
-            if res_icms:
-                response_data.update({
-                    'cst_icms': res_icms['cst'],
-                    'aliq_icms': res_icms['aliquota'],
-                    'valor_icms': res_icms['valor'],
-                    'reducao_icms': res_icms['reducao'],
-                    'base_icms': res_icms['base']
-                })
-                icms_calculado_valor = res_icms['valor']
-            else:
-                logger.warning(f"Nenhuma regra de ICMS encontrada para CFOP {cfop.cfop_codi}, UF {uf_origem}->{uf_destino}, Contrib {contribuinte}")
-                
-        # 2. ST
-        if cfop.cfop_gera_st:
-            st_service = STService(empresa_adapter, operacao_adapter)
-            res_st = st_service.calcular(base_calculo, icms_calculado_valor, cfop)
-            
-            if res_st:
-                response_data.update({
-                    'base_icms_st': res_st['base_st'],
-                    'valor_icms_st': res_st['valor_st'],
-                    'aliquota_icms_st': res_st['aliquota_st'],
-                    'margem_valor_adicionado_st': res_st['mva_st']
-                })
 
-        # 3. DIFAL
-        if cfop.cfop_gera_difal:
-            difal_service = DIFALService(empresa_adapter, operacao_adapter)
-            res_difal = difal_service.calcular(base_calculo, icms_calculado_valor, cfop)
-            
-            if res_difal:
-                response_data.update({
-                    'valor_bc_uf_dest': res_difal['base_difal'],
-                    'valor_icms_uf_dest': res_difal['valor_difal'],
-                    'aliquota_interestadual': res_difal['aliquota_interestadual'],
-                    'aliquota_interna_dest': res_difal['aliquota_destino']
-                })
-                
+        logger.info(
+            "API calcular_impostos_cte ms_total=%.2f ms_fetch=%.2f keys=%s",
+            (time.perf_counter() - t0) * 1000,
+            (time.perf_counter() - t_fetch) * 1000,
+            sorted(list(response_data.keys())),
+        )
+
         return JsonResponse(response_data)
         
     except Exception as e:

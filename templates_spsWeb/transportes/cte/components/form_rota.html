@@ -28,37 +28,47 @@
             </button>
         </div>
         <div id="info_cidade_entrega" class="form-text text-primary"></div>
-        {% if form.cidade_entrega.errors %}<div class="text-danger small mt-1">{{ form.cidade_entrega.errors|striptags }}</div>{% endif %}
+        {% if form.cidade_entrega.errors %}<div class="text-danger small mt-1">{{ form.cidade_entrega.errors|striptags
+            }}</div>{% endif %}
     </div>
 
     <div class="col-md-3">
-        <label for="{{ form.peso_total.id_for_label }}" class="form-label fw-semibold" id="peso_total">{{ form.peso_total.label }}</label>
+        <label for="{{ form.peso_total.id_for_label }}" class="form-label fw-semibold" id="peso_total">{{
+            form.peso_total.label }}</label>
         {{ form.peso_total }}
     </div>
     <div class="col-md-3">
-        <label for="{{ form.pedagio.id_for_label }}" class="form-label fw-semibold" id="pedagio">{{ form.pedagio.label }}</label>
+        <label for="{{ form.pedagio.id_for_label }}" class="form-label fw-semibold" id="pedagio">{{ form.pedagio.label
+            }}</label>
         {{ form.pedagio }}
     </div>
     <div class="col-md-3">
-        <label for="{{ form.tarifa.id_for_label }}" class="form-label fw-semibold" id="tarifa">{{ form.tarifa.label }}</label>
+        <label for="{{ form.tarifa.id_for_label }}" class="form-label fw-semibold" id="tarifa">{{ form.tarifa.label
+            }}</label>
         {{ form.tarifa }}
     </div>
     <div class="col-md-3">
-        <label for="{{ form.frete_peso.id_for_label }}" class="form-label fw-semibold" id="frete_peso">{{ form.frete_peso.label }}</label>
+        <label for="{{ form.frete_peso.id_for_label }}" class="form-label fw-semibold" id="frete_peso">{{
+            form.frete_peso.label }}</label>
         {{ form.frete_peso }}
     </div>
     <div class="col-md-3">
-        <label for="{{ form.frete_valor.id_for_label }}" class="form-label fw-semibold" id="frete_valor">{{ form.frete_valor.label }}</label>
+        <label for="{{ form.frete_valor.id_for_label }}" class="form-label fw-semibold" id="frete_valor">{{
+            form.frete_valor.label }}</label>
         {{ form.frete_valor }}
     </div>
     <div class="col-md-3">
-        <label for="{{ form.total_valor.id_for_label }}" class="form-label fw-semibold" id="total_valor">{{ form.total_valor.label }}</label>
+        <label for="{{ form.total_valor.id_for_label }}" class="form-label fw-semibold" id="total_valor">{{
+            form.total_valor.label }}</label>
         {{ form.total_valor }}
     </div>
 
     <div class="col-12">
-        <label for="{{ form.outras_observacoes.id_for_label }}" class="form-label fw-semibold" id="outras_observacoes">{{ form.outras_observacoes.label }}</label>
-        {{ form.outras_observacoes }}
+        <label for="{{ form.observacoes.id_for_label }}" class="form-label fw-semibold" id="observacoes">{{
+            form.observacoes.label }}</label>
+        {{ form.observacoes }}
+        {% if form.observacoes.errors %}<div class="text-danger small mt-1">{{ form.observacoes.errors|striptags }}
+        </div>{% endif %}
     </div>
 </div>
 
@@ -162,5 +172,5 @@
         if (pedagioEl) pedagioEl.addEventListener("input", updateTotal);
         updateTotal();
     })();
-    
+
 </script>

@@ -3,7 +3,7 @@
 
 {% block title %}{% if form.instance.pk %}Editar Regra{% else %}Nova Regra{% endif %}{% endblock %}
 
-{% block content %}
+{% block cte_content %}
 <link rel="stylesheet" href="{% static 'css/form.css' %}">
 <div class="container py-4">
     <div class="card shadow-lg border-0">
@@ -12,6 +12,11 @@
                 <h5 class="mb-0">{% if form.instance.pk %}Editar Regra{% else %}Nova Regra de ICMS{% endif %}</h5>
             </div>
             <div class="card-body">
+                {% include 'components/form_errors.html' with form=form title='ICMS: corrija os campos destacados.' %}
+                {% include 'components/form_errors.html' with form=pis_cofins_form title='PIS/COFINS: corrija os campos
+                destacados.' %}
+                {% include 'components/form_errors.html' with form=ibs_cbs_form title='IBS/CBS: corrija os campos
+                destacados.' %}
                 <form method="post">
                     {% csrf_token %}
 
@@ -128,35 +133,166 @@
                             {{ form.csosn.errors }}
                         </div>
                     </div>
+                    <hr>
+                    <h6>PIS / COFINS</h6>
+
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label for="{{ pis_cofins_form.pis_cst.id_for_label }}" class="form-label">CST PIS</label>
+                            {{ pis_cofins_form.pis_cst }}
+                            {{ pis_cofins_form.pis_cst.errors }}
+                        </div>
+
+                        <div class="col-md-3">
+                            <label for="{{ pis_cofins_form.pis_aliquota.id_for_label }}" class="form-label">Alíquota PIS
+                                (%)</label>
+                            {{ pis_cofins_form.pis_aliquota }}
+                            {{ pis_cofins_form.pis_aliquota.errors }}
+                        </div>
+
+                        <div class="col-md-3">
+                            <label for="{{ pis_cofins_form.cofins_cst.id_for_label }}" class="form-label">CST
+                                COFINS</label>
+                            {{ pis_cofins_form.cofins_cst }}
+                            {{ pis_cofins_form.cofins_cst.errors }}
+                        </div>
+
+                        <div class="col-md-3">
+                            <label for="{{ pis_cofins_form.cofins_aliquota.id_for_label }}" class="form-label">Alíquota
+                                COFINS (%)</label>
+                            {{ pis_cofins_form.cofins_aliquota }}
+                            {{ pis_cofins_form.cofins_aliquota.errors }}
+                        </div>
+
+                        <div class="col-md-3">
+                            <div class="form-check mt-4">
+                                {{ pis_cofins_form.ativo }}
+                                <label class="form-check-label" for="{{ pis_cofins_form.ativo.id_for_label }}">
+                                    Ativo?
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr>
+                    <h6>IBS / CBS</h6>
+
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label for="{{ ibs_cbs_form.cst.id_for_label }}" class="form-label">CST IBS/CBS</label>
+                            {{ ibs_cbs_form.cst }}
+                            {{ ibs_cbs_form.cst.errors }}
+                        </div>
+
+                        <div class="col-md-3">
+                            <label for="{{ ibs_cbs_form.cclasstrib.id_for_label }}" class="form-label">Classificação
+                                Tributária</label>
+                            {{ ibs_cbs_form.cclasstrib }}
+                            {{ ibs_cbs_form.cclasstrib.errors }}
+                        </div>
+
+                        <div class="col-md-3">
+                            <label for="{{ ibs_cbs_form.aliquota_cbs.id_for_label }}" class="form-label">Alíquota CBS
+                                (%)</label>
+                            {{ ibs_cbs_form.aliquota_cbs }}
+                            {{ ibs_cbs_form.aliquota_cbs.errors }}
+                        </div>
+
+                        <div class="col-md-3">
+                            <label for="{{ ibs_cbs_form.reducao_cbs.id_for_label }}" class="form-label">Redução CBS
+                                (%)</label>
+                            {{ ibs_cbs_form.reducao_cbs }}
+                            {{ ibs_cbs_form.reducao_cbs.errors }}
+                        </div>
+
+                        <div class="col-md-3">
+                            <label for="{{ ibs_cbs_form.aliquota_ibs_uf.id_for_label }}" class="form-label">Alíquota IBS
+                                UF (%)</label>
+                            {{ ibs_cbs_form.aliquota_ibs_uf }}
+                            {{ ibs_cbs_form.aliquota_ibs_uf.errors }}
+                        </div>
+
+                        <div class="col-md-3">
+                            <label for="{{ ibs_cbs_form.reducao_ibs_uf.id_for_label }}" class="form-label">Redução IBS
+                                UF (%)</label>
+                            {{ ibs_cbs_form.reducao_ibs_uf }}
+                            {{ ibs_cbs_form.reducao_ibs_uf.errors }}
+                        </div>
+
+                        <div class="col-md-3">
+                            <label for="{{ ibs_cbs_form.aliquota_ibs_mun.id_for_label }}" class="form-label">Alíquota
+                                IBS Município (%)</label>
+                            {{ ibs_cbs_form.aliquota_ibs_mun }}
+                            {{ ibs_cbs_form.aliquota_ibs_mun.errors }}
+                        </div>
+
+                        <div class="col-md-3">
+                            <label for="{{ ibs_cbs_form.reducao_ibs_mun.id_for_label }}" class="form-label">Redução IBS
+                                Município (%)</label>
+                            {{ ibs_cbs_form.reducao_ibs_mun }}
+                            {{ ibs_cbs_form.reducao_ibs_mun.errors }}
+                        </div>
+
+                        <div class="col-md-3">
+                            <div class="form-check mt-4">
+                                {{ ibs_cbs_form.ativo }}
+                                <label class="form-check-label" for="{{ ibs_cbs_form.ativo.id_for_label }}">
+                                    Ativo?
+                                </label>
+                            </div>
+                        </div>
+                    </div>
 
                     <div class="mt-4 d-flex justify-content-end gap-2">
-                        <a href="{% url 'transportes:regra_list' slug=slug %}" class="btn btn-outline-danger">Cancelar</a>
+                        <a href="{% url 'transportes:regra_list' slug=slug %}"
+                            class="btn btn-outline-danger">Cancelar</a>
                         <button type="submit" class="btn btn-outline-primary">Salvar</button>
                     </div>
                 </form>
             </div>
         </div>
+    </div>
+</div>
 
-        <script>
-            document.addEventListener("DOMContentLoaded", function () {
-                const simplesEl = document.getElementById("{{ form.simples_nacional.id_for_label }}");
-                const cstWrapper = document.getElementById("cst-field-wrapper");
-                const csosnWrapper = document.getElementById("csosn-field-wrapper");
-                const cstEl = document.getElementById("{{ form.cst.id_for_label }}");
-                const csosnEl = document.getElementById("{{ form.csosn.id_for_label }}");
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const simplesEl = document.getElementById("{{ form.simples_nacional.id_for_label }}");
+        const cstWrapper = document.getElementById("cst-field-wrapper");
+        const csosnWrapper = document.getElementById("csosn-field-wrapper");
+        const cstEl = document.getElementById("{{ form.cst.id_for_label }}");
+        const csosnEl = document.getElementById("{{ form.csosn.id_for_label }}");
 
-                function refreshCstCsosn() {
-                    const isSimples = !!(simplesEl && simplesEl.checked);
+        function refreshCstCsosn() {
+            const isSimples = !!(simplesEl && simplesEl.checked);
 
-                    if (cstWrapper) cstWrapper.style.display = isSimples ? "none" : "";
-                    if (csosnWrapper) csosnWrapper.style.display = isSimples ? "" : "none";
+            if (cstWrapper) cstWrapper.style.display = isSimples ? "none" : "";
+            if (csosnWrapper) csosnWrapper.style.display = isSimples ? "" : "none";
 
-                    if (cstEl) cstEl.required = !isSimples;
-                    if (csosnEl) csosnEl.required = isSimples;
-                }
+            if (cstEl) cstEl.required = !isSimples;
+            if (csosnEl) csosnEl.required = isSimples;
+        }
 
-                if (simplesEl) simplesEl.addEventListener("change", refreshCstCsosn);
-                refreshCstCsosn();
+        if (simplesEl) simplesEl.addEventListener("change", refreshCstCsosn);
+        refreshCstCsosn();
+
+        document.querySelectorAll("ul.errorlist").forEach((ul) => {
+            const fieldEl = ul.previousElementSibling;
+            if (!fieldEl) return;
+            if (["INPUT", "SELECT", "TEXTAREA"].includes(fieldEl.tagName)) {
+                fieldEl.classList.add("is-invalid");
+            }
+        });
+
+        const formEl = document.querySelector("form");
+        if (formEl) {
+            formEl.addEventListener("submit", () => {
+                formEl.querySelectorAll("[required]").forEach((el) => {
+                    const isCheckbox = el.type === "checkbox";
+                    const empty = isCheckbox ? !el.checked : !String(el.value || "").trim();
+                    if (empty) el.classList.add("is-invalid");
+                });
             });
-        </script>
-        {% endblock %}
+        }
+    });
+</script>
+{% endblock %}

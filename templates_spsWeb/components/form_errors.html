@@ -1,0 +1,18 @@
+{% if form.errors %}
+<div class="alert alert-danger mb-3">
+    <div class="fw-semibold mb-2">
+        {% if title %}{{ title }}{% else %}Corrija os campos destacados antes de salvar.{% endif %}
+    </div>
+    <ul class="mb-0">
+        {% for error in form.non_field_errors %}
+        <li>{{ error }}</li>
+        {% endfor %}
+        {% for bf in form %}
+            {% for error in bf.errors %}
+            <li>{% if bf.label %}{{ bf.label }}: {% endif %}{{ error }}</li>
+            {% endfor %}
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+

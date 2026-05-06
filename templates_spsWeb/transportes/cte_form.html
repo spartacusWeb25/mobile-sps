@@ -147,12 +147,7 @@
     <div class="card-body p-4">
         <form method="post" novalidate id="cteForm">
             {% csrf_token %}
-
-            {% if form.non_field_errors %}
-            <div class="alert alert-danger">
-                {{ form.non_field_errors }}
-            </div>
-            {% endif %}
+            {% include 'components/form_errors.html' with form=form %}
 
             {# Carrega o componente do formulário baseado na aba ativa #}
             {% if active_tab == 'emissao' %}

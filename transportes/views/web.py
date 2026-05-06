@@ -52,8 +52,15 @@ class CteListView(CteBaseMixin, ListView):
     model = Cte
     template_name = 'transportes/cte_list.html'
     context_object_name = 'ctes'
-    ordering = ['id']
+    ordering = ['-numero', '-id']
     paginate_by = 50
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        ordering = self.get_ordering()
+        if ordering:
+            return qs.order_by(*ordering)
+        return qs.order_by("-numero", "-id")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -785,10 +792,9 @@ class CteTributacaoView(CteUpdateBaseView):
         return kwargs
 
     def get_success_url(self):
-        # Permanece na mesma tela para conferência dos cálculos
         slug = get_licenca_db_config(self.request)
-        messages.success(self.request, "Tributação salva e calculada com sucesso!")
-        return reverse('transportes:cte_tributacao', kwargs={'slug': slug, 'pk': self.object.pk})
+        messages.success(self.request, "Tributação salva com sucesso!")
+        return reverse('transportes:cte_list', kwargs={'slug': slug})
 
 class CteDocumentoView(CteUpdateBaseView):
     # Usa um form vazio para o CTE, pois só vamos mexer nos documentos

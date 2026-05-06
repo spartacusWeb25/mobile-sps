@@ -1,7 +1,66 @@
 from django import forms
-from transportes.models import RegraICMS
+from transportes.models import RegraICMS, RegraPISCOFINS, RegraIBSCBS
 from CFOP.models import CFOP
 from core.utils import get_licenca_db_config
+
+
+PIS_COFINS_CST_CHOICES = [
+    ("", "---------"),
+    ("01", "01 - Operação tributável com alíquota básica"),
+    ("02", "02 - Operação tributável com alíquota diferenciada"),
+    ("03", "03 - Operação tributável por unidade de medida"),
+    ("04", "04 - Operação monofásica"),
+    ("05", "05 - Substituição tributária"),
+    ("06", "06 - Alíquota zero"),
+    ("07", "07 - Isenta"),
+    ("08", "08 - Sem incidência"),
+    ("09", "09 - Suspensão"),
+    ("49", "49 - Outras operações de saída"),
+    ("50", "50 - Crédito vinculado exclusivamente à receita tributada"),
+    ("51", "51 - Crédito vinculado exclusivamente à receita não tributada"),
+    ("52", "52 - Crédito vinculado exclusivamente à receita de exportação"),
+    ("53", "53 - Crédito vinculado a receitas tributadas e não tributadas"),
+    ("54", "54 - Crédito vinculado a receitas tributadas e exportação"),
+    ("55", "55 - Crédito vinculado a receitas não tributadas e exportação"),
+    ("56", "56 - Crédito vinculado a receitas tributadas, não tributadas e exportação"),
+    ("60", "60 - Crédito presumido vinculado à receita tributada"),
+    ("61", "61 - Crédito presumido vinculado à receita não tributada"),
+    ("62", "62 - Crédito presumido vinculado à receita de exportação"),
+    ("63", "63 - Crédito presumido vinculado a receitas tributadas e não tributadas"),
+    ("64", "64 - Crédito presumido vinculado a receitas tributadas e exportação"),
+    ("65", "65 - Crédito presumido vinculado a receitas não tributadas e exportação"),
+    ("66", "66 - Crédito presumido vinculado a receitas tributadas, não tributadas e exportação"),
+    ("67", "67 - Crédito presumido - outras operações"),
+    ("70", "70 - Operação sem direito a crédito"),
+    ("71", "71 - Operação com isenção"),
+    ("72", "72 - Operação com suspensão"),
+    ("73", "73 - Operação com alíquota zero"),
+    ("74", "74 - Operação sem incidência"),
+    ("75", "75 - Operação por substituição tributária"),
+    ("98", "98 - Outras operações de entrada"),
+    ("99", "99 - Outras operações"),
+]
+
+IBS_CBS_CST_CHOICES = [
+    ("", "---------"),
+    ("000", "000 - Tributação integral"),
+    ("010", "010 - Tributação com alíquotas uniformes"),
+    ("011", "011 - Tributação com alíquotas uniformes reduzidas"),
+    ("200", "200 - Alíquota reduzida"),
+    ("210", "210 - Redução com redutor de base"),
+    ("220", "220 - Alíquota fixa"),
+    ("221", "221 - Alíquota fixa proporcional"),
+    ("222", "222 - Redução de alíquota fixa"),
+    ("400", "400 - Isenção"),
+    ("410", "410 - Imunidade e não incidência"),
+    ("510", "510 - Diferimento"),
+    ("550", "550 - Suspensão"),
+    ("620", "620 - Tributação monofásica"),
+    ("800", "800 - Transferência de crédito"),
+    ("810", "810 - Ajustes"),
+    ("820", "820 - Tributação em declaração de regime específico"),
+    ("830", "830 - Exclusão de base"),
+]
 
 ESTADOS_CHOICES = [
     ('AC', 'Acre'), ('AL', 'Alagoas'), ('AP', 'Amapá'), ('AM', 'Amazonas'),
@@ -120,7 +179,8 @@ class RegraICMSForm(forms.ModelForm):
 
         is_simples = bool(self.instance.simples_nacional) if getattr(self.instance, "pk", None) else False
         if self.data:
-            is_simples = self.data.get("simples_nacional") in {"on", "true", "True", "1"}
+            key = self.add_prefix("simples_nacional")
+            is_simples = self.data.get(key) in {"on", "true", "True", "1"}
 
         self.fields["csosn"].required = is_simples
         self.fields["cst"].required = not is_simples
@@ -155,3 +215,50 @@ class RegraICMSForm(forms.ModelForm):
             cleaned_data["csosn"] = None
 
         return cleaned_data
+
+class RegraPISCOFINSForm(forms.ModelForm):
+    pis_cst = forms.ChoiceField(
+        choices=PIS_COFINS_CST_CHOICES,
+        required=True,
+        widget=forms.Select(attrs={"class": "form-select"}),
+        label="CST PIS",
+    )
+
+    cofins_cst = forms.ChoiceField(
+        choices=PIS_COFINS_CST_CHOICES,
+        required=True,
+        widget=forms.Select(attrs={"class": "form-select"}),
+        label="CST COFINS",
+    )
+
+    class Meta:
+        model = RegraPISCOFINS
+        exclude = ["empresa", "uf_origem", "uf_destino", "cfop", "simples_nacional"]
+        widgets = {
+            "pis_aliquota": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
+            "cofins_aliquota": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
+            "ativo": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+        }
+
+
+class RegraIBSCBSForm(forms.ModelForm):
+    cst = forms.ChoiceField(
+        choices=IBS_CBS_CST_CHOICES,
+        required=True,
+        widget=forms.Select(attrs={"class": "form-select"}),
+        label="CST IBS/CBS",
+    )
+
+    class Meta:
+        model = RegraIBSCBS
+        exclude = ["empresa", "uf_origem", "uf_destino", "cfop"]
+        widgets = {
+            "cclasstrib": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ex: 000001"}),
+            "aliquota_cbs": forms.NumberInput(attrs={"class": "form-control", "step": "0.0001"}),
+            "aliquota_ibs_uf": forms.NumberInput(attrs={"class": "form-control", "step": "0.0001"}),
+            "aliquota_ibs_mun": forms.NumberInput(attrs={"class": "form-control", "step": "0.0001"}),
+            "reducao_cbs": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
+            "reducao_ibs_uf": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
+            "reducao_ibs_mun": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
+            "ativo": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+        }
