@@ -1,6 +1,6 @@
-{% extends 'base.html' %}
+{% extends 'processos/layouts/processos_base.html' %}
 {% load static %}
-{% block content %}
+{% block processos_css %}
 <style>
 /* ── BASE ───────────────────────────────────────────────────── */
 .processo-card {
@@ -169,7 +169,9 @@
 [data-bs-theme="light"] .assinatura-card    { background: var(--bs-tertiary-bg); border: 1px solid var(--bs-border-color); }
 [data-bs-theme="light"] .assinatura-title   { color: var(--bs-secondary-color); }
 </style>
+{% endblock %}
 
+{% block processos_content %}
 <div class="container py-4">
 <div class="processo-card card p-4">
 
@@ -198,52 +200,54 @@
 
   <form method="post" action="{% url 'processos:salvar_checklist' slug=slug pk=processo.id %}">
     {% csrf_token %}
-    <table class="checklist-table">
-      <thead>
-        <tr>
-          <th style="width:44%">Item</th>
-          <th style="width:10%">Obrigatório</th>
-          <th style="width:15%">Resposta</th>
-          <th>Observação</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for r in respostas %}
-        <tr>
-          <td class="item-desc">{{ r.pchr_item.chit_desc }}</td>
-          <td>
-            {% if r.pchr_item.chit_obri %}
-              <span class="badge-obri sim">Sim</span>
-            {% else %}
-              <span class="badge-obri nao">Não</span>
-            {% endif %}
-          </td>
-          <td>
-            <select name="resposta_{{ r.pchr_item.id }}"
-              class="select-resposta {% if r.pchr_resp == 'SIM' %}sim{% elif r.pchr_resp == 'NAO' %}nao{% elif r.pchr_resp == 'NA' %}na{% endif %}"
-              onchange="colorSelect(this)">
-              <option value="">--</option>
-              <option value="SIM" {% if r.pchr_resp == 'SIM' %}selected{% endif %}>SIM</option>
-              <option value="NAO" {% if r.pchr_resp == 'NAO' %}selected{% endif %}>NÃO</option>
-              <option value="NA"  {% if r.pchr_resp == 'NA'  %}selected{% endif %}>N/A</option>
-            </select>
-          </td>
-          <td>
-            <input class="input-obs" type="text"
-              name="observacao_{{ r.pchr_item.id }}"
-              value="{{ r.pchr_obse|default:'' }}"
-              placeholder="Observação...">
-          </td>
-        </tr>
-        {% empty %}
-        <tr>
-          <td colspan="4" class="text-center py-4" style="font-size:14px; color: var(--bs-secondary-color);">
-            Nenhum item de checklist encontrado para este tipo de processo.
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div class="table-responsive">
+      <table class="checklist-table">
+        <thead>
+          <tr>
+            <th style="width:44%">Item</th>
+            <th style="width:10%">Obrigatório</th>
+            <th style="width:15%">Resposta</th>
+            <th>Observação</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in respostas %}
+          <tr>
+            <td class="item-desc">{{ r.pchr_item.chit_desc }}</td>
+            <td>
+              {% if r.pchr_item.chit_obri %}
+                <span class="badge-obri sim">Sim</span>
+              {% else %}
+                <span class="badge-obri nao">Não</span>
+              {% endif %}
+            </td>
+            <td>
+              <select name="resposta_{{ r.pchr_item.id }}"
+                class="select-resposta {% if r.pchr_resp == 'SIM' %}sim{% elif r.pchr_resp == 'NAO' %}nao{% elif r.pchr_resp == 'NA' %}na{% endif %}"
+                onchange="colorSelect(this)">
+                <option value="">--</option>
+                <option value="SIM" {% if r.pchr_resp == 'SIM' %}selected{% endif %}>SIM</option>
+                <option value="NAO" {% if r.pchr_resp == 'NAO' %}selected{% endif %}>NÃO</option>
+                <option value="NA"  {% if r.pchr_resp == 'NA'  %}selected{% endif %}>N/A</option>
+              </select>
+            </td>
+            <td>
+              <input class="input-obs" type="text"
+                name="observacao_{{ r.pchr_item.id }}"
+                value="{{ r.pchr_obse|default:'' }}"
+                placeholder="Observação...">
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="4" class="text-center py-4" style="font-size:14px; color: var(--bs-secondary-color);">
+              Nenhum item de checklist encontrado para este tipo de processo.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
 
     <div class="action-bar">
       <button type="submit" class="btn btn-outline-primary d-inline-flex align-items-center gap-2">

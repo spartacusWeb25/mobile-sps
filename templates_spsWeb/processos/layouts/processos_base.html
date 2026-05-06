@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/form.css' %}">
+<style>
+    .processos-layout {
+        display: flex;
+        gap: 24px;
+    }
+
+    .processos-sidebar {
+        width: 280px;
+        flex-shrink: 0;
+    }
+
+    .processos-content {
+        flex: 1;
+        min-width: 0;
+    }
+
+    @media (max-width: 991px) {
+
+        .processos-layout {
+            flex-direction: column;
+        }
+
+        .processos-sidebar {
+            width: 100%;
+        }
+    }
+</style>
+
+{% block processos_css %}{% endblock %}
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid py-4">
+
+    <div class="d-lg-none mb-3">
+        {% with slug=slug|default:view.kwargs.slug %}
+        {% include 'processos/partials/sidebar_processos.html' with actions_only=True %}
+        {% endwith %}
+    </div>
+
+    <div class="processos-layout">
+
+        <aside class="processos-sidebar d-none d-lg-block">
+            {% with slug=slug|default:view.kwargs.slug %}
+            {% include 'processos/partials/sidebar_processos.html' %}
+            {% endwith %}
+        </aside>
+
+        <main class="processos-content">
+            {% block processos_content %}
+            {% endblock %}
+        </main>
+
+    </div>
+
+</div>
+
+{% endblock %}

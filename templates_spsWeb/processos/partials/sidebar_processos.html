@@ -1,0 +1,78 @@
+{% if actions_only %}
+<div class="processos-mobile-actions card shadow-sm border-0">
+  <div class="card-body p-2">
+    <div class="row g-2 row-cols-2">
+      <div class="col">
+        <a class="btn btn-sm btn-outline-primary w-100 text-start" href="{% url 'processos:tipo_criar' slug=slug %}">
+          <i class="bi bi-plus-circle"></i> Novo Tipo
+        </a>
+      </div>
+      <div class="col">
+        <a class="btn btn-sm btn-outline-danger w-100 text-start" href="{% url 'processos:modelo_criar' slug=slug %}">
+          <i class="bi bi-plus-square"></i> Novo Modelo
+        </a>
+      </div>
+      <div class="col">
+        <a class="btn btn-sm btn-outline-info w-100 text-start" href="{% url 'processos:item_criar' slug=slug %}">
+          <i class="bi bi-list-check"></i> Adicionar Item
+        </a>
+      </div>
+      <div class="col">
+        <a class="btn btn-sm btn-outline-secondary w-100 text-start" href="{% url 'processos:lista' slug=slug %}">
+          <i class="bi bi-arrow-left-right"></i> Ir para Processos
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% else %}
+<div class="processos-sidebar card shadow-sm border-0">
+  <div class="card-body p-3">
+
+    <h6 class="fw-bold mb-3">
+      <i class="bi bi-diagram-3"></i> Processos
+    </h6>
+
+    <div class="d-grid gap-2">
+      <a class="btn btn-sm btn-outline-primary text-start" href="{% url 'processos:tipo_criar' slug=slug %}">
+        <i class="bi bi-plus-circle"></i> Novo Tipo
+      </a>
+
+      <a class="btn btn-sm btn-outline-danger text-start" href="{% url 'processos:modelo_criar' slug=slug %}">
+        <i class="bi bi-plus-square"></i> Novo Modelo
+      </a>
+
+      <a class="btn btn-sm btn-outline-info text-start" href="{% url 'processos:item_criar' slug=slug %}">
+        <i class="bi bi-list-check"></i> Adicionar Item
+      </a>
+
+      <a class="btn btn-sm btn-outline-secondary text-start" href="{% url 'processos:lista' slug=slug %}">
+        <i class="bi bi-arrow-left-right"></i> Ir para Processos
+      </a>
+    </div>
+
+    <hr>
+
+    <small class="text-muted fw-bold">Tipos</small>
+    <div class="mt-2 small">
+      {% for t in tipos %}
+      <div class="mb-1">{{ t.prot_codi }} - {{ t.prot_nome }}</div>
+      {% empty %}
+      <div class="text-muted">Sem tipos</div>
+      {% endfor %}
+    </div>
+
+    <hr>
+
+    <small class="text-muted fw-bold">Modelos</small>
+    <div class="mt-2 small">
+      {% for m in modelos %}
+      <div class="mb-1">{{ m.chmo_nome }} <span class="text-muted">v{{ m.chmo_vers }}</span></div>
+      {% empty %}
+      <div class="text-muted">Sem modelos</div>
+      {% endfor %}
+    </div>
+
+  </div>
+</div>
+{% endif %}

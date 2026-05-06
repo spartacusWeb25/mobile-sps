@@ -1,7 +1,6 @@
-{% extends 'base.html' %}
+{% extends 'processos/layouts/processos_base.html' %}
 {% load static %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'css/form.css' %}?v=20260313">{% endblock %}
-{% block content %}
+{% block processos_content %}
 <div class="container page-container">
   <div class="page-header-custom"><h3 class="page-title">Novo Processo</h3></div>
   <form method="post" class="form-section">{% csrf_token %}
