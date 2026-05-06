@@ -18,6 +18,7 @@ class ProdutoSerializer(BancoContextMixin, serializers.ModelSerializer):
     prod_cera_m2cx = serializers.SerializerMethodField()
     prod_cera_pccx = serializers.SerializerMethodField()
     prod_cera_kgcx = serializers.SerializerMethodField()
+    prod_cera_m2pallet = serializers.SerializerMethodField()
     lote_atual = serializers.SerializerMethodField()
     lote_data_fabr = serializers.SerializerMethodField()
     lote_data_venc = serializers.SerializerMethodField()
@@ -69,6 +70,10 @@ class ProdutoSerializer(BancoContextMixin, serializers.ModelSerializer):
         """Retorna kg/caixa de forma segura"""
         return self.safe_decimal_conversion(getattr(obj, 'prod_cera_kgcx', None), Decimal('0.00'))
 
+    def get_prod_cera_m2pallet(self, obj):
+        """Retorna m²/pallet de forma segura"""
+        return self.safe_decimal_conversion(getattr(obj, 'prod_cera_m2pallet', None), Decimal('0.00'))
+
     def _ultimo_lote(self, obj):
         banco = self.context.get("using") or self.context.get("banco")
         if not banco:
@@ -101,7 +106,7 @@ class ProdutoSerializer(BancoContextMixin, serializers.ModelSerializer):
     def to_internal_value(self, data):
         """Normaliza entradas antes da validação de campo (blank -> None)."""
         decimal_fields = [
-            'prod_cera_m2cx', 'prod_cera_pccx', 'prod_cera_kgcx',
+            'prod_cera_m2cx', 'prod_cera_pccx', 'prod_cera_kgcx', 'prod_cera_m2pallet',
             # Campos opcionais que podem vir em requests
             'preco_vista', 'preco_prazo', 'custo', 'saldo',
             'peso_bruto', 'peso_liquido', 'valor_total_estoque',
@@ -125,7 +130,7 @@ class ProdutoSerializer(BancoContextMixin, serializers.ModelSerializer):
         
         # Converter strings vazias em None para todos os campos decimais possíveis
         decimal_fields = [
-            'prod_cera_m2cx', 'prod_cera_pccx', 'prod_cera_kgcx',
+            'prod_cera_m2cx', 'prod_cera_pccx', 'prod_cera_kgcx', 'prod_cera_m2pallet',
             # Campos de preço que podem vir no request
             'preco_vista', 'preco_prazo', 'custo', 'saldo',
             'peso_bruto', 'peso_liquido', 'valor_total_estoque',
@@ -248,6 +253,13 @@ class ProdutoSerializer(BancoContextMixin, serializers.ModelSerializer):
         except Exception:
             validated_data['prod_cera_kgcx'] = None
 
+        try:
+            raw_m2pallet = self.initial_data.get('prod_cera_m2pallet', None)
+            if raw_m2pallet not in (None, ''):
+                validated_data['prod_cera_m2pallet'] = Decimal(str(raw_m2pallet).replace(',', '.'))
+        except Exception:
+            validated_data['prod_cera_m2pallet'] = None
+
         produto = Produtos.objects.using(banco).create(**validated_data)
 
         # Cria preços se veio no contexto
@@ -312,6 +324,17 @@ class ProdutoSerializer(BancoContextMixin, serializers.ModelSerializer):
             except Exception:
                 validated_data['prod_cera_kgcx'] = None
                 instance.prod_cera_kgcx = None
+
+        raw_m2pallet = self.initial_data.get('prod_cera_m2pallet', None)
+        if raw_m2pallet == '':
+            validated_data['prod_cera_m2pallet'] = None
+            instance.prod_cera_m2pallet = None
+        elif raw_m2pallet is not None:
+            try:
+                validated_data['prod_cera_m2pallet'] = Decimal(str(raw_m2pallet).replace(',', '.'))
+            except Exception:
+                validated_data['prod_cera_m2pallet'] = None
+                instance.prod_cera_m2pallet = None
 
         from ..models import Produtos
         Produtos.objects.using(banco).filter(
