@@ -46,6 +46,7 @@ class PedidoCriarService:
                     cliente_id=pedido.pedi_clie,
                     total_liquido_sem_credito=total_liquido_sem_credito,
                     valor_desejado=credito_desejado,
+                    excluir_pedido=pedido.pedi_nume,
                 )
 
             pedido.pedi_cred = credito_aplicado

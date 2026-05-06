@@ -46,6 +46,7 @@ class OrcamentoCriarService:
                     cliente_id=orcamento.orca_clie,
                     total_liquido_sem_credito=total_liquido_sem_credito,
                     valor_desejado=credito_desejado,
+                    excluir_orcamento=orcamento.orca_nume,
                 )
 
             orcamento.orca_cred = credito_aplicado

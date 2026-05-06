@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% block content %}
+{% load finance_tags %}
 <style>
   :root {
     --bg: #151925;
@@ -83,7 +84,8 @@
       <a class="btn btn-outline-secondary btn-sm" href="{% url 'PisosWeb:pedidos_pisos_listar' slug=slug %}">Listar</a>
       <a class="btn btn-outline-primary btn-sm"
         href="{% url 'PisosWeb:pedidos_pisos_editar' slug=slug pk=pedido.pedi_nume %}">Editar</a>
-      <a class="btn btn-outline-dark btn-sm" target="_blank" href="{% url 'PisosWeb:pedidos_pisos_imprimir' slug=slug pk=pedido.pedi_nume %}">Imprimir</a>
+      <a class="btn btn-outline-dark btn-sm" target="_blank"
+        href="{% url 'PisosWeb:pedidos_pisos_imprimir' slug=slug pk=pedido.pedi_nume %}">Imprimir</a>
     </div>
   </div>
 
@@ -98,13 +100,34 @@
       <div class="col-12 col-lg-4">
         <div class="cardx">
           <div class="label">Total</div>
-          <div class="value">{{ pedido.pedi_tota|default:"—" }}</div>
+          <div class="value">{{ pedido.pedi_tota|default:0|brl }}</div>
         </div>
       </div>
       <div class="col-12 col-lg-4">
         <div class="cardx">
           <div class="label">Orçamento</div>
           <div class="value">{{ pedido.pedi_orca|default:"—" }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+      <div class="col-12 col-lg-4">
+        <div class="cardx">
+          <div class="label">Desconto</div>
+          <div class="value">{{ pedido.pedi_desc|default:0|brl }}</div>
+        </div>
+      </div>
+      <div class="col-12 col-lg-4">
+        <div class="cardx">
+          <div class="label">Frete</div>
+          <div class="value">{{ pedido.pedi_fret|default:0|brl }}</div>
+        </div>
+      </div>
+      <div class="col-12 col-lg-4">
+        <div class="cardx">
+          <div class="label">Crédito aplicado</div>
+          <div class="value">{{ pedido.pedi_cred|default:0|brl }}</div>
         </div>
       </div>
     </div>

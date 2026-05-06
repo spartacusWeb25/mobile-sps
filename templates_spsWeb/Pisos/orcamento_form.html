@@ -616,6 +616,12 @@
   const URL_CALCULAR = "{% url 'PisosWeb:api_calcular_item' slug=slug %}";
   const CSRF = "{{ csrf_token }}";
   const URL_CREDITO = `/api/${SLUG}/pisos/credito-troca/`;
+  const EXCLUIR_ORCAMENTO = "{% if orcamento %}{{ orcamento.orca_nume }}{% endif %}";
+  const ORCAMENTO_STAT = "{% if orcamento %}{{ orcamento.orca_stat }}{% endif %}";
+
+  function orcamentoExportado() {
+    return String(ORCAMENTO_STAT || '').trim() === '2';
+  }
 
   function fmtBRL(v) {
     const n = parseNumberBR(v);
@@ -916,6 +922,7 @@
     }
     try {
       const qs = new URLSearchParams({ cliente: clie, empresa, filial });
+      if (EXCLUIR_ORCAMENTO) qs.set('excluir_orcamento', EXCLUIR_ORCAMENTO);
       const resp = await fetch(`${URL_CREDITO}?${qs.toString()}`, { headers: { 'Accept': 'application/json' } });
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const data = await resp.json();
@@ -1122,14 +1129,14 @@
 
     setupAutocomplete('cliente_nome', 'id_orca_clie', URL_AUTO_CLIENTES, async () => {
       await carregarCreditoCliente();
-      aplicarCreditoAuto();
+      if (!orcamentoExportado()) aplicarCreditoAuto();
     });
     prefillAutocomplete('cliente_nome', 'id_orca_clie', URL_AUTO_CLIENTES, async () => {
       await carregarCreditoCliente();
       const credAtual = parseNumberBR(document.getElementById('id_orca_cred')?.value);
       const chk = document.getElementById('usar-credito');
       if (chk) chk.checked = credAtual > 0;
-      aplicarCreditoAuto();
+      if (!orcamentoExportado()) aplicarCreditoAuto();
     });
 
     setupAutocomplete('vendedor_nome', 'id_orca_vend', URL_AUTO_VENDEDORES);
@@ -1149,6 +1156,10 @@
     });
 
     document.getElementById('id_orca_desc')?.addEventListener('input', () => {
+      if (orcamentoExportado()) {
+        atualizarTotais();
+        return;
+      }
       if (document.getElementById('usar-credito')?.checked) {
         aplicarCreditoAuto();
       } else {
@@ -1156,13 +1167,20 @@
       }
     });
     document.getElementById('id_orca_fret')?.addEventListener('input', () => {
+      if (orcamentoExportado()) {
+        atualizarTotais();
+        return;
+      }
       if (document.getElementById('usar-credito')?.checked) {
         aplicarCreditoAuto();
       } else {
         atualizarTotais();
       }
     });
-    document.getElementById('usar-credito')?.addEventListener('change', () => aplicarCreditoAuto());
+    document.getElementById('usar-credito')?.addEventListener('change', () => {
+      if (orcamentoExportado()) return;
+      aplicarCreditoAuto();
+    });
     setupAddItem();
     bindRemoveButtons();
     atualizarTotais();
@@ -1170,6 +1188,11 @@
       const credAtual = parseNumberBR(document.getElementById('id_orca_cred')?.value);
       const chk = document.getElementById('usar-credito');
       if (chk) chk.checked = credAtual > 0;
+      if (orcamentoExportado()) {
+        if (chk) chk.disabled = true;
+        atualizarTotais();
+        return;
+      }
       if (chk && chk.checked) aplicarCreditoAuto();
       atualizarTotais();
     });

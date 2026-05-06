@@ -38,23 +38,21 @@ def editar_pedido_pisos(request, slug, pk):
 
     if request.method == "POST" and form.is_valid() and formset.is_valid():
         itens = []
-        for i, f in enumerate(formset):
-            print(f"Form {i} initial:", f.initial)
-            print(f"Form {i} item_prod_nome value:", f['item_prod_nome'].value())
-            item = {}
-            item["item_nume"] = i + 1
+        for f in formset:
             if not f.cleaned_data or f.cleaned_data.get("DELETE"):
                 continue
             item = {k: v for k, v in f.cleaned_data.items() if k != "DELETE"}
             if item.get("item_prod"):
+                if not item.get("item_ambi"):
+                    item["item_ambi"] = len(itens) + 1
                 itens.append(item)
 
-        payload = {**form.cleaned_data, "itens_input": itens}
         try:
             PedidoAtualizarService().executar(
                 banco=banco,
-                pk=pk,
-                dados=payload,
+                pedido=pedido,
+                dados=form.cleaned_data,
+                itens=itens,
             )
             messages.success(request, f"Pedido {pk} atualizado com sucesso.")
             return redirect("PisosWeb:pedidos_pisos_visualizar", slug=slug, pk=pk)

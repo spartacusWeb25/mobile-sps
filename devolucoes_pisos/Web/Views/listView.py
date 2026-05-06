@@ -3,6 +3,7 @@ from django.views.generic import ListView
 from core.utils import get_db_from_slug
 from Entidades.models import Entidades
 from Pisos.models import Pedidospisos
+from Pisos.services.credito_troca_service import CreditoTrocaPisosService
 from devolucoes_pisos.models import Creditotrocas
 from devolucoes_pisos.services.troca_devolucao_service import DevolucaoPedidoPisoService
 
@@ -55,11 +56,29 @@ class DevolucoesPisosListView(ListView):
             creditos = Creditotrocas.objects.using(self.banco).filter(cred_id__in=creditos_ids)
             creditos_map = {c.cred_id: c for c in creditos}
 
+        resumo_credito_por_cliente = {}
+        for cliente_id in clientes_ids:
+            try:
+                resumo_credito_por_cliente[int(cliente_id)] = CreditoTrocaPisosService.calcular_resumo(
+                    banco=self.banco,
+                    empresa=self.empresa,
+                    filial=self.filial,
+                    cliente_id=int(cliente_id),
+                )
+            except Exception:
+                continue
+
         for d in devolucoes:
             p = pedido_map.get(getattr(d, "devo_pedi", None))
             d.pedido = p
             if p:
                 d.cliente_nome = nomes_clientes.get(p.pedi_clie, "")
+                resumo = resumo_credito_por_cliente.get(int(p.pedi_clie or 0))
+                if resumo:
+                    d.credito_total = resumo.get("total_creditos")
+                    d.credito_usado_pedidos = resumo.get("total_usado_pedidos")
+                    d.credito_usado_orcamentos = resumo.get("total_usado_orcamentos")
+                    d.credito_disponivel = resumo.get("total_disponivel")
             credito = creditos_map.get(getattr(d, "devo_cred", None))
             d.credito_valor = getattr(credito, "cred_fina_valo", None) if credito else None
 
@@ -71,4 +90,3 @@ class DevolucoesPisosListView(ListView):
             "devo_pedi": self.request.GET.get("devo_pedi", ""),
         }
         return context
-

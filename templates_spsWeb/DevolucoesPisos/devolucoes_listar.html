@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load finance_tags %}
 
 {% block title %}Trocas/Devoluções (Pisos){% endblock %}
 {% load static %}
@@ -39,7 +40,13 @@
             <i class="bi bi-person me-1"></i> Cliente: {{ d.cliente_nome|default:'' }}
           </div>
           <div class="small mt-1">
-            <i class="bi bi-cash-coin me-1"></i> Crédito: R$ {{ d.credito_valor|default_if_none:"0,00" }}
+            <i class="bi bi-cash-coin me-1"></i> Crédito (troca/devolução): {{ d.credito_valor|default_if_none:0|brl }}
+          </div>
+          <div class="small mt-1">
+            <i class="bi bi-wallet2 me-1"></i> Crédito (cliente): Total {{ d.credito_total|default:0|brl }} | Usado Pedidos {{ d.credito_usado_pedidos|default:0|brl }} | Usado Orçamentos {{ d.credito_usado_orcamentos|default:0|brl }}
+          </div>
+          <div class="small mt-1">
+            <i class="bi bi-check2-circle me-1"></i> Disponível (cliente): {{ d.credito_disponivel|default:0|brl }}
           </div>
           <div class="mt-3 d-flex justify-content-end gap-2">
             <a class="btn btn-sm btn-outline-primary" href="{% url 'DevolucoesPisosWeb:devolucao_pisos_editar' slug=slug pk=d.devo_pedi %}">Editar</a>
@@ -56,4 +63,3 @@
   </div>
 </div>
 {% endblock %}
-

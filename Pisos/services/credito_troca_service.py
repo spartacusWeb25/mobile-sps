@@ -41,6 +41,7 @@ class CreditoTrocaPisosService:
             orca_fili=filial,
             orca_clie=int(cliente_id),
         )
+        qs_orc = qs_orc.exclude(orca_stat=2)
         if excluir_orcamento is not None:
             qs_orc = qs_orc.exclude(orca_nume=int(excluir_orcamento))
         total_usado_orc = qs_orc.aggregate(v=Sum("orca_cred")).get("v") or Decimal("0.00")

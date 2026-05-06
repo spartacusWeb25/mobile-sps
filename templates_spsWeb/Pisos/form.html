@@ -718,6 +718,7 @@
   const URL_AUTO_VENDEDORES = "{% url 'PisosWeb:autocomplete_vendedores' slug=slug %}";
   const URL_AUTO_PRODUTOS = "{% url 'PisosWeb:autocomplete_produtos' slug=slug %}";
   const URL_CREDITO = `/api/${SLUG}/pisos/credito-troca/`;
+  const EXCLUIR_PEDIDO = "{% if pedido %}{{ pedido.pedi_nume }}{% endif %}";
 
   /* ── Utilitários ── */
   function fmtBRL(v) {
@@ -946,6 +947,7 @@
     }
     try {
       const qs = new URLSearchParams({ cliente: clie, empresa, filial });
+      if (EXCLUIR_PEDIDO) qs.set('excluir_pedido', EXCLUIR_PEDIDO);
       const resp = await fetch(`${URL_CREDITO}?${qs.toString()}`, { headers: { 'Accept': 'application/json' } });
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const data = await resp.json();
