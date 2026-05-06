@@ -306,7 +306,8 @@
           <label for="username" class="form-label d-flex align-items-center gap-2">
             <i class="bi bi-person-circle"></i><span>Usuário</span>
           </label>
-          <input type="text" class="form-control" id="username" name="username" placeholder="seu usuário" required>
+          <input type="text" class="form-control" id="username" name="username" placeholder="seu usuário"
+            autocomplete="username" autocapitalize="none" spellcheck="false" required>
         </div>
         <div class="mb-3">
           <label for="password" class="form-label d-flex align-items-center gap-2">
@@ -413,7 +414,7 @@
 
     const docu = document.getElementById('docu').value.trim();
     const docuDigits = (docu || '').replace(/\D/g, '');
-    const username = document.getElementById('username').value.trim();
+    const username = document.getElementById('username').value.trim().replace(/\s+/g, ' ');
     const password = document.getElementById('password').value;
 
     setLoading(true);

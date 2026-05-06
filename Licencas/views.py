@@ -32,6 +32,7 @@ from django.db.models import Q
 from django.db import DatabaseError
 from django.conf import settings
 from django.core import signing
+from django.db.models.functions import Lower, Trim
 from core.utils import get_db_from_slug
 from core.cache_service import build_cache_key, cache_get_or_set
 from django.core.cache import cache
@@ -182,7 +183,37 @@ class LoginView(APIView):
 
         user_start = time.time()
         try:
-            usuario = Usuarios.objects.using(banco).get(usua_nome__iexact=username)
+            username_raw = str(username or "")
+            username_norm = " ".join(username_raw.strip().split()).lower()
+
+            usuario = None
+            try:
+                usuario = (
+                    Usuarios.objects.using(banco)
+                    .annotate(_usua_nome_norm=Lower(Trim("usua_nome")))
+                    .filter(_usua_nome_norm=username_norm)
+                    .first()
+                )
+            except Exception:
+                usuario = None
+
+            if not usuario:
+                usuario = (
+                    Usuarios.objects.using(banco)
+                    .filter(usua_nome__iexact=username_raw.strip())
+                    .first()
+                )
+
+            if not usuario:
+                logger.warning(
+                    "[LOGIN][%s] usuário não encontrado username_norm=%s username_raw=%s banco=%s slug=%s",
+                    request_id,
+                    username_norm,
+                    username_raw.strip(),
+                    banco,
+                    slug_from_docu,
+                )
+                return Response({'error': 'Usuário não encontrado.'}, status=404)
         except Usuarios.DoesNotExist:
             return Response({'error': 'Usuário não encontrado.'}, status=404)
         except Exception as e:
