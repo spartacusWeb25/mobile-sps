@@ -1,7 +1,7 @@
-{% extends 'base.html' %}
+{% extends 'ControleDeVisitas/parcials/crm_base.html' %}
 {% load static %}
 
-{% block content %}
+{% block crm_content %}
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
@@ -231,209 +231,215 @@
     </div>
 
     <!-- Filtros -->
-    <div class="card filter-card mb-4">
-        <div class="card-header border-bottom-0 pt-4 pb-0">
-            <h5 class="mb-0 fw-bold text-secondary"><i class="bi bi-funnel me-2"></i>Filtros de Pesquisa</h5>
-        </div>
-        <div class="card-body">
-            <form id="filterForm" class="row g-3">
-                <div class="col-md-3">
-                    <label for="empresa" class="form-label">Empresa</label>
-                    <select class="form-select" id="empresa" name="pedi_empr">
-                        <option value="">Todas</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label for="filial" class="form-label">Filial</label>
-                    <select class="form-select" id="filial" name="pedi_fili">
-                        <option value="">Todas</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label for="dataInicio" class="form-label">Data Início</label>
-                    <input type="date" class="form-control" id="dataInicio" name="data_inicial">
-                </div>
-                <div class="col-md-3">
-                    <label for="dataFim" class="form-label">Data Fim</label>
-                    <input type="date" class="form-control" id="dataFim" name="data_final">
-                </div>
-                <div class="col-md-3">
-                    <label for="cliente" class="form-label">Cliente</label>
-                    <input type="text" class="form-control" id="cliente" name="cliente_nome"
-                        placeholder="Nome do cliente">
-                </div>
-                <div class="col-md-3">
-                    <label for="vendedor" class="form-label">Vendedor</label>
-                    <input type="text" class="form-control" id="vendedor" name="vendedor_nome"
-                        placeholder="Nome do vendedor">
-                </div>
-                <div class="col-md-3">
-                    <label for="item" class="form-label">Item</label>
-                    <input type="text" class="form-control" id="item" name="item_nome" placeholder="Nome do produto">
-                </div>
-                <div class="col-12 text-end mt-4">
-                    <button type="button" class="btn btn-light me-2 text-secondary border" onclick="limparFiltros()">
-                        <i class="bi bi-x-circle me-1"></i> Limpar
-                    </button>
-                    <button type="submit" class="btn btn-primary px-4"><i class="bi bi-search me-1"></i>
-                        Filtrar</button>
-                </div>
-            </form>
-        </div>
+    <div class="col-12 d-flex justify-content-end">
+        <button class="btn btn-outline-info btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#filtroDash"
+            aria-expanded="true" aria-controls="filtroDash">
+            <i class="fas fa-sliders-h me-1"></i> Filtros
+        </button>
     </div>
-
-    <!-- Loading indicator -->
-    <div id="loadingIndicator" class="text-center my-4" style="display: none;">
-        <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Carregando...</span>
-        </div>
-        <p class="mt-2">Carregando dados...</p>
+</div>
+<div class="collapse show" id="filtroDash">
+    <div class="card-header border-bottom-0 pt-4 pb-0">
+        <h5 class="mb-0 fw-bold text-secondary"><i class="bi bi-funnel me-2"></i>Filtros de Pesquisa</h5>
     </div>
-
-    <!-- KPIs -->
-    <div class="row mb-4 g-3">
-        <div class="col-md-3">
-            <div class="card kpi-card h-100 border-start border-4 border-primary">
-                <div class="card-body p-3">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="text-uppercase text-muted small fw-bold mb-1" style="font-size: 0.75rem;">Total
-                                Pedidos</h6>
-                            <h4 class="fw-bold text-body mb-0" id="kpiQtd">0</h4>
-                        </div>
-                        <div class="bg-primary bg-opacity-10 p-2 rounded-circle">
-                            <i class="bi bi-receipt fs-5 text-primary"></i>
-                        </div>
-                    </div>
-                </div>
+    <div class="card-body">
+        <form id="filterForm" class="row g-3">
+            <div class="col-md-3">
+                <label for="empresa" class="form-label">Empresa</label>
+                <select class="form-select" id="empresa" name="pedi_empr">
+                    <option value="">Todas</option>
+                </select>
             </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card kpi-card h-100 border-start border-4 border-info">
-                <div class="card-body p-3">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="text-uppercase text-muted small fw-bold mb-1" style="font-size: 0.75rem;">Total
-                                Itens</h6>
-                            <h4 class="fw-bold text-body mb-0" id="kpiQtdItens">0</h4>
-                        </div>
-                        <div class="bg-info bg-opacity-10 p-2 rounded-circle">
-                            <i class="bi bi-box-seam fs-5 text-info"></i>
-                        </div>
-                    </div>
-                </div>
+            <div class="col-md-3">
+                <label for="filial" class="form-label">Filial</label>
+                <select class="form-select" id="filial" name="pedi_fili">
+                    <option value="">Todas</option>
+                </select>
             </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card kpi-card h-100 border-start border-4 border-success">
-                <div class="card-body p-3">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="text-uppercase text-muted small fw-bold mb-1" style="font-size: 0.75rem;">Volume
-                                de Vendas</h6>
-                            <h4 class="fw-bold text-body mb-0" id="kpiTotal">R$ 0,00</h4>
-                        </div>
-                        <div class="bg-success bg-opacity-10 p-2 rounded-circle">
-                            <i class="bi bi-currency-dollar fs-5 text-success"></i>
-                        </div>
-                    </div>
-                </div>
+            <div class="col-md-3">
+                <label for="dataInicio" class="form-label">Data Início</label>
+                <input type="date" class="form-control" id="dataInicio" name="data_inicial">
             </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card kpi-card h-100 border-start border-4 border-warning">
-                <div class="card-body p-3">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="text-uppercase text-muted small fw-bold mb-1" style="font-size: 0.75rem;">Ticket
-                                Médio</h6>
-                            <h4 class="fw-bold text-body mb-0" id="kpiTicket">R$ 0,00</h4>
-                        </div>
-                        <div class="bg-warning bg-opacity-10 p-2 rounded-circle">
-                            <i class="bi bi-graph-up fs-5 text-warning"></i>
-                        </div>
-                    </div>
-                </div>
+            <div class="col-md-3">
+                <label for="dataFim" class="form-label">Data Fim</label>
+                <input type="date" class="form-control" id="dataFim" name="data_final">
             </div>
-        </div>
+            <div class="col-md-3">
+                <label for="cliente" class="form-label">Cliente</label>
+                <input type="text" class="form-control" id="cliente" name="cliente_nome" placeholder="Nome do cliente">
+            </div>
+            <div class="col-md-3">
+                <label for="vendedor" class="form-label">Vendedor</label>
+                <input type="text" class="form-control" id="vendedor" name="vendedor_nome"
+                    placeholder="Nome do vendedor">
+            </div>
+            <div class="col-md-3">
+                <label for="item" class="form-label">Item</label>
+                <input type="text" class="form-control" id="item" name="item_nome" placeholder="Nome do produto">
+            </div>
+            <div class="col-12 text-end mt-4">
+                <button type="button" class="btn btn-outline-primary me-2 text-secondary border" onclick="limparFiltros()">
+                    <i class="bi bi-x-circle me-1"></i> Limpar
+                </button>
+                <button type="submit" class="btn btn-outline-primary text-primary px-4"><i class="bi bi-search me-1"></i>
+                    Filtrar</button>
+            </div>
+        </form>
     </div>
+</div>
 
-    <!-- Gráficos -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card h-100">
-                <div
-                    class="card-header d-flex justify-content-between align-items-center border-0 bg-transparent pt-4 px-4">
+<!-- Loading indicator -->
+<div id="loadingIndicator" class="text-center my-4" style="display: none;">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Carregando...</span>
+    </div>
+    <p class="mt-2">Carregando dados...</p>
+</div>
+
+<!-- KPIs -->
+<div class="row mb-4 g-3">
+    <div class="col-md-3">
+        <div class="card kpi-card h-100 border-start border-4 border-primary">
+            <div class="card-body p-3">
+                <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h5 class="mb-1 text-body fw-bold">Desempenho por Vendedor</h5>
-                        <small class="text-muted" id="chartSubtitle">Top 6 Vendedores</small>
+                        <h6 class="text-uppercase text-muted small fw-bold mb-1" style="font-size: 0.75rem;">Total
+                            Pedidos</h6>
+                        <h4 class="fw-bold text-body mb-0" id="kpiQtd">0</h4>
                     </div>
-                    <div class="chart-controls">
-                        <div class="btn-group" role="group">
-                            <button type="button" class="btn btn-sm btn-outline-light text-secondary active"
-                                id="btnBarChart" onclick="switchChart('bar')">
-                                <i class="bi bi-bar-chart-fill me-1"></i> Barras
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-light text-secondary" id="btnPieChart"
-                                onclick="switchChart('pie')">
-                                <i class="bi bi-pie-chart-fill me-1"></i> Pizza
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-body p-5">
-                    <div style="height: 400px; position: relative;">
-                        <canvas id="mainChart"></canvas>
+                    <div class="bg-primary bg-opacity-10 p-2 rounded-circle">
+                        <i class="bi bi-receipt fs-5 text-primary"></i>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+    <div class="col-md-3">
+        <div class="card kpi-card h-100 border-start border-4 border-info">
+            <div class="card-body p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-uppercase text-muted small fw-bold mb-1" style="font-size: 0.75rem;">Total
+                            Itens</h6>
+                        <h4 class="fw-bold text-body mb-0" id="kpiQtdItens">0</h4>
+                    </div>
+                    <div class="bg-info bg-opacity-10 p-2 rounded-circle">
+                        <i class="bi bi-box-seam fs-5 text-info"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card kpi-card h-100 border-start border-4 border-success">
+            <div class="card-body p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-uppercase text-muted small fw-bold mb-1" style="font-size: 0.75rem;">Volume
+                            de Vendas</h6>
+                        <h4 class="fw-bold text-body mb-0" id="kpiTotal">R$ 0,00</h4>
+                    </div>
+                    <div class="bg-success bg-opacity-10 p-2 rounded-circle">
+                        <i class="bi bi-currency-dollar fs-5 text-success"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card kpi-card h-100 border-start border-4 border-warning">
+            <div class="card-body p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-uppercase text-muted small fw-bold mb-1" style="font-size: 0.75rem;">Ticket
+                            Médio</h6>
+                        <h4 class="fw-bold text-body mb-0" id="kpiTicket">R$ 0,00</h4>
+                    </div>
+                    <div class="bg-warning bg-opacity-10 p-2 rounded-circle">
+                        <i class="bi bi-graph-up fs-5 text-warning"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
-    <!-- Tabela -->
-    <div class="card">
-        <div class="card-header bg-transparent border-0 pt-4 px-4">
-            <h5 class="mb-0 fw-bold text-body">Últimos Pedidos</h5>
-        </div>
-        <div class="card-body px-0">
-            <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
-                <table class="table table-modern mb-0" id="pedidosTable">
-                    <thead>
-                        <tr>
-                            <th class="ps-4">Número</th>
-                            <th>Data</th>
-                            <th>Cliente</th>
-                            <th>Vendedor</th>
-                            <th>Status</th>
-                            <th class="pe-4 text-end">Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr id="noDataRow">
-                            <td colspan="6" class="text-center py-5 text-muted">Nenhum dado disponível</td>
-                        </tr>
-                    </tbody>
-                </table>
+<!-- Gráficos -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card h-100">
+            <div
+                class="card-header d-flex justify-content-between align-items-center border-0 bg-transparent pt-4 px-4">
+                <div>
+                    <h5 class="mb-1 text-body fw-bold">Desempenho por Vendedor</h5>
+                    <small class="text-muted" id="chartSubtitle">Top 6 Vendedores</small>
+                </div>
+                <div class="chart-controls">
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-sm btn-outline-light text-secondary active"
+                            id="btnBarChart" onclick="switchChart('bar')">
+                            <i class="bi bi-bar-chart-fill me-1"></i> Barras
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-light text-secondary" id="btnPieChart"
+                            onclick="switchChart('pie')">
+                            <i class="bi bi-pie-chart-fill me-1"></i> Pizza
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body p-5">
+                <div style="height: 400px; position: relative;">
+                    <canvas id="mainChart"></canvas>
+                </div>
             </div>
         </div>
-        <!-- Paginação -->
-        <div class="card-footer bg-transparent border-0 d-flex justify-content-between align-items-center px-4 pb-4">
-            <span class="text-muted" id="paginationInfo">Mostrando 0 de 0</span>
-            <nav aria-label="Navegação de página">
-                <ul class="pagination mb-0">
-                    <li class="page-item disabled" id="prevPageItem">
-                        <button class="page-link" onclick="changePage(-1)">Anterior</button>
-                    </li>
-                    <li class="page-item disabled">
-                        <span class="page-link" id="currentPageDisplay">1</span>
-                    </li>
-                    <li class="page-item disabled" id="nextPageItem">
-                        <button class="page-link" onclick="changePage(1)">Próximo</button>
-                    </li>
-                </ul>
-            </nav>
+    </div>
+</div>
+
+<!-- Tabela -->
+<div class="card">
+    <div class="card-header bg-transparent border-0 pt-4 px-4">
+        <h5 class="mb-0 fw-bold text-body">Últimos Pedidos</h5>
+    </div>
+    <div class="card-body px-0">
+        <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+            <table class="table table-modern mb-0" id="pedidosTable">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Número</th>
+                        <th>Data</th>
+                        <th>Cliente</th>
+                        <th>Vendedor</th>
+                        <th>Status</th>
+                        <th class="pe-4 text-end">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr id="noDataRow">
+                        <td colspan="6" class="text-center py-5 text-muted">Nenhum dado disponível</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
+    <!-- Paginação -->
+    <div class="card-footer bg-transparent border-0 d-flex justify-content-between align-items-center px-4 pb-4">
+        <span class="text-muted" id="paginationInfo">Mostrando 0 de 0</span>
+        <nav aria-label="Navegação de página">
+            <ul class="pagination mb-0">
+                <li class="page-item disabled" id="prevPageItem">
+                    <button class="page-link" onclick="changePage(-1)">Anterior</button>
+                </li>
+                <li class="page-item disabled">
+                    <span class="page-link" id="currentPageDisplay">1</span>
+                </li>
+                <li class="page-item disabled" id="nextPageItem">
+                    <button class="page-link" onclick="changePage(1)">Próximo</button>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</div>
 </div>
 
 {{ empresas_list|json_script:"empresas-data" }}
@@ -913,46 +919,109 @@
             .sort(([, a], [, b]) => b - a);
 
         if (sortedSellers.length === 0) {
-            // Mostrar mensagem no gráfico
             ctx.save();
+
             ctx.font = `16px ${theme.fontFamily}`;
             ctx.fillStyle = theme.textColor;
             ctx.textAlign = 'center';
+
             ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-            ctx.fillText('Nenhum dado disponível', ctx.canvas.width / 2, ctx.canvas.height / 2);
+
+            ctx.fillText(
+                'Nenhum dado disponível',
+                ctx.canvas.width / 2,
+                ctx.canvas.height / 2
+            );
+
             ctx.restore();
             return;
         }
 
-        let labels, data, backgroundColor, type, options;
-        const fontConfig = { family: theme.fontFamily, size: 12 };
+        let labels;
+        let data;
+        let backgroundColor;
+        let type;
+        let options;
+
+        const fontConfig = {
+            family: theme.fontFamily,
+            size: 12
+        };
+
+        /* =========================================
+           BAR CHART
+        ========================================= */
 
         if (currentChartType === 'bar') {
+
             const topSellers = sortedSellers.slice(0, 6);
 
             labels = topSellers.map(([name]) => {
-                if (!name || name === 'Sem Vendedor') return 'Sem Vendedor';
+
+                if (!name || name === 'Sem Vendedor') {
+                    return 'Sem Vendedor';
+                }
+
                 const parts = name.split(' ');
-                if (parts.length >= 2) return `${parts[0]} ${parts[1].charAt(0)}.`;
-                return name.length > 10 ? name.substring(0, 10) + '...' : name;
+
+                if (parts.length >= 2) {
+                    return `${parts[0]} ${parts[1].charAt(0)}.`;
+                }
+
+                return name.length > 12
+                    ? name.substring(0, 12) + '...'
+                    : name;
             });
 
             data = topSellers.map(([, val]) => val);
-            // Gradient or solid modern color
-            backgroundColor = '#4f46e5'; // Indigo 600
+
+            /* =========================================
+               GRADIENTE PREMIUM
+            ========================================= */
+
+            const gradient = ctx.createLinearGradient(0, 0, 0, 450);
+
+            gradient.addColorStop(0, '#3b82f6');
+            gradient.addColorStop(0.4, '#06b6d4');
+            gradient.addColorStop(1, '#8b5cf6');
+
+            backgroundColor = gradient;
+
             type = 'bar';
 
             options = {
                 responsive: true,
                 maintainAspectRatio: false,
+
+                animation: {
+                    duration: 1400,
+                    easing: 'easeOutQuart'
+                },
+
                 plugins: {
-                    legend: { display: false },
+
+                    legend: {
+                        display: false
+                    },
+
                     tooltip: {
                         backgroundColor: theme.tooltipBg,
-                        padding: 12,
-                        cornerRadius: 8,
-                        titleFont: { family: theme.fontFamily, size: 13 },
-                        bodyFont: { family: theme.fontFamily, size: 13 },
+                        padding: 14,
+                        cornerRadius: 12,
+
+                        titleFont: {
+                            family: theme.fontFamily,
+                            size: 13,
+                            weight: '600'
+                        },
+
+                        bodyFont: {
+                            family: theme.fontFamily,
+                            size: 13
+                        },
+
+                        displayColors: false,
+
                         callbacks: {
                             label: function (context) {
                                 return formatCurrency(context.raw);
@@ -960,109 +1029,247 @@
                         }
                     }
                 },
+
                 scales: {
+
                     x: {
-                        grid: { display: false },
-                        ticks: { font: fontConfig, color: theme.textColor }
+                        grid: {
+                            display: false
+                        },
+
+                        ticks: {
+                            font: fontConfig,
+                            color: theme.textColor
+                        }
                     },
+
                     y: {
-                        border: { display: false },
+
+                        border: {
+                            display: false
+                        },
+
                         grid: {
                             color: theme.gridColor,
                             borderDash: [5, 5]
                         },
+
                         ticks: {
                             font: fontConfig,
                             color: theme.textColor,
+
                             callback: function (value) {
-                                return 'R$ ' + value.toLocaleString('pt-BR', { notation: "compact" });
+                                return 'R$ ' + value.toLocaleString(
+                                    'pt-BR',
+                                    { notation: 'compact' }
+                                );
                             }
                         }
                     }
                 },
+
                 elements: {
+
                     bar: {
-                        borderRadius: 6,
-                        borderSkipped: false
+                        borderRadius: 14,
+                        borderSkipped: false,
+
+                        hoverBorderWidth: 2,
+                        hoverBorderColor: 'rgba(255,255,255,.15)'
                     }
                 }
             };
+
         } else {
+
+            /* =========================================
+               DOUGHNUT CHART
+            ========================================= */
+
             const topSellersPie = sortedSellers.slice(0, 5);
 
             labels = topSellersPie.map(([name]) => {
-                if (!name || name === 'Sem Vendedor') return 'Sem Vendedor';
+
+                if (!name || name === 'Sem Vendedor') {
+                    return 'Sem Vendedor';
+                }
+
                 const parts = name.split(' ');
-                if (parts.length >= 2) return `${parts[0]} ${parts[1].charAt(0)}.`;
-                return name.length > 10 ? name.substring(0, 10) + '...' : name;
+
+                if (parts.length >= 2) {
+                    return `${parts[0]} ${parts[1].charAt(0)}.`;
+                }
+
+                return name.length > 10
+                    ? name.substring(0, 10) + '...'
+                    : name;
             });
 
             data = topSellersPie.map(([, val]) => val);
-            // Modern palette
-            backgroundColor = ['#4f46e5', '#3b82f6', '#0ea5e9', '#6366f1', '#8b5cf6'];
-            type = 'pie';
+
+            backgroundColor = [
+                '#3b82f6',
+                '#06b6d4',
+                '#8b5cf6',
+                '#ec4899',
+                '#14b8a6'
+            ];
+
+            type = 'doughnut';
 
             options = {
+
                 responsive: true,
                 maintainAspectRatio: false,
+
+                cutout: '72%',
+
+                animation: {
+                    duration: 1400,
+                    easing: 'easeOutQuart'
+                },
+
                 layout: {
                     padding: 20
                 },
+
                 plugins: {
+
                     legend: {
+
                         position: 'right',
+
                         labels: {
+
                             font: fontConfig,
+
                             color: theme.textColor,
+
                             usePointStyle: true,
-                            padding: 20
+
+                            pointStyle: 'circle',
+
+                            padding: 18
                         }
                     },
+
                     tooltip: {
+
                         backgroundColor: theme.tooltipBg,
-                        padding: 12,
-                        cornerRadius: 8,
+
+                        padding: 14,
+
+                        cornerRadius: 12,
+
+                        titleFont: {
+                            family: theme.fontFamily,
+                            size: 13,
+                            weight: '600'
+                        },
+
+                        bodyFont: {
+                            family: theme.fontFamily,
+                            size: 13
+                        },
+
                         callbacks: {
+
                             label: function (context) {
+
                                 const value = context.raw;
                                 const label = context.label;
+
                                 return `${label}: ${formatCurrency(value)}`;
                             }
                         }
                     }
                 },
+
                 elements: {
+
                     arc: {
+
                         borderWidth: 2,
-                        borderColor: document.documentElement.getAttribute('data-bs-theme') === 'dark' ? '#1e293b' : '#ffffff'
+
+                        borderColor:
+                            document.documentElement.getAttribute('data-bs-theme') === 'dark'
+                                ? '#0f172a'
+                                : '#ffffff',
+
+                        hoverOffset: 18
                     }
                 }
             };
         }
 
+        /* =========================================
+           CREATE CHART
+        ========================================= */
+
         currentChartInstance = new Chart(ctx, {
+
             type: type,
+
             data: {
+
                 labels: labels,
+
                 datasets: [{
+
                     label: 'Vendas',
+
                     data: data,
+
                     backgroundColor: backgroundColor,
-                    borderColor: currentChartType === 'bar' ? 'transparent' : (document.documentElement.getAttribute('data-bs-theme') === 'dark' ? '#1e293b' : '#ffffff'),
-                    borderWidth: currentChartType === 'bar' ? 0 : 2,
-                    // For bar chart, set max bar thickness
-                    maxBarThickness: 50
+
+                    spacing: 3,
+
+                    borderRadius: 8,
+
+                    borderWidth:
+                        currentChartType === 'bar'
+                            ? 0
+                            : 2,
+
+                    borderColor:
+                        currentChartType === 'bar'
+                            ? 'transparent'
+                            : (
+                                document.documentElement.getAttribute('data-bs-theme') === 'dark'
+                                    ? '#0f172a'
+                                    : '#ffffff'
+                            ),
+
+                    maxBarThickness: 52,
+
+                    hoverOffset: 18
                 }]
             },
+
             options: options
         });
 
-        // Update last updated timestamp
+        /* =========================================
+           UPDATE LAST UPDATED
+        ========================================= */
+
         const now = new Date();
+
         const dateStr = now.toLocaleDateString('pt-BR');
-        const timeStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+        const timeStr = now.toLocaleTimeString(
+            'pt-BR',
+            {
+                hour: '2-digit',
+                minute: '2-digit'
+            }
+        );
+
         const lastUpdatedEl = document.getElementById('lastUpdated');
-        if (lastUpdatedEl) lastUpdatedEl.textContent = `${dateStr} às ${timeStr}`;
+
+        if (lastUpdatedEl) {
+            lastUpdatedEl.textContent = `${dateStr} às ${timeStr}`;
+        }
     }
 
     function formatCurrency(value) {

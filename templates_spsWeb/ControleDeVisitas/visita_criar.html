@@ -1,93 +1,296 @@
-{% extends 'base.html' %}
+{% extends 'ControleDeVisitas/parcials/crm_base.html' %}
 {% load static %}
 
-{% block content %}
-<link rel="stylesheet" href="{% static 'css/form.css' %}">
-<div class="container">
-  <h4 class="mb-3 mt-5 text-center"><i class="fas fa-user-check me-1"></i> Nova Visita</h4>
-  <ul class="nav nav-pills mb-3" id="cv-tabs" role="tablist">
-    <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="pill"
-        data-bs-target="#tab-dados" type="button" role="tab">Dados Básicos</button></li>
-    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill"
-        data-bs-target="#tab-contato" type="button" role="tab">Contato</button></li>
-    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-ativ"
-        type="button" role="tab">Atividades</button></li>
-    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-itens"
-        type="button" role="tab">Itens</button></li>
-    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-extras"
-        type="button" role="tab">Extras</button></li>
-  </ul>
-  <form method="post" class="card p-3">
+{% block crm_css %}
+<style>
+  .cv-form-shell {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .cv-page-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 14px;
+  }
+
+  .cv-page-title {
+    margin: 0;
+    font-weight: 800;
+    letter-spacing: .01em;
+  }
+
+  .cv-page-subtitle {
+    margin: 0;
+    color: var(--bs-secondary-color);
+    font-size: .9rem;
+  }
+
+  .cv-card {
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, .08);
+    overflow: hidden;
+  }
+
+  .cv-card .card-header {
+    background: transparent;
+    border-bottom: 1px solid rgba(255, 255, 255, .08);
+  }
+
+  .cv-tabs-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .cv-tabs {
+    display: inline-flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+    padding: 6px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, .04);
+  }
+
+  .cv-tabs .nav-link {
+    border: 1px solid transparent;
+    border-radius: 12px;
+    padding: 10px 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    color: var(--bs-secondary-color);
+    white-space: nowrap;
+    transition: transform .08s ease, background-color .15s ease, border-color .15s ease;
+  }
+
+  .cv-tabs .nav-link:hover {
+    background: rgba(255, 255, 255, .06);
+    transform: translateY(-1px);
+  }
+
+  .cv-tabs .nav-link.active {
+    color: var(--bs-body-color);
+    background: rgba(255, 255, 255, .10);
+    border-color: rgba(255, 255, 255, .12);
+  }
+
+  .cv-step {
+    width: 28px;
+    height: 28px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .85rem;
+    font-weight: 800;
+    background: rgba(0, 0, 0, .18);
+    border: 1px solid rgba(255, 255, 255, .12);
+    flex: 0 0 auto;
+  }
+
+  .cv-section {
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 14px;
+    padding: 14px;
+    background: rgba(255, 255, 255, .02);
+  }
+
+  .cv-section-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .cv-section-title h6 {
+    margin: 0;
+    font-weight: 800;
+    letter-spacing: .02em;
+  }
+
+  .cv-field {
+    position: relative;
+  }
+
+  .cv-field .list-group {
+    top: calc(100% + 6px);
+    max-height: 240px;
+    overflow: auto;
+    border-radius: 12px;
+  }
+
+  .cv-form-footer {
+    border-top: 1px solid rgba(255, 255, 255, .08);
+    padding: 12px 16px;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+  }
+
+  @media (max-width: 767.98px) {
+    .cv-form-footer {
+      position: sticky;
+      bottom: 0;
+      background: var(--bs-body-bg);
+      z-index: 2;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block crm_content %}
+<div class="cv-form-shell">
+  <div class="cv-page-head">
+    <div>
+      <h4 class="cv-page-title"><i class="fas fa-user-check me-1"></i> Nova Visita</h4>
+      <p class="cv-page-subtitle">Preencha os dados e avance pelas etapas</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{% url 'visitas_list_web' slug=slug %}" class="btn btn-outline-secondary btn-sm">Voltar</a>
+    </div>
+  </div>
+
+  <div class="cv-tabs-wrap mb-3">
+    <ul class="nav cv-tabs" id="cv-tabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-dados" type="button" role="tab">
+          <span class="cv-step">1</span> Dados
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-contato" type="button" role="tab">
+          <span class="cv-step">2</span> Contato
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-ativ" type="button" role="tab">
+          <span class="cv-step">3</span> Atividades
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-itens" type="button" role="tab">
+          <span class="cv-step">4</span> Itens
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-extras" type="button" role="tab">
+          <span class="cv-step">5</span> Extras
+        </button>
+      </li>
+    </ul>
+  </div>
+
+  <form method="post" class="card cv-card">
     {% csrf_token %}
-    <div class="tab-content">
-      <div class="tab-pane fade show active" id="tab-dados" role="tabpanel">
-        <div class="row g-2">
-          <div class="col-md-3">{{ form.ctrl_data.label_tag }}{{ form.ctrl_data }}</div><div class="col-md-9"></div>
-          <div class="col-md-3 d-none">{{ form.ctrl_cliente_id.label_tag }}{{ form.ctrl_cliente_id }}</div>
-          <div class="col-md-3 d-none">{{ form.ctrl_vendedor_id.label_tag }}{{ form.ctrl_vendedor_id }}</div>
-          <div class="col-md-3 d-none">{{ form.ctrl_etapa_id.label_tag }}{{ form.ctrl_etapa_id }}</div>
-          <div class="col-md-4"><label class="form-label">Cliente</label><input type="text" id="cli-search"
-              class="form-control" placeholder="Buscar cliente" autocomplete="off" />
-            <div id="cli-results" class="list-group position-absolute w-100" style="z-index:1060;"></div>
-          </div>
-          <div class="col-md-4"><label class="form-label">Vendedor</label><input type="text" id="ven-search"
-              class="form-control" placeholder="Buscar vendedor" autocomplete="off" />
-            <div id="ven-results" class="list-group position-absolute w-100" style="z-index:1060;"></div>
-          </div>
-          <div class="col-md-4"><label class="form-label">Etapa</label><input type="text" id="eta-search"
-              class="form-control" placeholder="Buscar etapa" autocomplete="off" />
-            <div id="eta-results" class="list-group position-absolute w-100" style="z-index:1060;"></div>
+    <div class="card-body p-3 p-md-4">
+      <div class="tab-content">
+        <div class="tab-pane fade show active" id="tab-dados" role="tabpanel">
+          <div class="cv-section">
+            <div class="cv-section-title">
+              <h6>Dados Básicos</h6>
+            </div>
+            <div class="row g-3">
+              <div class="col-12 col-md-4">{{ form.ctrl_data.label_tag }}{{ form.ctrl_data }}</div>
+              <div class="col-md-8 d-none d-md-block"></div>
+
+              <div class="col-md-3 d-none">{{ form.ctrl_cliente_id.label_tag }}{{ form.ctrl_cliente_id }}</div>
+              <div class="col-md-3 d-none">{{ form.ctrl_vendedor_id.label_tag }}{{ form.ctrl_vendedor_id }}</div>
+              <div class="col-md-3 d-none">{{ form.ctrl_etapa_id.label_tag }}{{ form.ctrl_etapa_id }}</div>
+
+              <div class="col-12 col-md-4 cv-field">
+                <label class="form-label">Cliente</label>
+                <input type="text" id="cli-search" class="form-control" placeholder="Buscar cliente"
+                  autocomplete="off" />
+                <div id="cli-results" class="list-group position-absolute w-100" style="z-index:1060;"></div>
+              </div>
+              <div class="col-12 col-md-4 cv-field">
+                <label class="form-label">Vendedor</label>
+                <input type="text" id="ven-search" class="form-control" placeholder="Buscar vendedor"
+                  autocomplete="off" />
+                <div id="ven-results" class="list-group position-absolute w-100" style="z-index:1060;"></div>
+              </div>
+              <div class="col-12 col-md-4 cv-field">
+                <label class="form-label">Etapa</label>
+                <input type="text" id="eta-search" class="form-control" placeholder="Buscar etapa" autocomplete="off" />
+                <div id="eta-results" class="list-group position-absolute w-100" style="z-index:1060;"></div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-      <div class="tab-pane fade" id="tab-contato" role="tabpanel">
-        <div class="row g-2">
-          <div class="col-md-4">{{ form.ctrl_contato.label_tag }}{{ form.ctrl_contato }}</div>
-          <div class="col-md-4">{{ form.ctrl_fone.label_tag }}{{ form.ctrl_fone }}</div>
+        <div class="tab-pane fade" id="tab-contato" role="tabpanel">
+          <div class="cv-section">
+            <div class="cv-section-title">
+              <h6>Contato</h6>
+            </div>
+            <div class="row g-3">
+              <div class="col-12 col-md-6">{{ form.ctrl_contato.label_tag }}{{ form.ctrl_contato }}</div>
+              <div class="col-12 col-md-6">{{ form.ctrl_fone.label_tag }}{{ form.ctrl_fone }}</div>
+            </div>
+          </div>
         </div>
-      </div>
-      <div class="tab-pane fade" id="tab-ativ" role="tabpanel">
-        <div class="row g-2">
-          <div class="col-md-2">
-            <div class="form-check">
-              {{ form.ctrl_novo }}<label class="form-check-label" for="id_ctrl_novo">Novo Cliente</label>
+        <div class="tab-pane fade" id="tab-ativ" role="tabpanel">
+          <div class="cv-section">
+            <div class="cv-section-title">
+              <h6>Atividades</h6>
             </div>
-          </div>
-          <div class="col-md-2">
-            <div class="form-check">
-              {{ form.ctrl_base }}<label class="form-check-label" for="id_ctrl_base">Base</label>
+            <div class="row g-3 align-items-center">
+              <div class="col-6 col-md-3">
+                <div class="form-check">
+                  {{ form.ctrl_novo }}<label class="form-check-label" for="id_ctrl_novo">Novo Cliente</label>
+                </div>
+              </div>
+              <div class="col-6 col-md-2">
+                <div class="form-check">
+                  {{ form.ctrl_base }}<label class="form-check-label" for="id_ctrl_base">Base</label>
+                </div>
+              </div>
+              <div class="col-6 col-md-2">
+                <div class="form-check">
+                  {{ form.ctrl_prop }}<label class="form-check-label" for="id_ctrl_prop">Proposta</label>
+                </div>
+              </div>
+              <div class="col-6 col-md-2">
+                <div class="form-check">
+                  {{ form.ctrl_leva }}<label class="form-check-label" for="id_ctrl_leva">Levantamento</label>
+                </div>
+              </div>
+              <div class="col-12 col-md-3">{{ form.ctrl_proj.label_tag }}{{ form.ctrl_proj }}</div>
             </div>
+            <div class="alert alert-secondary mt-3 mb-0">Número de orçamento é preenchido automaticamente quando
+              exportar para orçamento/pisos.</div>
           </div>
-          <div class="col-md-2">
-            <div class="form-check">
-              {{ form.ctrl_prop }}<label class="form-check-label" for="id_ctrl_prop">Proposta</label>
-            </div>
-          </div>
-          <div class="col-md-2">
-            <div class="form-check">
-              {{ form.ctrl_leva }}<label class="form-check-label" for="id_ctrl_leva">Levantamento</label>
-            </div>
-          </div>
-          <div class="col-md-4">{{ form.ctrl_proj.label_tag }}{{ form.ctrl_proj }}</div>
         </div>
-        <div class="alert alert-secondary mt-2">Número de orçamento é preenchido automaticamente quando exportar para
-          orçamento/pisos.</div>
-      </div>
-      <div class="tab-pane fade" id="tab-itens" role="tabpanel">
-        <div class="alert alert-info">Itens podem ser adicionados após criar a visita.</div>
-      </div>
-      <div class="tab-pane fade" id="tab-extras" role="tabpanel">
-        <div class="row g-2">
-          <div class="col-md-3">{{ form.ctrl_km_inic.label_tag }}{{ form.ctrl_km_inic }}</div>
-          <div class="col-md-3">{{ form.ctrl_km_fina.label_tag }}{{ form.ctrl_km_fina }}</div>
-          <div class="col-md-3">{{ form.ctrl_prox_visi.label_tag }}{{ form.ctrl_prox_visi }}</div>
-          <div class="col-md-12">{{ form.ctrl_obse.label_tag }}{{ form.ctrl_obse }}</div>
+        <div class="tab-pane fade" id="tab-itens" role="tabpanel">
+          <div class="cv-section">
+            <div class="cv-section-title">
+              <h6>Itens</h6>
+            </div>
+            <div class="alert alert-info mb-0">Itens podem ser adicionados após criar a visita.</div>
+          </div>
+        </div>
+        <div class="tab-pane fade" id="tab-extras" role="tabpanel">
+          <div class="cv-section">
+            <div class="cv-section-title">
+              <h6>Extras</h6>
+            </div>
+            <div class="row g-3">
+              <div class="col-12 col-md-4">{{ form.ctrl_km_inic.label_tag }}{{ form.ctrl_km_inic }}</div>
+              <div class="col-12 col-md-4">{{ form.ctrl_km_fina.label_tag }}{{ form.ctrl_km_fina }}</div>
+              <div class="col-12 col-md-4">{{ form.ctrl_prox_visi.label_tag }}{{ form.ctrl_prox_visi }}</div>
+              <div class="col-12">{{ form.ctrl_obse.label_tag }}{{ form.ctrl_obse }}</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-    <div class="mt-3 d-flex gap-2">
+
+    <div class="cv-form-footer">
+      <a href="{% url 'visitas_list_web' slug=slug %}" class="btn btn-outline-secondary">Cancelar</a>
       <button class="btn btn-primary">Criar</button>
-      <a href="/web/{{ slug }}/controle-de-visitas/" class="btn btn-outline-secondary">Cancelar</a>
     </div>
   </form>
 </div>

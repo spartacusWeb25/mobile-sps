@@ -1,21 +1,42 @@
-{% extends 'base.html' %}
+{% extends 'ControleDeVisitas/parcials/crm_base.html' %}
 {% load static %}
 
-{% block content %}
+{% block crm_content %}
 <style>
-    .cv-dark .card {
+    [data-bs-theme="dark"] .cv-dark .card {
         border: 1px solid rgba(255, 255, 255, .08);
         color: #e8eef5;
     }
 
-    .cv-dark .card .small,
-    .cv-dark .card .text-muted {
+    [data-bs-theme="dark"] .cv-dark .card .small,
+    [data-bs-theme="dark"] .cv-dark .card .text-muted {
         color: #a8b4c2 !important;
     }
 
-    .cv-dark .badge {
+    [data-bs-theme="dark"] .cv-dark .badge {
         background: rgba(255, 255, 255, .12);
         color: #e8eef5;
+    }
+
+    [data-bs-theme="light"] .cv-dark .card {
+        background: #ffffff;
+        color: #212529;
+        border: 1px solid rgba(0, 0, 0, .08);
+        box-shadow: 0 10px 28px rgba(0, 0, 0, .08);
+    }
+
+    [data-bs-theme="light"] .cv-dark .card .small,
+    [data-bs-theme="light"] .cv-dark .card .text-muted {
+        color: #6c757d !important;
+    }
+
+    [data-bs-theme="light"] .cv-dark .badge {
+        background: rgba(0, 0, 0, .06);
+        color: #212529;
+    }
+
+    [data-bs-theme="light"] .cv-dark .card-funil {
+        box-shadow: 0 12px 24px -14px rgba(0, 0, 0, .25) !important;
     }
 
     .btn-green {
@@ -188,6 +209,26 @@
         transform: translateY(-5px);
         box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
         border-color: rgba(255, 255, 255, .2);
+    }
+
+    [data-bs-theme="light"] .card-visita {
+        border: 1px solid rgba(0, 0, 0, .08);
+        background: #ffffff;
+        box-shadow: 0 10px 22px rgba(0, 0, 0, .08);
+    }
+
+    [data-bs-theme="light"] .card-visita:hover {
+        border-color: rgba(0, 0, 0, .16);
+        box-shadow: 0 16px 28px rgba(0, 0, 0, .12);
+    }
+
+    [data-bs-theme="light"] .card-visita .badge.text-light {
+        color: #212529 !important;
+    }
+
+    [data-bs-theme="light"] .card-visita .badge.bg-secondary {
+        background-color: rgba(108, 117, 125, .12) !important;
+        border-color: rgba(108, 117, 125, .18) !important;
     }
 </style>
 <div class="container cv-dark py-2">

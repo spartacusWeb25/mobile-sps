@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/form.css' %}">
+
+<style>
+    .crm-layout {
+        display: flex;
+        gap: 24px;
+        align-items: flex-start;
+    }
+
+    .crm-layout>aside.crm-sidebar {
+        width: 280px;
+        flex: 0 0 280px;
+    }
+
+    .crm-content {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .crm-sidebar-card.card,
+    .crm-actions-card.card {
+        background-color: #2c2f31;
+        color: #e8eef5;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, .08);
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        overflow: hidden;
+    }
+
+    .crm-sidebar-card .btn {
+        width: 100%;
+        border-radius: 12px;
+        text-align: left;
+        padding: 10px 12px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        justify-content: flex-start;
+    }
+
+    .crm-actions-card .btn {
+        width: auto;
+        border-radius: 12px;
+        text-align: left;
+        padding: 10px 12px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        justify-content: flex-start;
+    }
+
+    .crm-sidebar-card .btn:hover,
+    .crm-actions-card .btn:hover {
+        background-color: rgba(255, 255, 255, .08);
+    }
+
+    .crm-sidebar-card .btn.active,
+    .crm-actions-card .btn.active {
+        background-color: rgba(255, 255, 255, .12);
+    }
+
+    .crm-sidebar-card .btn i,
+    .crm-actions-card .btn i {
+        min-width: 18px;
+        text-align: center;
+    }
+
+    @media (max-width: 991px) {
+        .crm-layout {
+            display: block;
+        }
+
+        .crm-layout>aside.crm-sidebar {
+            width: 100%;
+            flex: 1 1 auto;
+        }
+
+        .crm-content {
+            width: 100%;
+        }
+    }
+</style>
+
+{% block crm_css %}{% endblock %}
+
+<style>
+    [data-bs-theme="light"] .crm-sidebar-card.card,
+    [data-bs-theme="light"] .crm-actions-card.card {
+        background-color: #ffffff;
+        color: #212529;
+        border: 1px solid rgba(0, 0, 0, .08);
+        box-shadow: 0 10px 28px rgba(0, 0, 0, .10);
+    }
+
+    [data-bs-theme="light"] .crm-sidebar-card .btn:hover,
+    [data-bs-theme="light"] .crm-actions-card .btn:hover {
+        background-color: rgba(0, 0, 0, .04);
+    }
+
+    [data-bs-theme="light"] .crm-sidebar-card .btn.active,
+    [data-bs-theme="light"] .crm-actions-card .btn.active {
+        background-color: rgba(0, 0, 0, .06);
+        color: #ffffff;
+    }
+
+    [data-bs-theme="light"] .cv-tabs {
+        background: rgba(0, 0, 0, .03);
+        border: 1px solid rgba(0, 0, 0, .06);
+    }
+
+    [data-bs-theme="light"] .cv-tabs .nav-link {
+        color: #6c757d;
+    }
+
+    [data-bs-theme="light"] .cv-tabs .nav-link:hover {
+        background: rgba(0, 0, 0, .04);
+    }
+
+    [data-bs-theme="light"] .cv-tabs .nav-link.active {
+        color: #212529;
+        background: #ffffff;
+        border-color: rgba(0, 0, 0, .10);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, .10);
+    }
+
+    [data-bs-theme="light"] .cv-step {
+        background: rgba(0, 0, 0, .04);
+        border-color: rgba(0, 0, 0, .10);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid py-4">
+
+    <!-- MOBILE / TABLET -->
+    <div class="d-lg-none mb-3">
+        {% with slug=slug|default:view.kwargs.slug %}
+        {% include 'ControleDeVisitas/parcials/sidebar.html' with actions_only=True %}
+        {% endwith %}
+    </div>
+
+    <div class="crm-layout">
+
+        <!-- DESKTOP -->
+        <aside class="crm-sidebar d-none d-lg-block">
+            {% with slug=slug|default:view.kwargs.slug %}
+            {% include 'ControleDeVisitas/parcials/sidebar.html' %}
+            {% endwith %}
+        </aside>
+
+        <main class="crm-content">
+            {% block crm_content %}
+            {% endblock %}
+        </main>
+
+    </div>
+
+</div>
+
+{% endblock %}
