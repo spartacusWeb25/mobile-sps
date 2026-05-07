@@ -8,6 +8,8 @@ from .Views.etapas import (
     EtapaVisitaUpdateView,
     EtapaVisitaDeleteView,
 )
+from .Views.cliente_sem_movimento import ClientesSemMovimentoListView
+
 
 
 urlpatterns = [
@@ -23,4 +25,6 @@ urlpatterns = [
     path('etapas/nova/', EtapaVisitaCreateView.as_view(), name='etapa_criar_web'),
     path('etapas/editar/<int:etap_id>/', EtapaVisitaUpdateView.as_view(), name='etapa_editar_web'),
     path('etapas/excluir/<int:etap_id>/', EtapaVisitaDeleteView.as_view(), name='etapa_excluir_web'),
+    # Clientes sem movimento
+    path('clientes-sem-movimento/', ClientesSemMovimentoListView.as_view(), name='clientes_sem_movimento_list'),
 ]

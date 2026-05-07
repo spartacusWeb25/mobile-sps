@@ -1,0 +1,136 @@
+{% extends 'ControleDeVisitas/parcials/crm_base.html' %}
+{% load static %}
+
+{% block crm_content %}
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+    <div>
+        <h1 class="h3 mb-1">Clientes sem movimento</h1>
+        <div class="text-muted small">Sem pedidos e sem orçamentos no período informado</div>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <form class="row g-2 align-items-end" method="get">
+            <div class="col-12 col-md-3">
+                <label class="form-label">Data inicial</label>
+                <input class="form-control" type="date" name="data_inicial"
+                    value="{{ data_inicial|default_if_none:'' }}">
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label">Data final</label>
+                <input class="form-control" type="date" name="data_final" value="{{ data_final|default_if_none:'' }}">
+            </div>
+            <div class="col-12 col-md-2">
+                <label class="form-label">Empresa</label>
+                <input class="form-control" type="text" name="empresa" value="{{ filtros.empresa|default:empresa }}">
+            </div>
+            <div class="col-12 col-md-2">
+                <label class="form-label">Filial</label>
+                <input class="form-control" type="text" name="filial" value="{{ filtros.filial|default:filial }}">
+            </div>
+            <div class="col-12 col-md-2">
+                <label class="form-label">Vendedor</label>
+                <input class="form-control" type="text" name="vendedor"
+                    value="{{ filtros.vendedor|default_if_none:'' }}" placeholder="Nome ou código">
+            </div>
+            <div class="col-12 col-md-6">
+                <label class="form-label">Cliente</label>
+                <input class="form-control" type="text" name="cliente" value="{{ filtros.cliente|default_if_none:'' }}"
+                    placeholder="Nome do cliente">
+            </div>
+            <div class="col-12 col-md-3">
+                <button class="btn btn-outline-primary w-100" type="submit">Filtrar</button>
+            </div>
+            <div class="col-12 col-md-3">
+                <a class="btn btn-outline-secondary w-100"
+                    href="{% url 'clientes_sem_movimento_list' slug=slug %}">Limpar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="row g-2 mb-3">
+    <div class="col-12 col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <div class="text-muted small">Total na lista</div>
+                <div class="h4 mb-0">{{ page_obj.paginator.count|default:0 }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <div class="text-muted small">Período</div>
+                <div class="h5 mb-0">
+                    {% if data_inicial_obj and data_final_obj %}
+                    {{ data_inicial_obj|date:"d/m/Y" }} até {{ data_final_obj|date:"d/m/Y" }}
+                    {% elif data_inicial_obj %}
+                    A partir de {{ data_inicial_obj|date:"d/m/Y" }}
+                    {% elif data_final_obj %}
+                    Até {{ data_final_obj|date:"d/m/Y" }}
+                    {% else %}
+                    Não informado
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if clientes %}
+<div id="clientes-grid" class="row g-2">
+    {% for cliente in clientes %}
+    <div class="col-12 col-md-6 col-xl-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start gap-2">
+                    <div class="fw-semibold">{{ cliente.enti_nome }}</div>
+                    <span class="badge text-bg-secondary">#{{ cliente.enti_clie }}</span>
+                </div>
+                <div class="mt-2 small text-muted">
+                    Último pedido:
+                    {% if cliente.ultimo_pedido %}
+                    {{ cliente.ultimo_pedido|date:"d/m/Y" }}
+                    {% else %}
+                    -
+                    {% endif %}
+                </div>
+                <div class="mt-1 small text-muted">
+                    Último orçamento:
+                    {% if cliente.ultimo_orcamento %}
+                    {{ cliente.ultimo_orcamento|date:"d/m/Y" }}
+                    {% else %}
+                    -
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if is_paginated %}
+<nav class="mt-3 d-none" aria-label="Paginação">
+    <ul class="pagination flex-wrap">
+        <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+            <a class="page-link"
+                href="{% if page_obj.has_previous %}?page={{ page_obj.previous_page_number }}{% if qs_sem_page %}&{{ qs_sem_page }}{% endif %}{% else %}#{% endif %}">Anterior</a>
+        </li>
+        <li class="page-item disabled">
+            <span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+        </li>
+        <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+            <a class="page-link"
+                href="{% if page_obj.has_next %}?page={{ page_obj.next_page_number }}{% if qs_sem_page %}&{{ qs_sem_page }}{% endif %}{% else %}#{% endif %}">Próxima</a>
+        </li>
+    </ul>
+</nav>
+{% include 'components/infinite_scroll.html' with infinite_append_selector='#clientes-grid' %}
+{% endif %}
+{% else %}
+<div class="alert alert-info mb-0">Nenhum cliente sem movimento encontrado.</div>
+{% endif %}
+
+{% endblock %}

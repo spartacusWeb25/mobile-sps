@@ -8,15 +8,15 @@
             <div
                 class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2">
                 <div>
-                    <h3 class="mb-1">Visita {{ visita.ctrl_numero }}</h3>
+                    <h3 class="mb-1"><i class="bi bi-patch-check-fill"></i> Controle de Visita Nº {{ visita.ctrl_numero }}</h3>
                     <div class="text-muted small">Resumo</div>
                 </div>
                 <div class="d-flex flex-wrap gap-2">
-                    <a href="/web/{{ slug }}/controle-de-visitas/" class="btn btn-outline-secondary">Voltar</a>
+                    <a href="/web/{{ slug }}/controle-de-visitas/" class="btn btn-outline-danger">Voltar</a>
                     <a href="/web/{{ slug }}/controle-de-visitas/novo-item/{{ visita.ctrl_id }}/"
-                        class="btn btn-primary">Novo Item</a>
+                        class="btn btn-outline-success">Novo Item</a>
                     <a href="/web/{{ slug }}/controle-de-visitas/editar/{{ visita.ctrl_id }}/"
-                        class="btn btn-outline-primary">Editar</a>
+                        class="btn btn-outline-warning">Editar</a>
                 </div>
             </div>
         </div>
@@ -50,7 +50,7 @@
         <div class="col-12 col-md-3">
             <div class="card card-corporate h-100">
                 <div class="card-body">
-                    <div class="small text-muted">Etapa</div>
+                    <div class="small text-muted">Etapa atual</div>
                     <div class="fw-bold">{{ visita.ctrl_etapa.etap_descricao }}</div>
                 </div>
             </div>
@@ -93,5 +93,48 @@
             {% endif %}
         </div>
     </div>
+    <div class="card card-corporate">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div class="fw-bold">Observações</div>
+        </div>
+        <div class="card-body">
+            <div class="text-muted">{{ visita.ctrl_obse }}</div>
+        </div>
+    </div>
+    <div class="row g-3 mb-3">
+        <div class="col-12 col-md-3">
+            <div class="card card-corporate h-100">
+                <div class="card-body">
+                    <div class="small text-muted">Proxima vista</div>
+                    <div class="fw-bold"> {% if visita.ctrl_prox_visi %} {{ visita.ctrl_prox_visi }} {% else %} Nenhuma Programada{% endif %}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-3">
+            <div class="card card-corporate h-100">
+                <div class="card-body">
+                    <div class="small text-muted">Km Inicial</div>
+                    <div class="fw-bold">{% if visita.ctrl_km_inic %} {{ visita.ctrl_km_inic }} {% else %} Sem Kms{% endif %}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-3">
+            <div class="card card-corporate h-100">
+                <div class="card-body">
+                    <div class="small text-muted">Km Final</div>
+                    <div class="fw-bold">{% if visita.ctrl_km_final %} {{ visita.ctrl_km_final }} {% else %} Sem Kms{% endif %}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-3">
+            <div class="card card-corporate h-100">
+                <div class="card-body">
+                    <div class="small text-muted">Kms Totais</div>
+                    <div class="fw-bold">{% if visita.ctrl_km_totais %} {{ visita.ctrl_km_totais }} {% else %} Sem Kms{% endif %}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 {% endblock %}
