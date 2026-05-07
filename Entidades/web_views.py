@@ -4,7 +4,7 @@ from django.contrib import messages
 
 logger = logging.getLogger(__name__)
 from django.utils import timezone
-from django.http import Http404, HttpResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.urls import reverse_lazy
 from django.views import View
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, TemplateView
@@ -12,7 +12,7 @@ from Agricola.service.cadastros_service import CadastrosDomainService
 from .services.entidades_trasportadores import EntidadeTransportadoraServico
 from .services.entidades_motoristas import EntidadeMotoristaServico
 from urllib.parse import quote_plus
-from django.db.models import Case, When, Value, CharField, IntegerField
+from django.db.models import BigIntegerField, Case, When, Value, CharField, IntegerField, OuterRef, Subquery
 from django.db.models.functions import Cast
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment
@@ -64,6 +64,7 @@ class EntidadeListView(DBAndSlugMixin, ListView):
         nome = request.GET.get('enti_nome', '')
         id_cliente = request.GET.get('enti_clie', '')
         tipo = request.GET.get('enti_tipo_enti', '')
+        vendedor_responsavel = request.GET.get('enti_vend', '')
         situacao = request.GET.get('enti_situ', '')
         
         if tipo:
@@ -77,10 +78,23 @@ class EntidadeListView(DBAndSlugMixin, ListView):
                 qs = qs.filter(enti_clie=int(id_cliente))
             except (ValueError, TypeError):
                 pass
-        if tipo:
-            qs = qs.filter(enti_tipo_enti__icontains=tipo)
-        if situacao:
-            qs = qs.filter(enti_situ__icontains=situacao)
+        if vendedor_responsavel:
+            try:
+                qs = qs.filter(enti_vend=int(vendedor_responsavel))
+            except (ValueError, TypeError):
+                pass
+
+        vendedores_sub = Entidades.objects.using(db_alias).filter(
+            enti_clie=Cast(OuterRef("enti_vend"), BigIntegerField())
+        )
+        if self.empresa_id:
+            vendedores_sub = vendedores_sub.filter(enti_empr=int(self.empresa_id))
+
+        qs = qs.annotate(
+            vendedor_responsavel_nome=Subquery(
+                vendedores_sub.values("enti_nome")[:1]
+            )
+        )
         return qs
 
     def get_context_data(self, **kwargs):
@@ -91,6 +105,10 @@ class EntidadeListView(DBAndSlugMixin, ListView):
         id_cliente = request.GET.get('enti_clie', '')
         tipo = request.GET.get('enti_tipo_enti', '')
         situacao = request.GET.get('enti_situ', '')
+        vendedor_responsavel = request.GET.get('enti_vend', '')
+        db_alias = getattr(request, 'db_alias', None)
+        vendedor_responsavel_nome = CadastrosDomainService.vendedor_nome_por_enti_clie(vendedor_responsavel, db_alias)
+        
         total_entidades = qs.count()
         total_de_clientes = qs.filter(enti_tipo_enti='CL').count()
         total_de_fornecedores = qs.filter(enti_tipo_enti='FO').count()
@@ -121,9 +139,51 @@ class EntidadeListView(DBAndSlugMixin, ListView):
             extra_parts.append('&enti_tipo_enti=' + quote_plus(tipo))
         if situacao:
             extra_parts.append('&enti_situ=' + quote_plus(situacao))
+        if vendedor_responsavel:
+            extra_parts.append('&enti_vend=' + quote_plus(vendedor_responsavel))
             
         context['extra_query'] = ''.join(extra_parts)
+        context['vendedor_responsavel_nome'] = vendedor_responsavel_nome
+        context['vendedor_responsavel_selecionado'] = int(vendedor_responsavel) if str(vendedor_responsavel or '').strip().isdigit() else None
+        try:
+            empresa_id = int(self.empresa_id) if self.empresa_id not in [None, ""] else None
+        except Exception:
+            empresa_id = None
+        vendedores_qs = Entidades.objects.using(db_alias).filter(
+            enti_tipo_enti__in=["VE", "AM", "FU"],
+            enti_situ="1",
+        )
+        if empresa_id is not None:
+            vendedores_qs = vendedores_qs.filter(enti_empr=empresa_id)
+        vendedores_qs = vendedores_qs.only("enti_clie", "enti_nome").order_by("enti_nome")[:500]
+        context['vendedores_entidade'] = [(v.enti_clie, f"{v.enti_clie} - {v.enti_nome}") for v in vendedores_qs]
         return context
+
+
+def autocomplete_vendedores(request, slug=None):
+    banco = get_licenca_db_config(request) or "default"
+    empresa_id = request.session.get("empresa_id") or request.headers.get("X-Empresa")
+    term = (request.GET.get("term") or request.GET.get("q") or "").strip()
+
+    try:
+        empresa_id = int(empresa_id)
+    except (TypeError, ValueError):
+        return JsonResponse({"results": []})
+
+    qs = Entidades.objects.using(banco).filter(
+        enti_empr=empresa_id,
+        enti_tipo_enti__in=["VE", "AM", "FU"],
+        enti_situ="1",
+    )
+    if term:
+        if term.isdigit():
+            qs = qs.filter(enti_clie__icontains=term)
+        else:
+            qs = qs.filter(enti_nome__icontains=term)
+    qs = qs.only("enti_clie", "enti_nome").order_by("enti_nome")[:20]
+
+    data = [{"id": str(v.enti_clie), "text": f"{v.enti_clie} - {v.enti_nome}"} for v in qs]
+    return JsonResponse({"results": data})
 
 
 class EntidadeCreateView(DBAndSlugMixin, CreateView):

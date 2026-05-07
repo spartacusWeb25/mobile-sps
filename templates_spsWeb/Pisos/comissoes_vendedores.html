@@ -3,6 +3,68 @@
 {% load finance_tags %}
 
 {% block content %}
+<style>
+  .chart-box {
+    position: relative;
+    width: 100%;
+  }
+
+  .chart-bar {
+    height: 320px;
+  }
+
+  .chart-doughnut {
+    height: 360px;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #totalVendido {
+    border-left: 1px solid #298f26;
+    border-right: 1px solid #083307;
+  } 
+
+  #totalVendido:hover {
+    border-left: #298f26;
+    transform: scale(1.1);
+  }
+  #totalComissao:hover {
+    border-left: #689fa7;
+    transform: scale(1.1);
+  }
+  #pedidos:hover {
+    border-left: #ddaf73;
+    transform: scale(1.1);
+  }
+  #itens:hover {
+    border-left: #c57272;
+    transform: scale(1.1);
+  }
+
+  #totalComissao {
+    border-left: 1px solid #689fa7;
+    border-right: 1px solid #1a4955;
+  }
+  #pedidos {
+    border-left: 1px solid #ddaf73;
+    border-right: 1px solid #92a106;
+  }
+
+  #itens {
+    border-left: 1px solid #c57272;
+    border-right: 1px solid #5e0101;
+  }
+
+
+  @media (max-width: 768px) {
+    .chart-bar,
+    .chart-doughnut {
+      height: 280px;
+    }
+  }
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="{% static 'css/form.css' %}">
 <div class="container">
 
   <div class="d-flex align-items-start mb-4">
@@ -132,37 +194,37 @@
   <div class="row g-3 mb-4">
 
     <div class="col-md-3">
-      <div class="card border-0 shadow-sm h-100">
-        <div class="card-body">
-          <small class="text-muted">Total vendido</small>
-          <h4 class="mb-0">{{ metricas.total_vendido|brl }}</h4>
+      <div class="card border-0 shadow-sm h-100" >
+        <div class="card-body" id="totalVendido">
+          <small class="text-muted"><i class="bi bi-coin"></i> Total vendido</small>
+          <h4 class="mb-0" style="font-size: 24px; font-weight: bold; color: #5bac54;">{{ metricas.total_vendido|brl }}</h4>
         </div>
       </div>
     </div>
 
     <div class="col-md-3">
-      <div class="card border-0 shadow-sm h-100">
-        <div class="card-body">
-          <small class="text-muted">Total comissão</small>
-          <h4 class="mb-0">{{ metricas.total_comissao|brl }}</h4>
+      <div class="card border-0 shadow-sm h-100" ">
+        <div class="card-body" id="totalComissao">
+          <small class="text-muted"><i class="bi bi-coin"></i> Total comissão</small>
+          <h4 class="mb-0" style="font-size: 24px; font-weight: bold; color: #54aca5;">{{ metricas.total_comissao|brl }}</h4>
         </div>
       </div>
     </div>
 
     <div class="col-md-3">
-      <div class="card border-0 shadow-sm h-100">
-        <div class="card-body">
-          <small class="text-muted">Pedidos</small>
-          <h4 class="mb-0">{{ metricas.quantidade_pedidos }}</h4>
+      <div class="card border-0 shadow-sm h-100" >
+        <div class="card-body" id="pedidos">
+          <small class="text-muted"><i class="bi bi-people-fill"></i> Pedidos</small>
+          <h4 class="mb-0" style="font-size: 24px; font-weight: bold; color: #aa832e;">{{ metricas.quantidade_pedidos }}</h4>
         </div>
       </div>
     </div>
 
     <div class="col-md-3">
-      <div class="card border-0 shadow-sm h-100">
-        <div class="card-body">
-          <small class="text-muted">Itens vendidos</small>
-          <h4 class="mb-0">{{ metricas.quantidade_itens }}</h4>
+      <div class="card border-0 shadow-sm h-100" >
+        <div class="card-body" id="itens">
+          <small class="text-muted"><i class="bi bi-people-fill"></i> Itens vendidos</small>
+          <h4 class="mb-0" style="font-size: 24px; font-weight: bold; color: #d84747;">{{ metricas.quantidade_itens }}</h4>
         </div>
       </div>
     </div>
@@ -178,7 +240,10 @@
           Comissão por agrupamento
         </div>
         <div class="card-body">
-          <canvas id="graficoComissao" height="120"></canvas>
+          <div class="chart-box chart-bar">
+            <canvas id="graficoComissao"></canvas>
+          </div>
+
         </div>
       </div>
     </div>
@@ -189,7 +254,9 @@
           Total vendido por agrupamento
         </div>
         <div class="card-body">
-          <canvas id="graficoVendas" height="170"></canvas>
+          <div class="chart-box chart-bar">
+            <canvas id="graficoVendas"></canvas>
+          </div>
         </div>
       </div>
     </div>
@@ -310,6 +377,8 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script>
   const labels = {{ chart.labels|safe }};
   const valoresComissao = {{ chart.comissoes|safe }};
@@ -322,18 +391,57 @@
     }).format(valor || 0);
   };
 
-  new Chart(document.getElementById("graficoComissao"), {
+  const paletaGradiente = [
+    ["#36A2EB", "#0d6efd"],
+    ["#FFCE56", "#fd7e14"],
+    ["#4BC0C0", "#198754"],
+    ["#9966FF", "#6f42c1"],
+    ["#FF9900", "#ffc107"],
+    ["#FF6B6B", "#dc3545"],
+    ["#20c997", "#0dcaf0"],
+    ["#adb5bd", "#495057"],
+  ];
+
+  function criarGradientes(ctx, quantidade, altura = 320) {
+    return Array.from({ length: quantidade }, (_, index) => {
+      const [cor1, cor2] = paletaGradiente[index % paletaGradiente.length];
+
+      const gradient = ctx.createLinearGradient(0, 0, 0, altura);
+      gradient.addColorStop(0, cor1);
+      gradient.addColorStop(1, cor2);
+
+      return gradient;
+    });
+  }
+
+  const canvasComissao = document.getElementById("graficoComissao");
+  const ctxComissao = canvasComissao.getContext("2d");
+  const gradientesComissao = criarGradientes(ctxComissao, valoresComissao.length, 320);
+
+  new Chart(ctxComissao, {
     type: "bar",
     data: {
       labels: labels,
       datasets: [{
         label: "Comissão",
         data: valoresComissao,
-        borderWidth: 1
+        backgroundColor: gradientesComissao,
+        borderColor: gradientesComissao,
+        borderWidth: 1,
+        borderRadius: 10,
+        borderSkipped: false,
+        barPercentage: 0.8,
+        categoryPercentage: 0.8,
+        barThickness: 22,
+        maxBarThickness: 34
       }]
     },
     options: {
       responsive: true,
+      maintainAspectRatio: false,
+      layout: {
+        padding: 8
+      },
       plugins: {
         tooltip: {
           callbacks: {
@@ -347,7 +455,20 @@
         }
       },
       scales: {
+        x: {
+          grid: {
+            display: false
+          },
+          ticks: {
+            maxRotation: 45,
+            minRotation: 35
+          }
+        },
         y: {
+          beginAtZero: true,
+          grid: {
+            color: "rgba(255,255,255,0.06)"
+          },
           ticks: {
             callback: function(value) {
               return moeda(value);
@@ -358,19 +479,43 @@
     }
   });
 
-  new Chart(document.getElementById("graficoVendas"), {
+  const canvasVendas = document.getElementById("graficoVendas");
+  const ctxVendas = canvasVendas.getContext("2d");
+  const gradientesVendas = criarGradientes(ctxVendas, valoresVenda.length, 360);
+
+  new Chart(ctxVendas, {
     type: "doughnut",
     data: {
       labels: labels,
       datasets: [{
         label: "Total vendido",
         data: valoresVenda,
-        borderWidth: 1
+        backgroundColor: gradientesVendas,
+        borderColor: "#1f2428",
+        borderWidth: 4,
+        borderRadius: 8,
+        hoverOffset: 14,
+        spacing: 4,
+        cutout: "66%"
       }]
     },
     options: {
       responsive: true,
+      maintainAspectRatio: false,
+      layout: {
+        padding: 8
+      },
       plugins: {
+        legend: {
+          position: "top",
+          labels: {
+            usePointStyle: true,
+            pointStyle: "rectRounded",
+            boxWidth: 10,
+            boxHeight: 10,
+            padding: 12
+          }
+        },
         tooltip: {
           callbacks: {
             label: function(context) {

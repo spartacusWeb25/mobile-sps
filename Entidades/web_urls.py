@@ -6,6 +6,7 @@ from .web_views import (
     EntidadeDeleteView,
     ExportarEntidadesView,
     RelatorioEntidadesView,
+    autocomplete_vendedores,
 )
 
 urlpatterns = [
@@ -15,4 +16,5 @@ urlpatterns = [
     path('<int:enti_clie>/excluir/', EntidadeDeleteView.as_view(), name='entidade_delete_web'),
     path('exportar/', ExportarEntidadesView.as_view(), name='exportar_entidades_web'),
     path('relatorio/', RelatorioEntidadesView.as_view(), name='relatorio_entidades_web'),
+    path('autocomplete/vendedores/', autocomplete_vendedores, name='entidades_autocomplete_vendedores'),
 ]

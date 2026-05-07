@@ -2,13 +2,13 @@ from django.views.generic import ListView
 from core.utils import get_db_from_slug
 from Entidades.models import Entidades
 from ...service.clientes_sem_movimento import ClienteSemMovimentoService
-from core.mixins.vendedor_mixin import VendedorEntidadeMixin
+from core.mixins.vendedor_responsavel_entidade_mixin import VendedorResponsavelEntidadeMixin
 from datetime import datetime, timedelta
 from django.conf import settings
 from django.utils import timezone
 
 
-class ClientesSemMovimentoListView(VendedorEntidadeMixin, ListView):
+class ClientesSemMovimentoListView(VendedorResponsavelEntidadeMixin, ListView):
     model = Entidades
     template_name = "ControleDeVisitas/clientes_sem_movimento.html"
     context_object_name = "clientes"
@@ -30,11 +30,9 @@ class ClientesSemMovimentoListView(VendedorEntidadeMixin, ListView):
         self.banco = get_db_from_slug(self.kwargs["slug"])
         vendedor_param = (self.request.GET.get("vendedor") or "").strip()
         vendedor_nome = vendedor_param or None
-        if self._usuario_eh_perfil_vendedores(banco=self.banco):
-            vendedor_entidade = self.get_entidade_vendedor(banco=self.banco)
-            vendedor_nome = (
-                str(getattr(vendedor_entidade, "enti_clie", "") or "").strip() or None
-            )
+        vendedor_ids = self.get_vendedor_responsavel_ids(banco=self.banco, param_name="vendedor")
+        if vendedor_ids and len(vendedor_ids) == 1:
+            vendedor_nome = str(vendedor_ids[0])
         service = ClienteSemMovimentoService(self.banco)
 
         self.data_inicial_obj = self._parse_date(self.request.GET.get("data_inicial"))

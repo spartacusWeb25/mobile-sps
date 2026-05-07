@@ -121,3 +121,20 @@ class CadastrosDomainService:
                         pass # Ignora erro de duplicação na replicação
         
         return entidade_principal
+    
+    @staticmethod
+    def vendedor_nome_por_enti_clie(enti_clie, using):
+        if enti_clie in [None, "", "None", "null", "undefined"]:
+            return None
+
+        try:
+            enti_clie_int = int(enti_clie)
+        except (TypeError, ValueError):
+            return None
+
+        return (
+            Entidades.objects.using(using)
+            .filter(enti_clie=enti_clie_int)
+            .values_list("enti_nome", flat=True)
+            .first()
+        )

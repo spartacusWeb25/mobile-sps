@@ -124,10 +124,16 @@
                 </div>
                 {% endfor %}
             {% endif %}
-
+           
+                 <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#filtrosVisitas" aria-expanded="true" aria-controls="filtrosVisitas">
+                    <i class="fas fa-sliders-h me-1"></i> Filtros
+                </button>
+                <div id="filtrosVisitas" class="collapse">
+           
             <form method="get" class="mb-0">
                 <div class="row g-2">
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label for="enti_nome" class="form-label">Nome</label>
                         <input type="text" id="enti_nome" name="enti_nome" class="form-control"
                             value="{{ request.GET.enti_nome }}" placeholder="Filtrar por nome">
@@ -159,7 +165,18 @@
                             {% endfor %}
                         </select>
                     </div>
-                    <div class="col-md-3 d-flex align-items-end gap-2">
+                    <div class="col-md-2">
+                        <label for="enti_vend" class="form-label">Vendedor</label>
+                        <select id="enti_vend" name="enti_vend" class="form-select">
+                            <option value="">Todos</option>
+                            {% for codigo, descricao in vendedores_entidade %}
+                            <option value="{{ codigo }}" {% if codigo == vendedor_responsavel_selecionado %}selected{% endif %}>
+                                {{ descricao }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end gap-2">
                         <button type="submit" class="btn btn-outline-primary" id="btn-filtrar-entidades">
                             <i class="bi bi-search"></i> Filtrar
                         </button>
@@ -169,7 +186,7 @@
             </form>
         </div>
     </div>
-
+     </div>
     <div class="card card-corporate">
         <div class="card-body">
             {% if entidades %}
@@ -203,6 +220,9 @@
                                 {% endif %}
                                 {% if entidade.enti_emai %}
                                 <div><i class="bi bi-envelope"></i> {{ entidade.enti_emai }}</div>
+                                {% endif %}
+                                {% if entidade.enti_vend %}
+                                <div><i class="bi bi-person"></i> {{ entidade.enti_vend }} - {{ entidade.vendedor_responsavel_nome|default_if_none:"" }}</div>
                                 {% endif %}
                             </div>
                         </div>
