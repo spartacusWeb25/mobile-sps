@@ -28,11 +28,16 @@ class ClientesSemMovimentoListView(VendedorResponsavelEntidadeMixin, ListView):
 
     def get_queryset(self):
         self.banco = get_db_from_slug(self.kwargs["slug"])
-        vendedor_param = (self.request.GET.get("vendedor") or "").strip()
-        vendedor_nome = vendedor_param or None
         vendedor_ids = self.get_vendedor_responsavel_ids(banco=self.banco, param_name="vendedor")
-        if vendedor_ids and len(vendedor_ids) == 1:
-            vendedor_nome = str(vendedor_ids[0])
+        self.vendedor_forcado_id = ""
+        self.vendedor_forcado_nome = ""
+        somente_carteira = False
+        if self._usuario_eh_perfil_vendedores(banco=self.banco):
+            somente_carteira = True
+            if vendedor_ids and len(vendedor_ids) == 1:
+                self.vendedor_forcado_id = str(vendedor_ids[0])
+                entidade_vendedor = self.get_entidade_vendedor(banco=self.banco)
+                self.vendedor_forcado_nome = (getattr(entidade_vendedor, "enti_nome", "") or "").strip()
         service = ClienteSemMovimentoService(self.banco)
 
         self.data_inicial_obj = self._parse_date(self.request.GET.get("data_inicial"))
@@ -48,7 +53,8 @@ class ClientesSemMovimentoListView(VendedorResponsavelEntidadeMixin, ListView):
             data_inicial=self.data_inicial_obj,
             data_final=self.data_final_obj,
             cliente_nome=self.request.GET.get("cliente"),
-            vendedor_nome=vendedor_nome,
+            vendedores_ids=vendedor_ids or None,
+            somente_carteira=somente_carteira,
         )
 
         return qs
@@ -67,6 +73,27 @@ class ClientesSemMovimentoListView(VendedorResponsavelEntidadeMixin, ListView):
         context["data_final"] = _to_input_date_obj(getattr(self, "data_final_obj", None))
         context["data_inicial_obj"] = getattr(self, "data_inicial_obj", None)
         context["data_final_obj"] = getattr(self, "data_final_obj", None)
+        context["vendedor_forcado"] = getattr(self, "vendedor_forcado_id", "") or ""
+        context["vendedor_forcado_nome"] = getattr(self, "vendedor_forcado_nome", "") or ""
+
+        vendedor_nome_input = context["vendedor_forcado_nome"]
+        if not vendedor_nome_input:
+            vend = (self.request.GET.get("vendedor") or "").strip()
+            if vend.isdigit():
+                try:
+                    empresa = self.request.session.get("empresa_id") or self.request.headers.get("X-Empresa")
+                    empresa = int(empresa) if empresa not in [None, ""] else None
+                except Exception:
+                    empresa = None
+                try:
+                    qs = Entidades.objects.using(self.banco).filter(enti_clie=int(vend))
+                    if empresa is not None:
+                        qs = qs.filter(enti_empr=empresa)
+                    obj = qs.first()
+                    vendedor_nome_input = (getattr(obj, "enti_nome", "") or "").strip()
+                except Exception:
+                    vendedor_nome_input = ""
+        context["vendedor_nome_input"] = vendedor_nome_input
 
         filtros_sem_page = self.request.GET.copy()
         try:

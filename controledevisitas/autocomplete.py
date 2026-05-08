@@ -95,7 +95,10 @@ def clientes_autocomplete(request, slug=None):
 
     qs = Entidades.objects.using(banco).filter(enti_empr=empresa, enti_tipo_enti__in=["CL", "AM"])
     if q:
-        qs = qs.filter(Q(enti_nome__icontains=q) | Q(enti_cnpj__icontains=q) | Q(enti_cpf__icontains=q))
+        filters = Q(enti_nome__icontains=q) | Q(enti_cnpj__icontains=q) | Q(enti_cpf__icontains=q)
+        if q.isdigit():
+            filters |= Q(enti_clie__icontains=q)
+        qs = qs.filter(filters)
     qs = qs.only("enti_clie", "enti_nome", "enti_cnpj", "enti_cpf").order_by("enti_nome")[offset:offset+limit]
 
     data = [
@@ -121,7 +124,10 @@ def vendedores_autocomplete(request, slug=None):
 
     qs = Entidades.objects.using(banco).filter(enti_empr=empresa, enti_tipo_enti__in=["VE", "FU", "AM"])
     if q:
-        qs = qs.filter(Q(enti_nome__icontains=q) | Q(enti_cnpj__icontains=q) | Q(enti_cpf__icontains=q))
+        filters = Q(enti_nome__icontains=q) | Q(enti_cnpj__icontains=q) | Q(enti_cpf__icontains=q)
+        if q.isdigit():
+            filters |= Q(enti_clie__icontains=q)
+        qs = qs.filter(filters)
     qs = qs.only("enti_clie", "enti_nome", "enti_cnpj", "enti_cpf").order_by("enti_nome")[offset:offset+limit]
 
     data = [

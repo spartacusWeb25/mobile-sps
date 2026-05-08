@@ -194,30 +194,30 @@
               <h6>Dados Básicos</h6>
             </div>
             <div class="row g-3">
-              <div class="col-12 col-md-4">{{ form.ctrl_data.label_tag }}{{ form.ctrl_data }}</div>
+              <div class="col-12 col-md-4">{{ form.ctrl_data.label_tag }}{{ form.ctrl_data }} </div>
               <div class="col-md-8 d-none d-md-block"></div>
 
               <div class="col-md-3 d-none">{{ form.ctrl_cliente_id.label_tag }}{{ form.ctrl_cliente_id }}</div>
               <div class="col-md-3 d-none">{{ form.ctrl_vendedor_id.label_tag }}{{ form.ctrl_vendedor_id }}</div>
               <div class="col-md-3 d-none">{{ form.ctrl_etapa_id.label_tag }}{{ form.ctrl_etapa_id }}</div>
 
-              <div class="col-12 col-md-4 cv-field">
+              <div class="col-12 col-md-4 mt-3 mb-3 cv-field">
                 <label class="form-label">Cliente <button type="button" class="btn btn-outline-success"
                     id="btnNovoCliente">
-                    Novo
+                    <i class="fas fa-plus fs-5"></i> Novo
                   </button></label>
-                <input type="text" id="cli-search" class="form-control" placeholder="Buscar cliente"
-                  autocomplete="off" />
+                <input type="text" id="cli-search" class="form-control" placeholder="Buscar cliente" autocomplete="off"
+                  value="{{ cliente_pre_nome|default:'' }}" />
                 <div id="cli-results" class="list-group position-absolute w-100" style="z-index:1060;"></div>
               </div>
-              <div class="col-12 col-md-4 cv-field">
-                <label class="form-label">Vendedor</label>
-                <input type="text" id="ven-search" class="form-control" placeholder="Buscar vendedor"
-                  autocomplete="off" />
+              <div class="col-12 col-md-4 mt-3 mb-3 cv-field">
+                <label class="form-label mt-3">Vendedor</label>
+                <input type="text" id="ven-search" class="form-control" placeholder="Buscar vendedor" autocomplete="off"
+                  value="{{ vendedor_pre_nome|default:'' }}" />
                 <div id="ven-results" class="list-group position-absolute w-100" style="z-index:1060;"></div>
               </div>
-              <div class="col-12 col-md-4 cv-field">
-                <label class="form-label">Etapa</label>
+              <div class="col-12 col-md-4 mt-3 mb-3 cv-field">
+                <label class="form-label mt-3">Etapa</label>
                 <input type="text" id="eta-search" class="form-control" placeholder="Buscar etapa" autocomplete="off" />
                 <div id="eta-results" class="list-group position-absolute w-100" style="z-index:1060;"></div>
               </div>
@@ -248,7 +248,8 @@
               </div>
               <div class="col-6 col-md-2">
                 <div class="form-check">
-                  {{ form.ctrl_base }}<label class="form-check-label" for="id_ctrl_base">Base</label>
+                  {{ form.ctrl_base }}<label class="form-check-label" for="id_ctrl_base">Base de Clientes
+                    (Retomar)</label>
                 </div>
               </div>
               <div class="col-6 col-md-2">
@@ -453,8 +454,29 @@
     const cliRes = document.getElementById('cli-results');
     const venRes = document.getElementById('ven-results');
     const etaRes = document.getElementById('eta-results');
+    const clientePreId = '{{ cliente_pre_id|default:"" }}';
+    const clientePreNome = '{{ cliente_pre_nome|default:""|escapejs }}';
+
+    const vendedorPreId = '{{ vendedor_pre_id|default:"" }}';
+    const vendedorPreNome = '{{ vendedor_pre_nome|default:""|escapejs }}';
 
     let tCli = null, tVen = null, tEta = null;
+
+    if (clientePreId && hidCli) {
+      hidCli.value = clientePreId;
+    }
+
+    if (clientePreNome && cliInput) {
+      cliInput.value = clientePreNome;
+    }
+
+    if (vendedorPreId && hidVen) {
+      hidVen.value = vendedorPreId;
+    }
+
+    if (vendedorPreNome && venInput) {
+      venInput.value = vendedorPreNome;
+    }
 
     cliInput?.addEventListener('input', function () {
       const v = (this.value || '').trim();

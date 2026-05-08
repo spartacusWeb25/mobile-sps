@@ -36,6 +36,24 @@
   .metric-value {
     font-size: 1.35rem; font-weight: 700; line-height: 1;
   }
+
+  #total-pedidos {
+    border-left: 3px solid #7c3aed;
+    border-radius: 12px 0 0 12px;
+    border-right: 2px solid #8d69ca;
+  }
+  #total-valor {
+    border-left: 3px solid #10b981;
+    border-radius: 0 12px 12px 0;
+    border-right: 2px solid #b0dda6;
+  }
+  #total-concluidos {
+    border-left: 3px solid #e11d1d;
+    border-radius: 0 0 12px 0;
+    border-right: 2px solid #e29492;
+  }
+
+
   .table thead th {
     font-size: .72rem; text-transform: uppercase;
     letter-spacing: .07em; color: #7a8099;
@@ -56,10 +74,11 @@
   }
   #btn-imprimir { margin-top: 1rem; margin-bottom: 1rem; border-radius: 8px;  border-color: #a4a9aa;}
   #btn-abrir { margin-top: 1rem; margin-bottom: 1rem; border-radius: 8px;  border-color: #62b9c7;}
+  #btn-filtros { margin-top: 1rem; margin-bottom: 1rem; border-radius: 8px;  border-color: #62b9c7; color: #33818f;}
 
   @media screen and (max-width: 768px) {
   .metric-label { font-size: .45rem; }
-  .metric-value { font-size: .5rem; }
+  .metric-value { font-size: .64rem; margin-left:0; }
   #pedido-card { border: 3px solid #122733; margin-bottom: 0.40rem; }
   #btn-imprimir { margin-top: 1rem; margin-bottom: 1rem; border-radius: 8px;  border-color: #a4a9aa;}
   #btn-abrir { margin-top: 1rem; margin-bottom: 1rem; border-radius: 8px;  border-color: #62b9c7;}
@@ -78,7 +97,7 @@
   <!-- Metric Cards -->
   <div class="row g-3 mb-3">
     <div class="col-4 col-sm-4">
-      <div class="metric-card">
+      <div class="metric-card" id="total-pedidos">
         <div class="metric-icon" style="background:#f3eeff; color:#7c3aed;">
           <i class="bi bi-cart3"></i>
         </div>
@@ -89,7 +108,7 @@
       </div>
     </div>
     <div class="col-4 col-sm-4">
-      <div class="metric-card">
+      <div class="metric-card" id="total-valor">
         <div class="metric-icon" style="background:#e6fbf5; color:#10b981;">
           <i class="bi bi-currency-dollar"></i>
         </div>
@@ -100,12 +119,12 @@
       </div>
     </div>
     <div class="col-4 col-sm-4">
-      <div class="metric-card">
+      <div class="metric-card" id="total-concluidos">
         <div class="metric-icon" style="background:#fff0f6; color:#e11d1d;">
           <i class="bi bi-lock-fill"></i>
         </div>
         <div>
-          <div class="metric-label">Concluídos(Compra Efetuada)</div>
+          <div class="metric-label">Concluídos</div>
           <div class="metric-value" style="color:#e11d1d;">{{ metricas.total_concluidos }}</div>
         </div>
       </div>
@@ -124,7 +143,9 @@
 <div class="mb-2">
   <button class="btn btn-outline-primary w-full"
           data-bs-toggle="collapse"
-          data-bs-target="#filtrosCollapse">
+          data-bs-target="#filtrosCollapse"
+          id="btn-filtros">
+          
     <i class="bi bi-funnel"></i> Filtros
   </button>
 </div>

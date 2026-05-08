@@ -61,9 +61,63 @@ class ControleVisitaCreateView(VendedorEntidadeMixin, FormView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx['slug'] = self.slug
-        return ctx
+        ctx["slug"] = self.slug
 
+        cliente_id = self.request.GET.get("cliente")
+        vendedor_id = self.request.GET.get("vendedor")
+
+        ctx["cliente_pre_id"] = ""
+        ctx["cliente_pre_nome"] = ""
+        ctx["vendedor_pre_id"] = ""
+        ctx["vendedor_pre_nome"] = ""
+
+        if cliente_id:
+            from Entidades.models import Entidades
+
+            try:
+                empresa_id = int(self.empresa_id)
+            except Exception:
+                empresa_id = None
+
+            qs = Entidades.objects.using(self.db_alias).filter(enti_clie=cliente_id)
+
+            if empresa_id:
+                qs = qs.filter(enti_empr=empresa_id)
+
+            cliente = qs.first()
+
+            if cliente:
+                ctx["cliente_pre_id"] = cliente.enti_clie
+                ctx["cliente_pre_nome"] = cliente.enti_nome
+
+        if vendedor_id:
+            from Entidades.models import Entidades
+
+            try:
+                empresa_id = int(self.empresa_id)
+            except Exception:
+                empresa_id = None
+
+            try:
+                qs_vend = Entidades.objects.using(self.db_alias).filter(enti_clie=vendedor_id)
+                if empresa_id:
+                    qs_vend = qs_vend.filter(enti_empr=empresa_id)
+                vendedor = qs_vend.first()
+            except Exception:
+                vendedor = None
+
+            ctx["vendedor_pre_id"] = vendedor.enti_clie if vendedor else ""
+            ctx["vendedor_pre_nome"] = vendedor.enti_nome if vendedor else ""
+
+
+        return ctx
+    
+    
+    def form_valid(self, form):
+
+        return ctx
+    
+    
     def form_valid(self, form):
         dados = form.cleaned_data
         from Entidades.models import Entidades
@@ -173,6 +227,27 @@ class ControleVisitaCreateView(VendedorEntidadeMixin, FormView):
 
     def get_success_url(self):
         return f"/web/{self.slug}/controle-de-visitas/resumo/{getattr(self, 'created_id', '') or ''}/"
+    
+    def get_initial(self):
+        initial = super().get_initial()
+
+        cliente_id = self.request.GET.get("cliente")
+        vendedor_id = self.request.GET.get("vendedor")
+
+        origem = self.request.GET.get("origem")
+
+        if cliente_id:
+            initial["ctrl_cliente_id"] = cliente_id
+        
+        if vendedor_id:
+            initial["ctrl_vendedor_id"] = vendedor_id
+
+        if origem == "sem_movimento":
+            initial["ctrl_novo"] = True
+            initial["ctrl_base"] = True
+            initial["ctrl_obse"] = "Contato aberto pela tela de clientes sem movimento."
+
+        return initial
 
 
 class ControleVisitaEditView(FormView):

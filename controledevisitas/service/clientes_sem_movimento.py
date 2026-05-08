@@ -38,6 +38,8 @@ class ClienteSemMovimentoService:
         data_final: date | None = None,
         cliente_nome: str | None = None,
         vendedor_nome: str | None = None,
+        vendedores_ids: list[int] | None = None,
+        somente_carteira: bool = False,
     ):
         empresa = self._clean_int(empresa)
         filial = self._clean_int(filial)
@@ -52,9 +54,10 @@ class ClienteSemMovimentoService:
         if cliente_nome:
             clientes = clientes.filter(enti_nome__icontains=cliente_nome)
 
-        vendedores_ids = None
+        vendedores_ids_int = []
+        vendedores_ids_str = []
 
-        if vendedor_nome:
+        if vendedores_ids is None and vendedor_nome:
             if vendedor_nome.isdigit():
                 vendedores_ids = [int(vendedor_nome)]
             else:
@@ -70,10 +73,24 @@ class ClienteSemMovimentoService:
                     vendedores_qs.values_list("enti_clie", flat=True)[:200]
                 )
 
-            if not vendedores_ids:
-                return clientes.none()
+        if vendedores_ids is not None:
+            for v in vendedores_ids:
+                if v is None or v == "":
+                    continue
+                try:
+                    vendedores_ids_int.append(int(v))
+                except (TypeError, ValueError):
+                    pass
+                try:
+                    vendedores_ids_str.append(str(v))
+                except Exception:
+                    pass
 
-            clientes = clientes.filter(enti_vend__in=vendedores_ids)
+            vendedores_ids_int = [v for v in vendedores_ids_int if v is not None]
+            vendedores_ids_str = [v for v in vendedores_ids_str if v not in [None, ""]]
+
+            if not vendedores_ids_int and not vendedores_ids_str:
+                return clientes.none()
 
         _pedido_data = Coalesce(
             Cast(F("pedi_data"), DateField()),
@@ -103,9 +120,36 @@ class ClienteSemMovimentoService:
             pedidos_base = pedidos_base.filter(pedi_fili=filial)
             orcamentos_base = orcamentos_base.filter(orca_fili=filial)
 
-        if vendedores_ids:
-            pedidos_base = pedidos_base.filter(pedi_vend__in=vendedores_ids)
-            orcamentos_base = orcamentos_base.filter(orca_vend__in=vendedores_ids)
+        if vendedores_ids_int or vendedores_ids_str:
+            if somente_carteira:
+                clientes = clientes.filter(
+                    Q(enti_vend__in=vendedores_ids_int) | Q(enti_vend__in=vendedores_ids_str)
+                )
+            else:
+                filtro_ped = Q()
+                if vendedores_ids_int:
+                    filtro_ped |= Q(pedi_vend__in=vendedores_ids_int)
+                if vendedores_ids_str:
+                    filtro_ped |= Q(pedi_vend__in=vendedores_ids_str)
+
+                filtro_orc = Q()
+                if vendedores_ids_int:
+                    filtro_orc |= Q(orca_vend__in=vendedores_ids_int)
+                if vendedores_ids_str:
+                    filtro_orc |= Q(orca_vend__in=vendedores_ids_str)
+
+                pedidos_vendedor_base = pedidos_base.filter(filtro_ped)
+                orcamentos_vendedor_base = orcamentos_base.filter(filtro_orc)
+
+                clientes = clientes.annotate(
+                    tem_pedido_vendedor=Exists(pedidos_vendedor_base),
+                    tem_orcamento_vendedor=Exists(orcamentos_vendedor_base),
+                ).filter(
+                    Q(enti_vend__in=vendedores_ids_int)
+                    | Q(enti_vend__in=vendedores_ids_str)
+                    | Q(tem_pedido_vendedor=True)
+                    | Q(tem_orcamento_vendedor=True)
+                )
 
         pedidos_periodo = pedidos_base
         orcamentos_periodo = orcamentos_base

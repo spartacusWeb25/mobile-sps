@@ -3,99 +3,201 @@
 
 {% block crm_content %}
 <style>
-  #etapas-card {
-    margin-top: 20px;
-    margin-bottom: 20px;
-    padding: 20px;
-    border-radius: 10px;
+  .etapas-shell {
+    max-width: 1220px;
+    margin: 0 auto;
   }
 
-  #etapas-bodys{
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 0 0 3px rgba(255, 250, 250, 0.555);
+  .etapas-title {
+    font-weight: 800;
+    letter-spacing: .01em;
+  }
 
+  .etapas-subtitle {
+    color: var(--bs-secondary-color);
+    margin: 0;
+  }
+
+  .etapas-filter-card,
+  .etapas-list-card {
+    border: 1px solid rgba(255, 255, 255, .10);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, .025);
+  }
+
+  .etapa-item {
+    border: 1px solid rgba(255, 255, 255, .12);
+    border-radius: 18px;
+    background: linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.018));
+    overflow: hidden;
+    transition: transform .12s ease, border-color .12s ease;
+  }
+
+  .etapa-item:hover {
+    transform: translateY(-2px);
+    border-color: rgba(13, 110, 253, .55);
+  }
+
+  .etapa-numero {
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    background: rgba(13, 110, 253, .12);
+    border: 1px solid rgba(13, 110, 253, .35);
+    color: #66a3ff;
+  }
+
+  .etapa-desc {
+    font-size: 1.05rem;
+    font-weight: 800;
+  }
+
+  .etapa-muted {
+    color: var(--bs-secondary-color);
+    font-size: .84rem;
+  }
+
+  .etapa-actions {
+    border-top: 1px solid rgba(255,255,255,.08);
+    background: rgba(0,0,0,.10);
+  }
+
+  @media (max-width: 767.98px) {
+    .etapas-shell {
+      padding-inline: 6px;
+    }
   }
 </style>
-<div class="container">
-  <div class="row mb-3">
-    <div class="col-12">
-      <h3 class="text-center mt-5"><i class="bi bi-people-fill"></i> Etapas de Visita</h3>
+
+<div class="container-fluid etapas-shell py-4">
+
+  <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-end gap-3 mb-4">
+    <div>
+      <h3 class="etapas-title mb-1">
+        <i class="bi bi-flag me-2"></i>Etapas de Visita
+      </h3>
+      <p class="etapas-subtitle">
+        Organize o funil comercial do controle de visitas.
+      </p>
     </div>
+
+    <a href="/web/{{ slug }}/controle-de-visitas/" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left"></i> Voltar
+    </a>
   </div>
-  <div class="row g-2 align-items-end mb-3">
-    <div class="col-md-8">
-      <form class="row g-2" method="get">
-        <div class="col-md-6">
+
+  <div class="card etapas-filter-card mb-3">
+    <div class="card-body">
+      <form class="row g-3 align-items-end" method="get">
+        <div class="col-12 col-lg-6">
           <label class="form-label">Descrição</label>
-          <input type="text" name="descricao" value="{{ descricao }}" placeholder="Filtrar descrição"
-            class="form-control" />
+          <input
+            type="text"
+            name="descricao"
+            value="{{ descricao }}"
+            placeholder="Ex: prospecção, visita, proposta..."
+            class="form-control"
+          />
         </div>
-        <div class="container">
-          <div class="col-md-6">
-            <label class="form-label d-block">&nbsp;</label>
-            <button class="btn btn-outline-primary w-100">Filtrar</button>
-          </div>
+
+        <div class="col-12 col-md-6 col-lg-3">
+          <button class="btn btn-outline-primary w-100">
+            <i class="bi bi-funnel"></i> Filtrar
+          </button>
+        </div>
+
+        <div class="col-12 col-md-6 col-lg-3">
+          <a href="/web/{{ slug }}/controle-de-visitas/etapas/nova/" class="btn btn-outline-success w-100">
+            <i class="bi bi-plus-lg"></i> Nova Etapa
+          </a>
+        </div>
       </form>
     </div>
   </div>
-  <div class="col-md-4">
-    <div class="d-flex justify-content-end">
-      <a href="/web/{{ slug }}/controle-de-visitas/etapas/nova/" class="btn btn-outline-success">Nova Etapa</a>
-    </div>
-  </div>
-</div>
 
-<div class="card" id="etapas-card">
-  <div class="card-body" id="etapas-body">
-    {% if etapas %}
-    <div class="row g-3">
-      {% for e in etapas %}
-      <div class="col-12 col-md-6 col-lg-4">
-        <div class="card h-100 shadow-sm">
-          <div class="card-body" id="etapas-bodys">
-            <div class="small text-muted">Número</div>
-            <div class="fw-bold mb-2">{{ e.etap_nume }}</div>
-            <div class="small text-muted">Descrição</div>
-            <div class="mb-2">{{ e.etap_descricao }}</div>
-            <div class="small text-muted">Observações</div>
-            <div>{{ e.etap_obse|default:"-" }}</div>
-          </div>
-          <div class="card-footer d-flex gap-2">
-            <a href="/web/{{ slug }}/controle-de-visitas/etapas/editar/{{ e.etap_id }}/"
-              class="btn btn-sm btn-outline-primary flex-grow-1">Editar</a>
-            <a href="/web/{{ slug }}/controle-de-visitas/etapas/excluir/{{ e.etap_id }}/"
-              class="btn btn-sm btn-outline-danger flex-grow-1"
-              onclick="return confirm('Deseja excluir esta etapa?');">Excluir</a>
-          </div>
+  <div class="card etapas-list-card">
+    <div class="card-body p-3 p-md-4">
+      {% if etapas %}
+        <div class="row g-3">
+          {% for e in etapas %}
+            <div class="col-12 col-md-6 col-xl-4">
+              <div class="etapa-item h-100">
+                <div class="p-3">
+                  <div class="d-flex align-items-start gap-3 mb-3">
+                    <div class="etapa-numero">
+                      {{ e.etap_nume }}
+                    </div>
+
+                    <div class="flex-grow-1">
+                      <div class="etapa-muted">Etapa</div>
+                      <div class="etapa-desc">{{ e.etap_descricao }}</div>
+                    </div>
+                  </div>
+
+                  <div class="etapa-muted mb-1">Observações</div>
+                  <div>
+                    {{ e.etap_obse|default:"Sem observações" }}
+                  </div>
+                </div>
+
+                <div class="etapa-actions p-3 d-flex gap-2">
+                  <a
+                    href="/web/{{ slug }}/controle-de-visitas/etapas/editar/{{ e.etap_id }}/"
+                    class="btn btn-sm btn-outline-primary flex-fill"
+                  >
+                    <i class="bi bi-pencil"></i> Editar
+                  </a>
+
+                  <a
+                    href="/web/{{ slug }}/controle-de-visitas/etapas/excluir/{{ e.etap_id }}/"
+                    class="btn btn-sm btn-outline-danger flex-fill"
+                    onclick="return confirm('Deseja excluir esta etapa?');"
+                  >
+                    <i class="bi bi-trash"></i> Excluir
+                  </a>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="text-center text-muted py-5">
+          <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+          Nenhuma etapa encontrada
+        </div>
+      {% endif %}
+    </div>
+
+    {% if page_obj %}
+      <div class="card-footer d-flex justify-content-between align-items-center">
+        <div>
+          {% if page_obj.has_previous %}
+            <a class="btn btn-outline-secondary btn-sm"
+               href="?page={{ page_obj.previous_page_number }}&descricao={{ descricao|urlencode }}">
+              Anterior
+            </a>
+          {% endif %}
+        </div>
+
+        <span class="badge bg-secondary">
+          {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+        </span>
+
+        <div>
+          {% if page_obj.has_next %}
+            <a class="btn btn-outline-secondary btn-sm"
+               href="?page={{ page_obj.next_page_number }}&descricao={{ descricao|urlencode }}">
+              Próxima
+            </a>
+          {% endif %}
         </div>
       </div>
-      {% endfor %}
-    </div>
-    {% else %}
-    <div class="text-center text-muted py-4">Nenhuma etapa encontrada</div>
     {% endif %}
   </div>
-  <div class="card-footer d-flex justify-content-between align-items-center">
-    <div>
-      {% if page_obj.has_previous %}
-      <a class="btn btn-outline-secondary btn-sm"
-        href="?page={{ page_obj.previous_page_number }}&descricao={{ descricao|urlencode }}">Anterior</a>
-      {% endif %}
-    </div>
-    <div>
-      <span class="badge bg-secondary">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
-    </div>
-    <div>
-      {% if page_obj.has_next %}
-      <a class="btn btn-outline-secondary btn-sm"
-        href="?page={{ page_obj.next_page_number }}&descricao={{ descricao|urlencode }}">Próxima</a>
-      {% endif %}
-    </div>
-  </div>
-</div>
-<div class="mt-2 text-end">
-  <a href="/web/{{ slug }}/controle-de-visitas/" class="btn btn-outline-secondary">Voltar</a>
-</div>
+
 </div>
 {% endblock %}
