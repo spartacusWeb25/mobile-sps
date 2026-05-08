@@ -1,39 +1,39 @@
 {
-  "debug_id": "5a4128c1-5b90-4199-bc2e-ae5f9bc73fe2",
-  "timestamp_inicio": "2026-05-04T23:55:03.212809Z",
+  "debug_id": "2daa802e-5724-445f-abc8-be036e3d98f5",
+  "timestamp_inicio": "2026-05-08T17:02:18.756608Z",
   "ambiente": {
-    "debug": false,
+    "debug": true,
     "database_alias": "saveweb001"
   },
   "tabelas_tributacao": {
     "versao": "Padrão"
   },
   "nota": {
-    "id": 100,
+    "id": 101,
     "modelo": "55",
     "serie": "005",
-    "numero": "24",
+    "numero": "25",
     "empresa": "1",
     "filial": "1",
-    "destinatario_id": "21",
+    "destinatario_id": "6",
     "uf_origem": "PR",
     "uf_destino": "PR",
     "regime": "1"
   },
   "itens": [
     {
-      "id": 116,
-      "produto_id": "3",
-      "descricao_produto": "CANECA DE TESTES",
-      "ncm_produto": "8419****",
+      "id": 120,
+      "produto_id": "23",
+      "descricao_produto": "BOLO DE LARANJA",
+      "ncm_produto": null,
       "cfop_inicial": "5102",
       "quantidade": "1.0000",
-      "unitario": "120.0000",
-      "desconto": "20.0000",
+      "unitario": "31.2000",
+      "desconto": "0.2000",
       "logs": [
         {
-          "id": "2ddb46a3-14c9-499d-a752-f2d5617778ac",
-          "timestamp": "2026-05-04T23:55:03.884472Z",
+          "id": "a1ff1e2a-77d0-4714-bd3f-6b51f2a3060d",
+          "timestamp": "2026-05-08T17:02:18.848226Z",
           "tipo": "antes_calculo_item",
           "mensagem": "Início do cálculo de impostos para o item.",
           "dados": {
@@ -44,7 +44,7 @@
           }
         }
       ],
-      "fonte_tributacao": "NCM",
+      "fonte_tributacao": "CFOP",
       "cfop_resolvido": "5102",
       "cfop_flags": {
         "exig_icms": false,
@@ -54,9 +54,9 @@
         "exig_ibs": false,
         "gera_st": false
       },
-      "ncm_resolvido": "8419****",
+      "ncm_resolvido": null,
       "bases": {
-        "raiz": "100.00",
+        "raiz": "31.00",
         "icms": null,
         "st": null
       },
@@ -97,12 +97,166 @@
         "cbs_habilitado_cfop": false,
         "ibs_habilitado_cfop": false
       }
+    },
+    {
+      "id": 121,
+      "produto_id": "26",
+      "descricao_produto": "bolo de cenoura",
+      "ncm_produto": null,
+      "cfop_inicial": "5102",
+      "quantidade": "1.0000",
+      "unitario": "36.0000",
+      "desconto": "0.0000",
+      "logs": [
+        {
+          "id": "a70d151a-c15a-4434-b552-8b02cf79fcd9",
+          "timestamp": "2026-05-08T17:02:18.989970Z",
+          "tipo": "antes_calculo_item",
+          "mensagem": "Início do cálculo de impostos para o item.",
+          "dados": {
+            "uf_origem": "PR",
+            "uf_destino": "PR",
+            "regime": "1",
+            "tipo_operacao": "VENDA"
+          }
+        }
+      ],
+      "fonte_tributacao": "CFOP",
+      "cfop_resolvido": "5102",
+      "cfop_flags": {
+        "exig_icms": false,
+        "exig_ipi": false,
+        "exig_pis_cofins": false,
+        "exig_cbs": false,
+        "exig_ibs": false,
+        "gera_st": false
+      },
+      "ncm_resolvido": null,
+      "bases": {
+        "raiz": "36.00",
+        "icms": null,
+        "st": null
+      },
+      "aliquotas": {
+        "ipi": null,
+        "icms": null,
+        "st": null,
+        "pis": null,
+        "cofins": null,
+        "cbs": null,
+        "ibs": null
+      },
+      "valores_calculados": {
+        "ipi": null,
+        "icms": null,
+        "st": null,
+        "pis": null,
+        "cofins": null,
+        "cbs": null,
+        "ibs": null
+      },
+      "extras": {
+        "mva_st": null
+      },
+      "csts": {
+        "ipi": null,
+        "icms": null,
+        "st": null,
+        "pis": null,
+        "cofins": null,
+        "cbs": null,
+        "ibs": null
+      },
+      "condicionais_aplicadas": {
+        "icms_habilitado_cfop": false,
+        "ipi_habilitado_cfop": false,
+        "pis_cofins_habilitado_cfop": false,
+        "cbs_habilitado_cfop": false,
+        "ibs_habilitado_cfop": false
+      }
+    },
+    {
+      "id": 122,
+      "produto_id": "7",
+      "descricao_produto": "Anel de outro",
+      "ncm_produto": "7113****",
+      "cfop_inicial": "5405",
+      "quantidade": "1.0000",
+      "unitario": "409.5000",
+      "desconto": "0.0000",
+      "logs": [
+        {
+          "id": "a3e25096-73d5-4325-bcc7-1027f056cb73",
+          "timestamp": "2026-05-08T17:02:19.131624Z",
+          "tipo": "antes_calculo_item",
+          "mensagem": "Início do cálculo de impostos para o item.",
+          "dados": {
+            "uf_origem": "PR",
+            "uf_destino": "PR",
+            "regime": "1",
+            "tipo_operacao": "VENDA"
+          }
+        }
+      ],
+      "fonte_tributacao": "NCM",
+      "cfop_resolvido": "5405",
+      "cfop_flags": {
+        "exig_icms": true,
+        "exig_ipi": false,
+        "exig_pis_cofins": false,
+        "exig_cbs": false,
+        "exig_ibs": false,
+        "gera_st": true
+      },
+      "ncm_resolvido": "7113****",
+      "bases": {
+        "raiz": "409.50",
+        "icms": "409.50",
+        "st": null
+      },
+      "aliquotas": {
+        "ipi": "0.00",
+        "icms": "0.00",
+        "st": null,
+        "pis": "0.00",
+        "cofins": "0.00",
+        "cbs": "0.00",
+        "ibs": "0.00"
+      },
+      "valores_calculados": {
+        "ipi": "0",
+        "icms": "0",
+        "st": null,
+        "pis": "0",
+        "cofins": "0",
+        "cbs": "0",
+        "ibs": "0"
+      },
+      "extras": {
+        "mva_st": null
+      },
+      "csts": {
+        "ipi": "99",
+        "icms": "102",
+        "st": null,
+        "pis": "49",
+        "cofins": "49",
+        "cbs": "400",
+        "ibs": "400"
+      },
+      "condicionais_aplicadas": {
+        "icms_habilitado_cfop": true,
+        "ipi_habilitado_cfop": false,
+        "pis_cofins_habilitado_cfop": false,
+        "cbs_habilitado_cfop": false,
+        "ibs_habilitado_cfop": false
+      }
     }
   ],
   "logs": [
     {
-      "id": "f618e2e4-f4ed-4422-ab3c-c4e6fb0624da",
-      "timestamp": "2026-05-04T23:55:03.671335Z",
+      "id": "19587af7-d9a4-4e25-b020-dd39006da232",
+      "timestamp": "2026-05-08T17:02:18.825898Z",
       "tipo": "contexto_nota",
       "mensagem": "Contexto fiscal inicial da nota.",
       "dados": {
@@ -110,5 +264,5 @@
       }
     }
   ],
-  "timestamp_fim": "2026-05-04T23:55:05.225395Z"
+  "timestamp_fim": "2026-05-08T17:02:19.470882Z"
 }

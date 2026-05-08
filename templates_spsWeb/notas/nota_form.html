@@ -6,24 +6,35 @@
 <link rel="stylesheet" href="{% static 'css/form.css' %}?v=20260313">
 
 <style>
-  :root {
-    --nf-bg: #0d1117;
-    --nf-surface: #161b22;
-    --nf-surface2: #1c2128;
-    --nf-border: rgba(255, 255, 255, 0.08);
+    :root {
+    --nf-bg: #171a1d;
+    --nf-surface: #212529;
+    --nf-surface2: #191e22;
+    --nf-border: rgba(0, 0, 0, 0.08);
     --nf-border-strong: rgba(255, 255, 255, 0.14);
     --nf-text: #e6edf3;
-    --nf-muted: #7d8590;
-    --nf-accent: #388bfd;
+    --nf-muted: #6f757e;
+    --nf-accent: #1652a7;
     --nf-accent-dim: rgba(56, 139, 253, 0.15);
     --nf-success: #3fb950;
     --nf-warning: #d29922;
     --nf-danger: #f85149;
-    --nf-label: 10px;
-    --nf-input-h: 28px;
-    --nf-radius: 6px;
+    --nf-input-h: 40px;
+    --nf-radius: 8px;
   }
 
+
+  html[data-bs-theme="light"],
+  body.light {
+    --nf-bg: #e4e4e4;
+    --nf-surface: #ffffff;
+    --nf-surface2: #e1e2e2; 
+    --nf-border: rgba(15,23,42,.08);
+    --nf-border-strong: rgba(15,23,42,.16);
+    --nf-text: #111827;
+    --nf-muted: #435268;
+    --nf-input-bg: #ffffff;
+  }
  
 
   .nf-wrap {
@@ -326,6 +337,7 @@
     color: var(--nf-text) !important;
     font-size: 12px !important;
     height: var(--nf-input-h) !important;
+    padding: 0 8px !important;
   }
 
   input.form-control:focus,
@@ -334,6 +346,7 @@
   select.form-control:focus {
     border-color: var(--nf-accent) !important;
     box-shadow: 0 0 0 3px rgba(56, 139, 253, 0.12) !important;
+
   }
 
   .nav-tabs {
@@ -471,7 +484,8 @@
   }
 </style>
 
-<div class="container">
+
+<div class="container-fluid">
   <div class="nf-wrap">
     <div class="nf-topbar">
       <div class="nf-topbar-left">

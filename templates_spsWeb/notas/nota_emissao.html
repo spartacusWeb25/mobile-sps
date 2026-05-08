@@ -6,162 +6,108 @@
 
 <style>
   :root {
-    --nf-bg: #0d1117;
-    --nf-surface: #161b22;
-    --nf-surface2: #1c2128;
-    --nf-border: rgba(255, 255, 255, 0.08);
+    --nf-bg: #171a1d;
+    --nf-surface: #212529;
+    --nf-surface2: #191e22;
+    --nf-border: rgba(0, 0, 0, 0.08);
     --nf-border-strong: rgba(255, 255, 255, 0.14);
     --nf-text: #e6edf3;
-    --nf-muted: #7d8590;
-    --nf-accent: #388bfd;
+    --nf-muted: #6f757e;
+    --nf-accent: #1652a7;
     --nf-accent-dim: rgba(56, 139, 253, 0.15);
     --nf-success: #3fb950;
     --nf-warning: #d29922;
     --nf-danger: #f85149;
-    --nf-label: 10px;
-    --nf-input-h: 28px;
-    --nf-radius: 6px;
+    --nf-input-h: 40px;
+    --nf-radius: 8px;
+  }
+
+
+  html[data-bs-theme="light"],
+  body.light {
+    --nf-bg: #e4e4e4;
+    --nf-surface: #ffffff;
+    --nf-surface2: #e1e2e2; 
+    --nf-border: rgba(15,23,42,.08);
+    --nf-border-strong: rgba(15,23,42,.16);
+    --nf-text: #111827;
+    --nf-muted: #435268;
+    --nf-input-bg: #ffffff;
+  }
+  /* ── Reset container do base ── */
+  .nf-page-root {
+    width: 100%;
+    max-width: 100%;
+    padding: 35px;
+    margin: 0;
   }
 
   .nf-wrap {
     font-family: 'Segoe UI', system-ui, sans-serif;
     font-size: 13px;
     color: var(--nf-text);
-    padding: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - 56px); /* desconta navbar do base */
   }
 
   /* ── Top bar ── */
   .nf-topbar {
-    background: var(--nf-surface);
+    background: var(--nf-surface2);
     border-bottom: 1px solid var(--nf-border);
-    padding: 8px 20px;
+    border-radius: 10px 10px 6px 6px;
+    padding: 10px 16px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     position: sticky;
     top: 0;
     z-index: 100;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 8px;
+    text-align: center;
   }
 
-  .nf-topbar-left {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .nf-topbar-title {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--nf-text);
-  }
-
-  .nf-topbar-title i {
-    color: var(--nf-accent);
-    margin-right: 5px;
-  }
+  .nf-topbar-left { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .nf-topbar-title { font-size: 14px; font-weight: 600; color: var(--nf-text); text-align: center; }
+  .nf-topbar-title i { color: var(--nf-accent); margin-right: 5px; font-size: 20px; }
 
   .nf-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 11px;
-    padding: 2px 8px;
-    border-radius: 20px;
-    border: 1px solid;
-    font-weight: 500;
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11px; padding: 2px 8px; border-radius: 20px;
+    border: 1px solid; font-weight: 500;
   }
-
   .nf-chip-draft {
     color: var(--nf-warning);
-    border-color: rgba(210, 153, 34, 0.3);
-    background: rgba(210, 153, 34, 0.08);
+    border-color: rgba(210,153,34,.3);
+    background: rgba(210,153,34,.08);
   }
 
   /* ── Buttons ── */
   .nf-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 4px 12px;
-    border-radius: var(--nf-radius);
-    font-size: 12px;
-    font-weight: 500;
-    cursor: pointer;
-    border: 1px solid;
-    transition: opacity 0.15s, transform 0.1s;
-    line-height: 1.4;
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 12px; border-radius: var(--nf-radius);
+    font-size: 12px; font-weight: 500; cursor: pointer;
+    border: 1px solid; transition: opacity .15s, transform .1s;
+    line-height: 1.4; text-decoration: none; white-space: nowrap;
   }
-
-  .nf-btn:active {
-    transform: scale(0.97);
-  }
-
-  .nf-btn-ghost {
-    background: transparent;
-    color: var(--nf-muted);
-    border-color: var(--nf-border-strong);
-  }
-
-  .nf-btn-ghost:hover {
-    color: var(--nf-text);
-    border-color: var(--nf-border-strong);
-    background: var(--nf-surface2);
-  }
-
-  .nf-btn-primary {
-    background: var(--nf-accent);
-    color: #fff;
-    border-color: transparent;
-  }
-
-  .nf-btn-primary:hover {
-    opacity: 0.88;
-  }
-
-  .nf-btn-success {
-    background: rgba(63, 185, 80, 0.12);
-    color: var(--nf-success);
-    border-color: rgba(63, 185, 80, 0.3);
-  }
-
-  .nf-btn-success:hover {
-    background: rgba(63, 185, 80, 0.2);
-  }
-
-  .nf-btn-warning {
-    background: rgba(210, 153, 34, 0.12);
-    color: var(--nf-warning);
-    border-color: rgba(210, 153, 34, 0.3);
-  }
-
-  .nf-btn-warning:hover {
-    background: rgba(210, 153, 34, 0.2);
-  }
-
-  .nf-btn-danger {
-    background: rgba(248, 81, 73, 0.1);
-    color: var(--nf-danger);
-    border-color: rgba(248, 81, 73, 0.25);
-  }
-
-  .nf-btn-danger:hover {
-    background: rgba(248, 81, 73, 0.18);
-  }
-
-  .nf-btn-sm {
-    padding: 2px 8px;
-    font-size: 11px;
-  }
-
-  .nf-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
+  .nf-btn:active { transform: scale(.97); }
+  .nf-btn-ghost  { background:transparent; color:var(--nf-muted); border-color:var(--nf-border-strong); }
+  .nf-btn-ghost:hover { color:var(--nf-text); background:var(--nf-surface2); }
+  .nf-btn-primary { background:var(--nf-accent); color:#fff; border-color:transparent; }
+  .nf-btn-primary:hover { opacity:.88; }
+  .nf-btn-success { background:rgba(63,185,80,.12); color:var(--nf-success); border-color:rgba(63,185,80,.3); }
+  .nf-btn-success:hover { background:rgba(63,185,80,.2); }
+  .nf-btn-warning { background:rgba(210,153,34,.12); color:var(--nf-warning); border-color:rgba(210,153,34,.3); }
+  .nf-btn-warning:hover { background:rgba(210,153,34,.2); }
+  .nf-btn-danger  { background:rgba(248,81,73,.1); color:var(--nf-danger); border-color:rgba(248,81,73,.25); }
+  .nf-btn-danger:hover  { background:rgba(248,81,73,.18); }
+  .nf-btn-sm { padding:2px 8px; font-size:11px; }
+  .nf-btn:disabled { opacity:.5; cursor:not-allowed; }
 
   /* ── Body ── */
-  .nf-body {
-    padding: 12px 16px;
-  }
+  .nf-body { padding: 10px 12px; flex: 1; }
 
   /* ── Panel ── */
   .nf-panel {
@@ -174,759 +120,566 @@
 
   /* ── Section header ── */
   .nf-section-hdr {
-    padding: 6px 14px;
+    padding: 5px 12px;
     background: var(--nf-surface2);
     border-bottom: 1px solid var(--nf-border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    display: flex; align-items: center; justify-content: space-between;
+    border-radius: 10px 10px 6px 6px;
+    margin-bottom: 4px;
   }
-
   .nf-section-hdr span {
-    font-size: 10px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.7px;
-    color: var(--nf-muted);
+    font-size: 12px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .7px; color: var(--nf-muted);
   }
 
   /* ── Field grid ── */
-  .nf-fields {
-    display: grid;
-    gap: 5px 10px;
-    padding: 10px 14px;
-  }
-
-  .nf-field {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-
+  .nf-fields { display: grid; gap: 12px 16px; padding: 14px 18px;margin-bottom: 10px; }
+  .nf-field { display: flex; flex-direction: column; gap: 4px; position: relative; }
   .nf-field label {
-    font-size: 10px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--nf-muted);
+    font-size: 12px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .5px; color: var(--nf-muted);
   }
-
   .nf-field input,
   .nf-field select,
   .nf-field textarea {
     background: var(--nf-surface2);
     border: 1px solid var(--nf-border-strong);
     border-radius: var(--nf-radius);
-    color: var(--nf-text);
-    font-size: 12px;
-    height: var(--nf-input-h);
-    padding: 0 8px;
-    width: 100%;
-    outline: none;
-    transition: border-color 0.15s, box-shadow 0.15s;
+    color: var(--nf-text); font-size: 12px;
+    height: var(--nf-input-h); padding: 0 8px;
+    width: 100%; outline: none;
+    transition: border-color .15s, box-shadow .15s;
+    font-size: 14px;
+    padding: 0 12px;
   }
-
-  .nf-field input:focus,
-  .nf-field select:focus {
+  .nf-field input:focus, .nf-field select:focus {
     border-color: var(--nf-accent);
-    box-shadow: 0 0 0 3px rgba(56, 139, 253, 0.12);
+    box-shadow: 0 0 0 3px rgba(56,139,253,.12);
   }
-
-  .nf-field input[readonly] {
-    color: var(--nf-muted);
-    cursor: default;
-  }
-
+  .nf-field input[readonly] { color: var(--nf-muted); cursor: default; }
   .nf-field input.nf-highlight {
-    border-color: rgba(210, 153, 34, 0.5);
+    border-color: rgba(210,153,34,.5);
     color: var(--nf-warning);
-    background: rgba(210, 153, 34, 0.06);
+    background: rgba(210,153,34,.06);
+  }
+  .nf-field select option { background: #1c2128; }
+  .nf-field .nf-hint { font-size: 10px; color: var(--nf-muted); margin-top: 1px; }
+
+  /* ── Identificação — responsivo ── */
+  .nf-ident-grid {
+    grid-template-columns: 90px 80px 110px 140px 140px minmax(180px,1fr) minmax(150px,1fr);
+  }
+  @media (max-width: 1280px) {
+    .nf-ident-grid {
+      grid-template-columns: 80px 70px 100px repeat(2, minmax(120px,1fr)) repeat(2, minmax(140px,1fr));
+    }
+  }
+  @media (max-width: 960px) {
+    .nf-ident-grid { grid-template-columns: repeat(4, 1fr); }
+  }
+  @media (max-width: 600px) {
+    .nf-ident-grid { grid-template-columns: repeat(2, 1fr); }
   }
 
-  .nf-field select option {
-    background: #1c2128;
+  /* ── Destinatário ── */
+  .nf-dest-grid {
+    grid-template-columns: minmax(260px,2fr) minmax(160px,1fr);
   }
+  @media (max-width: 600px) { .nf-dest-grid { grid-template-columns: 1fr; } }
 
-  .nf-field .nf-hint {
-    font-size: 10px;
-    color: var(--nf-muted);
-    margin-top: 1px;
+  /* ── Transporte ── */
+  .nf-transp-grid {
+    grid-template-columns: 180px minmax(200px,1fr) 110px 80px;
   }
+  @media (max-width: 960px) { .nf-transp-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 480px) { .nf-transp-grid { grid-template-columns: 1fr; } }
 
   /* ── Tabs ── */
   .nf-tabs {
-    display: flex;
-    gap: 0;
-    border-bottom: 1px solid var(--nf-border);
-    padding: 0 14px;
-    overflow-x: auto;
-    scrollbar-width: none;
+    display: flex; border-bottom: 1px solid var(--nf-border);
+    padding: 0 12px; overflow-x: auto; scrollbar-width: none;
   }
-
-  .nf-tabs::-webkit-scrollbar {
-    display: none;
-  }
-
+  .nf-tabs::-webkit-scrollbar { display: none; }
   .nf-tab {
-    padding: 7px 12px;
-    font-size: 11px;
-    font-weight: 500;
-    color: var(--nf-muted);
-    cursor: pointer;
-    white-space: nowrap;
-    border-bottom: 2px solid transparent;
-    margin-bottom: -1px;
-    transition: color 0.15s;
+    padding: 7px 12px; font-size: 11px; font-weight: 500;
+    color: var(--nf-muted); cursor: pointer; white-space: nowrap;
+    border-bottom: 2px solid transparent; margin-bottom: -1px;
+    transition: color .15s;
   }
+  .nf-tab:hover { color: var(--nf-text); }
+  .nf-tab.active { color: var(--nf-accent); border-bottom-color: var(--nf-accent); }
 
-  .nf-tab:hover {
-    color: var(--nf-text);
-  }
+  .nf-pane { display: none; }
+  .nf-pane.active { display: block; }
 
-  .nf-tab.active {
-    color: var(--nf-accent);
-    border-bottom-color: var(--nf-accent);
-  }
-
-  /* ── Tab panes ── */
-  .nf-pane {
-    display: none;
-  }
-
-  .nf-pane.active {
-    display: block;
-  }
-
-  /* ── Totals bar (rodapé da tabela de itens) ── */
+  /* ── Totals bar ── */
   .nf-totals-bar {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 6px 14px;
-    padding: 8px 14px;
+    display: flex; align-items: center;
+    flex-wrap: wrap; gap: 6px 12px;
+    padding: 7px 12px;
     background: var(--nf-surface2);
     border-top: 1px solid var(--nf-border);
   }
-
-  .nf-total-item {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .nf-total-item .lbl {
-    font-size: 10px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--nf-muted);
-  }
-
-  .nf-total-item .val {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--nf-text);
-  }
-
-  .nf-total-item.accent .val {
-    color: var(--nf-accent);
-  }
-
-  .nf-vsep {
-    width: 1px;
-    height: 24px;
-    background: var(--nf-border);
-  }
+  .nf-total-item { display: flex; flex-direction: column; }
+  .nf-total-item .lbl { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--nf-muted); }
+  .nf-total-item .val { font-size:12px; font-weight:600; color:var(--nf-text); }
+  .nf-total-item.accent .val { color: var(--nf-accent); }
+  .nf-vsep { width:1px; height:24px; background:var(--nf-border); }
 
   /* ── Items table ── */
-  .nf-table-wrap {
-    overflow-x: auto;
-  }
-
-  .nf-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 11px;
-  }
-
+  .nf-table-wrap { overflow-x: auto; }
+  .nf-table { width:100%; border-collapse:collapse; font-size:11px; }
   .nf-table th {
-    text-align: left;
-    padding: 5px 10px;
-    font-size: 10px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--nf-muted);
-    border-bottom: 1px solid var(--nf-border);
-    white-space: nowrap;
+    text-align:left; padding:5px 8px; font-size:10px; font-weight:600;
+    text-transform:uppercase; letter-spacing:.5px; color:var(--nf-muted);
+    border-bottom:1px solid var(--nf-border); white-space:nowrap;
   }
-
-  .nf-table th.r,
-  .nf-table td.r {
-    text-align: right;
-  }
-
+  .nf-table th.r, .nf-table td.r { text-align:right; }
   .nf-table td {
-    padding: 5px 10px;
-    border-bottom: 1px solid var(--nf-border);
-    color: var(--nf-text);
-    vertical-align: middle;
+    padding:5px 8px; border-bottom:1px solid var(--nf-border);
+    color:var(--nf-text); vertical-align:middle;
   }
-
-  .nf-table tbody tr:hover {
-    background: rgba(255, 255, 255, 0.02);
-  }
-
-  .nf-table tbody tr:last-child td {
-    border-bottom: none;
-  }
-
-  .nf-table .empty td {
-    text-align: center;
-    padding: 20px;
-    color: var(--nf-muted);
-    font-style: italic;
-  }
-
+  .nf-table tbody tr:hover { background:rgba(255,255,255,.02); }
+  .nf-table tbody tr:last-child td { border-bottom:none; }
+  .nf-table .empty td { text-align:center; padding:20px; color:var(--nf-muted); font-style:italic; }
   .nf-badge {
-    display: inline-block;
-    padding: 1px 6px;
-    border-radius: 4px;
-    font-size: 10px;
-    font-weight: 500;
-    background: var(--nf-surface2);
-    border: 1px solid var(--nf-border-strong);
-    color: var(--nf-muted);
+    display:inline-block; padding:1px 6px; border-radius:4px;
+    font-size:10px; font-weight:500;
+    background:var(--nf-surface2); border:1px solid var(--nf-border-strong); color:var(--nf-muted);
   }
 
   /* ── Add item row ── */
   .nf-add-row {
     display: grid;
-    grid-template-columns: minmax(180px, 2fr) 80px 70px 80px 90px 80px auto;
-    gap: 5px 8px;
-    padding: 8px 14px;
-    background: rgba(255, 255, 255, 0.01);
+    grid-template-columns: minmax(160px,2fr) 80px 60px 72px 86px 76px auto;
+    gap: 5px 6px; padding: 7px 12px;
+    background: rgba(255,255,255,.01);
     border-bottom: 1px solid var(--nf-border);
     align-items: end;
+  }
+  @media (max-width: 960px) {
+    .nf-add-row {
+      grid-template-columns: minmax(140px,2fr) 72px 56px 68px 80px 72px auto;
+      gap: 4px 5px;
+    }
+  }
+  @media (max-width: 640px) {
+    .nf-add-row {
+      grid-template-columns: 1fr 1fr 1fr;
+    }
+    .nf-add-row > *:first-child { grid-column: 1 / -1; }
+    .nf-add-row > *:last-child  { grid-column: 1 / -1; }
   }
 
   /* ── Action bar ── */
   .nf-action-bar {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 16px;
-    background: var(--nf-surface);
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px;
+    background: var(--nf-surface2);
     border-top: 1px solid var(--nf-border);
-    position: sticky;
-    bottom: 0;
-    z-index: 99;
+    position: sticky; bottom: 0; z-index: 99;
+    flex-wrap: wrap;
   }
+  .nf-action-bar .spacer { flex: 1; min-width: 10px; }
 
-  .nf-action-bar .spacer {
-    flex: 1;
-  }
-
-  /* ── Autocomplete list ── */
-  .nf-field {
-    position: relative;
-  }
-
+  /* ── Autocomplete ── */
   .list-group {
-    z-index: 1000;
-    background: var(--nf-surface2) !important;
-    border: 1px solid var(--nf-border-strong) !important;
-    border-radius: var(--nf-radius);
-    max-height: 200px;
-    overflow-y: auto;
+    z-index:1000; background:var(--nf-surface2) !important;
+    border:1px solid var(--nf-border-strong) !important;
+    border-radius:var(--nf-radius); max-height:200px; overflow-y:auto;
   }
-
   .list-group-item {
-    background: transparent !important;
-    color: var(--nf-text) !important;
-    border-color: var(--nf-border) !important;
-    font-size: 12px;
-    padding: 6px 10px;
+    background:transparent !important; color:var(--nf-text) !important;
+    border-color:var(--nf-border) !important; font-size:12px; padding:6px 10px;
   }
-
-  .list-group-item:hover {
-    background: var(--nf-accent-dim) !important;
-  }
+  .list-group-item:hover { background:var(--nf-accent-dim) !important; }
 
   /* ── CFOP & Tributos ── */
-  .nf-tributos {
-    padding: 10px 14px;
+  .nf-tributos { padding: 8px 12px; }
+  .nf-tributos-grid { display:grid; gap:5px 8px; }
+  .g2 { grid-template-columns:repeat(2,1fr); }
+  .g3 { grid-template-columns:repeat(3,1fr); }
+  .g4 { grid-template-columns:repeat(4,1fr); }
+  .g5 { grid-template-columns:repeat(5,1fr); }
+  .g6 { grid-template-columns:repeat(6,1fr); }
+  .g7 { grid-template-columns:repeat(7,1fr); }
+  @media (max-width:960px) {
+    .g5,.g6,.g7 { grid-template-columns:repeat(4,1fr); }
   }
-
-  .nf-tributos-grid {
-    display: grid;
-    gap: 5px 10px;
+  @media (max-width:600px) {
+    .g3,.g4,.g5,.g6,.g7 { grid-template-columns:repeat(2,1fr); }
+    .g2 { grid-template-columns:1fr; }
   }
-
-  .g2 {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .g3 {
-    grid-template-columns: repeat(3, 1fr);
-  }
-
-  .g4 {
-    grid-template-columns: repeat(4, 1fr);
-  }
-
-  .g5 {
-    grid-template-columns: repeat(5, 1fr);
-  }
-
-  .g6 {
-    grid-template-columns: repeat(6, 1fr);
-  }
-
-  .g7 {
-    grid-template-columns: repeat(7, 1fr);
-  }
-
-  .nf-divider {
-    height: 1px;
-    background: var(--nf-border);
-    margin: 8px 0;
-  }
+  .nf-divider { height:1px; background:var(--nf-border); margin:8px 0; }
 
   /* ── Financeiro ── */
   .nf-financ-header {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 6px;
-    padding: 10px 14px;
-    background: var(--nf-surface2);
-    border-bottom: 1px solid var(--nf-border);
+    display:grid; grid-template-columns:1fr 1fr 1fr;
+    gap:6px; padding:10px 12px;
+    background:var(--nf-surface2); border-bottom:1px solid var(--nf-border);
   }
+  @media (max-width:480px) { .nf-financ-header { grid-template-columns:1fr 1fr; } }
 
-  .nf-financ-stat {
-    display: flex;
-    flex-direction: column;
+  .nf-financ-stat { display:flex; flex-direction:column; }
+  .nf-financ-stat .lbl { font-size:10px; text-transform:uppercase; letter-spacing:.5px; color:var(--nf-muted); font-weight:600; }
+  .nf-financ-stat .val { font-size:15px; font-weight:600; color:var(--nf-text); }
+  .nf-financ-stat.accent .val { color:var(--nf-accent); }
+
+  .spinner-border-sm { width:12px; height:12px; border-width:2px; }
+
+  input.form-control, select.form-select {
+    background:var(--nf-surface2) !important;
+    border:1px solid var(--nf-border-strong) !important;
+    border-radius:var(--nf-radius) !important;
+    color:var(--nf-text) !important; font-size:12px !important;
+    height:var(--nf-input-h) !important;
   }
-
-  .nf-financ-stat .lbl {
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--nf-muted);
-    font-weight: 600;
-  }
-
-  .nf-financ-stat .val {
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--nf-text);
-  }
-
-  .nf-financ-stat.accent .val {
-    color: var(--nf-accent);
-  }
-
-  /* ── Spinner inside button ── */
-  .spinner-border-sm {
-    width: 12px;
-    height: 12px;
-    border-width: 2px;
-  }
-
-  /* ── Hidden inputs field (keep form-control class for bootstrap compat) ── */
-  input.form-control,
-  select.form-select {
-    background: var(--nf-surface2) !important;
-    border: 1px solid var(--nf-border-strong) !important;
-    border-radius: var(--nf-radius) !important;
-    color: var(--nf-text) !important;
-    font-size: 12px !important;
-    height: var(--nf-input-h) !important;
-  }
-
-  input.form-control:focus,
-  select.form-select:focus {
-    border-color: var(--nf-accent) !important;
-    box-shadow: 0 0 0 3px rgba(56, 139, 253, 0.12) !important;
+  input.form-control:focus, select.form-select:focus {
+    border-color:var(--nf-accent) !important;
+    box-shadow:0 0 0 3px rgba(56,139,253,.12) !important;
   }
 </style>
 
-<div class="container">
-  <div class="nf-wrap">
 
-    <!-- Top Bar -->
-    <div class="nf-topbar">
-      <div class="nf-topbar-left">
-        <span class="nf-topbar-title"><i class="bi bi-upload"></i>Emissão de Nota Fiscal</span>
-        <span class="nf-chip nf-chip-draft">● Rascunho</span>
-      </div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <a class="nf-btn nf-btn-ghost" href="/web/{{ slug }}/notas-fiscais/">← Voltar</a>
-      </div>
+<div class="nf-page-root">
+<div class="nf-wrap">
+
+  <!-- Top Bar -->
+  <div class="nf-topbar">
+    <div class="nf-topbar-left">
+      <span class="nf-topbar-title"><i class="bi bi-upload"></i>Emissão de Nota Fiscal</span>
+      <span class="nf-chip nf-chip-draft">● Rascunho</span>
     </div>
+    <a class="nf-btn nf-btn-ghost" href="/web/{{ slug }}/notas-fiscais/">← Voltar</a>
+  </div>
 
-    <div class="nf-body">
-      <form id="emit-form">
+  <div class="nf-body">
+    <form id="emit-form">
 
-        <!-- ═══ PAINEL PRINCIPAL ═══ -->
-        <div class="nf-panel">
-          <!-- Identificação -->
-          <div class="nf-section-hdr"><span>Identificação</span></div>
-          <div class="nf-fields"
-            style="grid-template-columns: 90px 80px 110px 150px 150px minmax(200px,1fr) minmax(160px,1fr);">
-            <div class="nf-field">
-              <label>Modelo</label>
-              <select name="modelo">
-                <option value="55">NF-e</option>
-                <option value="65">NFC-e</option>
-              </select>
-            </div>
-            <div class="nf-field">
-              <label>Série</label>
-              {% if serie_opcoes %}
-              <select name="serie">
-                {% for opt in serie_opcoes %}
-                <option value="{{ opt.value }}" {% if opt.value == serie_default %}selected{% endif %}>{{ opt.label }}
-                </option>
-                {% endfor %}
-              </select>
-              {% else %}
-              <input type="number" name="serie" value="1" />
-              {% endif %}
-            </div>
-            <div class="nf-field">
-              <label>Número</label>
-              <input type="number" name="numero" class="nf-highlight" placeholder="Automático" />
-            </div>
-            <div class="nf-field">
-              <label>Data de Emissão</label>
-              <input type="date" name="data_emissao" value="{{ data_emissao_default }}" />
-            </div>
-            <div class="nf-field">
-              <label>Data de Saída</label>
-              <input type="date" name="data_saida" value="{{ data_saida_default }}" />
-            </div>
-            <div class="nf-field">
-              <label>Natureza da Operação</label>
-              <select name="natureza_operacao">
-                {% for opt in natureza_operacao_opcoes %}
-                <option value="{{ opt.value }}" {% if opt.value == natureza_operacao_default %}selected{% endif %}>{{ opt.label }}</option>
-                {% endfor %}
-              </select>
-            </div>
-            <div class="nf-field">
-              <label>Tipo de Documento</label>
-              <select name="tipo_documento">
-                {% for opt in tipo_documento_opcoes %}
-                <option value="{{ opt.value }}" {% if opt.value == tipo_documento_default %}selected{% endif %}>{{ opt.label }}</option>
-                {% endfor %}
-              </select>
-            </div>
+      <div class="nf-panel">
+
+        <!-- Identificação -->
+        <div class="nf-section-hdr"><span>Identificação</span></div>
+        <div class="nf-fields nf-ident-grid">
+          <div class="nf-field">
+            <label>Modelo</label>
+            <select name="modelo">
+              <option value="55">NF-e</option>
+              <option value="65">NFC-e</option>
+            </select>
           </div>
+          <div class="nf-field">
+            <label>Série</label>
+            {% if serie_opcoes %}
+            <select name="serie">
+              {% for opt in serie_opcoes %}
+              <option value="{{ opt.value }}" {% if opt.value == serie_default %}selected{% endif %}>{{ opt.label }}</option>
+              {% endfor %}
+            </select>
+            {% else %}
+            <input type="number" name="serie" value="1" />
+            {% endif %}
+          </div>
+          <div class="nf-field">
+            <label>Número</label>
+            <input type="number" name="numero" class="nf-highlight" placeholder="Automático" />
+          </div>
+          <div class="nf-field">
+            <label>Data de Emissão</label>
+            <input type="date" name="data_emissao" value="{{ data_emissao_default }}" />
+          </div>
+          <div class="nf-field">
+            <label>Data de Saída</label>
+            <input type="date" name="data_saida" value="{{ data_saida_default }}" />
+          </div>
+          <div class="nf-field">
+            <label>Natureza da Operação</label>
+            <select name="natureza_operacao">
+              {% for opt in natureza_operacao_opcoes %}
+              <option value="{{ opt.value }}" {% if opt.value == natureza_operacao_default %}selected{% endif %}>{{ opt.label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="nf-field">
+            <label>Tipo de Documento</label>
+            <select name="tipo_documento">
+              {% for opt in tipo_documento_opcoes %}
+              <option value="{{ opt.value }}" {% if opt.value == tipo_documento_default %}selected{% endif %}>{{ opt.label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
 
-          <!-- Cliente -->
-          <div class="nf-section-hdr"><span>Destinatário</span></div>
-          <div class="nf-fields" style="grid-template-columns: minmax(280px,2fr) minmax(160px,1fr);">
+        <!-- Destinatário -->
+        <div class="nf-section-hdr"><span>Destinatário</span></div>
+        <div class="nf-fields nf-dest-grid">
+          <div class="nf-field">
+            <label>Cliente</label>
+            <input type="text" id="cli-autocomplete" placeholder="Digite nome / CNPJ / CPF e selecione" />
+            <input type="hidden" name="destinatario" id="destinatario-id" />
+            <span class="nf-hint">Busca limitada a 20 resultados</span>
+          </div>
+          <div class="nf-field" style="justify-content:flex-end;">
+            <label>&nbsp;</label>
+            <span style="font-size:11px;color:var(--nf-muted);padding-top:4px;">Dados inferidos automaticamente após seleção</span>
+          </div>
+        </div>
+
+        <!-- Transporte -->
+        <div class="nf-section-hdr"><span>Transporte</span></div>
+        <div class="nf-fields nf-transp-grid">
+          <div class="nf-field">
+            <label>Modalidade</label>
+            <select name="transporte_modalidade" id="transporte-modalidade">
+              {% for opt in modalidade_frete_opcoes %}
+              <option value="{{ opt.value }}" {% if opt.value == modalidade_frete_default %}selected{% endif %}>{{ opt.label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="nf-field">
+            <label>Transportadora</label>
+            <input type="text" name="transportadora" id="transportadora" />
+            <input type="hidden" id="transportadora-id" />
+          </div>
+          <div class="nf-field">
+            <label>Placa</label>
+            <input type="text" name="placa_veiculo" id="placa-veiculo" />
+          </div>
+          <div class="nf-field">
+            <label>UF Veículo</label>
+            <input type="text" name="uf_veiculo" id="uf-veiculo" />
+          </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="nf-tabs" id="nf-tabs">
+          <div class="nf-tab active" data-tab="itens">Produtos / Itens</div>
+          <div class="nf-tab" data-tab="cfop">CFOP &amp; Tributos</div>
+          <div class="nf-tab" data-tab="totais">Totais</div>
+          <div class="nf-tab" data-tab="financeiro" id="tab-financeiro-btn-new">Financeiro</div>
+        </div>
+
+        <!-- ─── PANE: Itens ─── -->
+        <div class="nf-pane active" id="pane-itens">
+          <div class="nf-add-row">
             <div class="nf-field">
-              <label>Cliente</label>
-              <input type="text" id="cli-autocomplete" placeholder="Digite nome / CNPJ / CPF e selecione" />
-              <input type="hidden" name="destinatario" id="destinatario-id" />
-              <span class="nf-hint">Busca limitada a 20 resultados</span>
+              <label>Produto</label>
+              <input type="text" id="prod-autocomplete" placeholder="Digite descrição / ref / código" />
+              <input type="hidden" id="produto-codigo" />
             </div>
-            <div class="nf-field" style="justify-content:flex-end;">
+            <div class="nf-field">
+              <label>NCM</label>
+              <input type="text" name="item_ncm" id="item-ncm" value="00000000" />
+            </div>
+            <div class="nf-field">
+              <label>Unid.</label>
+              <input type="text" name="item_unidade" id="item-unidade" value="UN" />
+            </div>
+            <div class="nf-field">
+              <label>Qtd</label>
+              <input type="number" step="0.0001" name="item_quantidade" id="item-quantidade" value="1" />
+            </div>
+            <div class="nf-field">
+              <span class="nf-hint">(Tab. Preços)</span>
+              <label>Unitário</label>
+              <input type="number" step="0.01" name="item_unitario" id="item-unitario" value="0" />
+            </div>
+            <div class="nf-field">
+              <label>Desc. R$</label>
+              <input type="number" step="0.01" name="item_desconto" id="item-desconto" value="0" />
+            </div>
+            <div class="nf-field">
               <label>&nbsp;</label>
-              <span style="font-size:11px;color:var(--nf-muted);padding-top:4px;">Dados inferidos automaticamente após
-                seleção</span>
+              <button type="button" class="nf-btn nf-btn-primary nf-btn-sm" id="btn-add-item">
+                <i class="bi bi-plus-lg"></i> Adicionar
+              </button>
             </div>
           </div>
 
-          <!-- Transporte (inline) -->
-          <div class="nf-section-hdr"><span>Transporte</span></div>
-          <div class="nf-fields" style="grid-template-columns: 180px minmax(180px,1fr) 110px 80px;">
-            <div class="nf-field">
-              <label>Modalidade</label>
-              <select name="transporte_modalidade" id="transporte-modalidade">
-                {% for opt in modalidade_frete_opcoes %}
-                <option value="{{ opt.value }}" {% if opt.value == modalidade_frete_default %}selected{% endif %}>{{ opt.label }}</option>
-                {% endfor %}
-              </select>
-            </div>
-            <div class="nf-field">
-              <label>Transportadora</label>
-              <input type="text" name="transportadora" id="transportadora" />
-              <input type="hidden" id="transportadora-id" />
-            </div>
-            <div class="nf-field">
-              <label>Placa</label>
-              <input type="text" name="placa_veiculo" id="placa-veiculo" />
-            </div>
-            <div class="nf-field">
-              <label>UF Veículo</label>
-              <input type="text" name="uf_veiculo" id="uf-veiculo" />
-            </div>
+          <div class="nf-table-wrap">
+            <table class="nf-table" id="items-table">
+              <thead>
+                <tr>
+                  <th style="min-width:200px;">Produto</th>
+                  <th class="r" style="width:76px;">Qtd</th>
+                  <th class="r" style="width:86px;">Unitário</th>
+                  <th class="r" style="width:74px;">Desc.</th>
+                  <th style="width:60px;">CFOP</th>
+                  <th style="width:86px;">NCM</th>
+                  <th class="r" style="width:90px;">Total</th>
+                  <th style="width:74px;">Fonte</th>
+                  <th style="width:66px;"></th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
           </div>
 
-          <!-- Tabs: Itens / CFOP / Totais / Financeiro -->
-          <div class="nf-tabs" id="nf-tabs">
-            <div class="nf-tab active" data-tab="itens">Produtos / Itens</div>
-            <div class="nf-tab" data-tab="cfop">CFOP &amp; Tributos</div>
-            <div class="nf-tab" data-tab="totais">Totais</div>
-            <div class="nf-tab" data-tab="financeiro" id="tab-financeiro-btn-new">Financeiro</div>
+          <div class="nf-totals-bar">
+            <div class="nf-total-item">
+              <span class="lbl">Total Produtos</span>
+              <span class="val" id="total-produtos-bar-disp">R$ 0,00</span>
+              <input type="hidden" id="total-produtos-bar" />
+            </div>
+            <div class="nf-vsep"></div>
+            <div class="nf-total-item">
+              <span class="lbl">Desconto</span>
+              <span class="val" id="total-descontos-bar-disp">R$ 0,00</span>
+              <input type="hidden" id="total-descontos-bar" />
+            </div>
+            <div class="nf-vsep"></div>
+            <div class="nf-total-item">
+              <span class="lbl">Tributos</span>
+              <span class="val" id="total-tributos-bar-disp">R$ 0,00</span>
+            </div>
+            <div class="nf-vsep"></div>
+            <div class="nf-total-item accent">
+              <span class="lbl">Total Nota</span>
+              <span class="val" id="total-nota-bar-disp">R$ 0,00</span>
+            </div>
+            <div style="flex:1;"></div>
+            <div class="nf-total-item"><span class="lbl">ICMS</span><span class="val" id="tribbar-icms">0,00</span></div>
+            <div class="nf-total-item"><span class="lbl">IPI</span><span class="val" id="tribbar-ipi">0,00</span></div>
+            <div class="nf-total-item"><span class="lbl">PIS</span><span class="val" id="tribbar-pis">0,00</span></div>
+            <div class="nf-total-item"><span class="lbl">COFINS</span><span class="val" id="tribbar-cofins">0,00</span></div>
+            <div class="nf-total-item"><span class="lbl">IBS</span><span class="val" id="tribbar-ibs">0,00</span></div>
+            <div class="nf-total-item"><span class="lbl">CBS</span><span class="val" id="tribbar-cbs">0,00</span></div>
+            <input type="hidden" id="total" name="total" />
+            <input type="hidden" id="total-desconto" name="total_desconto" />
+            <input type="hidden" id="total-tributos" />
+            <input type="hidden" id="total-nota" />
+            <input type="hidden" id="total-icms" />
+            <input type="hidden" id="total-icms-st" />
+            <input type="hidden" id="total-ipi" />
+            <input type="hidden" id="total-pis" />
+            <input type="hidden" id="total-cofins" />
+            <input type="hidden" id="total-cbs" />
+            <input type="hidden" id="total-ibs" />
           </div>
+        </div>
 
-          <!-- ─── PANE: Itens ─── -->
-          <div class="nf-pane active" id="pane-itens">
-            <!-- Linha de adição -->
-            <div class="nf-add-row">
+        <!-- ─── PANE: CFOP & Tributos ─── -->
+        <div class="nf-pane" id="pane-cfop">
+          <div class="nf-tributos">
+            <div class="nf-tributos-grid g2" style="margin-bottom:8px;">
               <div class="nf-field">
-                <label>Produto</label>
-                <input type="text" id="prod-autocomplete" placeholder="Digite descrição / ref / código" />
-                <input type="hidden" id="produto-codigo" />
+                <label>Pesquisar CFOP</label>
+                <input type="text" id="cfop-autocomplete" placeholder="Digite CFOP ou descrição" />
               </div>
               <div class="nf-field">
-                <label>NCM</label>
-                <input type="text" name="item_ncm" id="item-ncm" value="00000000" />
-              </div>
-              <div class="nf-field">
-                <label>Unid.</label>
-                <input type="text" name="item_unidade" id="item-unidade" value="UN" />
-              </div>
-              <div class="nf-field">
-                <label>Qtd</label>
-                <input type="number" step="0.0001" name="item_quantidade" id="item-quantidade" value="1" />
-              </div>
-              <div class="nf-field">
-                 <span class="nf-hint">(Tabela de Preços)</span>
-                <label>Unitário</label>
-                <input type="number" step="0.01" name="item_unitario" id="item-unitario" value="0" />
-              </div>
-              <div class="nf-field">
-                <label>Desc. R$</label>
-                <input type="number" step="0.01" name="item_desconto" id="item-desconto" value="0" />
-              </div>
-              <div class="nf-field">
-                <label>&nbsp;</label>
-                <button type="button" class="nf-btn nf-btn-primary nf-btn-sm" id="btn-add-item">
-                  <i class="bi bi-plus-lg"></i> Adicionar
-                </button>
+                <label>CFOP do Item</label>
+                <input type="text" name="item_cfop" id="item-cfop" />
               </div>
             </div>
-
-            <!-- Tabela -->
-            <div class="nf-table-wrap">
-              <table class="nf-table" id="items-table">
-                <thead>
-                  <tr>
-                    <th style="min-width:240px;">Produto</th>
-                    <th class="r" style="width:80px;">Qtd</th>
-                    <th class="r" style="width:90px;">Unitário</th>
-                    <th class="r" style="width:80px;">Desc.</th>
-                    <th style="width:65px;">CFOP</th>
-                    <th style="width:90px;">NCM</th>
-                    <th class="r" style="width:100px;">Total</th>
-                    <th style="width:80px;">Fonte</th>
-                    <th style="width:70px;"></th>
-                  </tr>
-                </thead>
-                <tbody></tbody>
-              </table>
+            <div class="nf-divider"></div>
+            <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--nf-muted);margin-bottom:6px;">CSTs</div>
+            <div class="nf-tributos-grid g5" style="margin-bottom:8px;">
+              <div class="nf-field"><label>CST ICMS</label><input type="text" id="cst-icms" name="cst_icms" /></div>
+              <div class="nf-field"><label>CST PIS</label><input type="text" id="cst-pis" name="cst_pis" /></div>
+              <div class="nf-field"><label>CST COFINS</label><input type="text" id="cst-cofins" name="cst_cofins" /></div>
+              <div class="nf-field"><label>CST IBS</label><input type="text" id="cst-ibs" name="cst_ibs" /></div>
+              <div class="nf-field"><label>CST CBS</label><input type="text" id="cst-cbs" name="cst_cbs" /></div>
             </div>
-
-            <!-- Barra de totais -->
-            <div class="nf-totals-bar">
-              <div class="nf-total-item">
-                <span class="lbl">Total Produtos</span>
-                <span class="val" id="total-produtos-bar-disp">R$ 0,00</span>
-                <input type="hidden" id="total-produtos-bar" />
-              </div>
-              <div class="nf-vsep"></div>
-              <div class="nf-total-item">
-                <span class="lbl">Desconto</span>
-                <span class="val" id="total-descontos-bar-disp">R$ 0,00</span>
-                <input type="hidden" id="total-descontos-bar" />
-              </div>
-              <div class="nf-vsep"></div>
-              <div class="nf-total-item">
-                <span class="lbl">Tributos</span>
-                <span class="val" id="total-tributos-bar-disp">R$ 0,00</span>
-              </div>
-              <div class="nf-vsep"></div>
-              <div class="nf-total-item accent">
-                <span class="lbl">Total Nota</span>
-                <span class="val" id="total-nota-bar-disp">R$ 0,00</span>
-              </div>
-              <div style="flex:1;"></div>
-              <div class="nf-total-item"><span class="lbl">ICMS</span><span class="val" id="tribbar-icms">0,00</span>
-              </div>
-              <div class="nf-total-item"><span class="lbl">IPI</span><span class="val" id="tribbar-ipi">0,00</span>
-              </div>
-              <div class="nf-total-item"><span class="lbl">PIS</span><span class="val" id="tribbar-pis">0,00</span>
-              </div>
-              <div class="nf-total-item"><span class="lbl">COFINS</span><span class="val"
-                  id="tribbar-cofins">0,00</span></div>
-              <div class="nf-total-item"><span class="lbl">IBS</span><span class="val" id="tribbar-ibs">0,00</span>
-              </div>
-              <div class="nf-total-item"><span class="lbl">CBS</span><span class="val" id="tribbar-cbs">0,00</span>
-              </div>
-
-              <!-- Hidden fields that JS writes into (mantidos para compatibilidade) -->
-              <input type="hidden" id="total" name="total" />
-              <input type="hidden" id="total-desconto" name="total_desconto" />
-              <input type="hidden" id="total-tributos" />
-              <input type="hidden" id="total-nota" />
-              <input type="hidden" id="total-icms" />
-              <input type="hidden" id="total-icms-st" />
-              <input type="hidden" id="total-ipi" />
-              <input type="hidden" id="total-pis" />
-              <input type="hidden" id="total-cofins" />
-              <input type="hidden" id="total-cbs" />
-              <input type="hidden" id="total-ibs" />
+            <div class="nf-divider"></div>
+            <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--nf-muted);margin-bottom:6px;">Alíquotas %</div>
+            <div class="nf-tributos-grid g6" style="margin-bottom:8px;">
+              <div class="nf-field"><label>ICMS %</label><input type="number" step="0.01" id="aliq-icms" name="icms_aliquota" /></div>
+              <div class="nf-field"><label>IPI %</label><input type="number" step="0.01" id="aliq-ipi" name="ipi_aliquota" /></div>
+              <div class="nf-field"><label>PIS %</label><input type="number" step="0.01" id="aliq-pis" name="pis_aliquota" /></div>
+              <div class="nf-field"><label>COFINS %</label><input type="number" step="0.01" id="aliq-cof" name="cofins_aliquota" /></div>
+              <div class="nf-field"><label>IBS %</label><input type="number" step="0.01" id="aliq-ibs" name="ibs_aliquota" /></div>
+              <div class="nf-field"><label>CBS %</label><input type="number" step="0.01" id="aliq-cbs" name="cbs_aliquota" /></div>
+            </div>
+            <div class="nf-divider"></div>
+            <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--nf-muted);margin-bottom:6px;">Valores calculados R$</div>
+            <div class="nf-tributos-grid g7">
+              <div class="nf-field"><label>ICMS</label><input type="text" id="cfop-total-icms" readonly /></div>
+              <div class="nf-field"><label>ICMS ST</label><input type="text" id="cfop-total-icms-st" readonly /></div>
+              <div class="nf-field"><label>IPI</label><input type="text" id="cfop-total-ipi" readonly /></div>
+              <div class="nf-field"><label>PIS</label><input type="text" id="cfop-total-pis" readonly /></div>
+              <div class="nf-field"><label>COFINS</label><input type="text" id="cfop-total-cofins" readonly /></div>
+              <div class="nf-field"><label>CBS</label><input type="text" id="cfop-total-cbs" readonly /></div>
+              <div class="nf-field"><label>IBS</label><input type="text" id="cfop-total-ibs" readonly /></div>
             </div>
           </div>
+        </div>
 
-          <!-- ─── PANE: CFOP & Tributos ─── -->
-          <div class="nf-pane" id="pane-cfop">
-            <div class="nf-tributos">
-              <!-- CFOP search + item cfop -->
-              <div class="nf-tributos-grid g2" style="margin-bottom:8px;">
-                <div class="nf-field">
-                  <label>Pesquisar CFOP</label>
-                  <input type="text" id="cfop-autocomplete" placeholder="Digite CFOP ou descrição" />
-                </div>
-                <div class="nf-field">
-                  <label>CFOP do Item</label>
-                  <input type="text" name="item_cfop" id="item-cfop" />
-                </div>
-              </div>
-              <div class="nf-divider"></div>
-              <!-- CSTs -->
-              <div
-                style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.6px;color:var(--nf-muted);margin-bottom:6px;">
-                CSTs</div>
-              <div class="nf-tributos-grid g5" style="margin-bottom:8px;">
-                <div class="nf-field"><label>CST ICMS</label><input type="text" id="cst-icms" name="cst_icms" /></div>
-                <div class="nf-field"><label>CST PIS</label><input type="text" id="cst-pis" name="cst_pis" /></div>
-                <div class="nf-field"><label>CST COFINS</label><input type="text" id="cst-cofins" name="cst_cofins" />
-                </div>
-                <div class="nf-field"><label>CST IBS</label><input type="text" id="cst-ibs" name="cst_ibs" /></div>
-                <div class="nf-field"><label>CST CBS</label><input type="text" id="cst-cbs" name="cst_cbs" /></div>
-              </div>
-              <div class="nf-divider"></div>
-              <!-- Alíquotas -->
-              <div
-                style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.6px;color:var(--nf-muted);margin-bottom:6px;">
-                Alíquotas %</div>
-              <div class="nf-tributos-grid g6" style="margin-bottom:8px;">
-                <div class="nf-field"><label>ICMS %</label><input type="number" step="0.01" id="aliq-icms"
-                    name="icms_aliquota" /></div>
-                <div class="nf-field"><label>IPI %</label><input type="number" step="0.01" id="aliq-ipi"
-                    name="ipi_aliquota" /></div>
-                <div class="nf-field"><label>PIS %</label><input type="number" step="0.01" id="aliq-pis"
-                    name="pis_aliquota" /></div>
-                <div class="nf-field"><label>COFINS %</label><input type="number" step="0.01" id="aliq-cof"
-                    name="cofins_aliquota" /></div>
-                <div class="nf-field"><label>IBS %</label><input type="number" step="0.01" id="aliq-ibs"
-                    name="ibs_aliquota" /></div>
-                <div class="nf-field"><label>CBS %</label><input type="number" step="0.01" id="aliq-cbs"
-                    name="cbs_aliquota" /></div>
-              </div>
-              <div class="nf-divider"></div>
-              <!-- Valores calculados -->
-              <div
-                style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.6px;color:var(--nf-muted);margin-bottom:6px;">
-                Valores calculados R$</div>
-              <div class="nf-tributos-grid g7">
-                <div class="nf-field"><label>ICMS</label><input type="text" id="cfop-total-icms" readonly /></div>
-                <div class="nf-field"><label>ICMS ST</label><input type="text" id="cfop-total-icms-st" readonly /></div>
-                <div class="nf-field"><label>IPI</label><input type="text" id="cfop-total-ipi" readonly /></div>
-                <div class="nf-field"><label>PIS</label><input type="text" id="cfop-total-pis" readonly /></div>
-                <div class="nf-field"><label>COFINS</label><input type="text" id="cfop-total-cofins" readonly /></div>
-                <div class="nf-field"><label>CBS</label><input type="text" id="cfop-total-cbs" readonly /></div>
-                <div class="nf-field"><label>IBS</label><input type="text" id="cfop-total-ibs" readonly /></div>
-              </div>
+        <!-- ─── PANE: Totais ─── -->
+        <div class="nf-pane" id="pane-totais">
+          <div class="nf-tributos">
+            <div class="nf-tributos-grid g4" style="margin-bottom:8px;">
+              <div class="nf-field"><label>Total Produtos</label><input type="text" id="tot-prod-disp" readonly /></div>
+              <div class="nf-field"><label>Desconto</label><input type="text" id="tot-desc-disp" readonly /></div>
+              <div class="nf-field"><label>Tributos</label><input type="text" id="tot-trib-disp" readonly /></div>
+              <div class="nf-field"><label>Total Nota</label><input type="text" id="tot-nota-disp" style="color:var(--nf-accent);font-weight:600;" readonly /></div>
+            </div>
+            <div class="nf-divider"></div>
+            <div class="nf-tributos-grid g7">
+              <div class="nf-field"><label>ICMS</label><input type="text" id="tot-icms-disp" readonly /></div>
+              <div class="nf-field"><label>ICMS ST</label><input type="text" id="tot-st-disp" readonly /></div>
+              <div class="nf-field"><label>IPI</label><input type="text" id="tot-ipi-disp" readonly /></div>
+              <div class="nf-field"><label>PIS</label><input type="text" id="tot-pis-disp" readonly /></div>
+              <div class="nf-field"><label>COFINS</label><input type="text" id="tot-cofins-disp" readonly /></div>
+              <div class="nf-field"><label>CBS</label><input type="text" id="tot-cbs-disp" readonly /></div>
+              <div class="nf-field"><label>IBS</label><input type="text" id="tot-ibs-disp" readonly /></div>
             </div>
           </div>
+        </div>
 
-          <!-- ─── PANE: Totais ─── -->
-          <div class="nf-pane" id="pane-totais">
-            <div class="nf-tributos">
-              <div class="nf-tributos-grid g4" style="margin-bottom:8px;">
-                <div class="nf-field"><label>Total Produtos</label><input type="text" id="tot-prod-disp" readonly />
-                </div>
-                <div class="nf-field"><label>Desconto</label><input type="text" id="tot-desc-disp" readonly /></div>
-                <div class="nf-field"><label>Tributos</label><input type="text" id="tot-trib-disp" readonly /></div>
-                <div class="nf-field"><label>Total Nota</label><input type="text" id="tot-nota-disp"
-                    style="color:var(--nf-accent);font-weight:600;" readonly /></div>
-              </div>
-              <div class="nf-divider"></div>
-              <div class="nf-tributos-grid g7">
-                <div class="nf-field"><label>ICMS</label><input type="text" id="tot-icms-disp" readonly /></div>
-                <div class="nf-field"><label>ICMS ST</label><input type="text" id="tot-st-disp" readonly /></div>
-                <div class="nf-field"><label>IPI</label><input type="text" id="tot-ipi-disp" readonly /></div>
-                <div class="nf-field"><label>PIS</label><input type="text" id="tot-pis-disp" readonly /></div>
-                <div class="nf-field"><label>COFINS</label><input type="text" id="tot-cofins-disp" readonly /></div>
-                <div class="nf-field"><label>CBS</label><input type="text" id="tot-cbs-disp" readonly /></div>
-                <div class="nf-field"><label>IBS</label><input type="text" id="tot-ibs-disp" readonly /></div>
-              </div>
-            </div>
-          </div>
+        <!-- ─── PANE: Financeiro ─── -->
+        <div class="nf-pane" id="pane-financeiro">
+          {% include 'notas/financeiroAba.html' %}
+        </div>
 
-          <!-- ─── PANE: Financeiro ─── -->
-          <div class="nf-pane" id="pane-financeiro">
-            {% include 'notas/financeiroAba.html' %}
-          </div>
+      </div><!-- /nf-panel -->
+    </form>
+  </div><!-- /nf-body -->
 
-        </div><!-- /nf-panel -->
-
-      </form>
-    </div><!-- /nf-body -->
-
-    <!-- Action Bar -->
-    <div class="nf-action-bar">
-      <a class="nf-btn nf-btn-ghost" href="/web/{{ slug }}/notas-fiscais/">← Voltar</a>
-      <div class="spacer"></div>
-      <div id="totais-bar" style="display:flex;gap:10px;align-items:center;">
-        <span style="font-size:11px;color:var(--nf-muted);">Total Produtos</span>
-        <input type="text" id="total-produtos-bar-action" readonly
-          style="width:100px;background:var(--nf-surface2);border:1px solid var(--nf-border);border-radius:var(--nf-radius);color:var(--nf-text);font-size:11px;height:24px;padding:0 6px;text-align:right;">
-        <span style="font-size:11px;color:var(--nf-muted);">Desc.</span>
-        <input type="text" id="total-descontos-bar-action" readonly
-          style="width:80px;background:var(--nf-surface2);border:1px solid var(--nf-border);border-radius:var(--nf-radius);color:var(--nf-text);font-size:11px;height:24px;padding:0 6px;text-align:right;">
-      </div>
-      <button class="nf-btn nf-btn-warning" type="button" id="btn-calcular">
-        <span class="spinner-border spinner-border-sm d-none" aria-hidden="true"></span>
-        <i class="bi bi-calculator"></i> Calcular Impostos
-      </button>
-      <button class="nf-btn nf-btn-primary" type="button" id="btn-salvar">
-        <span class="spinner-border spinner-border-sm me-1 d-none" aria-hidden="true"></span>
-        <i class="bi bi-save"></i> Salvar
-      </button>
-      <button class="nf-btn nf-btn-success" type="submit" form="emit-form">
-        <span class="spinner-border spinner-border-sm me-1 d-none" aria-hidden="true"></span>
-        <i class="bi bi-upload"></i> Transmitir
-      </button>
+  <!-- Action Bar -->
+  <div class="nf-action-bar">
+    <a class="nf-btn nf-btn-ghost" href="/web/{{ slug }}/notas-fiscais/">← Voltar</a>
+    <div class="spacer"></div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <span style="font-size:11px;color:var(--nf-muted);">Produtos</span>
+      <input type="text" id="total-produtos-bar-action" readonly
+        style="width:90px;background:var(--nf-surface2);border:1px solid var(--nf-border);border-radius:var(--nf-radius);color:var(--nf-text);font-size:11px;height:24px;padding:0 6px;text-align:right;">
+      <span style="font-size:11px;color:var(--nf-muted);">Desc.</span>
+      <input type="text" id="total-descontos-bar-action" readonly
+        style="width:74px;background:var(--nf-surface2);border:1px solid var(--nf-border);border-radius:var(--nf-radius);color:var(--nf-text);font-size:11px;height:24px;padding:0 6px;text-align:right;">
     </div>
+    <button class="nf-btn nf-btn-warning" type="button" id="btn-calcular">
+      <span class="spinner-border spinner-border-sm d-none"></span>
+      <i class="bi bi-calculator"></i> Calcular Impostos
+    </button>
+    <button class="nf-btn nf-btn-primary" type="button" id="btn-salvar">
+      <span class="spinner-border spinner-border-sm me-1 d-none"></span>
+      <i class="bi bi-save"></i> Salvar
+    </button>
+    <button class="nf-btn nf-btn-success" type="submit" form="emit-form">
+      <span class="spinner-border spinner-border-sm me-1 d-none"></span>
+      <i class="bi bi-upload"></i> Transmitir
+    </button>
+  </div>
 
-  </div><!-- /nf-wrap -->
+</div><!-- /nf-wrap -->
+</div><!-- /nf-page-root -->
 
-  <!-- Modal Cálculo Item (mantido igual) -->
-  <div class="modal fade" id="modal-item-calculo" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
-      <div class="modal-content"
-        style="background:var(--nf-surface);border:1px solid var(--nf-border);color:var(--nf-text);">
-        <div class="modal-header" style="border-bottom:1px solid var(--nf-border);">
-          <h5 class="modal-title" style="font-size:14px;">Detalhes do cálculo do item</h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <div id="modal-item-calculo-body"></div>
-        </div>
-        <div class="modal-footer" style="border-top:1px solid var(--nf-border);">
-          <button type="button" class="nf-btn nf-btn-ghost" data-bs-dismiss="modal">Fechar</button>
-        </div>
+<!-- Modal Cálculo Item -->
+<div class="modal fade" id="modal-item-calculo" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content" style="background:var(--nf-surface);border:1px solid var(--nf-border);color:var(--nf-text);">
+      <div class="modal-header" style="border-bottom:1px solid var(--nf-border);">
+        <h5 class="modal-title" style="font-size:14px;">Detalhes do cálculo do item</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body"><div id="modal-item-calculo-body"></div></div>
+      <div class="modal-footer" style="border-top:1px solid var(--nf-border);">
+        <button type="button" class="nf-btn nf-btn-ghost" data-bs-dismiss="modal">Fechar</button>
       </div>
     </div>
   </div>
 </div>
+
 <script>
   (() => {
     /* ── Tab switching ── */
@@ -937,467 +690,399 @@
         tabs.forEach(t => t.classList.remove('active'));
         panes.forEach(p => p.classList.remove('active'));
         tab.classList.add('active');
-        const id = 'pane-' + tab.dataset.tab;
-        const pane = document.getElementById(id);
+        const pane = document.getElementById('pane-' + tab.dataset.tab);
         if (pane) pane.classList.add('active');
-        /* sync totais display fields when switching to totais tab */
         if (tab.dataset.tab === 'totais') syncTotaisDisplayFields();
       });
     });
 
-    /* ── Legacy tab compat: #tab-financeiro-btn used by original JS ── */
-    const legacyFinBtn = document.getElementById('tab-financeiro-btn');
-    if (!legacyFinBtn) {
-      /* create hidden shim so original JS won't crash */
-      const shim = document.createElement('button');
-      shim.id = 'tab-financeiro-btn';
-      shim.style.display = 'none';
-      document.body.appendChild(shim);
+    /* legacy shim */
+    if (!document.getElementById('tab-financeiro-btn')) {
+      const s = document.createElement('button');
+      s.id = 'tab-financeiro-btn'; s.style.display = 'none';
+      document.body.appendChild(s);
     }
 
     const slug = localStorage.getItem('slug');
     const empresa = localStorage.getItem('empresa_id') || '1';
-    const filial = localStorage.getItem('filial_id') || '1';
-    const authFetch = async (url, options = {}) => {
+    const filial  = localStorage.getItem('filial_id')  || '1';
+    const authFetch = async (url, opts = {}) => {
       const token = localStorage.getItem('access');
-      const headers = { 'Content-Type': 'application/json', 'X-Empresa': empresa, 'X-Filial': filial };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-      return fetch(url, { ...options, headers: { ...headers, ...(options.headers || {}) } });
+      const h = { 'Content-Type':'application/json', 'X-Empresa':empresa, 'X-Filial':filial };
+      if (token) h['Authorization'] = `Bearer ${token}`;
+      return fetch(url, { ...opts, headers: { ...h, ...(opts.headers||{}) } });
     };
 
-    /* ── Autocomplete helper ── */
+    /* ── Autocomplete ── */
     const mountAutocomplete = (input, source, onPick) => {
       let timer = null;
       const list = document.createElement('div');
       list.className = 'list-group position-absolute w-100';
       input.parentElement.appendChild(list);
-      const render = (items) => {
+      const render = items => {
         list.innerHTML = '';
         items.forEach(it => {
           const a = document.createElement('a');
           a.href = '#'; a.className = 'list-group-item list-group-item-action';
           a.textContent = it.label;
-          a.addEventListener('click', (e) => { e.preventDefault(); onPick(it); list.innerHTML = ''; });
+          a.addEventListener('click', e => { e.preventDefault(); onPick(it); list.innerHTML = ''; });
           list.appendChild(a);
         });
       };
-      input.addEventListener('input', async () => {
+      input.addEventListener('input', () => {
         const q = input.value.trim();
         clearTimeout(timer);
         timer = setTimeout(async () => {
-          if (!q) { list.innerHTML = ''; return; }
-          const resp = await authFetch(source(q));
-          const data = await resp.json();
-          render(Array.isArray(data) ? data : []);
+          if (!q) { list.innerHTML=''; return; }
+          const r = await authFetch(source(q));
+          const d = await r.json();
+          render(Array.isArray(d) ? d : []);
         }, 250);
       });
     };
 
-    /* ── Cliente autocomplete ── */
+    /* cliente */
     const cliInput = document.getElementById('cli-autocomplete');
-    const destId = document.getElementById('destinatario-id');
-    mountAutocomplete(cliInput, (q) => `/web/${slug}/notas-fiscais/entidades-autocomplete/?q=${encodeURIComponent(q)}`, (item) => {
-      cliInput.value = item.label; destId.value = item.value;
-    });
+    const destId   = document.getElementById('destinatario-id');
+    mountAutocomplete(cliInput, q=>`/web/${slug}/notas-fiscais/entidades-autocomplete/?q=${encodeURIComponent(q)}`, it=>{ cliInput.value=it.label; destId.value=it.value; });
 
-    /* ── Produto autocomplete ── */
-    const prodInput = document.getElementById('prod-autocomplete');
+    /* produto */
+    const prodInput      = document.getElementById('prod-autocomplete');
     const prodCodigoHidden = document.getElementById('produto-codigo');
-    const ncmInput = document.getElementById('item-ncm');
-    const unInput = document.getElementById('item-unidade');
-    const unitInput = document.getElementById('item-unitario');
-    const itemCfop = document.getElementById('item-cfop');
-    mountAutocomplete(prodInput, (q) => `/web/${slug}/notas-fiscais/produtos-autocomplete/?q=${encodeURIComponent(q)}`, async (item) => {
-      prodInput.value = item.label; prodCodigoHidden.value = item.value;
+    const ncmInput       = document.getElementById('item-ncm');
+    const unInput        = document.getElementById('item-unidade');
+    const unitInput      = document.getElementById('item-unitario');
+    const itemCfop       = document.getElementById('item-cfop');
+    mountAutocomplete(prodInput, q=>`/web/${slug}/notas-fiscais/produtos-autocomplete/?q=${encodeURIComponent(q)}`, async it => {
+      prodInput.value=it.label; prodCodigoHidden.value=it.value;
       try {
-        const destIdVal = (document.getElementById('destinatario-id')?.value || '').trim();
-        const resp = await authFetch(`/web/${slug}/notas-fiscais/produto-detalhe/${item.value}/?destinatario=${encodeURIComponent(destIdVal)}`);
-        const data = await resp.json();
-        ncmInput.value = data?.prod_ncm || ncmInput.value;
-        unInput.value = data?.prod_unid || unInput.value;
-        const preco = data?.prod_preco_vista || data?.prod_preco_normal || 0;
-        if (Number(preco) > 0) unitInput.value = Number(preco).toFixed(2);
-        if (itemCfop && !String(itemCfop.value || '').trim() && data?.cfop_sugerido) itemCfop.value = String(data.cfop_sugerido);
-        const cstIcms = document.getElementById('cst-icms');
-        const cstPis = document.getElementById('cst-pis');
-        const cstCof = document.getElementById('cst-cofins');
-        const cstIbs = document.getElementById('cst-ibs');
-        const cstCbs = document.getElementById('cst-cbs');
-        if (cstIcms && !String(cstIcms.value || '').trim() && data?.cst_icms_sugerido != null) cstIcms.value = String(data.cst_icms_sugerido);
-        if (cstPis && !String(cstPis.value || '').trim() && data?.cst_pis_sugerido != null) cstPis.value = String(data.cst_pis_sugerido);
-        if (cstCof && !String(cstCof.value || '').trim() && data?.cst_cofins_sugerido != null) cstCof.value = String(data.cst_cofins_sugerido);
-        if (cstCbs && !String(cstCbs.value || '').trim() && data?.cst_cbs_sugerido != null) cstCbs.value = String(data.cst_cbs_sugerido);
-        if (cstIbs && !String(cstIbs.value || '').trim() && data?.cst_ibs_sugerido != null) cstIbs.value = String(data.cst_ibs_sugerido);
-      } catch { }
+        const dv = (document.getElementById('destinatario-id')?.value||'').trim();
+        const r  = await authFetch(`/web/${slug}/notas-fiscais/produto-detalhe/${it.value}/?destinatario=${encodeURIComponent(dv)}`);
+        const d  = await r.json();
+        ncmInput.value  = d?.prod_ncm   || ncmInput.value;
+        unInput.value   = d?.prod_unid  || unInput.value;
+        const p = d?.prod_preco_vista || d?.prod_preco_normal || 0;
+        if (Number(p)>0) unitInput.value = Number(p).toFixed(2);
+        if (itemCfop && !String(itemCfop.value||'').trim() && d?.cfop_sugerido) itemCfop.value=String(d.cfop_sugerido);
+        [['cst-icms','cst_icms_sugerido'],['cst-pis','cst_pis_sugerido'],['cst-cofins','cst_cofins_sugerido'],
+         ['cst-ibs','cst_ibs_sugerido'],['cst-cbs','cst_cbs_sugerido']].forEach(([id,key])=>{
+          const el=document.getElementById(id);
+          if(el && !String(el.value||'').trim() && d?.[key]!=null) el.value=String(d[key]);
+        });
+      } catch {}
     });
 
-    /* ── CFOP autocomplete ── */
+    /* CFOP */
     const cfopInput = document.getElementById('cfop-autocomplete');
-    const aliqIcms = document.getElementById('aliq-icms');
-    const aliqIpi = document.getElementById('aliq-ipi');
-    const aliqPis = document.getElementById('aliq-pis');
-    const aliqCof = document.getElementById('aliq-cof');
-    const aliqIbs = document.getElementById('aliq-ibs');
-    const aliqCbs = document.getElementById('aliq-cbs');
-    let cfopFlags = { icms: true, ipi: false, pis_cofins: true, cbs: false, ibs: false };
-    mountAutocomplete(cfopInput, (q) => `/web/${slug}/notas-fiscais/cfop-autocomplete/?q=${encodeURIComponent(q)}`, (cf) => {
-      document.getElementById('item-cfop').value = cf.value;
-      document.getElementById('cst-icms').value = cf.cst_icms || '';
-      document.getElementById('cst-pis').value = cf.cst_pis || '';
-      document.getElementById('cst-cofins').value = cf.cst_cofins || '';
-      document.getElementById('cst-ibs').value = cf.cst_ibs || '';
-      document.getElementById('cst-cbs').value = cf.cst_cbs || '';
-      aliqIcms.value = cf.icms_aliquota || '';
-      aliqIpi.value = cf.ipi_aliquota || '';
-      aliqPis.value = cf.pis_aliquota || '';
-      aliqCof.value = cf.cofins_aliquota || '';
-      aliqIbs.value = cf.ibs_aliquota || '';
-      aliqCbs.value = cf.cbs_aliquota || '';
-      cfopFlags.icms = Boolean(cf.exig_icms ?? true);
-      cfopFlags.ipi = Boolean(cf.exig_ipi ?? false);
-      cfopFlags.pis_cofins = Boolean(cf.exig_pis_cofins ?? true);
-      cfopFlags.cbs = Boolean(cf.exig_cbs ?? false);
-      cfopFlags.ibs = Boolean(cf.exig_ibs ?? false);
+    const aliqIcms=document.getElementById('aliq-icms'), aliqIpi=document.getElementById('aliq-ipi'),
+          aliqPis=document.getElementById('aliq-pis'),   aliqCof=document.getElementById('aliq-cof'),
+          aliqIbs=document.getElementById('aliq-ibs'),   aliqCbs=document.getElementById('aliq-cbs');
+    let cfopFlags = { icms:true, ipi:false, pis_cofins:true, cbs:false, ibs:false };
+    mountAutocomplete(cfopInput, q=>`/web/${slug}/notas-fiscais/cfop-autocomplete/?q=${encodeURIComponent(q)}`, cf=>{
+      document.getElementById('item-cfop').value    = cf.value;
+      document.getElementById('cst-icms').value     = cf.cst_icms||'';
+      document.getElementById('cst-pis').value      = cf.cst_pis||'';
+      document.getElementById('cst-cofins').value   = cf.cst_cofins||'';
+      document.getElementById('cst-ibs').value      = cf.cst_ibs||'';
+      document.getElementById('cst-cbs').value      = cf.cst_cbs||'';
+      aliqIcms.value=cf.icms_aliquota||''; aliqIpi.value=cf.ipi_aliquota||'';
+      aliqPis.value=cf.pis_aliquota||'';   aliqCof.value=cf.cofins_aliquota||'';
+      aliqIbs.value=cf.ibs_aliquota||'';   aliqCbs.value=cf.cbs_aliquota||'';
+      cfopFlags = { icms:Boolean(cf.exig_icms??true), ipi:Boolean(cf.exig_ipi??false),
+                    pis_cofins:Boolean(cf.exig_pis_cofins??true), cbs:Boolean(cf.exig_cbs??false), ibs:Boolean(cf.exig_ibs??false) };
       calcTotais();
     });
 
-    /* ── Transportadora autocomplete ── */
-    const transpInput = document.getElementById('transportadora');
+    /* transportadora */
+    const transpInput    = document.getElementById('transportadora');
     const transpIdHidden = document.getElementById('transportadora-id');
-    mountAutocomplete(transpInput, (q) => `/web/${slug}/notas-fiscais/transportadoras-autocomplete/?q=${encodeURIComponent(q)}`, (item) => {
-      transpInput.value = item.label; transpIdHidden.value = item.value;
-    });
+    mountAutocomplete(transpInput, q=>`/web/${slug}/notas-fiscais/transportadoras-autocomplete/?q=${encodeURIComponent(q)}`, it=>{ transpInput.value=it.label; transpIdHidden.value=it.value; });
 
     /* ── Items state ── */
     const items = [];
-    let backendTotals = null;
-    let ultimoDebugCalculo = null;
-    let editIndex = -1;
-    let currentNotaId = null;
+    let backendTotals = null, editIndex = -1, currentNotaId = null;
 
-    const fmtR = (v) => 'R$ ' + Number(v || 0).toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-    const fmt2 = (v) => Number(v || 0).toFixed(2);
-
-    const setHidden = (id, v) => { const el = document.getElementById(id); if (el) el.value = fmt2(v); };
-    const setDisp = (id, v) => { const el = document.getElementById(id); if (el) el.value = fmt2(v); };
-    const setDispR = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = fmtR(v); };
+    const fmtR  = v => 'R$ '+Number(v||0).toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+    const fmt2  = v => Number(v||0).toFixed(2);
+    const setH  = (id,v) => { const e=document.getElementById(id); if(e) e.value=fmt2(v); };
+    const setD  = (id,v) => { const e=document.getElementById(id); if(e) e.value=fmt2(v); };
+    const setDR = (id,v) => { const e=document.getElementById(id); if(e) e.textContent=fmtR(v); };
 
     const syncTotaisDisplayFields = () => {
-      setDisp('tot-prod-disp', document.getElementById('total')?.value || 0);
-      setDisp('tot-desc-disp', document.getElementById('total-desconto')?.value || 0);
-      setDisp('tot-trib-disp', document.getElementById('total-tributos')?.value || 0);
-      setDisp('tot-nota-disp', document.getElementById('total-nota')?.value || 0);
-      setDisp('tot-icms-disp', document.getElementById('total-icms')?.value || 0);
-      setDisp('tot-st-disp', document.getElementById('total-icms-st')?.value || 0);
-      setDisp('tot-ipi-disp', document.getElementById('total-ipi')?.value || 0);
-      setDisp('tot-pis-disp', document.getElementById('total-pis')?.value || 0);
-      setDisp('tot-cofins-disp', document.getElementById('total-cofins')?.value || 0);
-      setDisp('tot-cbs-disp', document.getElementById('total-cbs')?.value || 0);
-      setDisp('tot-ibs-disp', document.getElementById('total-ibs')?.value || 0);
+      setD('tot-prod-disp',   document.getElementById('total')?.value||0);
+      setD('tot-desc-disp',   document.getElementById('total-desconto')?.value||0);
+      setD('tot-trib-disp',   document.getElementById('total-tributos')?.value||0);
+      setD('tot-nota-disp',   document.getElementById('total-nota')?.value||0);
+      setD('tot-icms-disp',   document.getElementById('total-icms')?.value||0);
+      setD('tot-st-disp',     document.getElementById('total-icms-st')?.value||0);
+      setD('tot-ipi-disp',    document.getElementById('total-ipi')?.value||0);
+      setD('tot-pis-disp',    document.getElementById('total-pis')?.value||0);
+      setD('tot-cofins-disp', document.getElementById('total-cofins')?.value||0);
+      setD('tot-cbs-disp',    document.getElementById('total-cbs')?.value||0);
+      setD('tot-ibs-disp',    document.getElementById('total-ibs')?.value||0);
     };
 
     const calcTotais = () => {
-      const sum = items.reduce((acc, it) => acc + (Number(it.quantidade) * Number(it.unitario) - Number(it.desconto || 0)), 0);
-      const totalDesc = items.reduce((acc, it) => acc + Number(it.desconto || 0), 0);
-      setHidden('total', sum);
-      setHidden('total-desconto', totalDesc);
-
-      /* action bar fields */
-      const abProd = document.getElementById('total-produtos-bar-action');
-      const abDesc = document.getElementById('total-descontos-bar-action');
-      if (abProd) abProd.value = fmt2(sum);
-      if (abDesc) abDesc.value = fmt2(totalDesc);
-
-      let vIcms, vIpi, vPis, vCof, vIbs, vCbs, vSt = 0;
+      const sum  = items.reduce((a,it)=>a+(Number(it.quantidade)*Number(it.unitario)-Number(it.desconto||0)),0);
+      const desc = items.reduce((a,it)=>a+Number(it.desconto||0),0);
+      setH('total',sum); setH('total-desconto',desc);
+      const ab1=document.getElementById('total-produtos-bar-action');
+      const ab2=document.getElementById('total-descontos-bar-action');
+      if(ab1) ab1.value=fmt2(sum); if(ab2) ab2.value=fmt2(desc);
+      let vIcms,vIpi,vPis,vCof,vIbs,vCbs,vSt=0;
       if (backendTotals) {
-        vIcms = backendTotals.icms; vIpi = backendTotals.ipi; vPis = backendTotals.pis;
-        vCof = backendTotals.cofins; vIbs = backendTotals.ibs; vCbs = backendTotals.cbs;
-        vSt = backendTotals.st || 0;
+        ({icms:vIcms,ipi:vIpi,pis:vPis,cofins:vCof,ibs:vIbs,cbs:vCbs}=backendTotals); vSt=backendTotals.st||0;
       } else {
-        const base = sum;
-        vIcms = cfopFlags.icms ? base * Number(aliqIcms.value || 0) / 100 : 0;
-        vIpi = cfopFlags.ipi ? base * Number(aliqIpi.value || 0) / 100 : 0;
-        vPis = cfopFlags.pis_cofins ? base * Number(aliqPis.value || 0) / 100 : 0;
-        vCof = cfopFlags.pis_cofins ? base * Number(aliqCof.value || 0) / 100 : 0;
-        vIbs = cfopFlags.ibs ? base * Number(aliqIbs.value || 0) / 100 : 0;
-        vCbs = cfopFlags.cbs ? base * Number(aliqCbs.value || 0) / 100 : 0;
+        const b=sum;
+        vIcms=cfopFlags.icms     ?b*Number(aliqIcms.value||0)/100:0;
+        vIpi =cfopFlags.ipi      ?b*Number(aliqIpi.value||0)/100:0;
+        vPis =cfopFlags.pis_cofins?b*Number(aliqPis.value||0)/100:0;
+        vCof =cfopFlags.pis_cofins?b*Number(aliqCof.value||0)/100:0;
+        vIbs =cfopFlags.ibs      ?b*Number(aliqIbs.value||0)/100:0;
+        vCbs =cfopFlags.cbs      ?b*Number(aliqCbs.value||0)/100:0;
       }
-      const trib = vIcms + vSt + vIpi + vPis + vCof + vIbs + vCbs;
-      setHidden('total-tributos', trib);
-      setHidden('total-nota', sum + trib);
-      setHidden('total-icms', vIcms); setHidden('total-icms-st', vSt); setHidden('total-ipi', vIpi);
-      setHidden('total-pis', vPis); setHidden('total-cofins', vCof);
-      setHidden('total-cbs', vCbs); setHidden('total-ibs', vIbs);
-
-      /* CFOP tab */
-      setDisp('cfop-total-icms', vIcms); setDisp('cfop-total-icms-st', vSt); setDisp('cfop-total-ipi', vIpi);
-      setDisp('cfop-total-pis', vPis); setDisp('cfop-total-cofins', vCof);
-      setDisp('cfop-total-cbs', vCbs); setDisp('cfop-total-ibs', vIbs);
-
-      /* Totals bar display */
-      setDispR('total-produtos-bar-disp', sum);
-      setDispR('total-descontos-bar-disp', totalDesc);
-      setDispR('total-tributos-bar-disp', trib);
-      setDispR('total-nota-bar-disp', sum + trib);
-
-      const sTrib = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = fmt2(v); };
-      sTrib('tribbar-icms', vIcms); sTrib('tribbar-ipi', vIpi); sTrib('tribbar-pis', vPis);
-      sTrib('tribbar-cofins', vCof); sTrib('tribbar-ibs', vIbs); sTrib('tribbar-cbs', vCbs);
-
+      const trib=vIcms+vSt+vIpi+vPis+vCof+vIbs+vCbs;
+      setH('total-tributos',trib); setH('total-nota',sum+trib);
+      setH('total-icms',vIcms); setH('total-icms-st',vSt); setH('total-ipi',vIpi);
+      setH('total-pis',vPis);   setH('total-cofins',vCof); setH('total-cbs',vCbs); setH('total-ibs',vIbs);
+      setD('cfop-total-icms',vIcms); setD('cfop-total-icms-st',vSt); setD('cfop-total-ipi',vIpi);
+      setD('cfop-total-pis',vPis);   setD('cfop-total-cofins',vCof); setD('cfop-total-cbs',vCbs); setD('cfop-total-ibs',vIbs);
+      setDR('total-produtos-bar-disp',sum); setDR('total-descontos-bar-disp',desc);
+      setDR('total-tributos-bar-disp',trib); setDR('total-nota-bar-disp',sum+trib);
+      const sT=(id,v)=>{ const e=document.getElementById(id); if(e) e.textContent=fmt2(v); };
+      sT('tribbar-icms',vIcms); sT('tribbar-ipi',vIpi); sT('tribbar-pis',vPis);
+      sT('tribbar-cofins',vCof); sT('tribbar-ibs',vIbs); sT('tribbar-cbs',vCbs);
       syncTotaisDisplayFields();
     };
-
-    [aliqIcms, aliqIpi, aliqPis, aliqCof, aliqIbs, aliqCbs].forEach(el => el.addEventListener('input', calcTotais));
+    [aliqIcms,aliqIpi,aliqPis,aliqCof,aliqIbs,aliqCbs].forEach(el=>el.addEventListener('input',calcTotais));
     calcTotais();
 
-    /* ── Render items table ── */
-    const itemsTableBody = document.querySelector('#items-table tbody');
-    const escapeHtml = (val) => String(val ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    /* ── Render items ── */
+    const tbody = document.querySelector('#items-table tbody');
+    const esc   = v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
     const renderItems = () => {
-      itemsTableBody.innerHTML = '';
-      if (!items.length) {
-        itemsTableBody.innerHTML = '<tr class="empty"><td colspan="9">Nenhum item adicionado</td></tr>';
-        calcTotais(); return;
-      }
-      items.forEach((it, idx) => {
-        const tr = document.createElement('tr');
-        const total = (Number(it.quantidade) * Number(it.unitario) - Number(it.desconto || 0)).toFixed(2);
-        tr.innerHTML = `
-          <td>
-            <div style="font-weight:500;">${escapeHtml(it.descricao || '')}</div>
-            ${it.codigo ? `<div style="font-size:10px;color:var(--nf-muted);">Cód. ${escapeHtml(it.codigo)}</div>` : ''}
+      tbody.innerHTML = '';
+      if (!items.length) { tbody.innerHTML='<tr class="empty"><td colspan="9">Nenhum item adicionado</td></tr>'; calcTotais(); return; }
+      items.forEach((it,idx) => {
+        const total=(Number(it.quantidade)*Number(it.unitario)-Number(it.desconto||0)).toFixed(2);
+        const tr=document.createElement('tr');
+        tr.innerHTML=`
+          <td><div style="font-weight:500;">${esc(it.descricao||'')}</div>
+              ${it.codigo?`<div style="font-size:10px;color:var(--nf-muted);">Cód. ${esc(it.codigo)}</div>`:''}
           </td>
-          <td class="r">${Number(it.quantidade || 0).toFixed(4)}</td>
-          <td class="r">${Number(it.unitario || 0).toFixed(2)}</td>
-          <td class="r">${Number(it.desconto || 0).toFixed(2)}</td>
-          <td><span class="nf-badge">${escapeHtml(it.cfop || '-')}</span></td>
-          <td><span class="nf-badge">${escapeHtml(it.ncm || '-')}</span></td>
+          <td class="r">${Number(it.quantidade||0).toFixed(4)}</td>
+          <td class="r">${Number(it.unitario||0).toFixed(2)}</td>
+          <td class="r">${Number(it.desconto||0).toFixed(2)}</td>
+          <td><span class="nf-badge">${esc(it.cfop||'-')}</span></td>
+          <td><span class="nf-badge">${esc(it.ncm||'-')}</span></td>
           <td class="r" style="font-weight:600;">${total}</td>
-          <td><span class="nf-badge">${escapeHtml(it.fonte_tributacao || '-')}</span></td>
+          <td><span class="nf-badge">${esc(it.fonte_tributacao||'-')}</span></td>
           <td style="text-align:right;">
-            ${it.debug_calculo ? `<button type="button" class="nf-btn nf-btn-ghost nf-btn-sm" data-debug="${idx}" title="Ver cálculo"><i class="bi bi-info-circle"></i></button>` : ''}
-            <button type="button" class="nf-btn nf-btn-ghost nf-btn-sm" data-edit="${idx}" title="Editar"><i class="bi bi-pencil"></i></button>
-            <button type="button" class="nf-btn nf-btn-danger nf-btn-sm" data-remove="${idx}" title="Remover"><i class="bi bi-trash"></i></button>
+            ${it.debug_calculo?`<button type="button" class="nf-btn nf-btn-ghost nf-btn-sm" data-debug="${idx}"><i class="bi bi-info-circle"></i></button>`:''}
+            <button type="button" class="nf-btn nf-btn-ghost nf-btn-sm" data-edit="${idx}"><i class="bi bi-pencil"></i></button>
+            <button type="button" class="nf-btn nf-btn-danger nf-btn-sm" data-remove="${idx}"><i class="bi bi-trash"></i></button>
           </td>`;
-        itemsTableBody.appendChild(tr);
+        tbody.appendChild(tr);
       });
       calcTotais();
     };
 
     document.getElementById('btn-add-item').addEventListener('click', () => {
-      const codigo = document.getElementById('produto-codigo').value || '';
-      const descricao = prodInput.value || '';
-      const ncm = ncmInput.value || '00000000';
-      const cfop = (itemCfop?.value || '').trim();
-      const unidade = unInput.value || 'UN';
-      const quantidade = Number(document.getElementById('item-quantidade').value || 0);
-      const unitario = Number(unitInput.value || 0);
-      const desconto = Number(document.getElementById('item-desconto').value || 0);
-      if (!codigo) { showToast('Selecione o produto.', { variant: 'warning' }); return; }
-      if (quantidade <= 0 || unitario <= 0) { showToast('Quantidade e unitário devem ser > 0.', { variant: 'warning' }); return; }
-      const obj = { codigo, descricao, ncm, cfop, unidade, quantidade, unitario, desconto };
-      if (editIndex >= 0) { items[editIndex] = obj; editIndex = -1; } else { items.push(obj); }
+      const codigo=document.getElementById('produto-codigo').value||'';
+      const descricao=prodInput.value||'';
+      const ncm=ncmInput.value||'00000000';
+      const cfop=(itemCfop?.value||'').trim();
+      const unidade=unInput.value||'UN';
+      const quantidade=Number(document.getElementById('item-quantidade').value||0);
+      const unitario=Number(unitInput.value||0);
+      const desconto=Number(document.getElementById('item-desconto').value||0);
+      if(!codigo){showToast('Selecione o produto.',{variant:'warning'});return;}
+      if(quantidade<=0||unitario<=0){showToast('Quantidade e unitário devem ser > 0.',{variant:'warning'});return;}
+      const obj={codigo,descricao,ncm,cfop,unidade,quantidade,unitario,desconto};
+      if(editIndex>=0){items[editIndex]=obj;editIndex=-1;}else{items.push(obj);}
       renderItems();
-      prodCodigoHidden.value = ''; prodInput.value = '';
-      document.getElementById('item-quantidade').value = '1';
-      unitInput.value = '0';
-      document.getElementById('item-desconto').value = '0';
+      prodCodigoHidden.value=''; prodInput.value='';
+      document.getElementById('item-quantidade').value='1';
+      unitInput.value='0'; document.getElementById('item-desconto').value='0';
     });
 
-    /* ── Items table delegated events ── */
-    const modalItemCalculoEl = document.getElementById('modal-item-calculo');
-    const modalItemCalculoBody = document.getElementById('modal-item-calculo-body');
-    const modalItemCalculo = modalItemCalculoEl && typeof bootstrap !== 'undefined' ? new bootstrap.Modal(modalItemCalculoEl) : null;
+    /* delegated table events */
+    const modalEl   = document.getElementById('modal-item-calculo');
+    const modalBody = document.getElementById('modal-item-calculo-body');
+    const modal     = modalEl&&typeof bootstrap!=='undefined'?new bootstrap.Modal(modalEl):null;
 
-    const abrirModalCalculoItem = (it, debugItem) => {
-      if (!modalItemCalculo || !modalItemCalculoBody) return;
-      const bases = debugItem?.bases || {}; const aliq = debugItem?.aliquotas || {};
-      const vals = debugItem?.valores_calculados || {}; const csts = debugItem?.csts || {};
-      const extras = debugItem?.extras || {}; const cond = debugItem?.condicionais_aplicadas || {};
-      modalItemCalculoBody.innerHTML = `
-        <div class="mb-2"><strong>Produto:</strong> ${it.descricao || ''}</div>
-        <div class="mb-2"><strong>Quantidade:</strong> ${it.quantidade} &nbsp; <strong>Unitário:</strong> ${Number(it.unitario).toFixed(2)} &nbsp; <strong>Desconto:</strong> ${Number(it.desconto || 0).toFixed(2)}</div>
-        <div class="mb-2"><strong>CFOP:</strong> ${it.cfop || ''} &nbsp; <strong>NCM:</strong> ${it.ncm || ''}</div>
-        <div class="mb-2"><strong>Fonte:</strong> ${debugItem?.fonte_tributacao || (it.fonte_tributacao || '-')} &nbsp; <strong>CFOP resolvido:</strong> ${debugItem?.cfop_resolvido || '-'} &nbsp; <strong>NCM resolvido:</strong> ${debugItem?.ncm_resolvido || '-'}</div>
-        <hr>
-        <h6>Bases</h6>
-        <div class="row g-2 mb-2">
-          <div class="col-4"><strong>Raiz:</strong> ${bases.raiz || '-'}</div>
-          <div class="col-4"><strong>ICMS:</strong> ${bases.icms || '-'}</div>
-          <div class="col-4"><strong>ST:</strong> ${bases.st || '-'}</div>
-        </div>
-        <h6>Alíquotas</h6>
-        <div class="row g-2 mb-2">
-          <div class="col-4"><strong>ICMS %:</strong> ${aliq.icms || '-'}</div><div class="col-4"><strong>ICMS ST %:</strong> ${aliq.st || '-'}</div>
-          <div class="col-4"><strong>MVA ST %:</strong> ${extras.mva_st || '-'}</div><div class="col-4"><strong>IPI %:</strong> ${aliq.ipi || '-'}</div>
-          <div class="col-4"><strong>PIS %:</strong> ${aliq.pis || '-'}</div><div class="col-4"><strong>COFINS %:</strong> ${aliq.cofins || '-'}</div>
-          <div class="col-4"><strong>CBS %:</strong> ${aliq.cbs || '-'}</div><div class="col-4"><strong>IBS %:</strong> ${aliq.ibs || '-'}</div>
-        </div>
-        <h6>Valores calculados</h6>
-        <div class="row g-2 mb-2">
-          <div class="col-4"><strong>ICMS R$:</strong> ${vals.icms || '0.00'}</div><div class="col-4"><strong>ICMS ST R$:</strong> ${vals.st || '0.00'}</div>
-          <div class="col-4"><strong>IPI R$:</strong> ${vals.ipi || '0.00'}</div><div class="col-4"><strong>PIS R$:</strong> ${vals.pis || '0.00'}</div>
-          <div class="col-4"><strong>COFINS R$:</strong> ${vals.cofins || '0.00'}</div><div class="col-4"><strong>CBS R$:</strong> ${vals.cbs || '0.00'}</div>
-          <div class="col-4"><strong>IBS R$:</strong> ${vals.ibs || '0.00'}</div>
-        </div>
-        <h6>CSTs</h6>
-        <div class="row g-2 mb-2">
-          <div class="col-4"><strong>CST ICMS:</strong> ${csts.icms || '-'}</div><div class="col-4"><strong>CST ST:</strong> ${csts.st || '-'}</div>
-          <div class="col-4"><strong>CST PIS:</strong> ${csts.pis || '-'}</div><div class="col-4"><strong>CST COFINS:</strong> ${csts.cofins || '-'}</div>
-          <div class="col-4"><strong>CST IBS:</strong> ${csts.ibs || '-'}</div><div class="col-4"><strong>CST CBS:</strong> ${csts.cbs || '-'}</div>
-        </div>
-        <h6>Condicionais CFOP</h6>
-        <div class="row g-2 mb-2">
-          <div class="col-4"><strong>ICMS:</strong> ${String(cond.icms_habilitado_cfop)}</div>
-          <div class="col-4"><strong>IPI:</strong> ${String(cond.ipi_habilitado_cfop)}</div>
-          <div class="col-4"><strong>PIS/COFINS:</strong> ${String(cond.pis_cofins_habilitado_cfop)}</div>
-          <div class="col-4"><strong>CBS:</strong> ${String(cond.cbs_habilitado_cfop)}</div>
-          <div class="col-4"><strong>IBS:</strong> ${String(cond.ibs_habilitado_cfop)}</div>
-        </div>`;
-      modalItemCalculo.show();
-    };
-
-    itemsTableBody.addEventListener('click', (ev) => {
-      const editBtn = ev.target.closest('[data-edit]');
-      const rmBtn = ev.target.closest('[data-remove]');
-      const dbgBtn = ev.target.closest('[data-debug]');
-      if (editBtn) {
-        const idx = Number(editBtn.getAttribute('data-edit')), it = items[idx];
-        editIndex = idx;
-        prodCodigoHidden.value = it.codigo; prodInput.value = it.descricao;
-        ncmInput.value = it.ncm; if (itemCfop) itemCfop.value = it.cfop;
-        unInput.value = it.unidade;
-        document.getElementById('item-quantidade').value = String(it.quantidade);
-        unitInput.value = String(it.unitario);
-        document.getElementById('item-desconto').value = String(it.desconto || 0);
-        /* switch to itens tab */
-        tabs.forEach(t => t.classList.remove('active'));
-        panes.forEach(p => p.classList.remove('active'));
+    tbody.addEventListener('click', ev => {
+      const eBtn=ev.target.closest('[data-edit]');
+      const rBtn=ev.target.closest('[data-remove]');
+      const dBtn=ev.target.closest('[data-debug]');
+      if(eBtn){
+        const idx=Number(eBtn.getAttribute('data-edit')),it=items[idx]; editIndex=idx;
+        prodCodigoHidden.value=it.codigo; prodInput.value=it.descricao;
+        ncmInput.value=it.ncm; if(itemCfop)itemCfop.value=it.cfop;
+        unInput.value=it.unidade;
+        document.getElementById('item-quantidade').value=String(it.quantidade);
+        unitInput.value=String(it.unitario);
+        document.getElementById('item-desconto').value=String(it.desconto||0);
+        tabs.forEach(t=>t.classList.remove('active'));
+        panes.forEach(p=>p.classList.remove('active'));
         document.querySelector('[data-tab="itens"]').classList.add('active');
         document.getElementById('pane-itens').classList.add('active');
       }
-      if (dbgBtn) {
-        const idx = Number(dbgBtn.getAttribute('data-debug')), it = items[idx];
-        if (!it?.debug_calculo) { showToast('Cálculo ainda não disponível.', { variant: 'warning' }); return; }
-        abrirModalCalculoItem(it, it.debug_calculo);
+      if(dBtn){
+        const idx=Number(dBtn.getAttribute('data-debug')),it=items[idx];
+        if(!it?.debug_calculo){showToast('Cálculo ainda não disponível.',{variant:'warning'});return;}
+        if(!modal||!modalBody)return;
+        const db=it.debug_calculo,bases=db.bases||{},aliq=db.aliquotas||{},vals=db.valores_calculados||{},csts=db.csts||{},extras=db.extras||{},cond=db.condicionais_aplicadas||{};
+        modalBody.innerHTML=`
+          <div class="mb-2"><strong>Produto:</strong> ${it.descricao||''}</div>
+          <div class="mb-2"><strong>Qtd:</strong> ${it.quantidade} &nbsp;<strong>Unit.:</strong> ${Number(it.unitario).toFixed(2)} &nbsp;<strong>Desc.:</strong> ${Number(it.desconto||0).toFixed(2)}</div>
+          <div class="mb-2"><strong>CFOP:</strong> ${it.cfop||''} &nbsp;<strong>NCM:</strong> ${it.ncm||''}</div>
+          <div class="mb-2"><strong>Fonte:</strong> ${db.fonte_tributacao||it.fonte_tributacao||'-'} &nbsp;<strong>CFOP res.:</strong> ${db.cfop_resolvido||'-'}</div>
+          <hr>
+          <h6>Bases</h6>
+          <div class="row g-2 mb-2">
+            <div class="col-4"><strong>Raiz:</strong> ${bases.raiz||'-'}</div>
+            <div class="col-4"><strong>ICMS:</strong> ${bases.icms||'-'}</div>
+            <div class="col-4"><strong>ST:</strong> ${bases.st||'-'}</div>
+          </div>
+          <h6>Alíquotas</h6>
+          <div class="row g-2 mb-2">
+            <div class="col-4"><strong>ICMS %:</strong> ${aliq.icms||'-'}</div><div class="col-4"><strong>ST %:</strong> ${aliq.st||'-'}</div>
+            <div class="col-4"><strong>MVA %:</strong> ${extras.mva_st||'-'}</div><div class="col-4"><strong>IPI %:</strong> ${aliq.ipi||'-'}</div>
+            <div class="col-4"><strong>PIS %:</strong> ${aliq.pis||'-'}</div><div class="col-4"><strong>COFINS %:</strong> ${aliq.cofins||'-'}</div>
+            <div class="col-4"><strong>CBS %:</strong> ${aliq.cbs||'-'}</div><div class="col-4"><strong>IBS %:</strong> ${aliq.ibs||'-'}</div>
+          </div>
+          <h6>Valores calculados</h6>
+          <div class="row g-2 mb-2">
+            <div class="col-4"><strong>ICMS:</strong> ${vals.icms||'0.00'}</div><div class="col-4"><strong>ST:</strong> ${vals.st||'0.00'}</div>
+            <div class="col-4"><strong>IPI:</strong> ${vals.ipi||'0.00'}</div><div class="col-4"><strong>PIS:</strong> ${vals.pis||'0.00'}</div>
+            <div class="col-4"><strong>COFINS:</strong> ${vals.cofins||'0.00'}</div><div class="col-4"><strong>CBS:</strong> ${vals.cbs||'0.00'}</div>
+            <div class="col-4"><strong>IBS:</strong> ${vals.ibs||'0.00'}</div>
+          </div>
+          <h6>CSTs</h6>
+          <div class="row g-2 mb-2">
+            <div class="col-4"><strong>ICMS:</strong> ${csts.icms||'-'}</div><div class="col-4"><strong>PIS:</strong> ${csts.pis||'-'}</div>
+            <div class="col-4"><strong>COFINS:</strong> ${csts.cofins||'-'}</div><div class="col-4"><strong>CBS:</strong> ${csts.cbs||'-'}</div>
+            <div class="col-4"><strong>IBS:</strong> ${csts.ibs||'-'}</div>
+          </div>
+          <h6>Condicionais CFOP</h6>
+          <div class="row g-2">
+            <div class="col-4"><strong>ICMS:</strong> ${String(cond.icms_habilitado_cfop)}</div>
+            <div class="col-4"><strong>IPI:</strong> ${String(cond.ipi_habilitado_cfop)}</div>
+            <div class="col-4"><strong>PIS/COFINS:</strong> ${String(cond.pis_cofins_habilitado_cfop)}</div>
+            <div class="col-4"><strong>CBS:</strong> ${String(cond.cbs_habilitado_cfop)}</div>
+            <div class="col-4"><strong>IBS:</strong> ${String(cond.ibs_habilitado_cfop)}</div>
+          </div>`;
+        modal.show();
       }
-      if (rmBtn) { items.splice(Number(rmBtn.getAttribute('data-remove')), 1); renderItems(); }
+      if(rBtn){items.splice(Number(rBtn.getAttribute('data-remove')),1);renderItems();}
     });
 
     /* ── preencherBackendDaNota ── */
-    const preencherBackendDaNota = (payload) => {
-      const nota = payload || {};
-      const debug = nota.debug_calculo || null;
-      ultimoDebugCalculo = debug;
-      const debugMap = {};
-      if (debug && Array.isArray(debug.itens)) debug.itens.forEach(di => { if (di?.id != null) debugMap[String(di.id)] = di; });
-      if (!Array.isArray(nota.itens)) { backendTotals = null; return; }
-      let totProd = 0, totDesc = 0, totIcms = 0, totSt = 0, totIpi = 0, totPis = 0, totCof = 0, totCbs = 0, totIbs = 0;
-      nota.itens.forEach((itB, idx) => {
-        const qtd = Number(itB.quantidade || 0), unit = Number(itB.unitario || 0), desc = Number(itB.desconto || 0);
-        totProd += qtd * unit - desc; totDesc += desc;
-        const imp = itB.impostos || {};
-        totIcms += Number(imp.icms_valor || 0); totSt += Number(imp.icms_st_valor || 0);
-        totIpi += Number(imp.ipi_valor || 0); totPis += Number(imp.pis_valor || 0);
-        totCof += Number(imp.cofins_valor || 0); totCbs += Number(imp.cbs_valor || 0); totIbs += Number(imp.ibs_valor || 0);
-        if (items[idx]) items[idx] = { ...items[idx], cfop: (itB.cfop || items[idx].cfop || '').trim(), ncm: (itB.ncm || items[idx].ncm || '').trim(), fonte_tributacao: itB.fonte_tributacao || items[idx].fonte_tributacao, debug_calculo: debugMap[String(itB.id)] || items[idx].debug_calculo };
+    const preencherBackendDaNota = nota => {
+      const debug=nota?.debug_calculo||null, debugMap={};
+      if(debug&&Array.isArray(debug.itens)) debug.itens.forEach(di=>{ if(di?.id!=null)debugMap[String(di.id)]=di; });
+      if(!Array.isArray(nota?.itens)){backendTotals=null;return;}
+      let tProd=0,tDesc=0,tIcms=0,tSt=0,tIpi=0,tPis=0,tCof=0,tCbs=0,tIbs=0;
+      nota.itens.forEach((itB,idx)=>{
+        const q=Number(itB.quantidade||0),u=Number(itB.unitario||0),d=Number(itB.desconto||0);
+        tProd+=q*u-d; tDesc+=d;
+        const imp=itB.impostos||{};
+        tIcms+=Number(imp.icms_valor||0); tSt+=Number(imp.icms_st_valor||0); tIpi+=Number(imp.ipi_valor||0);
+        tPis+=Number(imp.pis_valor||0);   tCof+=Number(imp.cofins_valor||0); tCbs+=Number(imp.cbs_valor||0); tIbs+=Number(imp.ibs_valor||0);
+        if(items[idx]) items[idx]={...items[idx],cfop:(itB.cfop||items[idx].cfop||'').trim(),ncm:(itB.ncm||items[idx].ncm||'').trim(),fonte_tributacao:itB.fonte_tributacao||items[idx].fonte_tributacao,debug_calculo:debugMap[String(itB.id)]||items[idx].debug_calculo};
       });
-      backendTotals = { produtos: totProd, desconto: totDesc, icms: totIcms, st: totSt, ipi: totIpi, pis: totPis, cofins: totCof, cbs: totCbs, ibs: totIbs };
+      backendTotals={produtos:tProd,desconto:tDesc,icms:tIcms,st:tSt,ipi:tIpi,pis:tPis,cofins:tCof,cbs:tCbs,ibs:tIbs};
       calcTotais();
     };
 
-    /* ── API helpers ── */
-    const criarNota = async (body) => { const r = await authFetch(`/api/${slug}/notasfiscais/notas-fiscais/notas/`, { method: 'POST', body: JSON.stringify(body) }); return { ok: r.ok, data: await r.json() }; };
-    const atualizarNota = async (id, body) => { const r = await authFetch(`/api/${slug}/notasfiscais/notas-fiscais/notas/${id}/`, { method: 'PATCH', body: JSON.stringify(body) }); return { ok: r.ok, data: await r.json() }; };
-    const gravarNota = async (id) => { const r = await authFetch(`/api/${slug}/notasfiscais/notas-fiscais/notas/${id}/gravar/`, { method: 'POST', body: JSON.stringify({ descricao: 'Rascunho via WEB' }) }); return { ok: r.ok, data: await r.json() }; };
+    /* ── API ── */
+    const criarNota    = async b => { const r=await authFetch(`/api/${slug}/notasfiscais/notas-fiscais/notas/`,{method:'POST',body:JSON.stringify(b)}); return {ok:r.ok,data:await r.json()}; };
+    const atualizarNota= async(id,b)=>{ const r=await authFetch(`/api/${slug}/notasfiscais/notas-fiscais/notas/${id}/`,{method:'PATCH',body:JSON.stringify(b)}); return {ok:r.ok,data:await r.json()}; };
+    const gravarNota   = async id => { const r=await authFetch(`/api/${slug}/notasfiscais/notas-fiscais/notas/${id}/gravar/`,{method:'POST',body:JSON.stringify({descricao:'Rascunho via WEB'})}); return {ok:r.ok,data:await r.json()}; };
 
-    const montarPayload = (fd) => ({
-      modelo: String(Number(fd.get('modelo') || 55)),
-      serie: String(Number(fd.get('serie') || 1)),
-      numero: Number(fd.get('numero') || 0),
-      data_emissao: fd.get('data_emissao') || null,
-      data_saida: fd.get('data_saida') || fd.get('data_emissao') || null,
-      tipo_operacao: 1, finalidade: Number(fd.get('tipo_documento') || 1), ambiente: 2,
-      destinatario: Number(document.getElementById('destinatario-id').value || 0),
-      itens: items.map(it => ({ produto: Number(it.codigo || 0), quantidade: Number(it.quantidade || 0), unitario: Number(it.unitario || 0), desconto: Number(it.desconto || 0), cfop: (it.cfop || '').trim(), ncm: it.ncm || '00000000', cest: '', cst_icms: (document.getElementById('cst-icms').value || '').trim(), cst_pis: (document.getElementById('cst-pis').value || '').trim(), cst_cofins: (document.getElementById('cst-cofins').value || '').trim(), cst_ibs: document.getElementById('cst-ibs').value || '', cst_cbs: document.getElementById('cst-cbs').value || '' })),
-      impostos: items.map(() => ({ icms_aliquota: Number(aliqIcms.value || 0), ibs_aliquota: Number(aliqIbs.value || 0), cbs_aliquota: Number(aliqCbs.value || 0) })),
-      transporte: { modalidade_frete: Number(document.getElementById('transporte-modalidade').value || 0), transportadora: Number(document.getElementById('transportadora-id').value || 0) || null, placa_veiculo: (document.getElementById('placa-veiculo')?.value || '').trim(), uf_veiculo: (document.getElementById('uf-veiculo')?.value || '').trim() },
-      natureza_operacao: fd.get('natureza_operacao') || 'Venda de mercadoria',
+    const montarPayload = fd => ({
+      modelo:String(Number(fd.get('modelo')||55)), serie:String(Number(fd.get('serie')||1)),
+      numero:Number(fd.get('numero')||0),
+      data_emissao:fd.get('data_emissao')||null, data_saida:fd.get('data_saida')||fd.get('data_emissao')||null,
+      tipo_operacao:1, finalidade:Number(fd.get('tipo_documento')||1), ambiente:2,
+      destinatario:Number(document.getElementById('destinatario-id').value||0),
+      itens:items.map(it=>({produto:Number(it.codigo||0),quantidade:Number(it.quantidade||0),unitario:Number(it.unitario||0),desconto:Number(it.desconto||0),cfop:(it.cfop||'').trim(),ncm:it.ncm||'00000000',cest:'',cst_icms:(document.getElementById('cst-icms').value||'').trim(),cst_pis:(document.getElementById('cst-pis').value||'').trim(),cst_cofins:(document.getElementById('cst-cofins').value||'').trim(),cst_ibs:document.getElementById('cst-ibs').value||'',cst_cbs:document.getElementById('cst-cbs').value||''})),
+      impostos:items.map(()=>({icms_aliquota:Number(aliqIcms.value||0),ibs_aliquota:Number(aliqIbs.value||0),cbs_aliquota:Number(aliqCbs.value||0)})),
+      transporte:{modalidade_frete:Number(document.getElementById('transporte-modalidade').value||0),transportadora:Number(document.getElementById('transportadora-id').value||0)||null,placa_veiculo:(document.getElementById('placa-veiculo')?.value||'').trim(),uf_veiculo:(document.getElementById('uf-veiculo')?.value||'').trim()},
+      natureza_operacao:fd.get('natureza_operacao')||'Venda de mercadoria',
     });
 
     /* ── Salvar ── */
-    const btnSalvar = document.getElementById('btn-salvar');
-    btnSalvar.addEventListener('click', async () => {
-      const fd = new FormData(document.getElementById('emit-form'));
-      if (!document.getElementById('destinatario-id').value) { showToast('Selecione o cliente.', { variant: 'warning' }); return; }
-      if (!items.length) { showToast('Adicione ao menos um item.', { variant: 'warning' }); return; }
-      const sp = btnSalvar.querySelector('.spinner-border'); btnSalvar.disabled = true; sp?.classList.remove('d-none');
-      const payload = montarPayload(fd);
-      const result = currentNotaId ? await atualizarNota(currentNotaId, payload) : await criarNota(payload);
-      if (!result.ok) { showToast('Falha ao salvar: ' + (result.data?.detail || result.data?.motivo || 'Erro'), { variant: 'danger', delay: 4000 }); btnSalvar.disabled = false; sp?.classList.add('d-none'); return; }
-      const notaId = result.data?.id || result.data?.pk || result.data?.nota?.id;
-      if (!notaId) { showToast('Nota salva, porém ID não retornado.', { variant: 'warning' }); btnSalvar.disabled = false; sp?.classList.add('d-none'); return; }
-      currentNotaId = notaId;
-      try { preencherBackendDaNota(result.data); renderItems(); } catch { }
-      const grav = await gravarNota(notaId);
-      if (!grav.ok) { showToast('Falha ao gravar: ' + (grav.data?.detail || 'Erro'), { variant: 'danger', delay: 4000 }); btnSalvar.disabled = false; sp?.classList.add('d-none'); return; }
-      window.location.href = `/web/${slug}/notas-fiscais/`;
-      btnSalvar.disabled = false; sp?.classList.add('d-none');
+    const btnSalvar=document.getElementById('btn-salvar');
+    btnSalvar.addEventListener('click', async()=>{
+      const fd=new FormData(document.getElementById('emit-form'));
+      if(!document.getElementById('destinatario-id').value){showToast('Selecione o cliente.',{variant:'warning'});return;}
+      if(!items.length){showToast('Adicione ao menos um item.',{variant:'warning'});return;}
+      const sp=btnSalvar.querySelector('.spinner-border'); btnSalvar.disabled=true; sp?.classList.remove('d-none');
+      const payload=montarPayload(fd);
+      const result=currentNotaId?await atualizarNota(currentNotaId,payload):await criarNota(payload);
+      if(!result.ok){showToast('Falha ao salvar: '+(result.data?.detail||result.data?.motivo||'Erro'),{variant:'danger',delay:4000});btnSalvar.disabled=false;sp?.classList.add('d-none');return;}
+      const notaId=result.data?.id||result.data?.pk||result.data?.nota?.id;
+      if(!notaId){showToast('Nota salva, porém ID não retornado.',{variant:'warning'});btnSalvar.disabled=false;sp?.classList.add('d-none');return;}
+      currentNotaId=notaId;
+      try{preencherBackendDaNota(result.data);renderItems();}catch{}
+      const grav=await gravarNota(notaId);
+      if(!grav.ok){showToast('Falha ao gravar: '+(grav.data?.detail||'Erro'),{variant:'danger',delay:4000});btnSalvar.disabled=false;sp?.classList.add('d-none');return;}
+      window.location.href=`/web/${slug}/notas-fiscais/`;
+      btnSalvar.disabled=false;sp?.classList.add('d-none');
     });
 
     /* ── Calcular ── */
-    const btnCalcular = document.getElementById('btn-calcular');
-    if (btnCalcular) {
-      btnCalcular.addEventListener('click', async () => {
-        if (!document.getElementById('destinatario-id').value) { showToast('Selecione o cliente.', { variant: 'warning' }); return; }
-        if (!items.length) { showToast('Adicione ao menos um item.', { variant: 'warning' }); return; }
-        if (!currentNotaId) { showToast('Salve a nota antes de calcular.', { variant: 'warning' }); return; }
-        const sp = document.createElement('span'); sp.className = 'spinner-border spinner-border-sm me-1';
-        btnCalcular.prepend(sp); btnCalcular.disabled = true;
-        try {
-          const respCalc = await authFetch(`/api/calcular/${slug}/${currentNotaId}/`, { method: 'POST' });
-          if (!respCalc.ok) { let d; try { d = await respCalc.json(); } catch { } throw new Error(d?.erro || d?.detail || `Erro ${respCalc.status}`); }
-          showToast('Cálculo realizado com sucesso.', { variant: 'success' });
-          const respGet = await authFetch(`/api/${slug}/notasfiscais/notas-fiscais/notas/${currentNotaId}/`);
-          if (respGet.ok) { const dg = await respGet.json(); preencherBackendDaNota(dg); renderItems(); }
-        } catch (e) { showToast(e.message || String(e), { variant: 'danger' }); }
-        finally { btnCalcular.disabled = false; if (sp?.parentNode) sp.remove(); }
-      });
-    }
-
-    /* ── Transmitir ── */
-    document.getElementById('emit-form').addEventListener('submit', async (ev) => {
-      ev.preventDefault();
-      const fd = new FormData(ev.target);
-      if (!document.getElementById('destinatario-id').value) { showToast('Selecione o cliente.', { variant: 'warning' }); return; }
-      if (!items.length) { showToast('Adicione ao menos um item.', { variant: 'warning' }); return; }
-      const btnSubmit = ev.target.querySelector('button[type="submit"]');
-      const sp = btnSubmit?.querySelector('.spinner-border');
-      if (btnSubmit) { btnSubmit.disabled = true; sp?.classList.remove('d-none'); }
-      try {
-        const payload = montarPayload(fd);
-        const created = await criarNota(payload);
-        if (!created.ok) { showToast('Falha na criação: ' + (created.data?.detail || created.data?.motivo || created.data?.erro || 'Erro'), { variant: 'danger', delay: 4000 }); return; }
-        const notaId = created.data?.id || created.data?.pk || created.data?.nota?.id;
-        if (!notaId) { showToast('Nota criada, porém ID não retornado.', { variant: 'warning' }); return; }
-        try { preencherBackendDaNota(created.data); renderItems(); } catch { }
-        await gravarNota(notaId);
-        const respEmit = await authFetch(`/api/emitir/${slug}/${notaId}/`, { method: 'GET' });
-        const dataEmit = await respEmit.json();
-        if (respEmit.ok) {
-          if (Number(dataEmit?.status) === 100) { const w = window.open(`/api/imprimir/${slug}/${notaId}/`, '_blank'); if (w) w.focus(); }
-          showToast('Emitida com sucesso. Chave: ' + (dataEmit?.chave || dataEmit?.chave_acesso || ''), { variant: 'success' });
-          window.location.href = `/web/${slug}/notas-fiscais/`;
-        } else {
-          const raw = dataEmit?.detail || dataEmit?.detalhes || dataEmit?.mensagem || dataEmit?.motivo || dataEmit?.erro || dataEmit?.error || (typeof dataEmit === 'string' ? dataEmit : '') || (dataEmit ? JSON.stringify(dataEmit) : '');
-          showToast('Falha na emissão: ' + (raw || 'Erro'), { variant: 'danger', delay: 4000 });
-        }
-      } catch (e) { showToast('Erro: ' + e, { variant: 'danger', delay: 4000 }); }
-      finally { if (btnSubmit) { btnSubmit.disabled = false; sp?.classList.add('d-none'); } }
+    const btnCalc=document.getElementById('btn-calcular');
+    if(btnCalc) btnCalc.addEventListener('click', async()=>{
+      if(!document.getElementById('destinatario-id').value){showToast('Selecione o cliente.',{variant:'warning'});return;}
+      if(!items.length){showToast('Adicione ao menos um item.',{variant:'warning'});return;}
+      if(!currentNotaId){showToast('Salve a nota antes de calcular.',{variant:'warning'});return;}
+      const sp=document.createElement('span'); sp.className='spinner-border spinner-border-sm me-1';
+      btnCalc.prepend(sp); btnCalc.disabled=true;
+      try{
+        const r=await authFetch(`/api/calcular/${slug}/${currentNotaId}/`,{method:'POST'});
+        if(!r.ok){let d;try{d=await r.json();}catch{}throw new Error(d?.erro||d?.detail||`Erro ${r.status}`);}
+        showToast('Cálculo realizado com sucesso.',{variant:'success'});
+        const rg=await authFetch(`/api/${slug}/notasfiscais/notas-fiscais/notas/${currentNotaId}/`);
+        if(rg.ok){const dg=await rg.json();preencherBackendDaNota(dg);renderItems();}
+      }catch(e){showToast(e.message||String(e),{variant:'danger'});}
+      finally{btnCalc.disabled=false;if(sp?.parentNode)sp.remove();}
     });
 
-    /* initial render */
+    /* ── Transmitir ── */
+    document.getElementById('emit-form').addEventListener('submit', async ev=>{
+      ev.preventDefault();
+      const fd=new FormData(ev.target);
+      if(!document.getElementById('destinatario-id').value){showToast('Selecione o cliente.',{variant:'warning'});return;}
+      if(!items.length){showToast('Adicione ao menos um item.',{variant:'warning'});return;}
+      const btnS=ev.target.querySelector('button[type="submit"]');
+      const sp=btnS?.querySelector('.spinner-border');
+      if(btnS){btnS.disabled=true;sp?.classList.remove('d-none');}
+      try{
+        const payload=montarPayload(fd);
+        const created=await criarNota(payload);
+        if(!created.ok){showToast('Falha na criação: '+(created.data?.detail||created.data?.motivo||created.data?.erro||'Erro'),{variant:'danger',delay:4000});return;}
+        const notaId=created.data?.id||created.data?.pk||created.data?.nota?.id;
+        if(!notaId){showToast('Nota criada, porém ID não retornado.',{variant:'warning'});return;}
+        try{preencherBackendDaNota(created.data);renderItems();}catch{}
+        await gravarNota(notaId);
+        const re=await authFetch(`/api/emitir/${slug}/${notaId}/`,{method:'GET'});
+        const de=await re.json();
+        if(re.ok){
+          if(Number(de?.status)===100){const w=window.open(`/api/imprimir/${slug}/${notaId}/`,'_blank');if(w)w.focus();}
+          showToast('Emitida com sucesso. Chave: '+(de?.chave||de?.chave_acesso||''),{variant:'success'});
+          window.location.href=`/web/${slug}/notas-fiscais/`;
+        }else{
+          const raw=de?.detail||de?.detalhes||de?.mensagem||de?.motivo||de?.erro||de?.error||(typeof de==='string'?de:'')||(de?JSON.stringify(de):'');
+          showToast('Falha na emissão: '+(raw||'Erro'),{variant:'danger',delay:4000});
+        }
+      }catch(e){showToast('Erro: '+e,{variant:'danger',delay:4000});}
+      finally{if(btnS){btnS.disabled=false;sp?.classList.add('d-none');}}
+    });
+
     renderItems();
   })();
 </script>
