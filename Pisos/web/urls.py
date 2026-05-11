@@ -13,6 +13,7 @@ from Pisos.web.views.impressao import imprimir_pedido_pisos, imprimir_orcamento_
 
 from Pisos.web.views.utils import autocomplete_clientes, autocomplete_vendedores, autocomplete_produtos
 from Pisos.web.views.comissao_view import ComissaoVendedorView
+from Pisos.web.views.workflow_pedido import PedidoWorkflowAjaxView
 
 app_name = "PisosWeb"
 
@@ -33,4 +34,5 @@ urlpatterns = [
     path("orcamentos-pisos/<int:numero>/exportar/", exportar_orcamento_pedido, name="orcamentos_pisos_exportar"),
     path("calcular-item/", api_calcular_item, name="api_calcular_item"),
     path("comissoes-vendedores/", ComissaoVendedorView.as_view(), name="comissoes_vendedores"),
+    path("pedidos-pisos/<int:pk>/workflow/", PedidoWorkflowAjaxView.as_view(), name="pedidos_pisos_workflow_ajax"),
 ]

@@ -146,11 +146,11 @@ def vendedores_autocomplete(request, slug=None):
 
 def produtos_autocomplete(request, slug=None):
     banco = get_licenca_db_config(request) or "default"
-    empresa = request.session.get("empresa_id")
+    empresa = _get_empresa_id(request)
     q = _safe_q(request)
     limit, offset = _get_pagination(request)
 
-    qs = Produtos.objects.using(banco).filter(prod_empr=empresa)
+    qs = Produtos.objects.using(banco).filter(prod_empr=str(empresa))
     if q:
         qs = qs.filter(
             Q(prod_nome__icontains=q) | Q(prod_codi__iexact=q) | Q(prod_codi_nume__iexact=q) | Q(prod_coba__iexact=q)

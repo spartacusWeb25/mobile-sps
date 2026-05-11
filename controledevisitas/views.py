@@ -433,13 +433,26 @@ class ItensVisitaViewSet(BaseMultiDBModelViewSet):
         tamanho_m2 = request.data.get('tamanho_m2')
         percentual_quebra = request.data.get('percentual_quebra', 0)
         condicao = request.data.get('condicao', '0')
+        empresa_id = request.data.get('empresa_id') or request.session.get('empresa_id') or request.headers.get('X-Empresa')
+        filial_id = request.data.get('filial_id') or request.session.get('filial_id') or request.headers.get('X-Filial')
+        try:
+            empresa_id = int(empresa_id) if empresa_id is not None and str(empresa_id).strip() != "" else None
+        except Exception:
+            empresa_id = None
+        try:
+            filial_id = int(filial_id) if filial_id is not None and str(filial_id).strip() != "" else None
+        except Exception:
+            filial_id = None
 
         # Log dos dados recebidos
         print(f"[calcular_metragem] Dados recebidos: {request.data}")
         print(f"[calcular_metragem] produto_id: {produto_id}, tamanho_m2: {tamanho_m2}, percentual_quebra: {percentual_quebra}")
 
         try:
-            produto = Produtos.objects.using(banco).get(prod_codi=produto_id)
+            qs_prod = Produtos.objects.using(banco).filter(prod_codi=produto_id)
+            if empresa_id is not None:
+                qs_prod = qs_prod.filter(prod_empr=str(empresa_id))
+            produto = qs_prod.get()
             print(f"[calcular_metragem] Produto encontrado: {produto.prod_nome}, m2_por_caixa: {getattr(produto, 'prod_cera_m2cx', None)}, pc_por_caixa: {getattr(produto, 'prod_cera_pccx', None)}")
         except Produtos.DoesNotExist:
             return Response({'error': 'Produto não encontrado'}, status=status.HTTP_404_NOT_FOUND)
@@ -454,7 +467,7 @@ class ItensVisitaViewSet(BaseMultiDBModelViewSet):
 
         preco_origem = "tabela"
         try:
-            preco_unitario = get_preco_produto(banco, produto_id, condicao)
+            preco_unitario = get_preco_produto(banco, produto_id, condicao, empresa=empresa_id, filial=filial_id)
         except Exception as e:
             logger.warning(f"[calcular_metragem] Preço não encontrado na tabela: {e}. Usando fallback do produto.")
             preco_origem = "fallback_produto"

@@ -8,29 +8,40 @@ from .utils_service import parse_decimal
 
 logger = logging.getLogger(__name__)
 
-def get_preco_produto(banco, produto_id, condicao="0"):
+def get_preco_produto(banco, produto_id, condicao="0", empresa=None, filial=None):
     """
     Busca o preço do produto priorizando ORM e com fallback em SQL cru.
     condicao='0' → à vista | condicao!='0' → a prazo
     """
     preco = None
+    empresa_tabe = None
+    filial_tabe = None
+
+    if empresa is not None:
+        empresa_tabe = int(empresa) if str(empresa).isdigit() else empresa
+    if filial is not None:
+        filial_tabe = int(filial) if str(filial).isdigit() else filial
 
     # 1️⃣ ORM primeiro (corrige filtro por código em vez de objeto e ordenação)
     try:
-        produto = Produtos.objects.using(banco).filter(prod_codi=produto_id).first()
+        produto_qs = Produtos.objects.using(banco).filter(prod_codi=produto_id)
+        if empresa is not None:
+            produto_qs = produto_qs.filter(prod_empr=str(empresa))
+        produto = produto_qs.first()
         if not produto:
             logger.warning(f"[preco_service] Produto não encontrado para obter preço: {produto_id}")
         else:
-            # tabe_prod é CharField → usar código do produto
-            # tabe_empr é IntegerField, enquanto prod_empr é CharField → tentar converter
-            try:
-                empresa = int(produto.prod_empr) if produto.prod_empr is not None else None
-            except Exception:
-                empresa = produto.prod_empr
+            if empresa_tabe is None:
+                try:
+                    empresa_tabe = int(produto.prod_empr) if produto.prod_empr is not None else None
+                except Exception:
+                    empresa_tabe = produto.prod_empr
 
             qs = Tabelaprecos.objects.using(banco).filter(tabe_prod=produto.prod_codi)
-            if empresa is not None:
-                qs = qs.filter(tabe_empr=empresa)
+            if empresa_tabe is not None:
+                qs = qs.filter(tabe_empr=empresa_tabe)
+            if filial_tabe is not None:
+                qs = qs.filter(tabe_fili=filial_tabe)
 
             # Ordena pelos campos de log se existirem
             qs = qs.order_by("-field_log_data", "-field_log_time")
@@ -46,15 +57,23 @@ def get_preco_produto(banco, produto_id, condicao="0"):
     if preco is None:
         try:
             with connections[banco].cursor() as cursor:
+                where = ["tabe_prod = %s"]
+                params = [produto_id]
+                if empresa_tabe is not None:
+                    where.append("tabe_empr = %s")
+                    params.append(empresa_tabe)
+                if filial_tabe is not None:
+                    where.append("tabe_fili = %s")
+                    params.append(filial_tabe)
                 cursor.execute(
-                    """
+                    f"""
                     SELECT tabe_avis, tabe_apra
                     FROM tabelaprecos
-                    WHERE tabe_prod = %s
+                    WHERE {' AND '.join(where)}
                     ORDER BY _log_data DESC, _log_time DESC
                     LIMIT 1
                     """,
-                    [produto_id],
+                    params,
                 )
                 row = cursor.fetchone()
                 if row:

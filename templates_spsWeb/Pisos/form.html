@@ -709,6 +709,8 @@
     </div>
   </form>
 </div>
+{% include 'Pisos/modal_workflow.html' %}
+
 
 <script>
   const SLUG = "{{ slug }}";
@@ -801,18 +803,6 @@
   }
 
   /* ── Workflow ── */
-  function renderWorkflow() {
-    const container = document.getElementById('wf-timeline');
-    if (!container) return;
-    const steps = ['Financeiro Ok', 'Compra Realizada', 'Pedido Instalado', 'Pedido Finalizado'];
-    container.innerHTML = steps.map((step, i) => `
-      <div class="d-flex justify-content-between align-items-center py-2 border-bottom" style="border-color:#323760!important">
-        <span>${i + 1}. ${step}</span>
-        <button type="button" class="btn btn-sm btn-outline-primary">Concluir</button>
-      </div>
-    `).join('');
-  }
-
   /* ── Autocomplete ── */
   function setupAutocomplete(inputId, hiddenId, url, onSelect) {
     const input = document.getElementById(inputId);

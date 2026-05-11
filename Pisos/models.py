@@ -160,7 +160,17 @@ class Pedidospisos(models.Model):
     pedi_cred = models.DecimalField(max_digits=15, decimal_places=4, blank=True, null=True)
     #pedi_clon = models.BooleanField(blank=True, null=True)
     pedi_taxa_cart = models.DecimalField(max_digits=16, decimal_places=2, blank=True, null=True)
-
+    
+    #campos nomeados para o workflow de financeiro
+    pedi_desc_inst_work = models.TextField(blank=True, null=True)
+    pedi_data_fina_work = models.DateField(blank=True, null=True)
+    pedi_desc_comp_work = models.TextField(blank=True, null=True)
+    pedi_desc_fina_work = models.TextField(blank=True, null=True)
+    pedi_data_comp_work = models.DateField(blank=True, null=True)
+    pedi_data_inst_work = models.DateField(blank=True, null=True)
+    pedi_data_ence_work = models.DateField(blank=True, null=True)
+    pedi_desc_ence_work = models.TextField(blank=True, null=True)
+    
     class Meta:
         managed = False
         db_table = 'pedidospisos'

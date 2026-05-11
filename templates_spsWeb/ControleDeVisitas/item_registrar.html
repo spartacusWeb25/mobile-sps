@@ -2,24 +2,237 @@
 {% load static %}
 
 {% block crm_content %}
-<div class="container" x-data>
-  <h4 class="mb-3">Novo Item para Visita #{{ ctrl_id }}</h4>
-  <form method="post" class="card p-3">
-    {% csrf_token %}
-    <div class="row g-2">
-      <div class="col-md-6 d-none">{{ form.produto_codigo.label_tag }}{{ form.produto_codigo }}</div>
-      <div class="col-md-6">
-        <label class="form-label">Produto</label>
-        <input type="text" id="prod-search" class="form-control" placeholder="Buscar produto" autocomplete="off" />
-        <div id="prod-results" class="list-group position-absolute w-100" style="z-index:1060;"></div>
-      </div>
-      <div class="col-md-3">{{ form.quantidade.label_tag }}{{ form.quantidade }}</div>
-      <div class="col-md-3">{{ form.valor_unitario.label_tag }}{{ form.valor_unitario }}</div>
-      <div class="col-12">{{ form.observacoes.label_tag }}{{ form.observacoes }}</div>
+<style>
+  .item-card {
+    border: 1px solid rgba(148, 163, 184, .25);
+    border-radius: 16px;
+    background: var(--bs-body-bg);
+    box-shadow: 0 12px 30px rgba(15, 23, 42, .08);
+  }
+
+  .calc-preview {
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(13, 110, 253, .12), rgba(25, 135, 84, .10));
+    border: 1px solid rgba(13, 110, 253, .18);
+  }
+
+  .calc-box {
+    border-radius: 14px;
+    background: rgba(255, 255, 255, .08);
+    border: 1px solid rgba(148, 163, 184, .20);
+    padding: 14px;
+    height: 100%;
+  }
+
+  .calc-label {
+    font-size: .75rem;
+    color: var(--bs-secondary-color);
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+
+  .calc-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+  }
+
+  .produto-results {
+    z-index: 1060;
+    max-height: 280px;
+    overflow-y: auto;
+  }
+
+  .produto-option small {
+    display: block;
+    color: var(--bs-secondary-color);
+  }
+</style>
+
+<div class="container-fluid py-3">
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h4 class="mb-0">
+        <i class="bi bi-box-seam"></i>
+        {% if editando %}Editar Item da Visita #{{ ctrl_id }}{% else %}Novo Item para Visita #{{ ctrl_id }}{% endif %}
+      </h4>
+      <small class="text-muted">
+        Produto calculado por metragem, perda e tabela de preço.
+      </small>
     </div>
-    <div class="mt-3 d-flex gap-2">
-      <button class="btn btn-primary">Registrar</button>
-      <a href="/web/{{ slug }}/controle-de-visitas/resumo/{{ ctrl_id }}/" class="btn btn-outline-secondary">Cancelar</a>
+
+    <a href="/web/{{ slug }}/controle-de-visitas/resumo/{{ ctrl_id }}/" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left"></i>
+      Voltar
+    </a>
+  </div>
+
+  <form method="post" class="card item-card p-3">
+    {% csrf_token %}
+
+    <div class="row g-3">
+
+      <div class="col-md-6 d-none">
+        {{ form.produto_codigo.label_tag }}
+        {{ form.produto_codigo }}
+      </div>
+
+      <div class="col-lg-6 position-relative">
+        <label class="form-label fw-semibold">
+          Produto
+        </label>
+
+        <div class="input-group">
+          <span class="input-group-text">
+            <i class="bi bi-search"></i>
+          </span>
+          <input type="text" id="prod-search" class="form-control" placeholder="Buscar produto por nome ou código"
+            autocomplete="off" />
+        </div>
+
+        <div id="prod-results" class="list-group position-absolute w-100 produto-results shadow-sm"></div>
+
+        <small id="produto-selecionado" class="text-muted d-block mt-1">
+          {% if produto_pre_id %}Selecionado: {{ produto_pre_id }} - {{ produto_pre_nome }}{% else %}Nenhum produto
+          selecionado.{% endif %}
+        </small>
+      </div>
+
+      <div class="col-lg-2 col-md-4">
+        <label class="form-label fw-semibold">
+          Metragem / Quantidade
+        </label>
+        {{ form.quantidade }}
+      </div>
+
+      <div class="col-lg-2 col-md-4">
+        <label class="form-label fw-semibold">
+          Quebra %
+        </label>
+        <input type="number" name="percentual_quebra" id="id_percentual_quebra" class="form-control" step="0.01" min="0"
+          value="{{ request.POST.percentual_quebra|default:'0' }}">
+      </div>
+
+      <div class="col-lg-2 col-md-4">
+        <label class="form-label fw-semibold">
+          Condição
+        </label>
+        <select name="condicao" id="id_condicao" class="form-select">
+          <option value="0">À vista</option>
+          <option value="1">A prazo</option>
+        </select>
+      </div>
+
+      <div class="col-md-3">
+        <label class="form-label fw-semibold">
+          Valor unitário
+        </label>
+        {{ form.valor_unitario }}
+        <small class="text-muted">
+          Pode vir calculado pelo service.
+        </small>
+      </div>
+
+      <div class="col-md-9">
+        <label class="form-label fw-semibold">
+          Observações
+        </label>
+        {{ form.observacoes }}
+      </div>
+
+      <div class="col-12">
+        <div class="calc-preview p-3 mt-2">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+              <strong>
+                <i class="bi bi-calculator"></i>
+                Prévia do cálculo
+              </strong>
+              <div class="small text-muted">
+                Baseado no service de metragem do produto.
+              </div>
+            </div>
+
+            <button type="button" id="btn-calcular" class="btn btn-outline-primary btn-sm">
+              <i class="bi bi-lightning-charge"></i>
+              Calcular prévia
+            </button>
+          </div>
+
+          <div class="row g-2">
+            <div class="col-6 col-md-3">
+              <div class="calc-box">
+                <div class="calc-label">Metragem com perda</div>
+                <div class="calc-value" id="prev-metragem-perda">-</div>
+              </div>
+            </div>
+
+            <div class="col-6 col-md-3">
+              <div class="calc-box">
+                <div class="calc-label">Metragem real</div>
+                <div class="calc-value" id="prev-metragem-real">-</div>
+              </div>
+            </div>
+
+            <div class="col-6 col-md-3">
+              <div class="calc-box">
+                <div class="calc-label">Caixas</div>
+                <div class="calc-value" id="prev-caixas">-</div>
+              </div>
+            </div>
+
+            <div class="col-6 col-md-3">
+              <div class="calc-box">
+                <div class="calc-label">Total</div>
+                <div class="calc-value" id="prev-total">-</div>
+              </div>
+            </div>
+
+            <div class="col-6 col-md-3">
+              <div class="calc-box">
+                <div class="calc-label">Preço unitário</div>
+                <div class="calc-value" id="prev-preco">-</div>
+              </div>
+            </div>
+
+            <div class="col-6 col-md-3">
+              <div class="calc-box">
+                <div class="calc-label">M² por caixa</div>
+                <div class="calc-value" id="prev-m2-caixa">-</div>
+              </div>
+            </div>
+
+            <div class="col-6 col-md-3">
+              <div class="calc-box">
+                <div class="calc-label">Peças por caixa</div>
+                <div class="calc-value" id="prev-pc-caixa">-</div>
+              </div>
+            </div>
+
+            <div class="col-6 col-md-3">
+              <div class="calc-box">
+                <div class="calc-label">Origem preço</div>
+                <div class="calc-value fs-6" id="prev-origem">-</div>
+              </div>
+            </div>
+          </div>
+
+          <div id="calc-alert" class="alert alert-warning mt-3 mb-0 d-none"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="mt-4 d-flex justify-content-end gap-2">
+      <a href="/web/{{ slug }}/controle-de-visitas/resumo/{{ ctrl_id }}/" class="btn btn-outline-danger">
+        <i class="bi bi-x-circle"></i>
+        Cancelar
+      </a>
+
+      <button class="btn btn-outline-primary">
+        <i class="bi bi-check2-circle" style="margin-right: 5px; color: #5d7a66;"></i>
+        {% if editando %}Salvar alterações{% else %}Registrar item{% endif %}
+      </button>
     </div>
   </form>
 </div>
@@ -29,32 +242,242 @@
 <script>
   (function () {
     const slug = '{{ slug }}';
+    const empresaId = '{{ empresa_id }}';
+    const filialId = '{{ filial_id }}';
+    const produtoPreId = '{{ produto_pre_id|default:"" }}';
+    const produtoPreNome = '{{ produto_pre_nome|default:"" }}';
+
     const hidProd = document.getElementById('id_produto_codigo');
     const inp = document.getElementById('prod-search');
     const res = document.getElementById('prod-results');
-    let t;
+    const produtoSelecionado = document.getElementById('produto-selecionado');
+
+    if (hidProd && produtoPreId && !hidProd.value) hidProd.value = produtoPreId;
+    if (inp && produtoPreNome && !inp.value) inp.value = produtoPreNome;
+
+    const quantidade = document.getElementById('id_quantidade');
+    const valorUnitario = document.getElementById('id_valor_unitario');
+    const quebra = document.getElementById('id_percentual_quebra');
+    const condicao = document.getElementById('id_condicao');
+    const btnCalcular = document.getElementById('btn-calcular');
+    const calcAlert = document.getElementById('calc-alert');
+
+    let timerBusca;
+    let timerCalculo;
+
+    function moeda(v) {
+      if (v === null || v === undefined || v === '') return '-';
+
+      const n = Number(String(v).replace(',', '.'));
+
+      if (Number.isNaN(n)) return v;
+
+      return n.toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+      });
+    }
+
+    function numero(v, casas = 2) {
+      if (v === null || v === undefined || v === '') return '-';
+
+      const n = Number(String(v).replace(',', '.'));
+
+      if (Number.isNaN(n)) return v;
+
+      return n.toLocaleString('pt-BR', {
+        minimumFractionDigits: casas,
+        maximumFractionDigits: casas
+      });
+    }
+
+    function setText(id, value) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = value;
+    }
+
+    function limparPreview() {
+      setText('prev-metragem-perda', '-');
+      setText('prev-metragem-real', '-');
+      setText('prev-caixas', '-');
+      setText('prev-total', '-');
+      setText('prev-preco', '-');
+      setText('prev-m2-caixa', '-');
+      setText('prev-pc-caixa', '-');
+      setText('prev-origem', '-');
+    }
+
+    function mostrarErro(msg) {
+      calcAlert.textContent = msg;
+      calcAlert.classList.remove('d-none');
+    }
+
+    function limparErro() {
+      calcAlert.textContent = '';
+      calcAlert.classList.add('d-none');
+    }
+
     function fetchAuto(term) {
       const url = `/api/${slug}/controledevisitas/autocomplete/produtos/?q=${encodeURIComponent(term)}&limit=10&offset=0`;
-      return fetch(url, { headers: { 'Accept': 'application/json' } }).then(r => r.json()).catch(() => []);
+
+      return fetch(url, {
+        headers: {
+          'Accept': 'application/json',
+          'X-Empresa': empresaId,
+          'X-Filial': filialId,
+        }
+      })
+        .then(r => r.json())
+        .catch(() => []);
     }
+
     function render(items) {
       res.innerHTML = '';
+
       items.forEach(it => {
         const a = document.createElement('a');
         a.href = '#';
-        a.className = 'list-group-item list-group-item-action';
-        a.textContent = it.label || '';
-        a.addEventListener('click', function (e) { e.preventDefault(); hidProd.value = it.prod_codi; inp.value = it.prod_nome; res.innerHTML = ''; });
+        a.className = 'list-group-item list-group-item-action produto-option';
+
+        a.innerHTML = `
+          <strong>${it.prod_codi || ''} - ${it.prod_nome || it.label || ''}</strong>
+          <small>${it.label || ''}</small>
+        `;
+
+        a.addEventListener('click', function (e) {
+          e.preventDefault();
+
+          hidProd.value = it.prod_codi;
+          inp.value = it.prod_nome || it.label || '';
+          produtoSelecionado.textContent = `Selecionado: ${it.prod_codi} - ${it.prod_nome || it.label || ''}`;
+          res.innerHTML = '';
+
+          calcularPreviewDebounced();
+        });
+
         res.appendChild(a);
       });
     }
+
+    function calcularPreview() {
+      limparErro();
+
+      const produtoId = hidProd.value;
+      const qtd = quantidade ? quantidade.value : '';
+      const percQuebra = quebra ? quebra.value : '0';
+      const cond = condicao ? condicao.value : '0';
+
+      if (!produtoId) {
+        limparPreview();
+        mostrarErro('Selecione um produto para calcular.');
+        return;
+      }
+
+      if (!qtd || Number(String(qtd).replace(',', '.')) <= 0) {
+        limparPreview();
+        mostrarErro('Informe uma metragem/quantidade maior que zero.');
+        return;
+      }
+
+      const params = new URLSearchParams({
+        produto_id: produtoId,
+        tamanho_m2: qtd,
+        percentual_quebra: percQuebra || '0',
+        condicao: cond || '0'
+      });
+
+      const url = `/api/${slug}/controledevisitas/itens-visita/calcular-metragem-pisos/`;
+      const csrf = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+
+      btnCalcular.disabled = true;
+      btnCalcular.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Calculando';
+
+      fetch(url, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrf,
+          'X-Empresa': empresaId,
+          'X-Filial': filialId,
+        },
+        body: JSON.stringify({
+          produto_id: produtoId,
+          tamanho_m2: qtd,
+          percentual_quebra: percQuebra || '0',
+          condicao: cond || '0',
+          empresa_id: empresaId,
+          filial_id: filialId,
+        }),
+      })
+        .then(async (r) => {
+          const data = await r.json().catch(() => ({}));
+          if (!r.ok) throw new Error(data.error || data.detail || 'Falha ao calcular prévia.');
+          return data;
+        })
+        .then(data => {
+          setText('prev-metragem-perda', `${numero(data.metragem_com_perda)} m²`);
+          setText('prev-metragem-real', `${numero(data.metragem_real)} ${data.unidade_medida || ''}`);
+          setText('prev-caixas', data.caixas_necessarias ?? '-');
+          setText('prev-total', moeda(data.valor_total || data.total));
+          setText('prev-preco', moeda(data.preco_unitario));
+          setText('prev-m2-caixa', data.m2_por_caixa ? `${numero(data.m2_por_caixa)} m²` : '-');
+          setText('prev-pc-caixa', data.pc_por_caixa ? numero(data.pc_por_caixa) : '-');
+          setText('prev-origem', data.preco_origem || '-');
+
+          if (valorUnitario && data.preco_unitario) {
+            valorUnitario.value = data.preco_unitario;
+          }
+        })
+        .catch(err => {
+          limparPreview();
+          mostrarErro(err.message || 'Erro ao calcular.');
+        })
+        .finally(() => {
+          btnCalcular.disabled = false;
+          btnCalcular.innerHTML = '<i class="bi bi-lightning-charge"></i> Calcular prévia';
+        });
+    }
+
+    function calcularPreviewDebounced() {
+      clearTimeout(timerCalculo);
+      timerCalculo = setTimeout(calcularPreview, 400);
+    }
+
     inp.addEventListener('input', function () {
       const v = this.value.trim();
-      clearTimeout(t);
-      if (v.length < 2) { res.innerHTML = ''; return; }
-      t = setTimeout(function () { fetchAuto(v).then(render); }, 250);
+
+      clearTimeout(timerBusca);
+
+      if (v.length < 2) {
+        res.innerHTML = '';
+        return;
+      }
+
+      timerBusca = setTimeout(function () {
+        fetchAuto(v).then(render);
+      }, 250);
     });
-    document.addEventListener('click', function (e) { if (res && !res.contains(e.target)) res.innerHTML = ''; });
+
+    if (quantidade) {
+      quantidade.addEventListener('input', calcularPreviewDebounced);
+    }
+
+    if (quebra) {
+      quebra.addEventListener('input', calcularPreviewDebounced);
+    }
+
+    if (condicao) {
+      condicao.addEventListener('change', calcularPreviewDebounced);
+    }
+
+    btnCalcular.addEventListener('click', calcularPreview);
+
+    document.addEventListener('click', function (e) {
+      if (res && !res.contains(e.target) && e.target !== inp) {
+        res.innerHTML = '';
+      }
+    });
   })();
 </script>
 {% endblock %}

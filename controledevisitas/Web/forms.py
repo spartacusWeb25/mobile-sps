@@ -4,8 +4,14 @@ from django import forms
 class ItemVisitaForm(forms.Form):
     produto_codigo = forms.CharField(label='Código do Produto', max_length=60)
     quantidade = forms.DecimalField(label='Quantidade', max_digits=15, decimal_places=5)
+    percentual_quebra = forms.DecimalField(label='Quebra %', max_digits=5, decimal_places=2, required=False)
+    condicao = forms.ChoiceField(
+        label='Condição',
+        choices=[('0', 'À vista'), ('1', 'A prazo')],
+        required=False,
+    )
     valor_unitario = forms.DecimalField(label='Valor Unitário', max_digits=15, decimal_places=5, required=False)
-    observacoes = forms.CharField(label='Observações', required=False, widget=forms.Textarea)
+    observacoes = forms.CharField(label='Observações', required=False, widget=forms.Textarea(attrs={'rows': 1}))
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

@@ -7,8 +7,11 @@ from Pisos.services.utils_service import parse_decimal, arredondar
 
 
 class MetragemProdutoService:
-    def executar(self, *, banco, produto_id, tamanho_m2, percentual_quebra=0, condicao="0"):
-        produto = Produtos.objects.using(banco).get(prod_codi=produto_id)
+    def executar(self, *, banco, produto_id, tamanho_m2, percentual_quebra=0, condicao="0", empresa_id=None, filial_id=None):
+        qs_prod = Produtos.objects.using(banco).filter(prod_codi=produto_id)
+        if empresa_id is not None:
+            qs_prod = qs_prod.filter(prod_empr=str(empresa_id))
+        produto = qs_prod.get()
 
         calculo = calcular_item(
             SimpleNamespace(
@@ -22,7 +25,7 @@ class MetragemProdutoService:
         preco_origem = "tabela"
 
         try:
-            preco_unitario = get_preco_produto(banco, produto_id, condicao)
+            preco_unitario = get_preco_produto(banco, produto_id, condicao, empresa=empresa_id, filial=filial_id)
         except Exception:
             preco_origem = "fallback_produto"
             preco_unitario = parse_decimal(getattr(produto, "prod_prec", 0))

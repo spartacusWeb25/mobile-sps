@@ -20,36 +20,38 @@ def calcular_item(item, produto=None):
     tem_caixa = m2_por_caixa > 0
     tem_pc = pc_por_caixa > 0
 
-    metragem_com_perda = metragem * (Decimal(1) - perda)
+    metragem_com_perda = metragem * (Decimal(1) + perda)
 
-    # PRIORIZAR PEÇAS: Se tem peças E metros quadrados, usar peças primeiro
-    if tem_pc:
-        # Para produtos com peças por caixa, calcular caixas baseado na metragem em m²
-        # mas usar m2_por_caixa para calcular quantas caixas são necessárias
-        if tem_caixa:
-            # Usar m2_por_caixa para calcular caixas necessárias
+    unidade = None
+    if produto is not None:
+        u = getattr(produto, "prod_unme", None)
+        u = getattr(u, "unid_desc", None) if u is not None and hasattr(u, "unid_desc") else u
+        unidade = str(u).strip().upper() if u else None
+        if unidade in ["METRO QUADRADO", "M²", "M2", "M"]:
+            unidade = "M2"
+        elif unidade in ["PEÇA", "PÇ", "PC", "BARRA"]:
+            unidade = "PC"
+
+    if unidade == "PC":
+        if tem_pc:
+            caixas_necessarias = math.ceil(metragem_com_perda / pc_por_caixa) if pc_por_caixa else None
+            metragem_real = (caixas_necessarias * pc_por_caixa) if caixas_necessarias is not None else metragem_com_perda
+        elif tem_caixa:
             caixas_necessarias = math.ceil(metragem_com_perda / m2_por_caixa)
+            metragem_real = caixas_necessarias * m2_por_caixa
         else:
-            # Se não tem m2_por_caixa, usar pc_por_caixa como fallback
-            caixas_necessarias = math.ceil(metragem_com_perda / pc_por_caixa)
-        
-        print(f"Service: Metragem com perda: {metragem_com_perda}")
-        print(f"Service: Peças por caixa: {pc_por_caixa}")
-        print(f"Service: M2 por caixa: {m2_por_caixa}")
-        print(f"Service: Caixas necessárias: {caixas_necessarias}")
-        # Quantidade real em PEÇAS = caixas × peças por caixa
-        metragem_real = caixas_necessarias * pc_por_caixa
-        print(f"Service: Quantidade real (peças): {metragem_real}")
-    elif tem_caixa:
-        caixas_necessarias = math.ceil(metragem_com_perda / m2_por_caixa)
-        print(f"Service: Metragem com perda: {metragem_com_perda}")
-        print(f"Service: Metragem por caixa: {m2_por_caixa}")
-        print(f"Service: Caixas necessárias: {caixas_necessarias}")
-        metragem_real = caixas_necessarias * m2_por_caixa
-        print(f"Service: Metragem real (m2): {metragem_real}")
+            caixas_necessarias = None
+            metragem_real = metragem_com_perda
     else:
-        caixas_necessarias = None
-        metragem_real = metragem_com_perda
+        if tem_caixa:
+            caixas_necessarias = math.ceil(metragem_com_perda / m2_por_caixa)
+            metragem_real = caixas_necessarias * m2_por_caixa
+        elif tem_pc:
+            caixas_necessarias = math.ceil(metragem_com_perda / pc_por_caixa) if pc_por_caixa else None
+            metragem_real = (caixas_necessarias * pc_por_caixa) if caixas_necessarias is not None else metragem_com_perda
+        else:
+            caixas_necessarias = None
+            metragem_real = metragem_com_perda
 
     # Total baseado na metragem real calculada
     total = metragem_real * preco_unit

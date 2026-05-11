@@ -6,6 +6,7 @@ from django.urls import reverse
 from django.http import HttpResponseRedirect
 from controledevisitas.models import Controlevisita, ItensVisita
 from core.mixins.vendedor_mixin import VendedorEntidadeMixin
+from controledevisitas.service.item_visita_service import ItemVisitaService
 from ..forms import ItemVisitaForm, ControleVisitaForm
 
 
@@ -17,35 +18,121 @@ class RegistrarItemVisitaView(FormView):
         self.slug = kwargs.get('slug')
         self.ctrl_id = kwargs.get('ctrl_id')
         self.db_alias = get_licenca_db_config(request)
+        self.empresa_id = request.session.get('empresa_id') or request.headers.get('X-Empresa') or 1
+        self.filial_id = request.session.get('filial_id') or request.headers.get('X-Filial') or 1
         return super().dispatch(request, *args, **kwargs)
 
+    def get_service(self):
+        return ItemVisitaService(
+            banco=self.db_alias,
+            empresa_id=self.empresa_id,
+            filial_id=self.filial_id,
+        )
+    
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx['slug'] = self.slug
         ctx['ctrl_id'] = self.ctrl_id
+        try:
+            visita = self.get_service().buscar_visita(self.ctrl_id)
+            ctx['empresa_id'] = (
+                getattr(getattr(visita, "ctrl_empresa", None), "empr_codi", None)
+                or self.empresa_id
+                or 1
+            )
+            ctx['filial_id'] = getattr(visita, "ctrl_filial", None) or self.filial_id or 1
+        except Exception:
+            ctx['empresa_id'] = self.empresa_id or 1
+            ctx['filial_id'] = self.filial_id or 1
         return ctx
 
     def form_valid(self, form):
-        dados = form.cleaned_data
-        visita = Controlevisita.objects.using(self.db_alias).select_related('ctrl_empresa').get(ctrl_id=self.ctrl_id)
         try:
-            ItensVisita.objects.using(self.db_alias).create(
-                item_empr=getattr(getattr(visita, 'ctrl_empresa', None), 'empr_codi', None) or self.request.session.get('empresa_id', 1),
-                item_fili=getattr(visita, 'ctrl_filial', None) or self.request.session.get('filial_id', 1),
-                item_visita=visita,
-                item_prod=dados['produto_codigo'],
-                item_quan=dados['quantidade'],
-                item_unit=dados.get('valor_unitario') or None,
-                item_obse=dados.get('observacoes') or None,
+            item, calculo = self.get_service().criar_item_calculado(
+                ctrl_id=self.ctrl_id,
+                dados=form.cleaned_data,
             )
-            messages.success(self.request, 'Item registrado com sucesso.')
+
+            messages.success(
+                self.request,
+                f"Item criado. Total calculado: R$ {calculo['valor_total']}"
+            )
+
+            return super().form_valid(form)
+
         except Exception as e:
-            messages.error(self.request, f'Falha ao registrar item: {e}')
+            messages.error(self.request, f"Falha ao registrar item: {e}")
             return self.form_invalid(form)
-        return super().form_valid(form)
 
     def get_success_url(self):
         return f"/web/{self.slug}/controle-de-visitas/resumo/{self.ctrl_id}/"
+
+
+class EditarItemVisitaView(FormView):
+    template_name = 'ControleDeVisitas/item_registrar.html'
+    form_class = ItemVisitaForm
+
+    def dispatch(self, request, *args, **kwargs):
+        self.slug = kwargs.get('slug')
+        self.item_id = kwargs.get('item_id')
+        self.db_alias = get_licenca_db_config(request)
+        self.empresa_id = request.session.get('empresa_id') or request.headers.get('X-Empresa') or 1
+        self.filial_id = request.session.get('filial_id') or request.headers.get('X-Filial') or 1
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_service(self):
+        return ItemVisitaService(
+            banco=self.db_alias,
+            empresa_id=self.empresa_id,
+            filial_id=self.filial_id,
+        )
+
+    def _get_item(self):
+        return ItensVisita.objects.using(self.db_alias).select_related('item_visita').get(item_id=self.item_id)
+
+    def get_initial(self):
+        item = self._get_item()
+        return {
+            'produto_codigo': item.item_prod,
+            'quantidade': item.item_m2 if item.item_m2 is not None else item.item_quan,
+            'percentual_quebra': item.item_queb,
+            'valor_unitario': item.item_unit,
+            'observacoes': item.item_obse,
+        }
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        item = self._get_item()
+        ctx['slug'] = self.slug
+        ctx['ctrl_id'] = getattr(getattr(item, 'item_visita', None), 'ctrl_id', None)
+        ctx['editando'] = True
+        ctx['item_id'] = self.item_id
+        ctx['produto_pre_id'] = item.item_prod
+        ctx['produto_pre_nome'] = item.item_desc_prod or item.item_prod
+        ctx['empresa_id'] = getattr(getattr(getattr(item, 'item_visita', None), 'ctrl_empresa', None), 'empr_codi', None) or self.empresa_id or 1
+        ctx['filial_id'] = getattr(getattr(item, 'item_visita', None), 'ctrl_filial', None) or self.filial_id or 1
+        return ctx
+
+    def form_valid(self, form):
+        try:
+            item = self._get_item()
+            _, calculo = self.get_service().atualizar_item_calculado(
+                item=item,
+                dados=form.cleaned_data,
+            )
+            messages.success(
+                self.request,
+                f"Item atualizado. Total calculado: R$ {calculo['valor_total']}"
+            )
+            return super().form_valid(form)
+        except Exception as e:
+            messages.error(self.request, f"Falha ao atualizar item: {e}")
+            return self.form_invalid(form)
+
+    def get_success_url(self):
+        item = self._get_item()
+        ctrl_id = getattr(getattr(item, 'item_visita', None), 'ctrl_id', None)
+        return f"/web/{self.slug}/controle-de-visitas/resumo/{ctrl_id}/"
 
 
 class ControleVisitaCreateView(VendedorEntidadeMixin, FormView):

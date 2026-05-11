@@ -73,16 +73,31 @@
                             <th class="text-end">Unitário</th>
                             <th class="text-end">Total</th>
                             <th>Data</th>
+                            <th class="text-end"></th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for i in itens %}
                         <tr>
                             <td>{{ i.item_prod }} — {{ i.produto_nome }}</td>
-                            <td class="text-end">{{ i.item_quan }}</td>
+                            <td class="text-end">
+                                {{ i.item_quan }}{% if i.item_unli %} {{ i.item_unli }}{% endif %}
+                                {% if i.item_m2 %}
+                                <div class="text-muted small">Metragem: {{ i.item_m2 }} m²</div>
+                                {% endif %}
+                                {% if i.item_caix %}
+                                <div class="text-muted small">Caixas: {{ i.item_caix }}</div>
+                                {% endif %}
+                            </td>
                             <td class="text-end">{{ i.item_unit }}</td>
                             <td class="text-end">{{ i.item_tota }}</td>
                             <td>{{ i.item_data }}</td>
+                            <td class="text-end">
+                                <a class="btn btn-sm btn-outline-primary"
+                                   href="/web/{{ slug }}/controle-de-visitas/item/{{ i.item_id }}/editar/">
+                                    Editar
+                                </a>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>

@@ -112,3 +112,40 @@ class ItemOrcamentoPisosForm(forms.Form):
 
 
 ItemOrcamentoPisosFormSet = formset_factory(ItemOrcamentoPisosForm, extra=0, can_delete=True)
+
+
+from django import forms
+from Pisos.models import Pedidospisos
+
+
+class WorkflowForm(forms.ModelForm):
+    class Meta:
+        model = Pedidospisos
+        fields = [
+            "pedi_desc_fina_work", "pedi_data_fina_work",
+            "pedi_desc_comp_work", "pedi_data_comp_work",
+            "pedi_desc_inst_work", "pedi_data_inst_work",
+            "pedi_desc_ence_work", "pedi_data_ence_work",
+        ]
+
+        widgets = {
+            "pedi_data_fina_work": forms.DateInput(attrs={"type": "date", "class": "form-control form-control-sm"}),
+            "pedi_data_comp_work": forms.DateInput(attrs={"type": "date", "class": "form-control form-control-sm"}),
+            "pedi_data_inst_work": forms.DateInput(attrs={"type": "date", "class": "form-control form-control-sm"}),
+            "pedi_data_ence_work": forms.DateInput(attrs={"type": "date", "class": "form-control form-control-sm"}),
+
+            "pedi_desc_fina_work": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
+            "pedi_desc_comp_work": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
+            "pedi_desc_inst_work": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
+            "pedi_desc_ence_work": forms.TextInput(attrs={"class": "form-control form-control-sm"})
+        }
+        labels = {
+            "pedi_desc_fina_work": "Financeiro Ok",
+            "pedi_data_fina_work": "Data Finananceiro Ok",
+            "pedi_desc_comp_work": "Compra Efetuada Ok",
+            "pedi_data_comp_work": "Data Compra Ok",
+            "pedi_desc_inst_work": "Instalação Ok",
+            "pedi_data_inst_work": "Data Instalação Ok",
+            "pedi_desc_ence_work": "Encerramento Pedido",
+            "pedi_data_ence_work": "Data Encerramento Pedido",
+        }

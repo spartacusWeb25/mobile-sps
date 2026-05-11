@@ -1,0 +1,172 @@
+<div class="modal fade" id="workflowModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background:var(--panel); color:var(--text); border:1px solid var(--border2);">
+            <div class="modal-header">
+                <h6 class="modal-title" id="workflowModalTitle">Concluir etapa</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <input type="hidden" id="wf-etapa">
+
+                <div class="mb-2">
+                    <label>Data</label>
+                    <input type="date" id="wf-data" class="form-control form-control-sm">
+                </div>
+
+                <div class="mb-2">
+                    <label>Observação</label>
+                    <textarea id="wf-descricao" class="form-control form-control-sm" rows="3"></textarea>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">
+                    Cancelar
+                </button>
+                <button type="button" class="btn btn-sm btn-primary" id="btn-salvar-workflow">
+                    Salvar etapa
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .wf-connector {
+        width: 4px;
+        height: 40px;
+        margin: 0 0 0 25px;
+        border-radius: 999px;
+        background: linear-gradient(180deg, rgba(80, 235, 247, 0) 0%, rgba(80, 235, 247, .95) 35%, rgba(110, 231, 183, .95) 65%, rgba(80, 235, 247, 0) 100%);
+        box-shadow: 0 0 10px rgba(80, 235, 247, .18);
+    }
+</style>
+
+<script>
+    const URL_WORKFLOW = "{% if pedido %}{% url 'PisosWeb:pedidos_pisos_workflow_ajax' slug=slug pk=pedido.pk %}{% endif %}";
+
+    const WORKFLOW_STEPS = [
+        {
+            key: "financeiro",
+            label: "Financeiro Ok",
+            desc: "{{ pedido.pedi_desc_fina_work|default:''|escapejs }}",
+            data: "{{ pedido.pedi_data_fina_work|date:'Y-m-d' }}"
+        },
+        {
+            key: "compra",
+            label: "Compra Realizada",
+            desc: "{{ pedido.pedi_desc_comp_work|default:''|escapejs }}",
+            data: "{{ pedido.pedi_data_comp_work|date:'Y-m-d' }}"
+        },
+        {
+            key: "instalacao",
+            label: "Pedido Instalado",
+            desc: "{{ pedido.pedi_desc_inst_work|default:''|escapejs }}",
+            data: "{{ pedido.pedi_data_inst_work|date:'Y-m-d' }}"
+        },
+        {
+            key: "encerramento",
+            label: "Pedido Finalizado",
+            desc: "{{ pedido.pedi_desc_ence_work|default:''|escapejs }}",
+            data: "{{ pedido.pedi_data_ence_work|date:'Y-m-d' }}"
+        },
+    ];
+
+    function escapeHtml(s) {
+        return String(s ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function renderWorkflow() {
+        const container = document.getElementById('wf-timeline');
+        if (!container) return;
+
+        container.innerHTML = WORKFLOW_STEPS.map((step, i) => {
+            const concluido = !!step.data;
+            const parts = [];
+            if (step.data) parts.push(`Concluído em ${step.data}`);
+            if (step.desc) parts.push(escapeHtml(step.desc));
+            const info = parts.join(' — ');
+            const hasWorkflow = !!(step.data || step.desc);
+            const isLast = i === WORKFLOW_STEPS.length - 1;
+            const showConnector = hasWorkflow && !isLast;
+
+            return `
+      <div class="d-flex justify-content-between align-items-center py-2 border-bottom"
+           style="border-color:#323760!important"
+           id="wf-row-${step.key}">
+        <div>
+          <div>${i + 1}. ${step.label}</div>
+          <small id="wf-info-${step.key}" style="color:#6ee7b7">${info}</small>
+        </div>
+
+        <button type="button"
+                class="btn btn-sm ${concluido ? 'btn-outline-success' : 'btn-outline-primary'} btn-wf-open"
+                data-step="${step.key}">
+          ${concluido ? 'Editar' : 'Concluir'}
+        </button>
+           
+      </div>
+      ${showConnector ? `<div class="wf-connector"></div>` : ''}
+    `;
+        }).join('');
+
+        bindWorkflowButtons();
+    }
+
+    function bindWorkflowButtons() {
+        document.querySelectorAll('.btn-wf-open').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const key = btn.dataset.step;
+                const step = WORKFLOW_STEPS.find(s => s.key === key);
+                if (!step) return;
+
+                document.getElementById('wf-etapa').value = step.key;
+                document.getElementById('wf-data').value = step.data || new Date().toISOString().slice(0, 10);
+                document.getElementById('wf-descricao').value = step.desc || '';
+                document.getElementById('workflowModalTitle').textContent = step.label;
+
+                const modal = new bootstrap.Modal(document.getElementById('workflowModal'));
+                modal.show();
+            });
+        });
+    }
+
+    document.getElementById('btn-salvar-workflow')?.addEventListener('click', async () => {
+        const etapa = document.getElementById('wf-etapa').value;
+        const data = document.getElementById('wf-data').value;
+        const descricao = document.getElementById('wf-descricao').value;
+
+        const resp = await fetch(URL_WORKFLOW, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': CSRF,
+            },
+            body: JSON.stringify({ etapa, data, descricao })
+        });
+
+        const payload = await resp.json();
+
+        if (!resp.ok || !payload.ok) {
+            showToast(payload.erro || 'Erro ao salvar workflow.', 'danger');
+            return;
+        }
+
+        const step = WORKFLOW_STEPS.find(s => s.key === etapa);
+        if (step) {
+            step.data = payload.data;
+            step.desc = payload.descricao;
+        }
+
+        bootstrap.Modal.getInstance(document.getElementById('workflowModal'))?.hide();
+
+        showToast('Etapa salva com sucesso.', 'success');
+        renderWorkflow();
+    });
+</script>
