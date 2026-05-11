@@ -370,7 +370,7 @@ class TabelaprecosForm(forms.ModelForm):
         valor_frete = prco * (perc_frete / Decimal('100'))
         custo_gerencial = prco + valor_frete + despesas
         custo_gerencial_q = custo_gerencial.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-        preco_vista = prco * (Decimal('1') + (marg / Decimal('100')))
+        preco_vista = custo_gerencial * (Decimal('1') + (marg / Decimal('100')))
         preco_vista_q = preco_vista.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
         preco_prazo = preco_vista * (Decimal('1') + (perc_prazo / Decimal('100')))
         preco_prazo_q = preco_prazo.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
@@ -458,7 +458,7 @@ class TabelaprecosPromocionalForm(forms.ModelForm):
 
         custo_gerencial = prco + despesas
         custo_gerencial_q = custo_gerencial.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-        preco_vista = prco * (Decimal('1') + (marg / Decimal('100')))
+        preco_vista = custo_gerencial * (Decimal('1') + (marg / Decimal('100')))
         preco_vista_q = preco_vista.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
         preco_prazo = preco_vista * (Decimal('1') + (perc_prazo / Decimal('100')))
         preco_prazo_q = preco_prazo.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)

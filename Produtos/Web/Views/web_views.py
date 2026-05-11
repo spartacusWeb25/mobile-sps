@@ -822,6 +822,12 @@ class ProdutoUpdateView(DBAndSlugMixin, UpdateView):
                 'tabe_entr': getattr(preco, 'tabe_entr', None),
                 'tabe_perc_st': getattr(preco, 'tabe_perc_st', None),
             })
+        if not initial_list:
+            try:
+                default_fili = int(self.filial_id or self.request.session.get('filial_id') or 1)
+            except Exception:
+                default_fili = self.filial_id or self.request.session.get('filial_id') or 1
+            initial_list = [{'tabe_fili': default_fili}]
         ctx['formset'] = TabelaprecosPlainFormSet(initial=initial_list, prefix='precos')
 
         qs_promo = TabelaprecosPromocional.objects.using(self.db_alias).filter(
@@ -843,6 +849,12 @@ class ProdutoUpdateView(DBAndSlugMixin, UpdateView):
                 'tabe_hist': preco.tabe_hist,
                 'tabe_perc_reaj': preco.tabe_perc_reaj,
             })
+        if not promo_initial_list:
+            try:
+                default_fili = int(self.filial_id or self.request.session.get('filial_id') or 1)
+            except Exception:
+                default_fili = self.filial_id or self.request.session.get('filial_id') or 1
+            promo_initial_list = [{'tabe_fili': default_fili}]
         ctx['promo_formset'] = TabelaprecosPromocionalPlainFormSet(initial=promo_initial_list, prefix='precos_promo')
         try:
             ctx['promo_historico'] = list(
@@ -891,7 +903,10 @@ class ProdutoUpdateView(DBAndSlugMixin, UpdateView):
                 pass
         update_fields = [
             'prod_nome','prod_unme','prod_grup','prod_sugr','prod_fami',
-            'prod_loca','prod_ncm','prod_gtin','prod_marc','prod_orig_merc'
+            'prod_loca','prod_ncm','prod_gtin','prod_marc','prod_orig_merc',
+            'prod_cera_m2cx','prod_cera_pccx','prod_cera_kgcx','prod_cera_m2pallet',
+            'prod_cera_form','prod_cera_espe','prod_cera_cor','prod_cera_cole',
+            'prod_cera_tipo','prod_cera_esti',
         ]
         if uploaded:
             update_fields.append('prod_foto')
