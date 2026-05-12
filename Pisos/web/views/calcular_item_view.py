@@ -32,6 +32,12 @@ def api_calcular_item(request, slug):
     def _normalizar_unidade(produto_obj):
         if not produto_obj:
             return None
+        m2cx = parse_decimal(getattr(produto_obj, "prod_cera_m2cx", None) or 0)
+        pccx = parse_decimal(getattr(produto_obj, "prod_cera_pccx", None) or 0)
+        if m2cx > 0:
+            return "M2"
+        if pccx > 0:
+            return "PC"
         un = getattr(produto_obj, "prod_unme", None)
         if un is None:
             return None
@@ -39,7 +45,7 @@ def api_calcular_item(request, slug):
         codigo = str(codigo).strip().upper()
         if codigo in {"METRO QUADRADO", "M²", "M2", "MT2", "M"}:
             return "M2"
-        if codigo in {"PEÇA", "PECA", "PÇ", "PC", "UN", "UNIDADE"}:
+        if codigo in {"PEÇA", "PECA", "PÇ", "PC", "UNIDADE", "UNIDADES"}:
             return "PC"
         return codigo or None
 

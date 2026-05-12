@@ -150,6 +150,16 @@
             </div>
         </div>
     </div>
+    <form method="post"
+      action="{% url 'gerar_orcamento_pisos_visita' slug=slug ctrl_id=visita.ctrl_id %}">
+  {% csrf_token %}
 
+  <input type="hidden" name="condicao" value="0">
+
+  <button class="btn btn-success">
+    <i class="bi bi-file-earmark-text"></i>
+    Gerar orçamento de pisos
+  </button>
+</form>
 </div>
 {% endblock %}

@@ -9,6 +9,7 @@ from .Views.etapas import (
     EtapaVisitaDeleteView,
 )
 from .Views.cliente_sem_movimento import ClientesSemMovimentoListView
+from .Views.views_orcamento import GerarOrcamentoPisosDaVisitaView
 
 
 
@@ -28,4 +29,9 @@ urlpatterns = [
     path('etapas/excluir/<int:etap_id>/', EtapaVisitaDeleteView.as_view(), name='etapa_excluir_web'),
     # Clientes sem movimento
     path('clientes-sem-movimento/', ClientesSemMovimentoListView.as_view(), name='clientes_sem_movimento_list'),
+    path(
+    "<int:ctrl_id>/gerar-orcamento-pisos/",
+    GerarOrcamentoPisosDaVisitaView.as_view(),
+    name="gerar_orcamento_pisos_visita",
+),
 ]

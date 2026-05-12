@@ -24,6 +24,7 @@ class EtapaVisitaListView(ListView):
 
     def get_queryset(self):
         qs = Etapavisita.objects.using(self.db_alias).filter(etap_empr__empr_codi=self.empresa_id)
+          
         descricao = (self.request.GET.get('descricao') or '').strip()
         if descricao:
             qs = qs.filter(etap_descricao__icontains=descricao)

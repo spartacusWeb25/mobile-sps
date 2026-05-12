@@ -3,6 +3,8 @@ from core.utils import get_licenca_db_config
 from controledevisitas.models import Controlevisita, ItensVisita
 from Produtos.models import Produtos
 from logging import getLogger
+import re
+from django.db.models import Q
 from core.mixins.vendedor_mixin import VendedorEntidadeMixin
 from core.decorator import ModuloRequeridoMixin
 logger = getLogger(__name__)
@@ -18,6 +20,50 @@ class ControleVisitaListView(ModuloRequeridoMixin, VendedorEntidadeMixin, ListVi
         self.slug = kwargs.get('slug')
         self.db_alias = get_licenca_db_config(request)
         return super().dispatch(request, *args, **kwargs)
+    
+    def _parse_codigo(self, valor):
+        s = (valor or "").strip()
+        if not s:
+            return None
+        m = re.match(r"^(\d+)", s)
+        if not m:
+            return None
+        try:
+            return int(m.group(1))
+        except Exception:
+            return None
+    
+    def aplicar_filtros(self, qs):
+        cliente = (self.request.GET.get('cliente') or '').strip()
+        vendedor = (self.request.GET.get('vendedor') or '').strip()
+        etapa = (self.request.GET.get('etapa') or '').strip()
+        data_inicio = self.request.GET.get('data_inicio')
+        data_fim = self.request.GET.get('data_fim')
+
+        if cliente:
+            codigo = self._parse_codigo(cliente)
+            q = Q(ctrl_cliente__enti_nome__icontains=cliente)
+            if codigo is not None:
+                q |= Q(ctrl_cliente_id=codigo)
+            qs = qs.filter(q)
+        if vendedor:
+            codigo = self._parse_codigo(vendedor)
+            q = Q(ctrl_vendedor__enti_nome__icontains=vendedor)
+            if codigo is not None:
+                q |= Q(ctrl_vendedor_id=codigo)
+            qs = qs.filter(q)
+        if etapa:
+            codigo = self._parse_codigo(etapa)
+            q = Q(ctrl_etapa__etap_descricao__icontains=etapa)
+            if codigo is not None:
+                q |= Q(ctrl_etapa_id=codigo)
+            qs = qs.filter(q)
+        if data_inicio:
+            qs = qs.filter(ctrl_data__gte=data_inicio)
+        if data_fim:
+            qs = qs.filter(ctrl_data__lte=data_fim)
+
+        return qs
 
     def get_queryset(self):
         
@@ -34,21 +80,7 @@ class ControleVisitaListView(ModuloRequeridoMixin, VendedorEntidadeMixin, ListVi
         )
         qs = self.filter_por_vendedor(qs, 'ctrl_vendedor')
         logger.info(f'Queryset: {qs.query}')
-        cliente = self.request.GET.get('cliente')
-        vendedor = self.request.GET.get('vendedor')
-        etapa = self.request.GET.get('etapa')
-        data_inicio = self.request.GET.get('data_inicio')
-        data_fim = self.request.GET.get('data_fim')
-        if cliente:
-            qs = qs.filter(ctrl_cliente__enti_nome__icontains=cliente)
-        if vendedor:
-            qs = qs.filter(ctrl_vendedor__enti_nome__icontains=vendedor)
-        if etapa:
-            qs = qs.filter(ctrl_etapa__etap_descricao__icontains=etapa)
-        if data_inicio:
-            qs = qs.filter(ctrl_data__gte=data_inicio)
-        if data_fim:
-            qs = qs.filter(ctrl_data__lte=data_fim)
+        qs = self.aplicar_filtros(qs)
         return qs.order_by('-ctrl_data', '-ctrl_numero')
     
 
@@ -63,21 +95,7 @@ class ControleVisitaListView(ModuloRequeridoMixin, VendedorEntidadeMixin, ListVi
             ctrl_filial=filial_id,
         )
         base = self.filter_por_vendedor(base, 'ctrl_vendedor')
-        cliente = self.request.GET.get('cliente')
-        vendedor = self.request.GET.get('vendedor')
-        etapa = self.request.GET.get('etapa')
-        data_inicio = self.request.GET.get('data_inicio')
-        data_fim = self.request.GET.get('data_fim')
-        if cliente:
-            base = base.filter(ctrl_cliente__enti_nome__icontains=cliente)
-        if vendedor:
-            base = base.filter(ctrl_vendedor__enti_nome__icontains=vendedor)
-        if etapa:
-            base = base.filter(ctrl_etapa__etap_descricao__icontains=etapa)
-        if data_inicio:
-            base = base.filter(ctrl_data__gte=data_inicio)
-        if data_fim:
-            base = base.filter(ctrl_data__lte=data_fim)
+        base = self.aplicar_filtros(base)
         total = base.count() or 1
         from django.db.models import Count
         funil_rows = list(

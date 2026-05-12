@@ -4,6 +4,7 @@ from Pisos.models import Orcamentopisos, Itensorcapisos
 from django.db.models import Max
 from core.decorator import get_modulos_usuario_db
 from Pisos.services.cliente_service import ClienteEnderecoService
+from controledevisitas.service.etapa_orcamento_gerado_service import EtapaOrcamentoGeradoService
 
 
 
@@ -125,12 +126,16 @@ def exportar_visita_para_orcamento_pisos(visita: Controlevisita, banco: str, req
             item_orca=orc_pisos.orca_nume,
             item_ambi=1,  # Ambiente padrão
             item_prod=item.item_prod,
+            item_m2=item.item_m2,
             item_quan=item.item_quan,
             item_unit=item.item_unit,
             item_suto=item_subtotal,
             item_obse=item.item_obse or '',
             item_nume=idx,
             item_desc=item.item_desc or 0,
+            item_queb=item.item_queb or 0,
+            item_caix=item.item_caix,
+            item_nome_ambi=item.item_nome_ambi,
         ))
 
     Itensorcapisos.objects.using(banco).bulk_create(itens)
@@ -141,7 +146,10 @@ def exportar_visita_para_orcamento_pisos(visita: Controlevisita, banco: str, req
 
     # Vincular orçamento à visita
     visita.ctrl_nume_orca = orc_pisos.orca_nume
-    visita.save(using=banco, update_fields=["ctrl_nume_orca"])
+    empresa_id = getattr(getattr(visita, "ctrl_empresa", None), "empr_codi", None) or getattr(visita, "ctrl_empresa_id", None) or 1
+    etapa = EtapaOrcamentoGeradoService(banco=banco, empresa_id=empresa_id).executar()
+    visita.ctrl_etapa = etapa
+    visita.save(using=banco, update_fields=["ctrl_nume_orca", "ctrl_etapa"])
 
     return orc_pisos
 
