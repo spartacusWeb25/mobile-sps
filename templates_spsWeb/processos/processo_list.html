@@ -7,30 +7,48 @@ Processos Checklist
 <div class="card shadow-sm border-0">
   <div class="card-body">
     <h4 class="mb-3">Processos Checklist</h4>
-    <div class="mb-3 d-flex gap-2">
+    <div class="mb-3 d-flex gap-2 flex-wrap">
       <a class="btn btn-outline-secondary" href="{% url 'processos:templates' slug=slug %}">Templates</a>
-      <a class="btn btn-outline-primary" href="{% url 'processos:criar' slug=slug %}">Novo Processo Checklist </a>
+      <a class="btn btn-outline-primary" href="{% url 'processos:criar' slug=slug %}">Novo Processo Checklist</a>
     </div>
     <div class="table-responsive">
-      <table class="table table-striped mb-0">
+      <table class="table table-striped align-middle mb-0">
         <thead>
           <tr>
             <th>ID</th>
             <th>Tipo</th>
             <th>Descrição</th>
             <th>Status</th>
-            <th></th>
+            <th class="text-end">Ações</th>
           </tr>
         </thead>
-        <tbody>{% for p in processos %}<tr>
+        <tbody>
+          {% for p in processos %}
+          <tr>
             <td>{{ p.id }}</td>
             <td>{{ p.proc_tipo.prot_nome }}</td>
             <td>{{ p.proc_desc }}</td>
             <td>{{ p.proc_stat }}</td>
-            <td><a href="{% url 'processos:detalhe' slug=slug pk=p.id %}">Abrir</a></td>
-          </tr>{% empty %}<tr>
+            <td>
+              <div class="d-flex justify-content-end gap-2 flex-wrap">
+                <form method="post" action="{% url 'processos:sincronizar_checklist' slug=slug pk=p.id %}">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-sm btn-outline-info">
+                    <i class="bi bi-arrow-repeat"></i> Adicionar itens
+                  </button>
+                </form>
+                <a class="btn btn-sm btn-outline-primary" href="{% url 'processos:detalhe' slug=slug pk=p.id %}">
+                  Abrir
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
             <td colspan="5">Sem processos</td>
-          </tr>{% endfor %}</tbody>
+          </tr>
+          {% endfor %}
+        </tbody>
       </table>
     </div>
   </div>

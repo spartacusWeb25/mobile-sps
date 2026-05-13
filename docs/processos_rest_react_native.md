@@ -103,7 +103,8 @@ Payload:
 | `GET` | `/api/{slug}/processos/processos/` | Lista processos com tipo e respostas. |
 | `POST` | `/api/{slug}/processos/processos/` | Abre processo e gera respostas do checklist ativo. |
 | `GET` | `/api/{slug}/processos/processos/{id}/` | Detalha processo. |
-| `GET` | `/api/{slug}/processos/processos/{id}/checklist/` | Retorna checklist do processo, gerando itens faltantes de forma idempotente. |
+| `GET` | `/api/{slug}/processos/processos/{id}/checklist/` | Retorna os itens já vinculados ao processo. |
+| `POST` | `/api/{slug}/processos/processos/{id}/sincronizar-checklist/` | Vincula ao processo os itens adicionados posteriormente ao modelo ativo. |
 | `POST` | `/api/{slug}/processos/processos/{id}/salvar-checklist/` | Salva respostas. |
 | `POST` | `/api/{slug}/processos/processos/{id}/validar/` | Valida obrigatórios e aprova/reprova processo. |
 
@@ -113,6 +114,18 @@ Criar processo:
 {
   "tipo_id": 10,
   "descricao": "Processo aberto pelo app mobile"
+}
+```
+
+
+Sincronizar itens novos do modelo ativo com um processo já aberto:
+
+```json
+{
+  "ok": true,
+  "criadas": 2,
+  "modelo_id": 7,
+  "respostas": []
 }
 ```
 
@@ -192,6 +205,15 @@ export async function criarProcesso(scope: Scope, tipoId: number, descricao: str
   return response.json();
 }
 
+export async function sincronizarChecklist(scope: Scope, processoId: number) {
+  const response = await fetch(`${API_URL}/${scope.slug}/processos/processos/${processoId}/sincronizar-checklist/`, {
+    method: 'POST',
+    headers: processosHeaders(scope),
+  });
+  if (!response.ok) throw new Error(await response.text());
+  return response.json();
+}
+
 export async function salvarChecklist(scope: Scope, processoId: number, respostas: Array<unknown>) {
   const response = await fetch(`${API_URL}/${scope.slug}/processos/processos/${processoId}/salvar-checklist/`, {
     method: 'POST',
@@ -217,14 +239,15 @@ export async function validarProcesso(scope: Scope, processoId: number) {
 1. Após login, persistir `slug`, `token`, `empresa`, `filial` e `usuarioId` no estado seguro do app.
 2. Carregar `GET /tipos/` para preencher o combo de tipo.
 3. Criar processo em `POST /processos/`.
-4. Abrir o detalhe e chamar `GET /processos/{id}/checklist/` para renderizar a lista de perguntas.
-5. Salvar incrementalmente em `POST /processos/{id}/salvar-checklist/`.
-6. Chamar `POST /processos/{id}/validar/` apenas após assinatura/confirmacão no app.
-7. Tratar `status = APROVADO` como fluxo finalizado e `REPROVADO` exibindo `erros` para correção.
+4. Abrir o detalhe e chamar `GET /processos/{id}/checklist/` para renderizar a lista de perguntas já vinculadas.
+5. Quando o backend informar/usuário solicitar atualização do template, chamar `POST /processos/{id}/sincronizar-checklist/` para adicionar itens criados depois da abertura.
+6. Salvar incrementalmente em `POST /processos/{id}/salvar-checklist/`.
+7. Chamar `POST /processos/{id}/validar/` apenas após assinatura/confirmacão no app.
+8. Tratar `status = APROVADO` como fluxo finalizado e `REPROVADO` exibindo `erros` para correção.
 
 ## Observações sobre o front Django
 
-O fluxo web está coerente: cadastro de templates, abertura de processo, detalhe com geração idempotente do checklist, salvamento das respostas e validação com assinatura. Foi removida uma duplicidade de classe de validação, que poderia confundir manutenção e leitura do fluxo.
+O fluxo web está coerente: cadastro de templates, abertura de processo, detalhe com itens já vinculados, sincronização explícita de itens adicionados posteriormente ao template, salvamento das respostas e validação com assinatura. A tela de templates passou a exibir modelos/versões como cards clicáveis com modal dos itens vinculados.
 
 Melhorias futuras sugeridas:
 

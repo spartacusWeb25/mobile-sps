@@ -86,6 +86,10 @@ class ChecklistItemCreateView(_BaseProcessoFormView):
         context["modelos"] = ChecklistModelo.objects.using(cfg["db_alias"]).filter(
             chmo_empr=cfg["empresa"], chmo_fili=cfg["filial"]
         )
+        modelo_id = self.request.GET.get("modelo_id")
+        context["selected_modelo_id"] = (
+            int(modelo_id) if modelo_id and modelo_id.isdigit() else None
+        )
         return context
 
     def form_valid(self, form):

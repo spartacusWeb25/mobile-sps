@@ -48,7 +48,7 @@ class ChecklistService:
         )
 
     @staticmethod
-    def gerar_respostas_para_processo(*, db_alias, empresa, filial, processo):
+    def sincronizar_respostas_para_processo(*, db_alias, empresa, filial, processo):
         modelo = ChecklistService.obter_modelo_ativo(
             db_alias=db_alias,
             empresa=empresa,
@@ -56,16 +56,17 @@ class ChecklistService:
             proc_tipo=processo.proc_tipo,
         )
         if not modelo:
-            return []
+            return {"modelo": None, "respostas": [], "criadas": 0}
 
         respostas = []
+        criadas = 0
         itens = (
             modelo.itens.using(db_alias)
             .filter(chit_empr=empresa, chit_fili=filial)
             .order_by("chit_orde")
         )
         for item in itens:
-            resposta, _ = ProcessoChecklistResposta.objects.using(
+            resposta, criada = ProcessoChecklistResposta.objects.using(
                 db_alias
             ).get_or_create(
                 pchr_empr=empresa,
@@ -73,8 +74,34 @@ class ChecklistService:
                 pchr_proc=processo,
                 pchr_item=item,
             )
+            if criada:
+                criadas += 1
             respostas.append(resposta)
-        return respostas
+        return {"modelo": modelo, "respostas": respostas, "criadas": criadas}
+
+    @staticmethod
+    def gerar_respostas_para_processo(*, db_alias, empresa, filial, processo):
+        resultado = ChecklistService.sincronizar_respostas_para_processo(
+            db_alias=db_alias,
+            empresa=empresa,
+            filial=filial,
+            processo=processo,
+        )
+        return resultado["respostas"]
+
+    @staticmethod
+    def _normalizar_dados_respostas(dados):
+        """Aceita payload REST em dict {item_id: {...}} ou lista [{item_id, ...}]."""
+        if isinstance(dados, list):
+            return {
+                str(item.get("item_id") or item.get("id")): {
+                    "resposta": item.get("resposta"),
+                    "observacao": item.get("observacao"),
+                }
+                for item in dados
+                if item.get("item_id") or item.get("id")
+            }
+        return dados or {}
 
     @staticmethod
     def _normalizar_dados_respostas(dados):

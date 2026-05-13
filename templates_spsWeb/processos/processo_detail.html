@@ -107,6 +107,21 @@
   padding: 20px 24px;
   margin-top: 20px;
 }
+
+.sync-panel {
+  border: 1px dashed var(--bs-border-color);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.sync-panel .sync-title { font-weight: 700; font-size: 13px; margin-bottom: 2px; }
+.sync-panel .sync-help { font-size: 12px; color: var(--bs-secondary-color); margin: 0; }
+.pending-list { margin: 8px 0 0; padding-left: 18px; font-size: 12px; color: var(--bs-secondary-color); }
 .assinatura-title {
   font-size: 13px;
   font-weight: 700;
@@ -196,7 +211,33 @@
   </div>
 
   <!-- Checklist -->
-  <div class="section-label">Itens do checklist</div>
+  <div class="section-label">Itens vinculados ao processo</div>
+
+  <div class="sync-panel">
+    <div>
+      <div class="sync-title">
+        {{ respostas|length }} item(ns) vinculado(s) ao processo
+        {% if itens_modelo_count %}de {{ itens_modelo_count }} item(ns) no modelo ativo{% endif %}.
+      </div>
+      <p class="sync-help">
+        Se novos itens forem adicionados ao template depois da abertura do processo, use a ação ao lado para vinculá-los neste processo.
+      </p>
+      {% if itens_pendentes_count %}
+      <ul class="pending-list">
+        {% for item in itens_pendentes %}
+        <li>{{ item.chit_orde }} - {{ item.chit_desc }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </div>
+
+    <form method="post" action="{% url 'processos:sincronizar_checklist' slug=slug pk=processo.id %}">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-outline-info d-inline-flex align-items-center gap-2" {% if not itens_pendentes_count %}disabled{% endif %}>
+        <i class="bi bi-arrow-repeat"></i> Adicionar itens novos
+      </button>
+    </form>
+  </div>
 
   <form method="post" action="{% url 'processos:salvar_checklist' slug=slug pk=processo.id %}">
     {% csrf_token %}
@@ -241,7 +282,7 @@
           {% empty %}
           <tr>
             <td colspan="4" class="text-center py-4" style="font-size:14px; color: var(--bs-secondary-color);">
-              Nenhum item de checklist encontrado para este tipo de processo.
+              Nenhum item vinculado a este processo. Se houver itens no modelo ativo, clique em “Adicionar itens novos”.
             </td>
           </tr>
           {% endfor %}

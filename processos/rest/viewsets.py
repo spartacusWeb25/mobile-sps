@@ -202,12 +202,6 @@ class ProcessoViewSet(BaseMultiDBViewSet):
     def checklist(self, request, pk=None, slug=None):
         cfg = self._ctx()
         processo = self.get_object()
-        ChecklistService.gerar_respostas_para_processo(
-            db_alias=cfg["db_alias"],
-            empresa=cfg["empresa"],
-            filial=cfg["filial"],
-            processo=processo,
-        )
         respostas = (
             processo.respostas.using(cfg["db_alias"])
             .filter(pchr_empr=cfg["empresa"], pchr_fili=cfg["filial"])
@@ -215,6 +209,27 @@ class ProcessoViewSet(BaseMultiDBViewSet):
             .order_by("pchr_item__chit_orde")
         )
         return Response(ProcessoChecklistRespostaSerializer(respostas, many=True).data)
+
+    @action(detail=True, methods=["post"], url_path="sincronizar-checklist")
+    def sincronizar_checklist(self, request, pk=None, slug=None):
+        cfg = self._ctx()
+        processo = self.get_object()
+        resultado = ChecklistService.sincronizar_respostas_para_processo(
+            db_alias=cfg["db_alias"],
+            empresa=cfg["empresa"],
+            filial=cfg["filial"],
+            processo=processo,
+        )
+        return Response(
+            {
+                "ok": True,
+                "criadas": resultado["criadas"],
+                "modelo_id": getattr(resultado["modelo"], "id", None),
+                "respostas": ProcessoChecklistRespostaSerializer(
+                    resultado["respostas"], many=True
+                ).data,
+            }
+        )
 
     @action(detail=True, methods=["post"], url_path="salvar-checklist")
     def salvar_checklist(self, request, pk=None, slug=None):

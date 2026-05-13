@@ -3,6 +3,7 @@ from django.shortcuts import redirect
 from django.views.generic import View
 
 from core.utils import get_db_from_slug
+from processos.models import Processo
 from processos.services.checklist_service import ChecklistService
 from processos.services.validacao_service import ValidacaoProcessoService
 
@@ -38,6 +39,39 @@ class SalvarChecklistView(_ChecklistBaseView):
             dados=dados,
         )
         messages.success(request, "Checklist salvo com sucesso.")
+        return redirect("processos:detalhe", slug=cfg["slug"], pk=pk)
+
+
+class SincronizarChecklistView(_ChecklistBaseView):
+    def post(self, request, pk, slug=None):
+        cfg = self._ctx()
+        processo = Processo.objects.using(cfg["db_alias"]).get(
+            id=pk,
+            proc_empr=cfg["empresa"],
+            proc_fili=cfg["filial"],
+        )
+        resultado = ChecklistService.sincronizar_respostas_para_processo(
+            db_alias=cfg["db_alias"],
+            empresa=cfg["empresa"],
+            filial=cfg["filial"],
+            processo=processo,
+        )
+
+        if not resultado["modelo"]:
+            messages.warning(
+                request, "Nenhum modelo ativo encontrado para o tipo deste processo."
+            )
+        elif resultado["criadas"]:
+            messages.success(
+                request,
+                f"{resultado['criadas']} item(ns) novo(s) foram vinculados ao processo.",
+            )
+        else:
+            messages.info(
+                request,
+                "Todos os itens do modelo ativo já estavam vinculados ao processo.",
+            )
+
         return redirect("processos:detalhe", slug=cfg["slug"], pk=pk)
 
 
