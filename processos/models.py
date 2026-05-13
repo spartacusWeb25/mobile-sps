@@ -98,6 +98,13 @@ class Processo(models.Model):
 
     proc_usro_aber = models.IntegerField(null=True, blank=True)
     proc_usro_vali = models.IntegerField(null=True, blank=True)
+    proc_os = models.IntegerField(null=True, blank=True)
+    proc_os_cria_em = models.DateTimeField(null=True, blank=True)
+    proc_clie = models.IntegerField(
+                                    null=True,
+                                    blank=True,
+                                    verbose_name="Cliente"
+                                )
 
     def __str__(self):
         return f"{self.proc_tipo.prot_nome} - {self.proc_desc}"
