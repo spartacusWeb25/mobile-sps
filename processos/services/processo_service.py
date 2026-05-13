@@ -75,6 +75,17 @@ class ProcessoService:
             processo.proc_data_fech = timezone.now()
         processo.save(using=db_alias)
         return processo
+    
+    @staticmethod
+    def atualizar_cliente(*, db_alias, processo_id, empresa, filial, cliente_id=None):
+        processo = Processo.objects.using(db_alias).get(
+            id=processo_id,
+            proc_empr=empresa,
+            proc_fili=filial,
+        )
+        processo.proc_clie = cliente_id
+        processo.save(using=db_alias, update_fields=["proc_clie"])
+        return processo
 
     @staticmethod
     def avancar_ordem_de_servico(*, db_alias, processo_id, empresa, filial, usuario_id=None):
@@ -106,7 +117,7 @@ class ProcessoService:
                         "os_clie": processo.proc_clie if processo.proc_clie else None,
 
                         "os_obse": f"OS gerada pelo processo #{processo.id} - {processo.proc_desc or ''}",
-                        "os_usua": usuario_id,
+                        "os_resp": usuario_id,
                     }
             ordem = OsService.create_os(
                 banco=db_alias,

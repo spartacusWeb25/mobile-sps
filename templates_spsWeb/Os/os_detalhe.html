@@ -19,7 +19,8 @@
         <div><strong>Cliente:</strong> {{ cliente_nome }}</div>
         <div><strong>Responsável:</strong> {{ vendedor_nome }}</div>
         <div><strong>Status:</strong> {{ object.os_stat_os }}</div>
-        <div><strong>Situação:</strong> {{ object.os_situ }}</div>
+        <div><strong>Situação:</strong> {{ object.os_situ|default_if_none:'' }}</div>
+        <div><strong>Observação:</strong> {{ object.os_obse|default_if_none:'' }}</div>
       </div></div>
     </div>
     <div class="col-md-8">

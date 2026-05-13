@@ -132,6 +132,12 @@
   align-items: center;
   gap: 8px;
 }
+#cliente { margin-top: 12px;
+          font-size: 13px;
+          font-weight: 600;
+          margin-bottom: 12px;
+}
+
 
 /* ── DARK ───────────────────────────────────────────────────── */
 [data-bs-theme="dark"] .processo-card      { box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
@@ -209,6 +215,37 @@
       </div>
     </div>
   </div>
+
+  <!-- Cliente -->
+      <div class="meta-item" id="cliente">
+      <strong>Cliente:</strong>
+      {% if cliente %}
+        {{ cliente.enti_nome }}
+        <span class="text-muted">#{{ processo.proc_clie }}</span>
+      {% elif processo.proc_clie %}
+        Cliente #{{ processo.proc_clie }}
+      {% else %}
+        Não informado
+      {% endif %}
+    </div>
+    <form method="post" action="{% url 'processos:atualizar_cliente' slug=slug pk=processo.id %}" class="mt-2">
+      {% csrf_token %}
+      <div class="row g-2 align-items-end" style="max-width: 520px;">
+        <div class="col-12 col-md-9">
+          <label class="form-label fw-semibold" style="font-size:13px;">Atualizar cliente</label>
+          <div class="position-relative">
+            {{ cliente_form.proc_clie_label }}
+            {{ cliente_form.proc_clie }}
+            <div id="cliente_detail_box" class="list-group position-absolute w-100 d-none" style="z-index:1200; max-height:240px; overflow:auto;"></div>
+          </div>
+        </div>
+        <div class="col-12 col-md-3 d-grid">
+          <button type="submit" class="btn btn-outline-primary">
+            Salvar
+          </button>
+        </div>
+      </div>
+    </form>
 
   <!-- Checklist -->
   <div class="section-label">Itens vinculados ao processo</div>
@@ -342,6 +379,16 @@
         </button>
       </div>
     </form>
+     {% if processo.proc_stat == processo.STATUS_APROVADO and not processo.proc_os %}
+          <form method="post"
+                action="{% url 'processos:abrir_os' slug=slug pk=processo.id %}"
+                class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-outline-info">
+              <i class="bi bi-tools"></i> Abrir OS
+            </button>
+          </form>
+        {% endif %}
   </div>
 
 </div>
@@ -353,5 +400,50 @@ function colorSelect(el) {
   const map = { SIM: 'sim', NAO: 'nao', NA: 'na' };
   if (map[el.value]) el.classList.add(map[el.value]);
 }
+</script>
+<script>
+  (function () {
+    const input = document.getElementById('id_proc_clie_label');
+    const hidden = document.getElementById('id_proc_clie');
+    const box = document.getElementById('cliente_detail_box');
+    if (!input || !hidden || !box) return;
+    const url = "{% url 'processos:autocomplete_entidades' slug=slug %}";
+    let ctrl;
+    let t;
+    input.addEventListener('input', () => {
+      clearTimeout(t);
+      const term = (input.value || '').trim();
+      hidden.value = '';
+      if (term.length < 2) { box.classList.add('d-none'); box.innerHTML = ''; return; }
+      t = setTimeout(async () => {
+        try {
+          if (ctrl) ctrl.abort();
+          ctrl = new AbortController();
+          const res = await fetch(url + '?term=' + encodeURIComponent(term), { signal: ctrl.signal });
+          const payload = await res.json();
+          const data = Array.isArray(payload) ? payload : (payload.results || []);
+          box.innerHTML = '';
+          data.forEach((item) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'list-group-item list-group-item-action';
+            btn.textContent = item.label || '';
+            btn.addEventListener('click', () => {
+              input.value = item.label || '';
+              hidden.value = item.id;
+              box.classList.add('d-none');
+            });
+            box.appendChild(btn);
+          });
+          box.classList.toggle('d-none', data.length === 0);
+        } catch (e) {
+          box.classList.add('d-none');
+        }
+      }, 250);
+    });
+    document.addEventListener('click', (e) => {
+      if (!input.parentElement.contains(e.target)) box.classList.add('d-none');
+    });
+  })();
 </script>
 {% endblock %}

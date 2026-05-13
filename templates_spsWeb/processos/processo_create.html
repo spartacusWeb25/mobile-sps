@@ -8,7 +8,62 @@
       <div class="col-md-4"><label class="form-label required-label">{{ form.proc_tipo.label }}</label>{{ form.proc_tipo }}</div>
       <div class="col-md-8"><label class="form-label required-label">{{ form.proc_desc.label }}</label>{{ form.proc_desc }}</div>
     </div>
+    <div class="row g-3 mt-1">
+      <div class="col-md-6">
+        <label class="form-label">{{ form.proc_clie_label.label }}</label>
+        <div class="position-relative">
+          {{ form.proc_clie_label }}
+          {{ form.proc_clie }}
+          <div id="cliente_create_box" class="list-group position-absolute w-100 d-none" style="z-index:1200; max-height:240px; overflow:auto;"></div>
+        </div>
+      </div>
+    </div>
     <div class="form-actions mt-3"><button class="btn btn-primary">Criar Processo</button></div>
   </form>
 </div>
+<script>
+  (function () {
+    const input = document.getElementById('id_proc_clie_label');
+    const hidden = document.getElementById('id_proc_clie');
+    const box = document.getElementById('cliente_create_box');
+    if (!input || !hidden || !box) return;
+    const url = "{% url 'processos:autocomplete_entidades' slug=slug %}";
+    let ctrl;
+    let t;
+    input.addEventListener('input', () => {
+      clearTimeout(t);
+      const term = (input.value || '').trim();
+      hidden.value = '';
+      if (term.length < 2) { box.classList.add('d-none'); box.innerHTML = ''; return; }
+      t = setTimeout(async () => {
+        try {
+          if (ctrl) ctrl.abort();
+          ctrl = new AbortController();
+          const res = await fetch(url + '?term=' + encodeURIComponent(term), { signal: ctrl.signal });
+          const payload = await res.json();
+          const data = Array.isArray(payload) ? payload : (payload.results || []);
+          box.innerHTML = '';
+          data.forEach((item) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'list-group-item list-group-item-action';
+            btn.textContent = item.label || '';
+            btn.addEventListener('click', () => {
+              input.value = item.label || '';
+              hidden.value = item.id;
+              box.classList.add('d-none');
+            });
+            box.appendChild(btn);
+          });
+          box.classList.toggle('d-none', data.length === 0);
+        } catch (e) {
+          box.classList.add('d-none');
+        }
+      }, 250);
+    });
+    document.addEventListener('click', (e) => {
+      if (!input.parentElement.contains(e.target)) box.classList.add('d-none');
+    });
+  })();
+</script>
 {% endblock %}

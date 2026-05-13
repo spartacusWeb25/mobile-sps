@@ -141,6 +141,8 @@ class ProcessoCreateView(_BaseProcessoFormView):
             empresa=cfg["empresa"],
             filial=cfg["filial"],
         )
+        kwargs["db_alias"] = cfg["db_alias"]
+        kwargs["empresa"] = cfg["empresa"]
         return kwargs
 
     def form_valid(self, form):
@@ -151,6 +153,7 @@ class ProcessoCreateView(_BaseProcessoFormView):
             filial=cfg["filial"],
             tipo_id=form.cleaned_data["proc_tipo"].id,
             descricao=form.cleaned_data["proc_desc"],
+            cliente_id=form.cleaned_data.get("proc_clie"),
             usuario_id=cfg["usuario_id"],
         )
         messages.success(self.request, "Processo criado e checklist inicializado.")

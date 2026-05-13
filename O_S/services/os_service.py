@@ -370,9 +370,12 @@ class OsService:
                 )
             
             # Gerar comissões
-            comissao_service = ComissaoAutomaticaService(db_alias=banco, empresa_id=ordem.os_empr, filial_id=ordem.os_fili)
-            lancamentos = comissao_service.gerar_por_os(os=ordem)
-            ordem.comisssoes.add(*lancamentos)
+            try:
+                comissao_service = ComissaoAutomaticaService(db_alias=banco, empresa_id=ordem.os_empr, filial_id=ordem.os_fili)
+                lancamentos = comissao_service.gerar_por_os(os=ordem)
+                ordem.comissoes = lancamentos
+            except Exception as e:
+                OsService.logger.error(f"[update_os] Falha ao gerar comissões para OS {ordem.os_os}: {e}")
             
             ordem.refresh_from_db(using=banco)
             return ordem
