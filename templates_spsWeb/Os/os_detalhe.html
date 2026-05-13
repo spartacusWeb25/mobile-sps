@@ -1,43 +1,322 @@
 {% extends 'base.html' %}
-
+{% load formatadores %}
 {% block title %}OS {{ object.os_os }}{% endblock %}
 
 {% block content %}
-<div class="container py-4">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h3 class="mb-0">OS {{ object.os_os }}</h3>
+<div class="container py-4" style="display: flex; flex-direction: column; gap: 14px;">
+
+  <div class="os-header" style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
     <div>
-      <a class="btn btn-primary" href="/web/login/" data-slug-route="/web/{slug}/os/{{ object.pk }}/editar/">Editar</a>
-      <a class="btn btn-outline-secondary" href="/web/login/" data-slug-route="/web/{slug}/os/{{ object.pk }}/imprimir/">Imprimir</a>
+      <p style="font-size: 12px; color: var(--bs-secondary-color); margin: 0 0 2px;">Ordem de Serviço</p>
+      <h1 style="font-size: 22px; font-weight: 500; margin: 0;">O.S. nº {{ object.os_os }}</h1>
+    </div>
+    <span class="badge-os
+      {% if object.os_stat_os == 0 or object.os_stat_os == 1 or object.os_stat_os == 2 %}badge-os--aberta
+      {% elif object.os_stat_os == 3 or object.os_stat_os == 4 or object.os_stat_os == 5 %}badge-os--fechada
+      {% else %}badge-os--pendente{% endif %}">
+      <i class="bi bi-circle-fill" style="font-size: 8px;"></i>
+      {{ object.get_os_stat_os_display }}
+    </span>
+  </div>
+
+  <div class="os-grid" style="display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.6fr); gap: 14px;">
+
+    <div class="card">
+      <div class="card-body">
+        <p class="section-label">Informações</p>
+
+        <div class="field-row">
+          <span class="field-label">Data</span>
+          <span class="field-value">{{ object.os_data_aber|data_br }}</span>
+        </div>
+        <div class="field-row">
+          <span class="field-label">Cliente</span>
+          <span class="field-value">{{ cliente_nome }}</span>
+        </div>
+        <div class="field-row">
+          <span class="field-label">Responsável</span>
+          <span class="field-value">{{ vendedor_nome }}</span>
+        </div>
+        <div class="field-row">
+          <span class="field-label">Situação</span>
+          <span class="field-value">{{ object.os_situ|default_if_none:'' }}</span>
+        </div>
+        <div class="field-row" style="align-items: flex-start; gap: 12px;">
+          <span class="field-label" style="white-space: nowrap;">Observação</span>
+          <span class="field-value" style="font-weight: 400; color: var(--bs-secondary-color);">
+            {{ object.os_obse|default_if_none:'' }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+        <p class="section-label">Itens da O.S.</p>
+        {% if itens %}
+        <div class="table-responsive">
+          <table class="os-table">
+            <thead>
+              <tr>
+                <th style="text-align: left; width: 18%;">Tipo</th>
+                <th style="text-align: left;">Item</th>
+                <th style="text-align: right; width: 10%;">Qtd</th>
+                <th style="text-align: right; width: 17%;">Preço</th>
+                <th style="text-align: right; width: 17%;">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in itens %}
+              <tr>
+                <td><span class="tipo-pill">{{ item.item_tipo }}</span></td>
+                <td>{{ item.item_nome }}</td>
+                <td style="text-align: right;">{{ item.item_qtd|qtd_br }}</td>
+                <td style="text-align: right;">{{ item.item_preco|brl }}</td>
+                <td style="text-align: right; font-weight: 500;">{{ item.item_subt|brl }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="alert alert-warning mb-0" role="alert">
+          Nenhum item cadastrado para esta O.S.
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <p class="section-label">Totais</p>
+      <div class="totals-grid">
+        <div class="total-card">
+          <p class="t-label">Subtotal</p>
+          <p class="t-value">{{ object.os_topr|default:object.os_tota|brl }}</p>
+        </div>
+        <div class="total-card">
+          <p class="t-label">Desconto</p>
+          <p class="t-value">{{ object.os_desc|brl }}</p>
+        </div>
+        <div class="total-card total-card--highlight">
+          <p class="t-label">Total</p>
+          <p class="t-value">{{ object.os_tota|brl }}</p>
+        </div>
+      </div>
     </div>
   </div>
 
-  <div class="row g-3">
-    <div class="col-md-4">
-      <div class="card"><div class="card-body">
-        <div><strong>Data:</strong> {{ object.os_data_aber }}</div>
-        <div><strong>Cliente:</strong> {{ cliente_nome }}</div>
-        <div><strong>Responsável:</strong> {{ vendedor_nome }}</div>
-        <div><strong>Status:</strong> {{ object.os_stat_os }}</div>
-        <div><strong>Situação:</strong> {{ object.os_situ|default_if_none:'' }}</div>
-        <div><strong>Observação:</strong> {{ object.os_obse|default_if_none:'' }}</div>
-      </div></div>
-    </div>
-    <div class="col-md-8">
-      <div class="card"><div class="card-body">
-        <div class="row">
-          <div class="col-md-4">
-            <div class="mb-2"><strong>Subtotal:</strong> R$ {{ object.os_topr }}</div>
-          </div>
-          <div class="col-md-4">
-            <div class="mb-2"><strong>Desconto:</strong> R$ {{ object.os_desc }}</div>
-          </div>
-          <div class="col-md-4">
-            <div class="mb-2"><strong>Total:</strong> R$ {{ object.os_tota }}</div>
-          </div>
-        </div>
-      </div></div>
-    </div>
+  <div class="os-actions" style="display: flex; justify-content: flex-end; gap: 10px;">
+    <a class="btn btn-outline-secondary" href="/web/login/" data-slug-route="/web/{slug}/os/{{ object.pk }}/imprimir/">
+      <i class="bi bi-printer"></i> Imprimir
+    </a>
+    <a class="btn btn-primary" href="/web/login/" data-slug-route="/web/{slug}/os/{{ object.pk }}/editar/">
+      <i class="bi bi-pencil"></i> Editar
+    </a>
   </div>
+
 </div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* Badge de status */
+  .badge-os {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 12px;
+    border-radius: 99px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .badge-os--aberta {
+    background: #E6F1FB;
+    color: #0C447C;
+  }
+
+  .badge-os--fechada {
+    background: #EAF3DE;
+    color: #27500A;
+  }
+
+  .badge-os--pendente {
+    background: #FAEEDA;
+    color: #633806;
+  }
+
+  /* Labels de seção */
+  .section-label {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--bs-secondary-color);
+    margin-bottom: 10px;
+  }
+
+  /* Linhas de campo */
+  .field-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 6px 0;
+    border-bottom: 0.5px solid var(--bs-border-color);
+    font-size: 14px;
+  }
+
+  .field-row:last-child {
+    border-bottom: none;
+  }
+
+  .field-label {
+    color: var(--bs-secondary-color);
+  }
+
+  .field-value {
+    font-weight: 500;
+    text-align: right;
+    max-width: 55%;
+  }
+
+  /* Tabela de itens */
+  .os-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    table-layout: fixed;
+  }
+
+  .os-table thead th {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--bs-secondary-color);
+    padding: 0 8px 8px;
+    border-bottom: 0.5px solid var(--bs-border-color);
+  }
+
+  .os-table tbody td {
+    padding: 8px;
+    border-bottom: 0.5px solid var(--bs-border-color);
+    vertical-align: middle;
+  }
+
+  .os-table tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  /* Pill de tipo */
+  .tipo-pill {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    background-color: var(--bs-secondary-bg);
+    color: var(--bs-secondary-color);
+  }
+
+  /* Grid de totais */
+  .totals-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .total-card {
+    background: var(--bs-secondary-bg);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+
+  .total-card .t-label {
+    font-size: 11px;
+    color: var(--bs-secondary-color);
+    margin-bottom: 4px;
+  }
+
+  .total-card .t-value {
+    font-size: 20px;
+    font-weight: 500;
+    margin: 0;
+  }
+
+  .total-card--highlight {
+    background: #E6F1FB;
+  }
+
+  .total-card--highlight .t-label {
+    color: #185FA5;
+  }
+
+  .total-card--highlight .t-value {
+    color: #0C447C;
+  }
+
+  @media (max-width: 768px) {
+    .os-header {
+      flex-direction: column;
+      align-items: flex-start !important;
+    }
+
+    .os-grid {
+      grid-template-columns: minmax(0, 1fr) !important;
+    }
+
+    .field-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+    }
+
+    .field-value {
+      max-width: 100%;
+      text-align: left;
+      word-break: break-word;
+    }
+
+    .os-table {
+      table-layout: auto;
+      min-width: 560px;
+    }
+
+    .os-table thead th {
+      padding: 0 6px 8px;
+      font-size: 10px;
+    }
+
+    .os-table tbody td {
+      padding: 8px 6px;
+      font-size: 12px;
+    }
+
+    .totals-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .total-card .t-value {
+      font-size: 18px;
+    }
+
+    .os-actions {
+      justify-content: stretch !important;
+      flex-direction: column;
+    }
+
+    .os-actions .btn {
+      width: 100%;
+    }
+  }
+
+  @media (max-width: 420px) {
+    .os-table {
+      min-width: 520px;
+    }
+  }
+</style>
 {% endblock %}

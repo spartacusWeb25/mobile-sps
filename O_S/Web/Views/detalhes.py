@@ -1,6 +1,8 @@
 from django.views.generic import DetailView
 from core.utils import get_licenca_db_config
-from ...models import Os
+from decimal import Decimal
+
+from ...models import Os, PecasOs, ServicosOs
 
 class OsDetailView(DetailView):
     model = Os
@@ -16,48 +18,113 @@ class OsDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['slug'] = self.kwargs.get('slug')
+        banco = get_licenca_db_config(self.request) or 'default'
+        empresa_id = self.request.session.get('empresa_id', 1)
+        os_obj = context.get('object')
+
+        context['cliente_nome'] = 'N/A'
+        context['vendedor_nome'] = 'N/A'
+        context['itens'] = []
+
+        if not os_obj:
+            return context
+
         try:
             from Entidades.models import Entidades
-            from Produtos.models import Produtos
-            banco = get_licenca_db_config(self.request) or 'default'
-            os = context.get('object')
-            if os:
-                cliente = Entidades.objects.using(banco).filter(
-                    enti_clie=os.os_clie
-                ).values('enti_nome').first()
-                vendedor = Entidades.objects.using(banco).filter(
-                    enti_clie=os.os_resp
-                ).values('enti_nome').first()
-                context['cliente_nome'] = cliente.get('enti_nome') if cliente else 'N/A'
-                context['vendedor_nome'] = vendedor.get('enti_nome') if vendedor else 'N/A'
-                itens_qs = os.itens if hasattr(os, 'itens') else []
-                try:
-                    itens_qs = Produtos.objects.none()
-                    from ..models import ItensOs
-                    itens_qs = ItensOs.objects.using(banco).filter(
-                        iped_empr=os.os_empr,
-                        iped_fili=os.os_fili,
-                        iped_os=str(os.os_nume)
-                    ).order_by('peca_os')
-                except Exception:
-                    pass
-                codigos = [i.peca_os for i in itens_qs]
-                produtos = Produtos.objects.using(banco).filter(prod_codi__in=codigos)
-                prod_map = {p.prod_codi: {'nome': p.prod_nome, 'has_foto': bool(p.prod_foto)} for p in produtos}
-                itens_detalhados = []
-                for i in itens_qs:
-                    meta = prod_map.get(i.peca_os, {})
-                    itens_detalhados.append({
-                        'prod_codigo': i.peca_os,
-                        'prod_nome': meta.get('nome') or i.peca_os,
-                        'has_foto': bool(meta.get('has_foto')),
-                        'peca_quan': i.peca_quan,
-                        'peca_unit': i.peca_unit,
-                        'peca_tota': i.peca_tota,
-                        'peca_item': getattr(i, 'peca_item', None),
-                    })
-                context['itens_detalhados'] = itens_detalhados
+
+            cliente = (
+                Entidades.objects.using(banco)
+                .filter(enti_empr=empresa_id, enti_clie=os_obj.os_clie)
+                .values('enti_nome')
+                .first()
+            )
+            vendedor = (
+                Entidades.objects.using(banco)
+                .filter(enti_empr=empresa_id, enti_clie=os_obj.os_resp)
+                .values('enti_nome')
+                .first()
+            )
+            context['cliente_nome'] = cliente.get('enti_nome') if cliente else 'N/A'
+            context['vendedor_nome'] = vendedor.get('enti_nome') if vendedor else 'N/A'
         except Exception:
-            context['cliente_nome'] = 'N/A'
-            context['vendedor_nome'] = 'N/A'
+            pass
+
+        pecas = list(
+            PecasOs.objects.using(banco)
+            .filter(
+                peca_empr=os_obj.os_empr,
+                peca_fili=os_obj.os_fili,
+                peca_os=os_obj.os_os,
+            )
+            .order_by('peca_item')
+        )
+        servicos = list(
+            ServicosOs.objects.using(banco)
+            .filter(
+                serv_empr=os_obj.os_empr,
+                serv_fili=os_obj.os_fili,
+                serv_os=os_obj.os_os,
+            )
+            .order_by('serv_item')
+        )
+
+        codigos = []
+        for p in pecas:
+            if getattr(p, 'peca_prod', None):
+                codigos.append(p.peca_prod)
+        for s in servicos:
+            if getattr(s, 'serv_prod', None):
+                codigos.append(s.serv_prod)
+
+        prod_map = {}
+        if codigos:
+            try:
+                from Produtos.models import Produtos
+
+                produtos = (
+                    Produtos.objects.using(banco)
+                    .filter(prod_codi__in=list(set(codigos)))
+                    .values('prod_codi', 'prod_nome')
+                )
+                prod_map = {p['prod_codi']: p['prod_nome'] for p in produtos}
+            except Exception:
+                prod_map = {}
+
+        itens = []
+        subtotal = Decimal('0.00')
+        for p in pecas:
+            nome = prod_map.get(getattr(p, 'peca_prod', None)) or getattr(p, 'peca_prod', None)
+            itens.append({
+                'item_tipo': 'Peça',
+                'item_codigo': getattr(p, 'peca_prod', None),
+                'item_nome': nome,
+                'item_qtd': getattr(p, 'peca_quan', None),
+                'item_preco': getattr(p, 'peca_unit', None),
+                'item_subt': getattr(p, 'peca_tota', None),
+            })
+            try:
+                subtotal += (p.peca_tota or Decimal('0.00'))
+            except Exception:
+                pass
+
+        for s in servicos:
+            nome = prod_map.get(getattr(s, 'serv_prod', None)) or getattr(s, 'serv_prod', None)
+            itens.append({
+                'item_tipo': 'Serviço',
+                'item_codigo': getattr(s, 'serv_prod', None),
+                'item_nome': nome,
+                'item_qtd': getattr(s, 'serv_quan', None),
+                'item_preco': getattr(s, 'serv_unit', None),
+                'item_subt': getattr(s, 'serv_tota', None),
+            })
+            try:
+                subtotal += (s.serv_tota or Decimal('0.00'))
+            except Exception:
+                pass
+
+        context['itens'] = itens
+        try:
+            os_obj.os_topr = subtotal
+        except Exception:
+            pass
         return context
