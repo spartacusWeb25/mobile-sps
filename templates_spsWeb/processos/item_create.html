@@ -13,6 +13,7 @@
 
         <form method="post">
             {% csrf_token %}
+            {% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}
 
             <div class="row g-3">
 
@@ -25,7 +26,7 @@
                             class="form-select">
 
                         {% for m in modelos %}
-                        <option value="{{ m.id }}">
+                        <option value="{{ m.id }}" {% if selected_modelo_id == m.id %}selected{% endif %}>
                             {{ m.chmo_nome }} (v{{ m.chmo_vers }})
                         </option>
                         {% endfor %}

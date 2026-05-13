@@ -1,3 +1,4 @@
+from django.db.models import Prefetch
 from django.views.generic import TemplateView
 
 from core.utils import get_db_from_slug
@@ -53,12 +54,28 @@ class ProcessoTemplateNavView(TemplateView):
         db_alias = get_db_from_slug(slug) if slug else "default"
         empresa = self.request.session.get("empresa_id", 1)
         filial = self.request.session.get("filial_id", 1)
+        itens_qs = (
+            ChecklistItem.objects.using(db_alias)
+            .filter(
+                chit_empr=empresa,
+                chit_fili=filial,
+            )
+            .order_by("chit_orde", "id")
+        )
+        modelos = (
+            ChecklistModelo.objects.using(db_alias)
+            .filter(chmo_empr=empresa, chmo_fili=filial)
+            .select_related("chmo_proc_tipo")
+            .prefetch_related(Prefetch("itens", queryset=itens_qs))
+            .order_by("chmo_proc_tipo__prot_nome", "-chmo_vers", "chmo_nome")
+        )
         context.update(
             {
                 "slug": slug,
-                "tipos": ProcessoTipo.objects.using(db_alias).filter(prot_empr=empresa, prot_fili=filial),
-                "modelos": ChecklistModelo.objects.using(db_alias).filter(chmo_empr=empresa, chmo_fili=filial),
-                "itens": ChecklistItem.objects.using(db_alias).filter(chit_empr=empresa, chit_fili=filial),
+                "tipos": ProcessoTipo.objects.using(db_alias)
+                .filter(prot_empr=empresa, prot_fili=filial)
+                .order_by("prot_nome"),
+                "modelos": modelos,
             }
         )
         return context

@@ -5,61 +5,167 @@
 
 {% block processos_css %}
 <link rel="stylesheet" href="{% static 'css/list.css' %}">
+<style>
+  .template-card {
+    border-radius: 14px;
+  }
+  .modelo-button {
+    width: 100%;
+    text-align: left;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 12px;
+    padding: 12px 14px;
+    background: var(--bs-body-bg);
+    color: var(--bs-body-color);
+    transition: border-color .15s ease, transform .15s ease, box-shadow .15s ease;
+  }
+  .modelo-button:hover {
+    border-color: var(--bs-primary);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(0,0,0,.12);
+  }
+  .modelo-meta {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--bs-secondary-color);
+  }
+  .tipo-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 999px;
+    padding: 7px 10px;
+    margin: 0 6px 8px 0;
+    font-size: 13px;
+  }
+  .item-table th,
+  .item-table td {
+    vertical-align: middle;
+  }
+</style>
 {% endblock %}
 
 {% block processos_content %}
-<div class="card shadow-sm border-0">
+<div class="card shadow-sm border-0 template-card">
   <div class="card-body">
-    <h4 class="mb-4">
-      <i class="bi bi-database-fill-down"></i>
-      Templates de Processos
-    </h4>
+    <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-4">
+      <div>
+        <h4 class="mb-1">
+          <i class="bi bi-database-fill-down"></i>
+          Templates de Processos
+        </h4>
+        <p class="text-muted mb-0">
+          Clique em um modelo/versão para ver, em modal, os itens vinculados a ele.
+        </p>
+      </div>
+      <a class="btn btn-outline-info" href="{% url 'processos:item_criar' slug=slug %}">
+        <i class="bi bi-list-check"></i> Adicionar item ao template
+      </a>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-body">
+        <h6 class="fw-bold mb-3">Tipos de processo</h6>
+        {% for t in tipos %}
+          <span class="tipo-pill">
+            <strong>{{ t.prot_codi }}</strong>
+            <span>{{ t.prot_nome }}</span>
+          </span>
+        {% empty %}
+          <div class="text-muted">Sem tipos cadastrados.</div>
+        {% endfor %}
+      </div>
+    </div>
 
     <div class="row g-3">
-
+      {% for m in modelos %}
       <div class="col-md-6 col-xl-4">
-        <div class="card h-100">
-          <div class="card-body">
-            <h6 class="fw-bold">Tipos</h6>
-
-            {% for t in tipos %}
-              <div>{{ t.prot_codi }} - {{ t.prot_nome }}</div>
-            {% empty %}
-              <div class="text-muted">Sem tipos</div>
-            {% endfor %}
+        <button type="button" class="modelo-button" data-bs-toggle="modal" data-bs-target="#modeloItensModal{{ m.id }}">
+          <div class="d-flex justify-content-between align-items-start gap-2">
+            <div>
+              <div class="fw-bold">{{ m.chmo_nome }}</div>
+              <div class="small text-muted">{{ m.chmo_proc_tipo.prot_nome }}</div>
+            </div>
+            <span class="badge text-bg-primary">v{{ m.chmo_vers }}</span>
           </div>
-        </div>
-      </div>
-
-      <div class="col-md-6 col-xl-4">
-        <div class="card h-100">
-          <div class="card-body">
-            <h6 class="fw-bold">Modelos</h6>
-
-            {% for m in modelos %}
-              <div>{{ m.chmo_nome }} (v{{ m.chmo_vers }})</div>
-            {% empty %}
-              <div class="text-muted">Sem modelos</div>
-            {% endfor %}
+          <div class="modelo-meta">
+            <span><i class="bi bi-list-check"></i> {{ m.itens.all|length }} item(ns)</span>
+            {% if m.chmo_ativ %}
+              <span class="text-success"><i class="bi bi-check-circle"></i> Ativo</span>
+            {% else %}
+              <span class="text-muted"><i class="bi bi-slash-circle"></i> Inativo</span>
+            {% endif %}
           </div>
-        </div>
+        </button>
       </div>
-
-      <div class="col-md-12 col-xl-4">
-        <div class="card h-100">
-          <div class="card-body">
-            <h6 class="fw-bold">Itens</h6>
-
-            {% for i in itens %}
-              <div>{{ i.chit_orde }} - {{ i.chit_desc }}</div>
-            {% empty %}
-              <div class="text-muted">Sem itens</div>
-            {% endfor %}
-          </div>
-        </div>
+      {% empty %}
+      <div class="col-12">
+        <div class="alert alert-info mb-0">Nenhum modelo de checklist cadastrado.</div>
       </div>
-
+      {% endfor %}
     </div>
   </div>
 </div>
+
+{% for m in modelos %}
+<div class="modal fade" id="modeloItensModal{{ m.id }}" tabindex="-1" aria-labelledby="modeloItensModalLabel{{ m.id }}" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <h5 class="modal-title" id="modeloItensModalLabel{{ m.id }}">
+            {{ m.chmo_nome }} — v{{ m.chmo_vers }}
+          </h5>
+          <div class="small text-muted">Tipo: {{ m.chmo_proc_tipo.prot_nome }}</div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <div class="modal-body">
+        <div class="table-responsive">
+          <table class="table table-sm item-table align-middle">
+            <thead>
+              <tr>
+                <th style="width: 90px;">Ordem</th>
+                <th>Item vinculado</th>
+                <th style="width: 130px;">Obrigatório</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in m.itens.all %}
+              <tr>
+                <td>{{ item.chit_orde }}</td>
+                <td>{{ item.chit_desc }}</td>
+                <td>
+                  {% if item.chit_obri %}
+                    <span class="badge text-bg-danger">Sim</span>
+                  {% else %}
+                    <span class="badge text-bg-secondary">Não</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="3" class="text-center text-muted py-4">
+                  Nenhum item vinculado a esta versão.
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <a class="btn btn-outline-info" href="{% url 'processos:item_criar' slug=slug %}?modelo_id={{ m.id }}">
+          <i class="bi bi-plus-circle"></i> Adicionar item nesta versão
+        </a>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
 {% endblock %}

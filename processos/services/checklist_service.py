@@ -1,13 +1,16 @@
 from processos.models import (
     ChecklistItem,
     ChecklistModelo,
+    Processo,
     ProcessoChecklistResposta,
 )
 
 
 class ChecklistService:
     @staticmethod
-    def criar_modelo(*, db_alias, empresa, filial, processo_tipo, nome, versao=1, ativo=True):
+    def criar_modelo(
+        *, db_alias, empresa, filial, processo_tipo, nome, versao=1, ativo=True
+    ):
         return ChecklistModelo.objects.using(db_alias).create(
             chmo_empr=empresa,
             chmo_fili=filial,
@@ -18,7 +21,9 @@ class ChecklistService:
         )
 
     @staticmethod
-    def criar_item(*, db_alias, empresa, filial, modelo, descricao, ordem=0, obrigatorio=True):
+    def criar_item(
+        *, db_alias, empresa, filial, modelo, descricao, ordem=0, obrigatorio=True
+    ):
         return ChecklistItem.objects.using(db_alias).create(
             chit_empr=empresa,
             chit_fili=filial,
@@ -43,7 +48,7 @@ class ChecklistService:
         )
 
     @staticmethod
-    def gerar_respostas_para_processo(*, db_alias, empresa, filial, processo):
+    def sincronizar_respostas_para_processo(*, db_alias, empresa, filial, processo):
         modelo = ChecklistService.obter_modelo_ativo(
             db_alias=db_alias,
             empresa=empresa,
@@ -51,21 +56,59 @@ class ChecklistService:
             proc_tipo=processo.proc_tipo,
         )
         if not modelo:
-            return []
+            return {"modelo": None, "respostas": [], "criadas": 0}
 
         respostas = []
-        for item in modelo.itens.using(db_alias).all():
-            resposta, _ = ProcessoChecklistResposta.objects.using(db_alias).get_or_create(
+        criadas = 0
+        itens = (
+            modelo.itens.using(db_alias)
+            .filter(chit_empr=empresa, chit_fili=filial)
+            .order_by("chit_orde")
+        )
+        for item in itens:
+            resposta, criada = ProcessoChecklistResposta.objects.using(
+                db_alias
+            ).get_or_create(
                 pchr_empr=empresa,
                 pchr_fili=filial,
                 pchr_proc=processo,
                 pchr_item=item,
             )
+            if criada:
+                criadas += 1
             respostas.append(resposta)
-        return respostas
+        return {"modelo": modelo, "respostas": respostas, "criadas": criadas}
+
+    @staticmethod
+    def gerar_respostas_para_processo(*, db_alias, empresa, filial, processo):
+        resultado = ChecklistService.sincronizar_respostas_para_processo(
+            db_alias=db_alias,
+            empresa=empresa,
+            filial=filial,
+            processo=processo,
+        )
+        return resultado["respostas"]
+
+    @staticmethod
+    def _normalizar_dados_respostas(dados):
+        """Aceita payload REST em dict {item_id: {...}} ou lista [{item_id, ...}]."""
+        if isinstance(dados, list):
+            return {
+                str(item.get("item_id") or item.get("id")): {
+                    "resposta": item.get("resposta"),
+                    "observacao": item.get("observacao"),
+                }
+                for item in dados
+                if item.get("item_id") or item.get("id")
+            }
+        return dados or {}
 
     @staticmethod
     def salvar_respostas(*, db_alias, empresa, filial, processo_id, dados):
+        Processo.objects.using(db_alias).get(
+            id=processo_id, proc_empr=empresa, proc_fili=filial
+        )
+        dados = ChecklistService._normalizar_dados_respostas(dados)
         respostas_salvas = []
         for item_id, payload in dados.items():
             resposta = ProcessoChecklistResposta.objects.using(db_alias).get(
