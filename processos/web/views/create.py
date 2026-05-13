@@ -1,6 +1,12 @@
 from django.contrib import messages
 from django.shortcuts import redirect
-from django.utils.http import url_has_allowed_host_and_scheme
+try:
+    from django.utils.http import url_has_allowed_host_and_scheme
+except Exception:
+    from django.utils.http import is_safe_url as _is_safe_url
+
+    def url_has_allowed_host_and_scheme(url, allowed_hosts=None, require_https=False):
+        return _is_safe_url(url=url, allowed_hosts=allowed_hosts, require_https=require_https)
 from django.views.generic import FormView
 
 from core.utils import get_db_from_slug
