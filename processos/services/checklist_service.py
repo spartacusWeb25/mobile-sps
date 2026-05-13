@@ -1,13 +1,16 @@
 from processos.models import (
     ChecklistItem,
     ChecklistModelo,
+    Processo,
     ProcessoChecklistResposta,
 )
 
 
 class ChecklistService:
     @staticmethod
-    def criar_modelo(*, db_alias, empresa, filial, processo_tipo, nome, versao=1, ativo=True):
+    def criar_modelo(
+        *, db_alias, empresa, filial, processo_tipo, nome, versao=1, ativo=True
+    ):
         return ChecklistModelo.objects.using(db_alias).create(
             chmo_empr=empresa,
             chmo_fili=filial,
@@ -18,7 +21,9 @@ class ChecklistService:
         )
 
     @staticmethod
-    def criar_item(*, db_alias, empresa, filial, modelo, descricao, ordem=0, obrigatorio=True):
+    def criar_item(
+        *, db_alias, empresa, filial, modelo, descricao, ordem=0, obrigatorio=True
+    ):
         return ChecklistItem.objects.using(db_alias).create(
             chit_empr=empresa,
             chit_fili=filial,
@@ -54,8 +59,15 @@ class ChecklistService:
             return []
 
         respostas = []
-        for item in modelo.itens.using(db_alias).all():
-            resposta, _ = ProcessoChecklistResposta.objects.using(db_alias).get_or_create(
+        itens = (
+            modelo.itens.using(db_alias)
+            .filter(chit_empr=empresa, chit_fili=filial)
+            .order_by("chit_orde")
+        )
+        for item in itens:
+            resposta, _ = ProcessoChecklistResposta.objects.using(
+                db_alias
+            ).get_or_create(
                 pchr_empr=empresa,
                 pchr_fili=filial,
                 pchr_proc=processo,
@@ -65,7 +77,25 @@ class ChecklistService:
         return respostas
 
     @staticmethod
+    def _normalizar_dados_respostas(dados):
+        """Aceita payload REST em dict {item_id: {...}} ou lista [{item_id, ...}]."""
+        if isinstance(dados, list):
+            return {
+                str(item.get("item_id") or item.get("id")): {
+                    "resposta": item.get("resposta"),
+                    "observacao": item.get("observacao"),
+                }
+                for item in dados
+                if item.get("item_id") or item.get("id")
+            }
+        return dados or {}
+
+    @staticmethod
     def salvar_respostas(*, db_alias, empresa, filial, processo_id, dados):
+        Processo.objects.using(db_alias).get(
+            id=processo_id, proc_empr=empresa, proc_fili=filial
+        )
+        dados = ChecklistService._normalizar_dados_respostas(dados)
         respostas_salvas = []
         for item_id, payload in dados.items():
             resposta = ProcessoChecklistResposta.objects.using(db_alias).get(

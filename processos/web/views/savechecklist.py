@@ -44,24 +44,16 @@ class SalvarChecklistView(_ChecklistBaseView):
 class ValidarProcessoView(_ChecklistBaseView):
     def post(self, request, pk, slug=None):
         cfg = self._ctx()
-        assinatura_nome = (request.POST.get("assinatura_nome") or "").strip()
-        assinatura_documento = (request.POST.get("assinatura_documento") or "").strip()
-        assinatura_confirmada = request.POST.get("assinatura_confirmada") == "on"
-
-        if not assinatura_nome or not assinatura_documento or not assinatura_confirmada:
-            messages.error(request, "Preencha a assinatura (nome, documento e confirmação) para validar o processo.")
-            return redirect("processos:detalhe", slug=cfg["slug"], pk=pk)
-
-class ValidarProcessoView(_ChecklistBaseView):
-    def post(self, request, pk, slug=None):
-        cfg = self._ctx()
 
         assinatura_nome = (request.POST.get("assinatura_nome") or "").strip()
         assinatura_documento = (request.POST.get("assinatura_documento") or "").strip()
         assinatura_confirmada = request.POST.get("assinatura_confirmada") == "on"
 
         if not assinatura_nome or not assinatura_documento or not assinatura_confirmada:
-            messages.error(request, "Preencha a assinatura (nome, documento e confirmação) para validar.")
+            messages.error(
+                request,
+                "Preencha a assinatura (nome, documento e confirmação) para validar.",
+            )
             return redirect("processos:detalhe", slug=cfg["slug"], pk=pk)
 
         resultado = ValidacaoProcessoService.validar_processo(
@@ -73,7 +65,10 @@ class ValidarProcessoView(_ChecklistBaseView):
         )
 
         if resultado["aprovado"]:
-            messages.success(request, f"Processo aprovado. Assinado por {assinatura_nome} ({assinatura_documento}).")
+            messages.success(
+                request,
+                f"Processo aprovado. Assinado por {assinatura_nome} ({assinatura_documento}).",
+            )
         else:
             for erro in resultado["erros"]:
                 messages.error(request, erro)
