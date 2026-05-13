@@ -3,6 +3,7 @@ from django.shortcuts import redirect
 from django.views.generic import View
 
 from core.utils import get_db_from_slug
+from processos.models import Processo
 from processos.services.checklist_service import ChecklistService
 from processos.services.validacao_service import ValidacaoProcessoService
 
@@ -41,27 +42,52 @@ class SalvarChecklistView(_ChecklistBaseView):
         return redirect("processos:detalhe", slug=cfg["slug"], pk=pk)
 
 
+class SincronizarChecklistView(_ChecklistBaseView):
+    def post(self, request, pk, slug=None):
+        cfg = self._ctx()
+        processo = Processo.objects.using(cfg["db_alias"]).get(
+            id=pk,
+            proc_empr=cfg["empresa"],
+            proc_fili=cfg["filial"],
+        )
+        resultado = ChecklistService.sincronizar_respostas_para_processo(
+            db_alias=cfg["db_alias"],
+            empresa=cfg["empresa"],
+            filial=cfg["filial"],
+            processo=processo,
+        )
+
+        if not resultado["modelo"]:
+            messages.warning(
+                request, "Nenhum modelo ativo encontrado para o tipo deste processo."
+            )
+        elif resultado["criadas"]:
+            messages.success(
+                request,
+                f"{resultado['criadas']} item(ns) novo(s) foram vinculados ao processo.",
+            )
+        else:
+            messages.info(
+                request,
+                "Todos os itens do modelo ativo já estavam vinculados ao processo.",
+            )
+
+        return redirect("processos:detalhe", slug=cfg["slug"], pk=pk)
+
+
 class ValidarProcessoView(_ChecklistBaseView):
     def post(self, request, pk, slug=None):
         cfg = self._ctx()
+
         assinatura_nome = (request.POST.get("assinatura_nome") or "").strip()
         assinatura_documento = (request.POST.get("assinatura_documento") or "").strip()
         assinatura_confirmada = request.POST.get("assinatura_confirmada") == "on"
 
         if not assinatura_nome or not assinatura_documento or not assinatura_confirmada:
-            messages.error(request, "Preencha a assinatura (nome, documento e confirmação) para validar o processo.")
-            return redirect("processos:detalhe", slug=cfg["slug"], pk=pk)
-
-class ValidarProcessoView(_ChecklistBaseView):
-    def post(self, request, pk, slug=None):
-        cfg = self._ctx()
-
-        assinatura_nome = (request.POST.get("assinatura_nome") or "").strip()
-        assinatura_documento = (request.POST.get("assinatura_documento") or "").strip()
-        assinatura_confirmada = request.POST.get("assinatura_confirmada") == "on"
-
-        if not assinatura_nome or not assinatura_documento or not assinatura_confirmada:
-            messages.error(request, "Preencha a assinatura (nome, documento e confirmação) para validar.")
+            messages.error(
+                request,
+                "Preencha a assinatura (nome, documento e confirmação) para validar.",
+            )
             return redirect("processos:detalhe", slug=cfg["slug"], pk=pk)
 
         resultado = ValidacaoProcessoService.validar_processo(
@@ -73,7 +99,10 @@ class ValidarProcessoView(_ChecklistBaseView):
         )
 
         if resultado["aprovado"]:
-            messages.success(request, f"Processo aprovado. Assinado por {assinatura_nome} ({assinatura_documento}).")
+            messages.success(
+                request,
+                f"Processo aprovado. Assinado por {assinatura_nome} ({assinatura_documento}).",
+            )
         else:
             for erro in resultado["erros"]:
                 messages.error(request, erro)

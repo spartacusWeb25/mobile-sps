@@ -25,7 +25,7 @@
                             class="form-select">
 
                         {% for m in modelos %}
-                        <option value="{{ m.id }}">
+                        <option value="{{ m.id }}" {% if selected_modelo_id == m.id %}selected{% endif %}>
                             {{ m.chmo_nome }} (v{{ m.chmo_vers }})
                         </option>
                         {% endfor %}
