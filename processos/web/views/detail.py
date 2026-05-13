@@ -64,6 +64,7 @@ class ProcessoDetailView(DetailView):
         context["itens_pendentes"] = itens_pendentes
         context["itens_pendentes_count"] = itens_pendentes.count()
         context["itens_modelo_count"] = itens_modelo.count()
+        context["next_url"] = self.request.get_full_path()
         context["tipos"] = ProcessoTipo.objects.using(ctx["db_alias"]).filter(
             prot_empr=ctx["empresa"], prot_fili=ctx["filial"]
         )

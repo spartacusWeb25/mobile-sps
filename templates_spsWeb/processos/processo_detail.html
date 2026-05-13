@@ -220,7 +220,7 @@
         {% if itens_modelo_count %}de {{ itens_modelo_count }} item(ns) no modelo ativo{% endif %}.
       </div>
       <p class="sync-help">
-        Se novos itens forem adicionados ao template depois da abertura do processo, use a ação ao lado para vinculá-los neste processo.
+        Cadastre novos itens no modelo ativo quando necessário e sincronize para vinculá-los a este processo.
       </p>
       {% if itens_pendentes_count %}
       <ul class="pending-list">
@@ -231,12 +231,26 @@
       {% endif %}
     </div>
 
-    <form method="post" action="{% url 'processos:sincronizar_checklist' slug=slug pk=processo.id %}">
-      {% csrf_token %}
-      <button type="submit" class="btn btn-outline-info d-inline-flex align-items-center gap-2" {% if not itens_pendentes_count %}disabled{% endif %}>
-        <i class="bi bi-arrow-repeat"></i> Adicionar itens novos
-      </button>
-    </form>
+    <div class="d-flex gap-2 flex-wrap justify-content-end">
+      {% if checklist_modelo %}
+      <a class="btn btn-outline-primary d-inline-flex align-items-center gap-2"
+        href="{% url 'processos:item_criar' slug=slug %}?modelo_id={{ checklist_modelo.id }}&next={{ next_url|urlencode }}">
+        <i class="bi bi-plus-circle"></i> Cadastrar item no modelo
+      </a>
+      {% else %}
+      <a class="btn btn-outline-primary d-inline-flex align-items-center gap-2" href="{% url 'processos:modelo_criar' slug=slug %}">
+        <i class="bi bi-plus-square"></i> Criar modelo
+      </a>
+      {% endif %}
+
+      <form method="post" action="{% url 'processos:sincronizar_checklist' slug=slug pk=processo.id %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-outline-info d-inline-flex align-items-center gap-2">
+          <i class="bi bi-arrow-repeat"></i>
+          {% if itens_pendentes_count %}Vincular itens pendentes{% else %}Sincronizar checklist{% endif %}
+        </button>
+      </form>
+    </div>
   </div>
 
   <form method="post" action="{% url 'processos:salvar_checklist' slug=slug pk=processo.id %}">
@@ -282,7 +296,7 @@
           {% empty %}
           <tr>
             <td colspan="4" class="text-center py-4" style="font-size:14px; color: var(--bs-secondary-color);">
-              Nenhum item vinculado a este processo. Se houver itens no modelo ativo, clique em “Adicionar itens novos”.
+              Nenhum item vinculado a este processo. Cadastre itens no modelo ativo ou clique em “Sincronizar checklist”.
             </td>
           </tr>
           {% endfor %}

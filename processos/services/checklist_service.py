@@ -104,20 +104,6 @@ class ChecklistService:
         return dados or {}
 
     @staticmethod
-    def _normalizar_dados_respostas(dados):
-        """Aceita payload REST em dict {item_id: {...}} ou lista [{item_id, ...}]."""
-        if isinstance(dados, list):
-            return {
-                str(item.get("item_id") or item.get("id")): {
-                    "resposta": item.get("resposta"),
-                    "observacao": item.get("observacao"),
-                }
-                for item in dados
-                if item.get("item_id") or item.get("id")
-            }
-        return dados or {}
-
-    @staticmethod
     def salvar_respostas(*, db_alias, empresa, filial, processo_id, dados):
         Processo.objects.using(db_alias).get(
             id=processo_id, proc_empr=empresa, proc_fili=filial
