@@ -431,6 +431,7 @@
 
   <form method="post" novalidate>
     {% csrf_token %}
+    <input type="hidden" name="parametros" id="id_parametros" value="{}">
     <div class="d-none">{{ form.pedi_empr }}</div>
 
     <div class="pedido-body">
@@ -525,6 +526,15 @@
                   <button type="button" class="btn btn-sm btn-outline-danger" id="fin-limpar">Remover</button>
                 </div>
               </div>
+              <div class="col-3" style="margin-top:25px" 
+                  type="button" data-bs-toggle="collapse" 
+                  data-bs-target="#filtrosCollapse" 
+                  data-bs-auto-close="false"
+                  title="Parcelas"
+                  data-bs-toggle="tooltip"
+                  aria-expanded="true" aria-controls="filtrosCollapse">
+                  <i class="bi bi-currency-exchange"></i></div>
+           <div id="filtrosCollapse" class="collapse show">
               <div class="table-responsive mt-2">
                 <table class="table table-sm table-dark align-middle mb-0">
                   <thead>
@@ -540,7 +550,7 @@
                 </table>
               </div>
             </div>
-
+            </div>
             <div id="tab-croqui" class="tab-content">
               <label>Croqui / Informações</label>
               {{ form.pedi_croq_info }}
@@ -721,6 +731,8 @@
   const URL_AUTO_PRODUTOS = "{% url 'PisosWeb:autocomplete_produtos' slug=slug %}";
   const URL_CREDITO = `/api/${SLUG}/pisos/credito-troca/`;
   const EXCLUIR_PEDIDO = "{% if pedido %}{{ pedido.pedi_nume }}{% endif %}";
+  const PEDIDO_NUME = "{% if pedido %}{{ pedido.pedi_nume }}{% endif %}";
+  const URL_TITULOS_PISOS = PEDIDO_NUME ? `/api/${SLUG}/pisos/pedidos-pisos/${PEDIDO_NUME}/financeiro/` : null;
 
   /* ── Utilitários ── */
   function fmtBRL(v) {
@@ -778,15 +790,64 @@
     const dias = cond ? cond.split(/\s+/).map(x => parseInt(x, 10)).filter(x => !isNaN(x)) : [];
     const valorParcela = restante / parcelas;
     const base = new Date();
+    const formaEl = document.getElementById('id_pedi_form_paga');
+    const formaLabel = formaEl?.selectedOptions?.[0]?.text || '-';
     body.innerHTML = '';
     for (let i = 0; i < parcelas; i++) {
       const d = new Date(base);
       d.setDate(d.getDate() + (dias[i] || (30 * i)));
       const venc = d.toISOString().slice(0, 10).split('-').reverse().join('/');
-      body.innerHTML += `<tr><td>${i + 1}</td><td>${venc}</td><td class="text-end">${fmtBRL(valorParcela)}</td><td>${document.getElementById('id_pedi_form_paga')?.value || '-'}</td><td>Aberto</td></tr>`;
+      body.innerHTML += `<tr><td>${i + 1}</td><td>${venc}</td><td class="text-end">${fmtBRL(valorParcela)}</td><td>${formaLabel}</td><td>Aberto</td></tr>`;
     }
     const finRest = document.getElementById('fin-restante');
     if (finRest) finRest.value = fmtBRL(restante);
+  }
+
+  function isoToBR(iso) {
+    if (!iso) return '';
+    const s = String(iso);
+    if (!s.includes('-')) return s;
+    const [y, m, d] = s.split('-');
+    return `${d}/${m}/${y}`;
+  }
+
+  async function carregarTitulosFinanceiro() {
+    const body = document.getElementById('fin-titulos-body');
+    if (!body || !URL_TITULOS_PISOS) return;
+    try {
+      const resp = await fetch(URL_TITULOS_PISOS, { headers: { 'Accept': 'application/json' } });
+      if (!resp.ok) return;
+      const data = await resp.json();
+
+      const entradaEl = document.getElementById('fin-entrada');
+      const parcelasEl = document.getElementById('fin-parcelas');
+      const condEl = document.getElementById('fin-condicao');
+      const restanteEl = document.getElementById('fin-restante');
+
+      const entrada = parseNumberBR(data.entrada);
+      if (entradaEl) entradaEl.value = entrada.toFixed(2);
+      if (parcelasEl) parcelasEl.value = String(data.parcelas || 1);
+      if (condEl) condEl.value = String(data.condicao || '').trim();
+
+      const total = parseNumberBR(document.getElementById('id_pedi_tota')?.value);
+      const restante = Math.max(total - entrada, 0);
+      if (restanteEl) restanteEl.value = fmtBRL(restante);
+
+      const titulos = Array.isArray(data.titulos) ? data.titulos : [];
+      body.innerHTML = '';
+      titulos.forEach(t => {
+        const parc = t.parcela ?? '';
+        const venc = isoToBR(t.vencimento);
+        const valor = fmtBRL(t.valor);
+        const forma = t.forma_label || t.forma_pagamento || '-';
+        const aberto = String(t.aberto || '').toUpperCase();
+        const status = aberto === 'A' ? 'ABERTO' : (aberto ? 'FECHADO' : '-');
+        body.innerHTML += `<tr><td>${parc}</td><td>${venc}</td><td class="text-end">${valor}</td><td>${forma}</td><td>${status}</td></tr>`;
+      });
+
+    } catch (e) {
+      console.error('Erro ao carregar títulos:', e);
+    }
   }
 
   /* ── Tabs ── */
@@ -1272,6 +1333,20 @@
   function validateBeforeSubmit() {
     const form = document.querySelector('form');
     form.addEventListener('submit', event => {
+      const entrada = parseNumberBR(document.getElementById('fin-entrada')?.value);
+      const parcelas = parseInt(document.getElementById('fin-parcelas')?.value || '1', 10) || 1;
+      const condicao = String(document.getElementById('fin-condicao')?.value || '').trim();
+      const chkCred = document.getElementById('usar-credito');
+      const credEl = document.getElementById('id_pedi_cred');
+      const parametrosEl = document.getElementById('id_parametros');
+      if (parametrosEl) {
+        const payload = {
+          financeiro: { entrada, parcelas, condicao },
+          usar_credito: !!chkCred?.checked,
+          valor_credito: parseNumberBR(credEl?.value),
+        };
+        parametrosEl.value = JSON.stringify(payload);
+      }
       const required = [
         { id: 'id_pedi_fili', label: 'Loja' },
         { id: 'id_pedi_clie', label: 'Cliente' },
@@ -1388,6 +1463,7 @@
 
     setupAddItem();
     atualizarTotais();
+    carregarTitulosFinanceiro();
     carregarCreditoCliente().then(() => {
       const credAtual = parseNumberBR(document.getElementById('id_pedi_cred')?.value);
       const chk = document.getElementById('usar-credito');

@@ -1,10 +1,14 @@
 from decimal import Decimal
+from datetime import date, timedelta
 from django.db import transaction
+from django.core.exceptions import ValidationError
 
 from Pisos.models import Pedidospisos, Itenspedidospisos
 from Pisos.services.utils_service import parse_decimal, arredondar
 from Pisos.services.cliente_service import ClienteEnderecoService
 from Pisos.services.credito_troca_service import CreditoTrocaPisosService
+from contas_a_receber.models import Titulosreceber
+from contas_a_receber.services import criar_titulo_receber
 
 
 class PedidoCriarService:
@@ -53,7 +57,134 @@ class PedidoCriarService:
             pedido.pedi_tota = arredondar(total_liquido_sem_credito - credito_aplicado)
             pedido.save(using=banco, update_fields=["pedi_tota", "pedi_cred"])
 
+            self.gerar_titulos_receber(banco=banco, pedido=pedido, parametros=parametros)
+
             return pedido
+
+    @staticmethod
+    def _map_forma_recebimento(forma) -> str | None:
+        if forma in (None, "", 99, "99"):
+            return None
+        try:
+            v = int(forma)
+        except (TypeError, ValueError):
+            return None
+        if v < 0:
+            return None
+        return f"{v:02d}" if v < 10 else str(v)
+
+    @staticmethod
+    def gerar_titulos_receber(*, banco: str, pedido: Pedidospisos, parametros: dict | None) -> None:
+        parametros = parametros or {}
+        financeiro = parametros.get("financeiro") or {}
+
+        try:
+            parcelas = int(financeiro.get("parcelas") or 1)
+        except (TypeError, ValueError):
+            parcelas = 1
+        parcelas = max(parcelas, 1)
+
+        condicao = str(financeiro.get("condicao") or "").strip()
+        dias = []
+        if condicao:
+            for item in condicao.split():
+                try:
+                    dias.append(int(item))
+                except (TypeError, ValueError):
+                    continue
+
+        entrada = parse_decimal(financeiro.get("entrada") or 0)
+        if parcelas <= 1 and not dias and entrada <= 0:
+            return
+
+        if not getattr(pedido, "pedi_clie", None):
+            raise ValidationError({"pedi_clie": ["Cliente obrigatório para gerar títulos."]})
+
+        forma = PedidoCriarService._map_forma_recebimento(getattr(pedido, "pedi_form_paga", None))
+        if not forma:
+            return
+
+        base = getattr(pedido, "pedi_data", None) or date.today()
+        total = arredondar(getattr(pedido, "pedi_tota", 0), 2)
+        entrada = arredondar(entrada, 2)
+        restante = total - entrada
+        if restante < 0:
+            restante = Decimal("0.00")
+
+        if restante <= 0:
+            return
+
+        valor_base = (restante / Decimal(parcelas)).quantize(Decimal("0.01"))
+        diferenca = restante - (valor_base * Decimal(parcelas))
+
+        doc = str(getattr(pedido, "pedi_nume", "") or "").strip()[:13]
+        if not doc:
+            return
+
+        for idx in range(parcelas):
+            parcela = str(idx + 1)
+            valor = valor_base + (diferenca if idx == 0 else Decimal("0.00"))
+            if valor <= 0:
+                continue
+
+            delta_dias = dias[idx] if idx < len(dias) else (30 * idx)
+            venc = base + timedelta(days=int(delta_dias or 0))
+
+            filtro_base = {
+                "titu_empr": int(getattr(pedido, "pedi_empr")),
+                "titu_fili": int(getattr(pedido, "pedi_fili")),
+                "titu_clie": int(getattr(pedido, "pedi_clie")),
+                "titu_titu": doc,
+                "titu_parc": parcela,
+            }
+
+            filtro_pvp = {**filtro_base, "titu_seri": "PVP"}
+            filtro_legado = {**filtro_base, "titu_seri": "PIS"}
+
+            existente = Titulosreceber.objects.using(banco).filter(**filtro_pvp).first()
+            if not existente:
+                existente = Titulosreceber.objects.using(banco).filter(**filtro_legado).first()
+
+            if existente:
+                if (existente.titu_aber or "A") == "A":
+                    Titulosreceber.objects.using(banco).filter(
+                        **{
+                            **filtro_base,
+                            "titu_seri": str(getattr(existente, "titu_seri", "") or ""),
+                        }
+                    ).update(
+                        titu_seri="PVP",
+                        titu_emis=base,
+                        titu_venc=venc,
+                        titu_valo=valor,
+                        titu_form_reci=forma,
+                        titu_hist=f"Pedido Pisos {doc}",
+                        titu_port=0,
+                        titu_situ=0,
+                        titu_vend=int(getattr(pedido, "pedi_vend", 0) or 0),
+                        titu_tipo="Receber",
+                        titu_prov=True,
+                    )
+                continue
+
+            criar_titulo_receber(
+                banco=banco,
+                empresa_id=int(getattr(pedido, "pedi_empr")),
+                filial_id=int(getattr(pedido, "pedi_fili")),
+                dados={
+                    **filtro_pvp,
+                    "titu_emis": base,
+                    "titu_venc": venc,
+                    "titu_valo": valor,
+                    "titu_form_reci": forma,
+                    "titu_hist": f"Pedido Pisos {doc}",
+                    "titu_port": 0,
+                    "titu_situ": 0,
+                    "titu_vend": int(getattr(pedido, "pedi_vend", 0) or 0),
+                    "titu_tipo": "Receber",
+                    "titu_prov": True,
+                },
+            )
 
     def _criar_pedido(self, *, banco, dados):
         ultimo = (

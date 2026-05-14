@@ -1,4 +1,5 @@
 import logging
+import json
 
 from django.contrib import messages
 from django.shortcuts import redirect, render
@@ -37,6 +38,14 @@ def criar_pedido_pisos(request, slug):
     is_formset_valid = formset.is_valid() if is_post else False
 
     if is_post and is_form_valid and is_formset_valid:
+        parametros = {}
+        raw_parametros = (request.POST.get("parametros") or "").strip()
+        if raw_parametros:
+            try:
+                parametros = json.loads(raw_parametros) or {}
+            except Exception:
+                parametros = {}
+
         itens = []
         for f in formset:
             if not f.cleaned_data or f.cleaned_data.get("DELETE"):
@@ -47,22 +56,23 @@ def criar_pedido_pisos(request, slug):
                     item["item_ambi"] = len(itens) + 1
                 itens.append(item)
 
-        payload = {
+        dados = {
             **form.cleaned_data,
             "pedi_empr": empresa_id,
             "pedi_fili": filial_id,
             "itens_input": itens,
+            "parametros": parametros,
         }
         try:
             pedido = PedidoCriarService().executar(
                 banco=banco,
-                dados=form.cleaned_data,
+                dados=dados,
                 itens=itens,
             )
             messages.success(request, f"Pedido {pedido.pedi_nume} criado com sucesso.")
             return redirect("PisosWeb:pedidos_pisos_visualizar", slug=slug, pk=pedido.pedi_nume)
         except Exception as exc:
-            logger.exception("Erro ao criar pedido de pisos (slug=%s, banco=%s). Payload keys=%s", slug, banco, list(payload.keys()))
+            logger.exception("Erro ao criar pedido de pisos (slug=%s, banco=%s). Payload keys=%s", slug, banco, list(dados.keys()))
             messages.error(request, f"Erro ao criar pedido: {PedidoCriarService.normalizar_erro(exc)}")
 
     if is_post and (not is_form_valid or not is_formset_valid):

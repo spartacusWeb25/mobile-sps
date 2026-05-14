@@ -106,8 +106,7 @@ def exportar_visita_para_orcamento_pisos(visita: Controlevisita, banco: str, req
         orca_stat=0,  # Status inicial
     )
 
-    # Preencher dados da entidade se request foi fornecido
-    if request and visita.ctrl_cliente:
+    if visita.ctrl_cliente:
         orc_pisos = ClienteEnderecoService.preencher_orcamento(
             banco=banco,
             orcamento=orc_pisos,

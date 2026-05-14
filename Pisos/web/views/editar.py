@@ -1,3 +1,5 @@
+import json
+
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
 
@@ -5,6 +7,7 @@ from core.utils import get_db_from_slug
 from core.mixins.vendedor_mixin import VendedorEntidadeMixin
 from Entidades.models import Entidades
 from Pisos.models import Pedidospisos, Itenspedidospisos
+from Pisos.services.cliente_service import ClienteEnderecoService
 from Pisos.web.forms import PedidoPisosForm, ItemPedidoPisosFormSet
 from Pisos.services.pedido_atualizar_service import PedidoAtualizarService
 
@@ -15,6 +18,24 @@ def editar_pedido_pisos(request, slug, pk):
     mix.request = request
     qs = mix.filter_por_vendedor(Pedidospisos.objects.using(banco), 'pedi_vend')
     pedido = get_object_or_404(qs, pedi_nume=pk)
+
+    if request.method != "POST" and getattr(pedido, "pedi_clie", None):
+        precisa = any(
+            not getattr(pedido, campo, None)
+            for campo in ["pedi_ende", "pedi_nume_ende", "pedi_bair", "pedi_cida", "pedi_esta"]
+            if hasattr(pedido, campo)
+        )
+        if precisa:
+            ClienteEnderecoService.preencher_pedido(banco=banco, pedido=pedido)
+            pedido.save(using=banco, update_fields=[
+                "pedi_ende",
+                "pedi_nume_ende",
+                "pedi_bair",
+                "pedi_cida",
+                "pedi_esta",
+                "pedi_comp",
+                "pedi_comp_fone",
+            ])
 
     cliente_label = ""
     if pedido.pedi_clie:
@@ -37,6 +58,14 @@ def editar_pedido_pisos(request, slug, pk):
     formset = ItemPedidoPisosFormSet(request.POST or None, prefix="itens", initial=initial_itens)
 
     if request.method == "POST" and form.is_valid() and formset.is_valid():
+        parametros = {}
+        raw_parametros = (request.POST.get("parametros") or "").strip()
+        if raw_parametros:
+            try:
+                parametros = json.loads(raw_parametros) or {}
+            except Exception:
+                parametros = {}
+
         itens = []
         for f in formset:
             if not f.cleaned_data or f.cleaned_data.get("DELETE"):
@@ -48,10 +77,11 @@ def editar_pedido_pisos(request, slug, pk):
                 itens.append(item)
 
         try:
+            dados = {**form.cleaned_data, "parametros": parametros}
             PedidoAtualizarService().executar(
                 banco=banco,
                 pedido=pedido,
-                dados=form.cleaned_data,
+                dados=dados,
                 itens=itens,
             )
             messages.success(request, f"Pedido {pk} atualizado com sucesso.")

@@ -1,4 +1,5 @@
 from Pisos.models import Orcamentopisos, Pedidospisos, Itensorcapisos, Itenspedidospisos
+from Pisos.services.cliente_service import ClienteEnderecoService
 
 
 class OrcamentoExportarPedidoService:
@@ -56,6 +57,17 @@ class OrcamentoExportarPedidoService:
             pedi_croq_info=orcamento.orca_croq_info,
             pedi_stat=0,
         )
+
+        ClienteEnderecoService.preencher_pedido(banco=banco, pedido=pedido)
+        pedido.save(using=banco, update_fields=[
+            "pedi_ende",
+            "pedi_nume_ende",
+            "pedi_cida",
+            "pedi_esta",
+            "pedi_comp",
+            "pedi_bair",
+            "pedi_comp_fone",
+        ])
 
         itens = Itensorcapisos.objects.using(banco).filter(
             item_empr=empresa,

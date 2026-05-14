@@ -42,4 +42,9 @@ class ClienteEnderecoService:
         if hasattr(pedido, "pedi_bair"):
             pedido.pedi_bair = getattr(cliente, "enti_bair", None)
 
+        if hasattr(pedido, "pedi_comp_fone"):
+            fone = (getattr(cliente, "enti_fone", None) or "").strip()
+            celu = (getattr(cliente, "enti_celu", None) or "").strip()
+            pedido.pedi_comp_fone = fone or celu or None
+
         return pedido

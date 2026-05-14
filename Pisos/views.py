@@ -9,7 +9,9 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.permissions import IsAuthenticated
 import logging
 from decimal import Decimal, InvalidOperation
-from django.db.models import Sum, Count
+from datetime import date
+from django.db.models import Sum, Count, IntegerField
+from django.db.models.functions import Cast
 from .models import Orcamentopisos, Pedidospisos, Itensorcapisos, Itenspedidospisos                            
 from .serializers import (
     OrcamentopisosSerializer, 
@@ -27,6 +29,7 @@ from Entidades.models import Entidades
 from Pisos.services.orcamento_exportar_service import OrcamentoExportarPedidoService
 from Pisos.services.metragem_service import MetragemProdutoService
 from Pisos.services.credito_troca_service import CreditoTrocaPisosService
+from contas_a_receber.models import Titulosreceber, FORMA_RECEBIMENTO
 from rest_framework.authentication import SessionAuthentication, BaseAuthentication
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from core.utils import get_db_from_slug
@@ -479,6 +482,98 @@ class PedidospisosViewSet(BaseMultiDBModelViewSet, VendedorEntidadeMixin):
             response_serializer.data,
             status=status.HTTP_201_CREATED,
             headers=headers,
+        )
+
+    @staticmethod
+    def _label_aberto(codigo: str | None) -> str:
+        c = str(codigo or "").strip().upper()
+        if c == "A":
+            return "Aberto"
+        if c == "P":
+            return "Parcial"
+        if c == "T":
+            return "Baixado"
+        if c == "C":
+            return "Cancelado"
+        return c or "-"
+
+    @action(detail=True, methods=["get"], url_path="financeiro")
+    def financeiro(self, request, *args, **kwargs):
+        banco = self.get_banco()
+        pedido = self.get_object()
+
+        if not getattr(pedido, "pedi_clie", None):
+            return Response(
+                {
+                    "titulos": [],
+                    "parcelas": 0,
+                    "condicao": "",
+                    "entrada": 0,
+                    "total_titulos": 0,
+                }
+            )
+
+        formas_map = {codigo: label for codigo, label in (FORMA_RECEBIMENTO or [])}
+
+        filtros_base = {
+            "titu_empr": int(getattr(pedido, "pedi_empr")),
+            "titu_fili": int(getattr(pedido, "pedi_fili")),
+            "titu_clie": int(getattr(pedido, "pedi_clie")),
+            "titu_titu": str(getattr(pedido, "pedi_nume")),
+        }
+
+        titulos_qs = Titulosreceber.objects.using(banco).filter(
+            **{**filtros_base, "titu_seri": "PVP"}
+        )
+        if not titulos_qs.exists():
+            titulos_qs = Titulosreceber.objects.using(banco).filter(
+                **{**filtros_base, "titu_seri": "PIS"}
+            )
+
+        titulos_qs = (
+            titulos_qs
+            .annotate(_parc_int=Cast("titu_parc", IntegerField()))
+            .order_by("_parc_int", "titu_parc")
+        )
+
+        total_titulos = titulos_qs.aggregate(total=Sum("titu_valo")).get("total") or Decimal("0.00")
+        total_pedido = Decimal(str(getattr(pedido, "pedi_tota", 0) or 0)).quantize(Decimal("0.01"))
+        entrada = (total_pedido - Decimal(str(total_titulos or 0))).quantize(Decimal("0.01"))
+        if entrada < 0:
+            entrada = Decimal("0.00")
+
+        base = getattr(pedido, "pedi_data", None) or date.today()
+        condicao_lista = []
+        for t in titulos_qs:
+            venc = getattr(t, "titu_venc", None)
+            if venc:
+                condicao_lista.append(str((venc - base).days))
+        condicao = " ".join(condicao_lista)
+
+        dados = []
+        for t in titulos_qs:
+            forma = str(getattr(t, "titu_form_reci", "") or "")
+            dados.append(
+                {
+                    "parcela": getattr(t, "titu_parc", None),
+                    "valor": float(Decimal(str(getattr(t, "titu_valo", 0) or 0)).quantize(Decimal("0.01"))),
+                    "vencimento": getattr(t, "titu_venc", None).isoformat() if getattr(t, "titu_venc", None) else None,
+                    "forma_pagamento": forma,
+                    "forma_label": formas_map.get(forma, forma or "-"),
+                    "aberto": getattr(t, "titu_aber", None),
+                    "aberto_label": self._label_aberto(getattr(t, "titu_aber", None)),
+                    "status": getattr(t, "titu_situ", None),
+                }
+            )
+
+        return Response(
+            {
+                "titulos": dados,
+                "parcelas": len(dados),
+                "condicao": condicao,
+                "entrada": float(entrada),
+                "total_titulos": float(Decimal(str(total_titulos or 0)).quantize(Decimal("0.01"))),
+            }
         )
 
 class ItensorcapisosViewSet(BaseMultiDBModelViewSet):

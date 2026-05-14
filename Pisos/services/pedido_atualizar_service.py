@@ -3,6 +3,7 @@ from django.db import transaction
 
 from Pisos.models import Pedidospisos, Itenspedidospisos
 from Pisos.services.pedido_criar_service import PedidoCriarService
+from Pisos.services.cliente_service import ClienteEnderecoService
 from Pisos.services.utils_service import parse_decimal, arredondar
 from Pisos.services.credito_troca_service import CreditoTrocaPisosService
 
@@ -25,6 +26,8 @@ class PedidoAtualizarService:
             # Atualiza campos
             for campo, valor in dados_pedido.items():
                 setattr(pedido, campo, valor)
+
+            ClienteEnderecoService.preencher_pedido(banco=banco, pedido=pedido)
 
             # Remove itens antigos
             Itenspedidospisos.objects.using(banco).filter(
@@ -69,5 +72,7 @@ class PedidoAtualizarService:
             pedido.pedi_tota = arredondar(total_liquido_sem_credito - credito_aplicado)
 
             pedido.save(using=banco)
+
+            PedidoCriarService.gerar_titulos_receber(banco=banco, pedido=pedido, parametros=parametros)
 
             return pedido
