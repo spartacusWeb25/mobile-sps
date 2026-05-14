@@ -1,6 +1,6 @@
 from django.test import SimpleTestCase
 from decimal import Decimal
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from CFOP.auxiliares.fiscal_padrao_resolver import FiscalPadraoResolver
 from CFOP.models import CFOPFiscalPadrao, NcmFiscalPadrao, ProdutoFiscalPadrao
@@ -12,6 +12,8 @@ class HierarquiaFiscalTests(SimpleTestCase):
         self.produto = MagicMock()
         self.produto.pk = 1
         self.produto.fiscal = None
+        self.produto.prod_codi = "ABC123"
+        self.produto.prod_empr = "1"
 
         self.cfop = MagicMock()
         self.cfop.pk = 2
@@ -123,3 +125,23 @@ class HierarquiaFiscalTests(SimpleTestCase):
         self.assertEqual(source, "PRODUTO")
         self.assertEqual(fiscal.aliq_icms, Decimal("18"))
         spy.assert_not_called()
+
+    @patch("CFOP.auxiliares.fiscal_padrao_resolver.TributoService")
+    def test_prioridade_spartacus_antes_produto(self, tributo_service_cls):
+        fiscal_spartacus = MagicMock()
+        fiscal_spartacus.aliq_icms = Decimal("4")
+
+        service = tributo_service_cls.return_value
+        service.buscar_contexto.return_value = object()
+        service.to_adapter.return_value = fiscal_spartacus
+
+        fiscal, source = self.resolver.resolver(
+            self.produto,
+            self.ncm,
+            self.cfop,
+            uf_destino="PR",
+            tipo_entidade="000",
+        )
+
+        self.assertEqual(source, "SPARTACUS")
+        self.assertEqual(fiscal.aliq_icms, Decimal("4"))

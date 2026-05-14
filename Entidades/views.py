@@ -32,7 +32,7 @@ class EntidadesViewSet(ModuloRequeridoMixin,viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, SearchFilter]
     search_fields = ['enti_nome', 'enti_nume']
     lookup_field = 'enti_clie'
-    filterset_fields = ['enti_empr']
+    filterset_fields = ['enti_empr', 'enti_tipo_enti', 'enti_espe_enti', 'enti_situ']
 
     def get_queryset(self):
         banco = get_licenca_db_config(self.request)
@@ -46,6 +46,8 @@ class EntidadesViewSet(ModuloRequeridoMixin,viewsets.ModelViewSet):
         # Aplicar filtros de forma otimizada
         
         tipo = self.request.query_params.get('enti_tipo_enti')
+        classificacao = self.request.query_params.get('enti_espe_enti')
+        situacao = self.request.query_params.get('enti_situ')
         search_query = self.request.query_params.get('search')
         
         # Filtro por empresa primeiro (mais eficiente)
@@ -54,6 +56,10 @@ class EntidadesViewSet(ModuloRequeridoMixin,viewsets.ModelViewSet):
         # Filtro por tipo de entidade (ex.: VE para vendedores)
         if tipo:
             queryset = queryset.filter(enti_tipo_enti=tipo)
+        if classificacao:
+            queryset = queryset.filter(enti_espe_enti=classificacao)
+        if situacao:
+            queryset = queryset.filter(enti_situ=situacao)
         
         # Filtro de busca otimizado
         if search_query:

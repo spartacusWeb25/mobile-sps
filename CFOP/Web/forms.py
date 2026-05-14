@@ -3,6 +3,8 @@ from django.core.exceptions import ValidationError
 from django.forms.models import construct_instance
 from Produtos.models import Ncm
 from ..models import CFOP, NcmFiscalPadrao
+
+
 class CFOPForm(forms.ModelForm):
     class Meta:
         model = CFOP

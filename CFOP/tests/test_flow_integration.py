@@ -123,3 +123,59 @@ class CFOPFlowIntegrationTest(SimpleTestCase):
         # ICMS Base should NOT include IPI (since IPI is 0/None)
         # Base ICMS = 100.00
         self.assertEqual(resultado["bases"]["icms"], Decimal("100.00"))
+
+    @patch("CFOP.auxiliares.aliquota_resolver.AliquotaResolver.resolver")
+    def test_spartacus_force_st_even_without_cfop_flag(self, mock_resolver):
+        self.cfop.cfop_gera_st = False
+        self.cfop.cfop_exig_ipi = False
+
+        mock_resolver.return_value = {
+            "ipi": None,
+            "pis": None,
+            "cofins": None,
+            "cbs": None,
+            "ibs": None,
+        }
+
+        fiscal_spartacus = MagicMock()
+        fiscal_spartacus.cst_icms = "102"
+        fiscal_spartacus.aliq_icms = Decimal("18.00")
+        fiscal_spartacus.cst_ipi = None
+        fiscal_spartacus.aliq_ipi = None
+        fiscal_spartacus.cst_pis = None
+        fiscal_spartacus.aliq_pis = None
+        fiscal_spartacus.cst_cofins = None
+        fiscal_spartacus.aliq_cofins = None
+        fiscal_spartacus.cst_cbs = None
+        fiscal_spartacus.aliq_cbs = None
+        fiscal_spartacus.cst_ibs = None
+        fiscal_spartacus.aliq_ibs = None
+        fiscal_spartacus.aliq_icms_st = Decimal("18.00")
+        fiscal_spartacus.mva_icms_st = Decimal("40.00")
+        fiscal_spartacus.redu_icms = None
+        fiscal_spartacus.redu_icms_st = None
+        fiscal_spartacus.redu_base = None
+        fiscal_spartacus.cfop = None
+
+        motor = MotorFiscal(banco=self.banco)
+        ctx = FiscalContexto(
+            empresa_id=1,
+            filial_id=1,
+            banco=self.banco,
+            regime="3",
+            uf_origem="SP",
+            uf_destino="RJ",
+            produto=self.produto,
+            cfop=self.cfop,
+            ncm=None,
+        )
+
+        with patch.object(motor, "obter_icms_data", return_value={"icms": None, "mva_st": None, "st_aliq": None}), \
+             patch.object(motor, "obter_ncm", return_value=None), \
+             patch.object(motor, "resolver_fiscal_padrao", return_value=(fiscal_spartacus, "SPARTACUS")):
+            resultado = motor.calcular_item(ctx, item=None, tipo_oper="VENDA", base_manual=Decimal("100.00"))
+
+        self.assertEqual(resultado["fonte_tributacao"], "SPARTACUS")
+        self.assertEqual(resultado["bases"]["st"], Decimal("140.00"))
+        self.assertEqual(resultado["aliquotas"]["st"], Decimal("18.00"))
+        self.assertEqual(resultado["valores"]["st"], Decimal("7.20"))

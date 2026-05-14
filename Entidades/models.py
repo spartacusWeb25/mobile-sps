@@ -1,5 +1,6 @@
 from django.db import connections, models
 from django.db.utils import OperationalError, ProgrammingError
+from django.utils.translation import gettext_lazy as _
 import logging
 
 logger = logging.getLogger(__name__)
@@ -72,11 +73,35 @@ class Entidades(models.Model):
         ('VE', 'VENDEDOR'),
         ('FU', 'FUNCIONÁRIOS'),
     ]
+    
+        
+    CLASSIFICACAO_TRIBUTACAO = (
+        ('000', _('Consumidor Final')),
+        ('001', _('Consumidor Final comercio')),
+        ('002', _('Consumidor Final Industria')),
+        ('003', _('Revenda Comercio')),
+        ('004', _('Revenda Industria')),
+        ('005', _('Transportes')),
+        ('006', _('Orgão Público')),
+        ('007', _('Sistemas Financeiros')),
+        ('008', _('Entidades Filantrópicas')),
+        ('009', _('Produtoe Rural')),
+        ('010', _('Orgao Público Federal')),
+        ('011', _('Outros')),
+    )
 
     enti_empr = models.IntegerField()
     enti_clie = models.BigIntegerField(unique=True, primary_key=True)
     enti_nome = models.CharField(max_length=100, default='')
     enti_tipo_enti = models.CharField(max_length=100, choices=TIPO_ENTIDADES, default='FO')
+    enti_espe_enti = models.CharField(
+        max_length=3,
+        choices=CLASSIFICACAO_TRIBUTACAO,
+        blank=True,
+        null=True,
+        default='000',
+        verbose_name=_('Tipo de Tributação'),
+    )
     enti_fant = models.CharField(max_length=100, default='', blank=True, null=True)  
     enti_cpf = models.CharField(max_length=11, blank=True, null=True)  
     enti_cnpj = models.CharField(max_length=14, blank=True, null=True)  

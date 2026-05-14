@@ -1,4 +1,5 @@
 from ..models import CFOPFiscalPadrao, NcmFiscalPadrao, ProdutoFiscalPadrao
+from ..services.tributos_service import TributoService
 
 
 class FiscalPadraoResolver:
@@ -76,7 +77,30 @@ class FiscalPadraoResolver:
                 best_score = score
         return best
 
-    def resolver(self, produto, ncm, cfop, uf_origem=None, uf_destino=None, tipo_entidade=None):
+    def resolver(self, produto, ncm, cfop, uf_origem=None, uf_destino=None, tipo_entidade=None, filial_id=None):
+        if produto:
+            try:
+                produto_codigo = getattr(produto, "prod_codi", None)
+                produto_empresa = getattr(produto, "prod_empr", None)
+            except Exception:
+                produto_codigo = None
+                produto_empresa = None
+
+            if produto_codigo and produto_empresa:
+                filial = filial_id or 1
+                try:
+                    service = TributoService(self.banco, produto_empresa, filial)
+                    spartacus = service.buscar_contexto(
+                        codigo=produto_codigo,
+                        estado=uf_destino,
+                        entidade=tipo_entidade,
+                        tipo="P",
+                    )
+                    adapter = service.to_adapter(spartacus)
+                    if adapter:
+                        return adapter, "SPARTACUS"
+                except Exception:
+                    pass
 
         if produto:
             try:

@@ -35,6 +35,7 @@ from ...models import (
     UnidadeMedida,
 )
 from CFOP.models import CFOP as CFOPModel, NCM_CFOP_DIF, ProdutoFiscalPadrao
+from CFOP.Web.forms_trib import TributoForm
 from django.utils import timezone
 from ..prod_forms import (
     ProdutosForm,
@@ -102,6 +103,48 @@ class DBAndSlugMixin:
         }
         name = mapping.get(mdl, 'produtos_web')
         return reverse_lazy(name, kwargs={'slug': self.slug or get_licenca_slug()})
+
+    def get_tributos_spartacus_context(self, produto_codigo=None):
+        codigo = produto_codigo
+        if codigo is None:
+            codigo = (
+                self.request.POST.get("prod_codi")
+                or self.request.GET.get("prod_codi")
+                or ""
+            )
+            
+        try:
+            empresa_id = int(self.empresa_id or 1)
+            filial_id = int(self.filial_id or 1)
+            from Licencas.models import Filiais
+            filial = Filiais.objects.using(self.db_alias).filter(
+                empr_empr=empresa_id, 
+                empr_codi=filial_id
+            ).first()
+            regime = filial.empr_regi_trib if filial else '1'
+        except Exception:
+            regime = '1'
+            
+        from CFOP.cst_utils import get_csts_por_regime
+        cst_choices = get_csts_por_regime(regime)
+            
+        return {
+            "tributos_spartacus_codigo": str(codigo or "").strip(),
+            "tributos_spartacus_api_url": reverse_lazy(
+                "tributos-spartacus-list",
+                kwargs={"slug": self.slug},
+            ),
+            "tributos_spartacus_cfop_url": reverse_lazy(
+                "cfop-list",
+                kwargs={"slug": self.slug},
+            ) + "?select=1",
+            "tributos_spartacus_estado_choices": list(TributoForm.base_fields["estado"].choices),
+            "tributos_spartacus_entidade_choices": list(TributoForm.base_fields["entidade"].choices),
+            "tributos_spartacus_tipo": "P",
+            "tributos_spartacus_cst_icms_choices": cst_choices.get("icms", []),
+            "tributos_spartacus_cst_pis_choices": cst_choices.get("pis", []),
+            "tributos_spartacus_cst_cofins_choices": cst_choices.get("cofins", []),
+        }
 
 class SimularImpostosView(DBAndSlugMixin, View):
     def post(self, request, *args, **kwargs):
@@ -328,6 +371,7 @@ class ProdutoCreateView(DBAndSlugMixin, CreateView):
             ctx['fiscal_form'] = ProdutoFiscalPadraoForm(self.request.POST, prefix='fiscal', cst_choices=cst_choices)
         else:
             ctx['fiscal_form'] = ProdutoFiscalPadraoForm(prefix='fiscal', cst_choices=cst_choices)
+        ctx.update(self.get_tributos_spartacus_context())
         return ctx
 
     def form_valid(self, form):
@@ -878,6 +922,7 @@ class ProdutoUpdateView(DBAndSlugMixin, UpdateView):
         else:
              ctx['fiscal_form'] = ProdutoFiscalPadraoForm(prefix='fiscal', instance=fiscal_obj, cst_choices=cst_choices)
 
+        ctx.update(self.get_tributos_spartacus_context(produto.prod_codi))
         logger.info(f'Preços carregados para produto {produto.prod_codi}: {initial_list}')
         return ctx
 

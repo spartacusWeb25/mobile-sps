@@ -30,6 +30,13 @@ class EntidadesSerializer(serializers.ModelSerializer):
     
     empresa_nome = serializers.SerializerMethodField()
     enti_tien = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    enti_espe_enti = serializers.ChoiceField(
+        choices=Entidades.CLASSIFICACAO_TRIBUTACAO,
+        required=False,
+        allow_null=True,
+        default='000',
+    )
+    enti_espe_enti_label = serializers.SerializerMethodField()
 
     class Meta:
         model = Entidades
@@ -55,6 +62,8 @@ class EntidadesSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Banco não encontrado")
         
         erros = {}
+        if not data.get("enti_espe_enti"):
+            data["enti_espe_enti"] = "000"
         obrigatorios = ['enti_nome', 'enti_cep', 'enti_ende', 'enti_nume', 'enti_cida', 'enti_esta']
 
         for campo in obrigatorios:
@@ -102,6 +111,7 @@ class EntidadesSerializer(serializers.ModelSerializer):
         if not validated_data.get('enti_clie'):
             max_enti = Entidades.objects.using(banco).aggregate(Max('enti_clie'))['enti_clie__max'] or 0
             validated_data['enti_clie'] = max_enti + 1
+        validated_data.setdefault('enti_espe_enti', '000')
         return Entidades.objects.using(banco).create(**validated_data)
     
     
@@ -112,6 +122,8 @@ class EntidadesSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Banco não encontrado")
         validated_data.pop('enti_clie', None)
         validated_data.pop('enti_empr', None)
+        if 'enti_espe_enti' not in validated_data and not getattr(instance, 'enti_espe_enti', None):
+            validated_data['enti_espe_enti'] = '000'
         Entidades.objects.using(banco).filter(
             enti_empr=instance.enti_empr,
             enti_clie=instance.enti_clie,
@@ -127,6 +139,8 @@ class EntidadesSerializer(serializers.ModelSerializer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['enti_fant'].required = False
+        if 'enti_espe_enti' in self.fields:
+            self.fields['enti_espe_enti'].required = False
 
     
     def get_empresa_nome(self, obj):
@@ -140,6 +154,12 @@ class EntidadesSerializer(serializers.ModelSerializer):
         except Exception as e:
             return None
         return None
+
+    def get_enti_espe_enti_label(self, obj):
+        try:
+            return obj.get_enti_espe_enti_display()
+        except Exception:
+            return None
 
 
 

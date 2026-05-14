@@ -15,6 +15,9 @@ PEDIDO_STATUS_CHOICES = (
 )
 
 
+
+
+
 class PedidoPisosForm(forms.ModelForm):
     class Meta:
         model = Pedidospisos
@@ -47,6 +50,34 @@ class PedidoPisosForm(forms.ModelForm):
         if "pedi_cred" in self.fields:
             self.fields["pedi_cred"].widget.attrs.setdefault("readonly", True)
 
+        if "pedi_form_paga" in self.fields:
+            valor_inicial = self.initial.get(
+                "pedi_form_paga",
+                getattr(self.instance, "pedi_form_paga", None),
+            )
+            formas_pagamento = [
+                ("", "Selecione"),
+                (99, "SEM FINANCEIRO"),
+                (0, "DUPLICATA"),
+                (1, "CHEQUE"),
+                (2, "PROMISSÓRIA"),
+                (3, "RECIBO"),
+                (50, "CHEQUE-PRÉ"),
+                (51, "CARTÃO DE CRÉDITO"),
+                (52, "CARTÃO DE DÉBITO"),
+                (53, "BOLETO"),
+                (54, "DINHEIRO"),
+                (55, "DEPÓSITO EM CONTA"),
+                (60, "PIX"),
+            ]
+            self.fields["pedi_form_paga"] = forms.TypedChoiceField(
+                choices=formas_pagamento,
+                required=False,
+                coerce=lambda v: int(v) if v != "" else None,
+                empty_value=None,
+                widget=forms.Select(attrs={"class": "form-control"}),
+            )
+            self.fields["pedi_form_paga"].initial = valor_inicial
 
 class ItemPedidoPisosForm(forms.Form):
     item_ambi = forms.IntegerField(required=False)

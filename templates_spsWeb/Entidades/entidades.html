@@ -166,6 +166,17 @@
                         </select>
                     </div>
                     <div class="col-md-2">
+                        <label for="enti_espe_enti" class="form-label">Classificação</label>
+                        <select id="enti_espe_enti" name="enti_espe_enti" class="form-select">
+                            <option value="">Todas</option>
+                            {% for codigo, descricao in classificacoes_tributarias %}
+                            <option value="{{ codigo }}" {% if codigo == classificacao_selecionada %}selected{% endif %}>
+                                {{ codigo }} - {{ descricao }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
                         <label for="enti_vend" class="form-label">Vendedor</label>
                         <select id="enti_vend" name="enti_vend" class="form-select">
                             <option value="">Todos</option>
@@ -203,6 +214,9 @@
                             </div>
                             <p class="text-body-secondary mb-2">ID {{ entidade.enti_clie|default_if_none:"" }}</p>
                             <div class="small">
+                                {% if entidade.enti_espe_enti %}
+                                <div><i class="bi bi-receipt"></i> Classificação: {{ entidade.enti_espe_enti }} - {{ entidade.get_enti_espe_enti_display|default_if_none:"" }}</div>
+                                {% endif %}
                                 {% if entidade.enti_cpf %}
                                 <div><i class="bi bi-person-badge"></i> CPF: {{ entidade.enti_cpf }}</div>
                                 {% endif %}

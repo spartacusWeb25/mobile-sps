@@ -17,6 +17,7 @@ from ..calculadores.icms_st_calculator import ICMSSTCalculator
 from ..calculadores.pis_cofins_calculator import PISCOFINSCalculator
 from ..calculadores.ibs_cbs_calculator import IBSCBSCalculator
 from ..models import NCM_CFOP_DIF
+from ..models import CFOP
 
 
 class FiscalEngine:
@@ -48,6 +49,15 @@ class FiscalEngine:
         if not isinstance(v, Decimal):
             v = Decimal(str(v))
         return v.quantize(Decimal(10) ** -casas, ROUND_HALF_UP)
+
+    def _has_decimal(self, v):
+        if v in (None, ""):
+            return False
+        try:
+            Decimal(str(v))
+            return True
+        except Exception:
+            return False
     
     def resolver_cfop(self, tipo_oper, uf_origem, uf_destino):
         return self.cfop_resolver.resolver(tipo_oper, uf_origem, uf_destino)
@@ -61,7 +71,7 @@ class FiscalEngine:
     def obter_icms_data(self, uf_origem, uf_destino, empresa_id=None):
         return self.icms_resolver.resolver(uf_origem, uf_destino, empresa_id)
     
-    def resolver_fiscal_padrao(self, produto, ncm, cfop, uf_origem=None, uf_destino=None, tipo_entidade=None):
+    def resolver_fiscal_padrao(self, produto, ncm, cfop, uf_origem=None, uf_destino=None, tipo_entidade=None, filial_id=None):
         return self.fiscal_padrao_resolver.resolver(
             produto,
             ncm,
@@ -69,7 +79,22 @@ class FiscalEngine:
             uf_origem=uf_origem,
             uf_destino=uf_destino,
             tipo_entidade=tipo_entidade,
+            filial_id=filial_id,
         )
+
+    def resolver_cfop_spartacus(self, fiscal_padrao):
+        if not fiscal_padrao:
+            return None
+        cfop_id = getattr(fiscal_padrao, "cfop", None)
+        if not cfop_id:
+            return None
+        qs = CFOP.objects
+        if self.banco:
+            qs = qs.using(self.banco)
+        try:
+            return qs.filter(pk=cfop_id).first()
+        except Exception:
+            return None
     
     def aplicar_overrides_dif(self, ncm, cfop, aliquotas, icms_data):
         if not ncm or not cfop:
@@ -151,7 +176,12 @@ class FiscalEngine:
             uf_origem=ctx.uf_origem,
             uf_destino=ctx.uf_destino,
             tipo_entidade=getattr(ctx, "tipo_entidade", None),
+            filial_id=getattr(ctx, "filial_id", None),
         )
+        if fonte == "SPARTACUS":
+            cfop_spartacus = self.resolver_cfop_spartacus(fiscal_padrao)
+            if cfop_spartacus:
+                cfop = cfop_spartacus
         if not fonte:
             if ncm:
                 fonte = "NCM"
@@ -189,8 +219,12 @@ class FiscalEngine:
             bases.icms,
         )
         st_res = {"base": None, "aliquota": None, "valor": None, "cst": None}
+        gera_st_por_padrao = bool(
+            self._has_decimal(getattr(ctx.fiscal_padrao, "aliq_icms_st", None))
+            or self._has_decimal(getattr(ctx.fiscal_padrao, "mva_icms_st", None))
+        )
 
-        if ctx.cfop and ctx.cfop.cfop_gera_st and bases.st:
+        if ((ctx.cfop and ctx.cfop.cfop_gera_st) or gera_st_por_padrao) and bases.st:
 
             st_res = self.icms_st_calc.calcular(
                 ctx,

@@ -343,6 +343,10 @@ class AuditoriaMiddleware:
                         app_candidate = 'notas_fiscais'
                     modulos = getattr(request, 'modulos_disponiveis', []) or get_modulos_disponiveis()
                     modulos_lower = {str(m).lower() for m in modulos}
+                    
+                    # Apps internos/globais que não dependem de contratação
+                    modulos_lower.update(['cfop', 'core', 'auditoria', 'entidades', 'produtos'])
+                    
                     app_slug = str(app_candidate).lower()
                     app_slug_us = app_slug.replace('-', '_')
                     app_slug_dash = app_slug.replace('_', '-')

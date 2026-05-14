@@ -102,9 +102,11 @@
     }
 
     async function fetchResults(url, term) {
-      const resp = await fetch(`${url}?term=${encodeURIComponent(term)}`);
+      const separator = url.includes('?') ? '&' : '?';
+      const resp = await fetch(`${url}${separator}term=${encodeURIComponent(term)}`);
       const json = await resp.json();
-      return (json.results || []).map(r => ({ value: r.value ?? r.id, label: r.label ?? r.text }));
+      const results = Array.isArray(json) ? json : (json.results || []);
+      return results.map(r => ({ value: r.value ?? r.id, label: r.label ?? r.text }));
     }
 
     function ensureOption(selectEl, value, label) {
@@ -305,7 +307,295 @@
     }
 
     // =================================================================
-    // 5. Simulação de Impostos
+    // 5. Tributos Spartacus
+    // =================================================================
+    const spartacusApp = document.getElementById('tributos-spartacus-app');
+    if (spartacusApp) {
+      const apiUrl = spartacusApp.dataset.apiUrl;
+      const cfopUrl = spartacusApp.dataset.cfopUrl;
+      const tipoDefault = spartacusApp.dataset.tipo || 'P';
+      const statusEl = document.getElementById('tributos-spartacus-status');
+      const listEl = document.getElementById('tributos-spartacus-lista');
+      const codigoInput = document.getElementById('id_prod_codi');
+      const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+
+      const fields = {
+        tipo: document.getElementById('spartacus-tipo'),
+        estado: document.getElementById('spartacus-estado'),
+        entidade: document.getElementById('spartacus-entidade'),
+        cfop: document.getElementById('spartacus-cfop'),
+        cfopDisplay: document.getElementById('spartacus-cfop-display'),
+        cstIcms: document.getElementById('spartacus-cst-icms'),
+        aliqIcms: document.getElementById('spartacus-aliq-icms'),
+        reducaoIcms: document.getElementById('spartacus-reducao-icms'),
+        cstPis: document.getElementById('spartacus-cst-pis'),
+        aliqPis: document.getElementById('spartacus-aliq-pis'),
+        cstCofins: document.getElementById('spartacus-cst-cofins'),
+        aliqCofins: document.getElementById('spartacus-aliq-cofins'),
+        aliqIcmsSt: document.getElementById('spartacus-aliq-icms-st'),
+        reducaoIcmsSt: document.getElementById('spartacus-reducao-icms-st'),
+        mvaSt: document.getElementById('spartacus-mva-st'),
+      };
+
+      const cloneFields = {
+        origemEstado: document.getElementById('spartacus-clone-origem-estado'),
+        origemEntidade: document.getElementById('spartacus-clone-origem-entidade'),
+        codigoDestino: document.getElementById('spartacus-clone-codigo-destino'),
+        estadosDestino: document.getElementById('spartacus-clone-estados'),
+        entidadesDestino: document.getElementById('spartacus-clone-entidades'),
+      };
+
+      const readCodigo = () => {
+        if (codigoInput && codigoInput.value.trim()) return codigoInput.value.trim();
+        return (spartacusApp.dataset.codigo || '').trim();
+      };
+
+      const setStatus = (message, type = 'secondary') => {
+        if (!statusEl) return;
+        statusEl.className = `alert alert-${type}${type === 'secondary' ? ' small' : ''}`;
+        statusEl.textContent = message;
+      };
+
+      const asText = (value) => value === null || value === undefined ? '' : String(value);
+      const asNumber = (value) => value === null || value === undefined || value === '' ? '' : String(value);
+      const readMulti = (selectEl) => Array.from(selectEl?.selectedOptions || []).map(option => option.value);
+
+      const clearSpartacusForm = () => {
+        fields.tipo.value = tipoDefault;
+        fields.estado.value = '';
+        fields.entidade.value = '';
+        fields.cfop.value = '';
+        if (fields.cfopDisplay) fields.cfopDisplay.value = '';
+        fields.cstIcms.value = '';
+        fields.aliqIcms.value = '';
+        fields.reducaoIcms.value = '';
+        fields.cstPis.value = '';
+        fields.aliqPis.value = '';
+        fields.cstCofins.value = '';
+        fields.aliqCofins.value = '';
+        fields.aliqIcmsSt.value = '';
+        fields.reducaoIcmsSt.value = '';
+        fields.mvaSt.value = '';
+      };
+
+      const fillSpartacusForm = (row) => {
+        fields.tipo.value = asText(row.tipo || tipoDefault);
+        fields.estado.value = asText(row.estado);
+        fields.entidade.value = asText(row.entidade);
+        fields.cfop.value = asNumber(row.cfop);
+        if (fields.cfopDisplay) fields.cfopDisplay.value = row.cfop_label || row.cfop || '';
+        fields.cstIcms.value = asText(row.cst_icms);
+        fields.aliqIcms.value = asNumber(row.aliquota_icms);
+        fields.reducaoIcms.value = asNumber(row.reducao_icms);
+        fields.cstPis.value = asText(row.cst_pis);
+        fields.aliqPis.value = asNumber(row.aliquota_pis);
+        fields.cstCofins.value = asText(row.cst_cofins);
+        fields.aliqCofins.value = asNumber(row.aliquota_cofins);
+        fields.aliqIcmsSt.value = asNumber(row.aliquota_icms_st);
+        fields.reducaoIcmsSt.value = asNumber(row.reducao_icms_st);
+        fields.mvaSt.value = asNumber(row.mva_icms_st);
+      };
+
+      const buildPayload = () => ({
+        codigo: readCodigo(),
+        tipo: (fields.tipo.value || tipoDefault).trim().toUpperCase(),
+        estado: fields.estado.value,
+        entidade: fields.entidade.value,
+        cfop: fields.cfop.value || null,
+        cst_icms: fields.cstIcms.value || null,
+        aliquota_icms: fields.aliqIcms.value || null,
+        reducao_icms: fields.reducaoIcms.value || null,
+        cst_pis: fields.cstPis.value || null,
+        aliquota_pis: fields.aliqPis.value || null,
+        cst_cofins: fields.cstCofins.value || null,
+        aliquota_cofins: fields.aliqCofins.value || null,
+        aliquota_icms_st: fields.aliqIcmsSt.value || null,
+        reducao_icms_st: fields.reducaoIcmsSt.value || null,
+        mva_icms_st: fields.mvaSt.value || null,
+      });
+
+      const renderRows = (rows) => {
+        if (!listEl) return;
+        if (!rows.length) {
+          listEl.innerHTML = '<tr><td colspan="8" class="text-center text-muted">Nenhuma tributação gravada para este produto.</td></tr>';
+          return;
+        }
+
+        listEl.innerHTML = '';
+        rows.forEach((row) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${row.estado_label || row.estado || ''}</td>
+            <td>${row.entidade || ''} - ${row.entidade_label || ''}</td>
+            <td>${row.cst_icms || '-'} / ${row.aliquota_icms || '0'}</td>
+            <td>${row.cst_pis || '-'} / ${row.aliquota_pis || '0'}</td>
+            <td>${row.cst_cofins || '-'} / ${row.aliquota_cofins || '0'}</td>
+            <td>${row.aliquota_icms_st || '0'} | MVA ${row.mva_icms_st || '0'}</td>
+            <td><small>${row.cfop_label || row.cfop || '-'}</small></td>
+            <td class="text-end">
+              <button type="button" class="btn btn-sm btn-outline-primary me-1" data-action="edit">Editar</button>
+              <button type="button" class="btn btn-sm btn-outline-danger" data-action="delete">Excluir</button>
+            </td>
+          `;
+
+          tr.querySelector('[data-action="edit"]')?.addEventListener('click', () => {
+            fillSpartacusForm(row);
+            cloneFields.origemEstado.value = row.estado || '';
+            cloneFields.origemEntidade.value = row.entidade || '';
+            setStatus(`Tributação ${row.estado}/${row.entidade} carregada para edição.`, 'info');
+          });
+
+          tr.querySelector('[data-action="delete"]')?.addEventListener('click', async () => {
+            if (!confirm(`Excluir a tributação ${row.estado}/${row.entidade}?`)) return;
+            try {
+              const resp = await fetch(apiUrl, {
+                method: 'DELETE',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'X-CSRFToken': csrfToken,
+                },
+                body: JSON.stringify({
+                  codigo: readCodigo(),
+                  tipo: row.tipo || tipoDefault,
+                  estado: row.estado,
+                  entidade: row.entidade,
+                }),
+              });
+              const data = await resp.json();
+              if (!resp.ok) throw new Error(data.detail || 'Falha ao excluir tributação.');
+              setStatus('Tributação excluída com sucesso.', 'success');
+              await loadSpartacusRows();
+            } catch (error) {
+              setStatus(error.message, 'danger');
+            }
+          });
+
+          listEl.appendChild(tr);
+        });
+      };
+
+      async function loadSpartacusRows() {
+        const codigo = readCodigo();
+        if (!codigo) {
+          renderRows([]);
+          setStatus('Salve o produto ou informe um código para gerenciar os Tributos Spartacus.', 'secondary');
+          return;
+        }
+
+        try {
+          const resp = await fetch(`${apiUrl}?codigo=${encodeURIComponent(codigo)}&tipo=${encodeURIComponent((fields.tipo.value || tipoDefault).trim().toUpperCase())}`);
+          const data = await resp.json();
+          if (!resp.ok) throw new Error(data.detail || 'Falha ao carregar tributações Spartacus.');
+          renderRows(Array.isArray(data) ? data : []);
+          setStatus(`Tributações Spartacus carregadas para o produto ${codigo}.`, 'success');
+        } catch (error) {
+          renderRows([]);
+          setStatus(error.message, 'danger');
+        }
+      }
+
+      if (window.setupTextAutocomplete && cfopUrl) {
+        window.setupTextAutocomplete({
+          inputEl: fields.cfopDisplay,
+          url: cfopUrl,
+          onPick: (item) => {
+            fields.cfopDisplay.value = item.label;
+            fields.cfop.value = item.value;
+          }
+        });
+
+        // Handle manual clear
+        fields.cfopDisplay.addEventListener('input', (e) => {
+          if (!e.target.value.trim()) {
+            fields.cfop.value = '';
+          }
+        });
+      }
+
+      document.getElementById('tributos-spartacus-recarregar')?.addEventListener('click', loadSpartacusRows);
+
+      document.getElementById('tributos-spartacus-salvar')?.addEventListener('click', async () => {
+        const payload = buildPayload();
+        if (!payload.codigo) {
+          setStatus('Informe o código do produto antes de salvar a tributação Spartacus.', 'warning');
+          return;
+        }
+        if (!payload.estado || !payload.entidade) {
+          setStatus('Selecione estado e tipo de entidade para salvar.', 'warning');
+          return;
+        }
+
+        try {
+          const resp = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': csrfToken,
+            },
+            body: JSON.stringify(payload),
+          });
+          const data = await resp.json();
+          if (!resp.ok) throw new Error(data.detail || 'Falha ao salvar tributação Spartacus.');
+          setStatus(`Tributação ${payload.estado}/${payload.entidade} salva com sucesso.`, 'success');
+          fillSpartacusForm(data);
+          await loadSpartacusRows();
+        } catch (error) {
+          setStatus(error.message, 'danger');
+        }
+      });
+
+      document.getElementById('tributos-spartacus-clonar')?.addEventListener('click', async () => {
+        const codigo = readCodigo();
+        if (!codigo) {
+          setStatus('Informe o código do produto antes de clonar.', 'warning');
+          return;
+        }
+
+        const payload = {
+          codigo,
+          codigo_destino: cloneFields.codigoDestino.value || null,
+          tipo: (fields.tipo.value || tipoDefault).trim().toUpperCase(),
+          origem_estado: cloneFields.origemEstado.value,
+          origem_entidade: cloneFields.origemEntidade.value,
+          estados_destino: readMulti(cloneFields.estadosDestino),
+          entidades_destino: readMulti(cloneFields.entidadesDestino),
+        };
+
+        if (!payload.origem_estado || !payload.origem_entidade) {
+          setStatus('Selecione o estado e a entidade de origem para clonar.', 'warning');
+          return;
+        }
+
+        try {
+          const resp = await fetch(`${apiUrl}clone/`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': csrfToken,
+            },
+            body: JSON.stringify(payload),
+          });
+          const data = await resp.json();
+          if (!resp.ok) throw new Error(data.detail || 'Falha ao clonar tributações Spartacus.');
+          setStatus(`${Array.isArray(data) ? data.length : 0} tributação(ões) clonada(s) com sucesso.`, 'success');
+          await loadSpartacusRows();
+        } catch (error) {
+          setStatus(error.message, 'danger');
+        }
+      });
+
+      codigoInput?.addEventListener('blur', () => {
+        spartacusApp.dataset.codigo = readCodigo();
+        loadSpartacusRows();
+      });
+
+      clearSpartacusForm();
+      spartacusApp.dataset.codigo = readCodigo();
+      loadSpartacusRows();
+    }
+
+    // =================================================================
+    // 6. Simulação de Impostos
     // =================================================================
     const btnSimular = document.getElementById('btn-simular-impostos');
     if (btnSimular) {

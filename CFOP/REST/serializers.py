@@ -1,6 +1,9 @@
 from rest_framework import serializers
 
+from Entidades.models import Entidades
+
 from ..models import CFOP
+from ..models_tributos import Tributos
 
 
 class CFOPSerializer(serializers.ModelSerializer):
@@ -90,3 +93,85 @@ class CFOPSerializer(serializers.ModelSerializer):
             "incidencias": [montar_item(f) for f in self.INCIDENCIAS],
         }
 
+
+class TributoSpartacusSerializer(serializers.ModelSerializer):
+    empresa = serializers.IntegerField(source="trib_empr", read_only=True)
+    filial = serializers.IntegerField(source="trib_fili", read_only=True)
+    tipo = serializers.CharField(source="trib_tipo")
+    entidade = serializers.ChoiceField(source="trib_enti", choices=Entidades.CLASSIFICACAO_TRIBUTACAO)
+    estado = serializers.ChoiceField(source="trib_esta", choices=Tributos._meta.get_field("trib_esta").choices)
+    codigo = serializers.CharField(source="trib_codi")
+    aliquota_icms = serializers.DecimalField(source="trib_aliq_icms", max_digits=9, decimal_places=4, required=False, allow_null=True)
+    reducao_icms = serializers.DecimalField(source="trib_redu_icms", max_digits=9, decimal_places=4, required=False, allow_null=True)
+    aliquota_icms_st = serializers.DecimalField(source="trib_aliq_icms_st", max_digits=9, decimal_places=4, required=False, allow_null=True)
+    reducao_icms_st = serializers.DecimalField(source="trib_redu_icms_st", max_digits=9, decimal_places=4, required=False, allow_null=True)
+    mva_icms_st = serializers.DecimalField(source="trib_mva_icms_st", max_digits=8, decimal_places=2, required=False, allow_null=True)
+    cst_icms = serializers.CharField(source="trib_cst_icms", required=False, allow_blank=True, allow_null=True)
+    cst_pis = serializers.CharField(source="trib_cst_pis", required=False, allow_blank=True, allow_null=True)
+    cst_cofins = serializers.CharField(source="trib_cst_cofi", required=False, allow_blank=True, allow_null=True)
+    aliquota_pis = serializers.DecimalField(source="trib_aliq_pis", max_digits=5, decimal_places=2, required=False, allow_null=True)
+    aliquota_cofins = serializers.DecimalField(source="trib_aliq_cofi", max_digits=5, decimal_places=2, required=False, allow_null=True)
+    cfop = serializers.IntegerField(source="trib_cfop", required=False, allow_null=True)
+    cfop_label = serializers.SerializerMethodField()
+    entidade_label = serializers.SerializerMethodField()
+    estado_label = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Tributos
+        fields = [
+            "empresa",
+            "filial",
+            "tipo",
+            "entidade",
+            "entidade_label",
+            "estado",
+            "estado_label",
+            "codigo",
+            "aliquota_icms",
+            "reducao_icms",
+            "aliquota_icms_st",
+            "reducao_icms_st",
+            "mva_icms_st",
+            "cst_icms",
+            "cst_pis",
+            "cst_cofins",
+            "aliquota_pis",
+            "aliquota_cofins",
+            "cfop",
+            "cfop_label",
+        ]
+
+    def get_entidade_label(self, instance):
+        return instance.get_trib_enti_display()
+
+    def get_estado_label(self, instance):
+        return instance.get_trib_esta_display()
+
+    def get_cfop_label(self, instance):
+        if not instance.trib_cfop:
+            return ""
+        try:
+            cfop = CFOP.objects.using(instance._state.db).filter(cfop_id=instance.trib_cfop).only('cfop_codi', 'cfop_desc').first()
+            if cfop:
+                return f"{cfop.cfop_codi} • {cfop.cfop_desc}"
+        except Exception:
+            pass
+        return str(instance.trib_cfop)
+
+
+class TributoSpartacusCloneSerializer(serializers.Serializer):
+    codigo = serializers.CharField()
+    codigo_destino = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    tipo = serializers.CharField(required=False, allow_blank=True, default="P")
+    origem_estado = serializers.ChoiceField(choices=Tributos._meta.get_field("trib_esta").choices)
+    origem_entidade = serializers.ChoiceField(choices=Entidades.CLASSIFICACAO_TRIBUTACAO)
+    estados_destino = serializers.ListField(
+        child=serializers.ChoiceField(choices=Tributos._meta.get_field("trib_esta").choices),
+        required=False,
+        allow_empty=True,
+    )
+    entidades_destino = serializers.ListField(
+        child=serializers.ChoiceField(choices=Entidades.CLASSIFICACAO_TRIBUTACAO),
+        required=False,
+        allow_empty=True,
+    )

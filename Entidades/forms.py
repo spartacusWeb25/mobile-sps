@@ -42,7 +42,7 @@ class EntidadesForm(forms.ModelForm):
     class Meta:
         model = Entidades
         fields = [
-            'enti_nome', 'enti_tipo_enti', 'enti_fant', 
+            'enti_nome', 'enti_tipo_enti', 'enti_espe_enti', 'enti_fant', 
             'enti_cpf', 'enti_cnpj', 'enti_insc_esta', 'enti_cep', 'enti_ende', 
             'enti_nume', 'enti_cida','enti_codi_cida', 'enti_esta', 'enti_fone', 'enti_celu', 
             'enti_emai', 'enti_situ', 'enti_vend'
@@ -50,6 +50,7 @@ class EntidadesForm(forms.ModelForm):
         widgets = {
             'enti_nome': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nome completo'}),
             'enti_tipo_enti': forms.Select(attrs={'class': 'form-control'}),
+            'enti_espe_enti': forms.Select(attrs={'class': 'form-control'}),
             'enti_fant': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nome Fantasia'}),
             'enti_cpf': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'CPF', 'maxlength': '11'}),
             'enti_cnpj': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'CNPJ', 'maxlength': '14'}),
@@ -77,6 +78,8 @@ class EntidadesForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.db_name = db_name  # Guarda o nome do banco para ser usado no save()
         self.request = request  # Store the request object
+        if 'enti_espe_enti' in self.fields:
+            self.fields['enti_espe_enti'].initial = '000'
 
         # Ajusta o valor inicial do campo booleano com base no valor '0'/'1' do model
         if self.instance and self.instance.pk:
@@ -84,11 +87,12 @@ class EntidadesForm(forms.ModelForm):
             enti_tien = str(getattr(self.instance, 'enti_tien', '') or '')
             self.fields['is_motorista'].initial = (enti_tien == 'M')
             self.fields['is_transportadora'].initial = (enti_tien == 'T')
+            self.fields['enti_espe_enti'].initial = getattr(self.instance, 'enti_espe_enti', None) or '000'
 
         # Tornar certos campos não obrigatórios
         for field in ['enti_cpf', 'enti_cnpj', 'enti_fone', 'enti_emai',
                       'enti_insc_esta', 'enti_fant', 'enti_ende', 
-                      'enti_cida', 'enti_esta', 'enti_clie']:
+                      'enti_cida', 'enti_esta', 'enti_clie', 'enti_espe_enti']:
             if field in self.fields:
                 self.fields[field].required = False
 
@@ -137,6 +141,8 @@ class EntidadesForm(forms.ModelForm):
             raise ValueError("Erro: banco de dados não definido no formulário. Verifique se a sessão contém 'banco'.")
 
         instance = super().save(commit=False)
+        if not getattr(instance, 'enti_espe_enti', None):
+            instance.enti_espe_enti = '000'
         if 'enti_situ' in self.cleaned_data:
             instance.enti_situ = '1' if str(self.cleaned_data.get('enti_situ')) == '1' else '0'
 

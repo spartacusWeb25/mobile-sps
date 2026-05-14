@@ -60,6 +60,22 @@ class CalculoImpostosService:
             return None
         return str(value)
 
+    def _classificacao_tributaria_entidade(self, entidade):
+        if not entidade:
+            return None
+        for attr in (
+            "enti_espe_enti",
+            "enti_clas_trib",
+            "enti_class_trib",
+            "enti_classificacao_tributaria",
+            "enti_tipo_tributacao",
+            "enti_trib_enti",
+        ):
+            valor = getattr(entidade, attr, None)
+            if valor not in (None, ""):
+                return str(valor).strip().upper()
+        return None
+
     def aplicar_impostos(self, nota: Nota, return_debug: bool = False):
         nota = Nota.objects.using(self.banco).get(pk=nota.pk)
 
@@ -288,7 +304,10 @@ class CalculoImpostosService:
 
             ctx_uf_origem = (uf_origem or "").strip().upper()
             ctx_uf_destino = (uf_destino or "").strip().upper()
-            ctx_tipo_entidade = (getattr(nota.destinatario, "enti_tipo_enti", None) or "").strip().upper()
+            ctx_tipo_entidade = (
+                self._classificacao_tributaria_entidade(nota.destinatario)
+                or (getattr(nota.destinatario, "enti_tipo_enti", None) or "").strip().upper()
+            )
 
             if fiscal_uf_origem and (not ctx_uf_origem or fiscal_uf_origem != ctx_uf_origem):
                 return False
@@ -364,7 +383,10 @@ class CalculoImpostosService:
             regime=regime,
             uf_origem=uf_origem,
             uf_destino=uf_destino,
-            tipo_entidade=getattr(nota.destinatario, "enti_tipo_enti", None),
+            tipo_entidade=(
+                self._classificacao_tributaria_entidade(nota.destinatario)
+                or getattr(nota.destinatario, "enti_tipo_enti", None)
+            ),
             produto=item.produto,
             cfop=cfop_obj, # Passamos o objeto já resolvido e ajustado
             ncm=ncm_obj,

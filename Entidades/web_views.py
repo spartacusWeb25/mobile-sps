@@ -64,11 +64,14 @@ class EntidadeListView(DBAndSlugMixin, ListView):
         nome = request.GET.get('enti_nome', '')
         id_cliente = request.GET.get('enti_clie', '')
         tipo = request.GET.get('enti_tipo_enti', '')
+        classificacao = request.GET.get('enti_espe_enti', '')
         vendedor_responsavel = request.GET.get('enti_vend', '')
         situacao = request.GET.get('enti_situ', '')
         
         if tipo:
             qs = qs.filter(enti_tipo_enti__icontains=tipo)
+        if classificacao:
+            qs = qs.filter(enti_espe_enti=classificacao)
         if situacao:
             qs = qs.filter(enti_situ__icontains=situacao)
         if nome:
@@ -104,6 +107,7 @@ class EntidadeListView(DBAndSlugMixin, ListView):
         nome = request.GET.get('enti_nome', '')
         id_cliente = request.GET.get('enti_clie', '')
         tipo = request.GET.get('enti_tipo_enti', '')
+        classificacao = request.GET.get('enti_espe_enti', '')
         situacao = request.GET.get('enti_situ', '')
         vendedor_responsavel = request.GET.get('enti_vend', '')
         db_alias = getattr(request, 'db_alias', None)
@@ -118,6 +122,7 @@ class EntidadeListView(DBAndSlugMixin, ListView):
         context['nome'] = nome
         context['id_cliente'] = id_cliente
         context['tipo_selecionado'] = tipo
+        context['classificacao_selecionada'] = classificacao
         context['situacao_selecionada'] = situacao
         context['total_entidades'] = total_entidades
         context['total_de_clientes'] = total_de_clientes
@@ -127,6 +132,7 @@ class EntidadeListView(DBAndSlugMixin, ListView):
         
         # Opções para os filtros
         context['tipos_entidade'] = Entidades.TIPO_ENTIDADES
+        context['classificacoes_tributarias'] = Entidades.CLASSIFICACAO_TRIBUTACAO
         context['situacoes_entidade'] = Entidades._meta.get_field('enti_situ').choices
 
         # Preservar filtros na paginação
@@ -137,6 +143,8 @@ class EntidadeListView(DBAndSlugMixin, ListView):
             extra_parts.append('&enti_clie=' + quote_plus(id_cliente))
         if tipo:
             extra_parts.append('&enti_tipo_enti=' + quote_plus(tipo))
+        if classificacao:
+            extra_parts.append('&enti_espe_enti=' + quote_plus(classificacao))
         if situacao:
             extra_parts.append('&enti_situ=' + quote_plus(situacao))
         if vendedor_responsavel:

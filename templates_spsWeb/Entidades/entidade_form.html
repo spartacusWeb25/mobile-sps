@@ -120,13 +120,26 @@
           <div class="tab-pane fade show active" id="cadastrais" role="tabpanel" aria-labelledby="cadastrais-tab">
             <br />
             <div class="row">
-              <div class="col-md-12">
+              <div class="col-md-6">
                 <div class="form-group">
                   <label for="{{  form.enti_tipo_enti.id_for_label }}">Tipo da Entidade</label>
                   {{ form.enti_tipo_enti }}
                   {% if form.enti_tipo_enti.errors %}
                   <div class="text-danger">
                     {% for error in form.enti_tipo_enti.errors %}
+                    <p>{{ error }}</p>
+                    {% endfor %}
+                  </div>
+                  {% endif %}
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label for="{{ form.enti_espe_enti.id_for_label }}">Tipo de Tributação</label>
+                  {{ form.enti_espe_enti }}
+                  {% if form.enti_espe_enti.errors %}
+                  <div class="text-danger">
+                    {% for error in form.enti_espe_enti.errors %}
                     <p>{{ error }}</p>
                     {% endfor %}
                   </div>

@@ -1,0 +1,215 @@
+<div class="tab-pane fade" id="tributos-spartacus">
+  <h5 class="form-section-title text-center mb-4">Tributos Spartacus</h5>
+
+  <div id="tributos-spartacus-app" data-api-url="{{ tributos_spartacus_api_url }}"
+    data-cfop-url="{{ tributos_spartacus_cfop_url }}" data-codigo="{{ tributos_spartacus_codigo }}"
+    data-tipo="{{ tributos_spartacus_tipo|default:'P' }}">
+    <div class="alert alert-info">
+      <strong>Prioridade nº 1 na emissão:</strong>
+      quando houver tributação Spartacus cadastrada para o produto, ela será usada antes do fiscal do produto, CFOP e
+      NCM.
+    </div>
+
+    <div class="alert alert-secondary small" id="tributos-spartacus-status">
+      Informe ou confirme o código do produto para carregar as tributações Spartacus já existentes.
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header">
+        <strong>Cadastro / Atualização</strong>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-2">
+            <label class="form-label" for="spartacus-tipo">Tipo</label>
+            <input type="text" id="spartacus-tipo" class="form-control"
+              value="{{ tributos_spartacus_tipo|default:'P' }}" maxlength="1">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label" for="spartacus-estado">Estado</label>
+            <select id="spartacus-estado" class="form-select">
+              <option value="">Selecione</option>
+              {% for value, label in tributos_spartacus_estado_choices %}
+              <option value="{{ value }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label" for="spartacus-entidade">Tipo de Entidade</label>
+            <select id="spartacus-entidade" class="form-select">
+              <option value="">Selecione</option>
+              {% for value, label in tributos_spartacus_entidade_choices %}
+              <option value="{{ value }}">{{ value }} - {{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-3 position-relative">
+            <label class="form-label" for="spartacus-cfop-display">CFOP</label>
+            <input type="text" id="spartacus-cfop-display" class="form-control" placeholder="Buscar CFOP..."
+              autocomplete="off">
+            <input type="hidden" id="spartacus-cfop">
+          </div>
+        </div>
+
+        <div class="row g-3 mt-1">
+          <div class="col-md-3">
+            <label class="form-label" for="spartacus-cst-icms">CST ICMS</label>
+            <select id="spartacus-cst-icms" class="form-select">
+              <option value="">Selecione</option>
+              {% for value, label in tributos_spartacus_cst_icms_choices %}
+              <option value="{{ value }}">{{ value }} - {{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label" for="spartacus-aliq-icms">Alíquota ICMS</label>
+            <input type="number" id="spartacus-aliq-icms" class="form-control" step="0.0001">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label" for="spartacus-reducao-icms">Redução ICMS</label>
+            <input type="number" id="spartacus-reducao-icms" class="form-control" step="0.0001">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label" for="spartacus-cst-pis">CST PIS</label>
+            <select id="spartacus-cst-pis" class="form-select">
+              <option value="">Selecione</option>
+              {% for value, label in tributos_spartacus_cst_pis_choices %}
+              <option value="{{ value }}">{{ value }} - {{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="row g-3 mt-1">
+          <div class="col-md-3">
+            <label class="form-label" for="spartacus-aliq-pis">Alíquota PIS</label>
+            <input type="number" id="spartacus-aliq-pis" class="form-control" step="0.01">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label" for="spartacus-cst-cofins">CST COFINS</label>
+            <select id="spartacus-cst-cofins" class="form-select">
+              <option value="">Selecione</option>
+              {% for value, label in tributos_spartacus_cst_cofins_choices %}
+              <option value="{{ value }}">{{ value }} - {{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label" for="spartacus-aliq-cofins">Alíquota COFINS</label>
+            <input type="number" id="spartacus-aliq-cofins" class="form-control" step="0.01">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label" for="spartacus-aliq-icms-st">Alíquota ICMS ST</label>
+            <input type="number" id="spartacus-aliq-icms-st" class="form-control" step="0.0001">
+          </div>
+        </div>
+
+        <div class="row g-3 mt-1">
+          <div class="col-md-4">
+            <label class="form-label" for="spartacus-reducao-icms-st">Redução ICMS ST</label>
+            <input type="number" id="spartacus-reducao-icms-st" class="form-control" step="0.0001">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label" for="spartacus-mva-st">MVA ST</label>
+            <input type="number" id="spartacus-mva-st" class="form-control" step="0.01">
+          </div>
+          <div class="col-md-4 d-flex align-items-end">
+            <button type="button" class="btn btn-outline-primary w-100" id="tributos-spartacus-salvar">
+              <i class="bi bi-save"></i> Salvar Tributação
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header">
+        <strong>Clonagem por Estado / Entidade</strong>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-3">
+            <label class="form-label" for="spartacus-clone-origem-estado">Estado Origem</label>
+            <select id="spartacus-clone-origem-estado" class="form-select">
+              <option value="">Selecione</option>
+              {% for value, label in tributos_spartacus_estado_choices %}
+              <option value="{{ value }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label" for="spartacus-clone-origem-entidade">Entidade Origem</label>
+            <select id="spartacus-clone-origem-entidade" class="form-select">
+              <option value="">Selecione</option>
+              {% for value, label in tributos_spartacus_entidade_choices %}
+              <option value="{{ value }}">{{ value }} - {{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-5">
+            <label class="form-label" for="spartacus-clone-codigo-destino">Código Destino</label>
+            <input type="text" id="spartacus-clone-codigo-destino" class="form-control"
+              placeholder="Opcional, usa o código atual se vazio">
+          </div>
+        </div>
+
+        <div class="row g-3 mt-1">
+          <div class="col-md-6">
+            <label class="form-label" for="spartacus-clone-estados">Estados Destino</label>
+            <select id="spartacus-clone-estados" class="form-select" multiple size="6">
+              {% for value, label in tributos_spartacus_estado_choices %}
+              <option value="{{ value }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="spartacus-clone-entidades">Entidades Destino</label>
+            <select id="spartacus-clone-entidades" class="form-select" multiple size="6">
+              {% for value, label in tributos_spartacus_entidade_choices %}
+              <option value="{{ value }}">{{ value }} - {{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="mt-3">
+          <button type="button" class="btn btn-outline-secondary" id="tributos-spartacus-clonar">
+            <i class="bi bi-copy"></i> Clonar Seleção
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <strong>Tributações Gravadas</strong>
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="tributos-spartacus-recarregar">
+          <i class="bi bi-arrow-repeat"></i> Recarregar
+        </button>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-sm table-striped align-middle">
+            <thead>
+              <tr>
+                <th>Estado</th>
+                <th>Entidade</th>
+                <th>ICMS</th>
+                <th>PIS</th>
+                <th>COFINS</th>
+                <th>ST</th>
+                <th>CFOP</th>
+                <th class="text-end">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tributos-spartacus-lista">
+              <tr>
+                <td colspan="8" class="text-center text-muted">Nenhuma tributação carregada.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

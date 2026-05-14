@@ -4,6 +4,14 @@ from .base_calculator import BaseCalculator
 
 class ICMSSTCalculator(BaseCalculator):
 
+    def _num(self, value):
+        if value in (None, ""):
+            return None
+        try:
+            return Decimal(str(value))
+        except Exception:
+            return None
+
     def calcular(self, ctx, base, valor_icms_proprio):
 
         if base is None:
@@ -16,6 +24,13 @@ class ICMSSTCalculator(BaseCalculator):
 
         mva = ctx.icms_data.get("mva_st")
         aliq = ctx.icms_data.get("st_aliq")
+        if getattr(ctx, "fiscal_padrao", None):
+            mva_padrao = self._num(getattr(ctx.fiscal_padrao, "mva_icms_st", None))
+            aliq_padrao = self._num(getattr(ctx.fiscal_padrao, "aliq_icms_st", None))
+            if mva_padrao is not None:
+                mva = mva_padrao
+            if aliq_padrao is not None:
+                aliq = aliq_padrao
         if not aliq:
             aliq = ctx.icms_data.get("icms")
 
