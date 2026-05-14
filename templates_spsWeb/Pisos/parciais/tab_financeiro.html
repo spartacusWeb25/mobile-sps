@@ -1,0 +1,53 @@
+<div id="tab-financeiro" class="tab-content">
+  <div class="row g-2">
+    <div class="col-12"><label>Forma Recebimento</label>{{ form.pedi_form_paga }}</div>
+    <div class="col-12">
+      <label>Condição de Preço</label>
+      <select id="preco-condicao" class="form-control">
+        <option value="0" selected>À Vista</option>
+        <option value="1">A Prazo</option>
+      </select>
+    </div>
+    <div class="col-4"><label>Desconto (R$)</label>{{ form.pedi_desc }}</div>
+    <div class="col-4"><label>Frete (R$)</label>{{ form.pedi_fret }}</div>
+    <div class="col-4"><label>Crédito</label>{{ form.pedi_cred }}</div>
+    <div class="col-12 d-flex align-items-center gap-2 mt-1">
+      <input type="checkbox" class="form-check-input" id="usar-credito">
+      <label for="usar-credito" style="margin:0">Usar crédito disponível</label>
+      <span class="ms-auto" style="font-size:11px;color:#93c5fd">Disponível: <b id="credito-disponivel-label">R$ 0,00</b></span>
+    </div>
+    <div class="col-4"><label>Total Líquido</label>{{ form.pedi_tota }}</div>
+    <div class="col-6"><label>Entrada (R$)</label><input id="fin-entrada" class="form-control" type="number" step="0.01"
+        value="0"></div>
+    <div class="col-6"><label>Restante</label><input id="fin-restante" class="form-control calc-field" readonly></div>
+    <div class="col-4"><label>Parcelas</label><input id="fin-parcelas" class="form-control" type="number" min="1" value="1">
+    </div>
+    <div class="col-8"><label>Condição (dias)</label><input id="fin-condicao" class="form-control"
+        placeholder="Ex: 30 60 90"></div>
+    <div class="col-12 d-flex gap-2 flex-wrap">
+      <button type="button" class="btn btn-sm btn-outline-success" id="fin-gerar">Gerar Títulos</button>
+      <button type="button" class="btn btn-sm btn-outline-danger" id="fin-limpar">Remover</button>
+    </div>
+  </div>
+  <div class="col-3" style="margin-top:25px" type="button" data-bs-toggle="collapse" data-bs-target="#filtrosCollapse"
+    data-bs-auto-close="false" title="Parcelas" data-bs-toggle="tooltip" aria-expanded="true"
+    aria-controls="filtrosCollapse">
+    <i class="bi bi-currency-exchange"></i>
+  </div>
+  <div id="filtrosCollapse" class="collapse show">
+    <div class="table-responsive mt-2">
+      <table class="table table-sm table-dark align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Parcela</th>
+            <th>Vencimento</th>
+            <th class="text-end">Valor</th>
+            <th>Forma</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="fin-titulos-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>

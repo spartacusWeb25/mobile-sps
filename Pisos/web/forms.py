@@ -23,16 +23,17 @@ class PedidoPisosForm(forms.ModelForm):
         model = Pedidospisos
         fields = [
             "pedi_empr", "pedi_fili", "pedi_clie", "pedi_forn", "pedi_vend", "pedi_data",
-            "pedi_data_prev_entr", "pedi_data_inst", "pedi_data_entr_inst", "pedi_orca", "pedi_stat",
-            "pedi_form_paga", "pedi_desc", "pedi_fret", "pedi_cred", "pedi_tota", "pedi_obse", "pedi_croq_info",
-            "pedi_mode_piso", "pedi_mode_alum", "pedi_mode_roda", "pedi_mode_port", "pedi_mode_outr",
-            "pedi_sent_piso", "pedi_ajus_port", "pedi_degr_esca", "pedi_obra_habi", "pedi_movi_mobi",
-            "pedi_remo_roda", "pedi_remo_carp",
+            "pedi_data_prev_entr", "pedi_orca", "pedi_stat",
+            "pedi_form_paga", "pedi_desc", "pedi_fret", "pedi_cred", "pedi_tota", "pedi_obse",
+            "pedi_nome_reti", "pedi_espe_reti", "pedi_comp","pedi_ende", "pedi_nume_ende", "pedi_bair", "pedi_cida", "pedi_esta","pedi_obse_roma", 
+            "pedi_croq_info","pedi_data_inst", "pedi_data_entr_inst", "pedi_mode_piso", "pedi_mode_alum", "pedi_mode_roda", "pedi_mode_port", "pedi_mode_outr",
+            "pedi_sent_piso","pedi_sent_piso", "pedi_ajus_port", "pedi_degr_esca", "pedi_obra_habi", "pedi_movi_mobi","pedi_remo_roda", "pedi_remo_carp",
         ]
         widgets = {k: forms.DateInput(attrs={"type": "date", "class": "form-control"}) for k in [
             "pedi_data", "pedi_data_prev_entr", "pedi_data_inst", "pedi_data_entr_inst"
         ]}
         widgets["pedi_obse"] = forms.TextInput(attrs={"class": "form-control form-control-sm"})
+        widgets["pedi_obse_roma"] = forms.TextInput(attrs={"class": "form-control form-control-sm"})        
         widgets["pedi_croq_info"] = forms.TextInput(attrs={"rows": 1, "class": "form-control"})
 
     def __init__(self, *args, **kwargs):
