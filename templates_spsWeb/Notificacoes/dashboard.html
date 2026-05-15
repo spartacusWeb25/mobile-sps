@@ -423,6 +423,16 @@
             </span>
             <span class="badge bg-success rounded-pill">{{ pedidos_hoje_count }}</span>
           </a>
+          {% if pedidos_pisos_hoje_count != None %}
+          <a class="list-group-item d-flex justify-content-between align-items-center"
+            href="/web/{{ slug }}/pisos/pedidos-pisos/">
+            <span>
+              <i class="bi bi-layers me-2" style="color:#6f42c1"></i>
+              Pedidos Pisos (Hoje)
+            </span>
+            <span class="badge rounded-pill" style="background:#6f42c1">{{ pedidos_pisos_hoje_count }}</span>
+          </a>
+          {% endif %}
           <a class="list-group-item d-flex justify-content-between align-items-center"
             href="/web/{{ slug }}/notificacoes/pagar/?period=hoje">
             <span>

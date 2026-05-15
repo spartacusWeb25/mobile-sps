@@ -11,6 +11,7 @@ from contas_a_receber.models import Baretitulos
 from Pedidos.models import PedidoVenda
 from Orcamentos.models import Orcamentos
 from logging import getLogger
+from django.db.utils import OperationalError, ProgrammingError
 
 
 logger = getLogger(__name__)
@@ -49,24 +50,17 @@ class NotificacoesDashboardView(DBAndSlugMixin, TemplateView):
             .filter(enti_empr=self.empresa_id)
             .values_list('enti_clie', 'enti_nome')
         )
-        logger.info(f'fornecedores: {fornecedores}')
 
         pagar_all_qs = Titulospagar.objects.using(self.db_alias).filter(titu_empr=self.empresa_id, titu_fili=self.filial_id)
-        logger.info(f'pagar_all_qs: {pagar_all_qs}')
         receber_all_qs = Titulosreceber.objects.using(self.db_alias).filter(titu_empr=self.empresa_id, titu_fili=self.filial_id)
-        logger.info(f'receber_all_qs: {receber_all_qs}')
         
         
         pagas_qs = Bapatitulos.objects.using(self.db_alias).filter(bapa_empr=self.empresa_id, bapa_fili=self.filial_id, bapa_dpag__gte=d_start, bapa_dpag__lt=d_end)
-        logger.info(f'pagas_qs: {pagas_qs}')
         recebidas_qs = Baretitulos.objects.using(self.db_alias).filter(bare_empr=self.empresa_id, bare_fili=self.filial_id, bare_dpag__gte=d_start, bare_dpag__lt=d_end)
-        logger.info(f'recebidas_qs: {recebidas_qs}')
         
         
-        orc_qs = Orcamentos.objects.using(self.db_alias).filter(pedi_empr=self.empresa_id, pedi_fili=self.filial_id, pedi_data__gte=d_start, pedi_data__lt=d_end)
-        logger.info(f'orc_qs: {orc_qs}')
+        orc_qs = Orcamentos.objects.using(self.db_alias).defer("pedi_stat").filter(pedi_empr=self.empresa_id, pedi_fili=self.filial_id, pedi_data__gte=d_start, pedi_data__lt=d_end)
         ped_qs = PedidoVenda.objects.using(self.db_alias).filter(pedi_empr=self.empresa_id, pedi_fili=self.filial_id)
-        logger.info(f'ped_qs: {ped_qs}')
 
         def _to_row(obj, tipo):
             if tipo == 'Paga':
@@ -118,6 +112,20 @@ class NotificacoesDashboardView(DBAndSlugMixin, TemplateView):
         orcamentos_hoje = orc_qs.filter(pedi_data__gte=d_start, pedi_data__lt=d_end)
         pedidos_hoje = ped_qs.filter(pedi_data__gte=d_start, pedi_data__lt=d_end)
 
+        pedidos_pisos_hoje_count = None
+        try:
+            from Pisos.models import Pedidospisos
+            pedidos_pisos_hoje_count = (
+                Pedidospisos.objects.using(self.db_alias)
+                .filter(pedi_empr=self.empresa_id, pedi_fili=self.filial_id)
+                .filter(pedi_data__gte=d_start, pedi_data__lt=d_end)
+                .count()
+            )
+        except (OperationalError, ProgrammingError):
+            pedidos_pisos_hoje_count = None
+        except Exception:
+            pedidos_pisos_hoje_count = None
+
         ctx.update({
             'today': today,
             'pagar_hoje_count': pagar_hoje.count(),
@@ -133,6 +141,7 @@ class NotificacoesDashboardView(DBAndSlugMixin, TemplateView):
             'recebidas_rows': recebidas_rows,
             'orcamentos_hoje_count': orcamentos_hoje.count(),
             'pedidos_hoje_count': pedidos_hoje.count(),
+            'pedidos_pisos_hoje_count': pedidos_pisos_hoje_count,
         })
         return ctx
 
