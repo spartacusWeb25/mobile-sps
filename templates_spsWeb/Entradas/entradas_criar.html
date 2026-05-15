@@ -184,7 +184,12 @@
       e.stopPropagation();
     });
     entradaForm.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && e.target && e.target.tagName !== 'TEXTAREA') {
+      if (
+        e.key === 'Enter' &&
+        e.target &&
+        e.target.tagName !== 'TEXTAREA' &&
+        String(e.target.type || '').toLowerCase() !== 'date'
+      ) {
         e.preventDefault();
       }
     });
@@ -218,13 +223,39 @@
       const dropdown = createDropdown(container);
       let controller = null;
       let debounce = null;
+      let lastCommittedText = '';
+
+      function normalizeItem(raw) {
+        return {
+          id: (typeof raw?.id !== 'undefined' && raw?.id !== null) ? raw.id : raw?.value,
+          text: (typeof raw?.text !== 'undefined' && raw?.text !== null) ? raw.text : raw?.label,
+        };
+      }
+
+      function commitSelection(item) {
+        try {
+          clearTimeout(debounce);
+          debounce = null;
+          if (controller) controller.abort();
+          controller = null;
+        } catch (e) { }
+        const id = String(item?.id ?? '').trim();
+        const text = String(item?.text ?? '').trim();
+        hiddenEl.value = id;
+        hiddenEl.dispatchEvent(new Event('change', { bubbles: true }));
+        inputEl.value = text;
+        lastCommittedText = text;
+        dropdown.innerHTML = '';
+        if (typeof onSelect === 'function') onSelect({ id, text });
+      }
+
       async function fetchResults(term) {
         try {
           if (controller) controller.abort();
           controller = new AbortController();
           const resp = await fetch(`${url}?term=${encodeURIComponent(term)}`, { signal: controller.signal });
           const json = await resp.json();
-          const results = json.results || [];
+          const results = (json.results || []).map(normalizeItem).filter(r => r && r.id != null && r.text);
           dropdown.innerHTML = '';
           results.forEach(item => {
             const a = document.createElement('a');
@@ -232,19 +263,21 @@
             a.className = 'list-group-item list-group-item-action';
             a.textContent = item.text;
             a.dataset.id = item.id;
-            a.addEventListener('click', (ev) => {
-              ev.preventDefault();
-              hiddenEl.value = item.id;
-              inputEl.value = item.text;
-              dropdown.innerHTML = '';
-              if (typeof onSelect === 'function') onSelect(item);
-            });
+            a.addEventListener('pointerdown', (ev) => { ev.preventDefault(); commitSelection(item); });
+            a.addEventListener('mousedown', (ev) => { ev.preventDefault(); commitSelection(item); });
+            a.addEventListener('click', (ev) => { ev.preventDefault(); commitSelection(item); });
             dropdown.appendChild(a);
           });
         } catch (e) { console.error('Erro no autocomplete:', e); }
       }
       inputEl.addEventListener('input', (e) => {
         const term = e.target.value.trim();
+        if (lastCommittedText && term !== lastCommittedText) {
+          hiddenEl.value = '';
+          hiddenEl.dispatchEvent(new Event('change', { bubbles: true }));
+          lastCommittedText = '';
+          if (typeof onSelect === 'function') onSelect({ id: '', text: '' });
+        }
         clearTimeout(debounce);
         dropdown.innerHTML = '';
         if (term.length < 2) return;
