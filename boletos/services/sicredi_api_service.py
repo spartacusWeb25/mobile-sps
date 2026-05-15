@@ -354,6 +354,14 @@ class SicrediCobrancaService:
                 return r.json() if r.text else {"ok": True}
             errors.append(f"PATCH /boletos/{nn}/cancelamento -> {r.status_code} {(r.text or '').strip()[:200]}")
 
+            if r.status_code in (404, 405):
+                try:
+                    return self._baixar_boleto_com_token(token, nn, payload=payload)
+                except SicrediAPIError as ex:
+                    errors.append(f"PATCH /boletos/{nn}/cancelamento -> {r.status_code} baixa_falhou")
+                    errors.append(str(ex)[:200])
+                    continue
+
             r = requests.post(url1, params=params, json=payload or {}, headers=self._headers(token), timeout=30)
             if r.status_code < 400:
                 return r.json() if r.text else {"ok": True}

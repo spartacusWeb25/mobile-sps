@@ -77,6 +77,7 @@
       <div class="mb-2 d-flex gap-2 flex-wrap">
         <button type="button" class="btn btn-outline-primary btn-sm" onclick="enviarSelecionados('consultar')">Consultar</button>
         <button type="button" class="btn btn-outline-warning btn-sm" onclick="enviarSelecionados('alterar')">Alterar vencimento</button>
+        <button type="button" class="btn btn-outline-success btn-sm" onclick="enviarSelecionados('adiantar')">Adiantar</button>
         <button type="button" class="btn btn-outline-danger btn-sm" onclick="enviarSelecionados('cancelar')">Cancelar</button>
         <button type="button" class="btn btn-outline-secondary btn-sm" onclick="enviarSelecionados('baixar')">Baixar</button>
       </div>
@@ -129,7 +130,7 @@ async function enviarSelecionados(action) {
   const clienteSel = document.querySelector('select[name="cliente"]');
   if (clienteSel && clienteSel.value) fd.append('cliente', clienteSel.value);
   titulos.forEach(t => fd.append('titulos[]', t));
-  if (action === 'alterar') {
+  if (action === 'alterar' || action === 'adiantar') {
     const nova = prompt('Nova data de vencimento (YYYY-MM-DD):');
     if (!nova) return;
     fd.append('nova_data_vencimento', nova);

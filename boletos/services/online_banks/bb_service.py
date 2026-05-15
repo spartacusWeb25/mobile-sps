@@ -209,6 +209,9 @@ class BancoBrasilCobrancaService:
     def cancelar_boleto(self, nosso_numero, payload=None):
         return self.baixar_boleto(nosso_numero, payload=payload)
 
+    def adiantar_boleto(self, nosso_numero, payload):
+        return self.alterar_boleto(nosso_numero, payload=payload)
+
     def alterar_boleto(self, nosso_numero, payload):
         token = self._token()
         convenio = self._numero_convenio()

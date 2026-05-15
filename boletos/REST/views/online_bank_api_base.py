@@ -74,7 +74,7 @@ class BaseOnlineBankAPIView(APIView):
                 retorno = service.baixar_boleto(nosso_numero, payload=payload)
             elif acao == "cancelar":
                 retorno = service.cancelar_boleto(nosso_numero, payload=payload)
-            elif acao in ("alterar", "alterar_vencimento"):
+            elif acao in ("alterar", "alterar_vencimento", "adiantar"):
                 retorno = service.alterar_boleto(nosso_numero, payload=payload)
             else:
                 return Response({"erro": "acao_invalida"}, status=status.HTTP_400_BAD_REQUEST)

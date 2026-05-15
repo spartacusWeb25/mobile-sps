@@ -460,7 +460,7 @@ class BoletoOnlineView(View):
                         retorno = service.cancelar_boleto(titulo.titu_noss_nume, payload={})
                     else:
                         retorno = service.baixar_boleto(titulo.titu_noss_nume, payload={})
-                elif action in ('alterar', 'alterar_vencimento'):
+                elif action in ('alterar', 'alterar_vencimento', 'adiantar'):
                     nova = _parse_date(request.POST.get('nova_data_vencimento'))
                     if not nova:
                         error_count += 1
