@@ -511,43 +511,43 @@
 
       <div class="kpi-scroll mb-4">
         <div class="kpi-grid">
-          <div class="card kpi-card">
+          <div class="card kpi-card js-card-filter" data-filter-unset="status,atrasadas">
             <div class="card-body">
               <div class="label">Total</div>
               <div class="value" id="kpi-op-total">{{ dashboard.total_ordens }}</div>
             </div>
           </div>
-          <div class="card kpi-card">
+          <div class="card kpi-card js-card-filter" data-filter-unset="atrasadas" data-filter-set="status=0">
             <div class="card-body">
               <div class="label">Abertas</div>
               <div class="value" id="kpi-op-abertas">{{ dashboard.ordens_abertas }}</div>
             </div>
           </div>
-          <div class="card kpi-card">
+          <div class="card kpi-card js-card-filter" data-filter-unset="atrasadas" data-filter-set="status=1">
             <div class="card-body">
               <div class="label">Produção</div>
               <div class="value" id="kpi-op-producao">{{ dashboard.ordens_producao }}</div>
             </div>
           </div>
-          <div class="card kpi-card">
+          <div class="card kpi-card js-card-filter" data-filter-unset="atrasadas" data-filter-set="status=2">
             <div class="card-body">
               <div class="label">Finalizadas</div>
               <div class="value" id="kpi-op-finalizadas">{{ dashboard.ordens_finalizadas }}</div>
             </div>
           </div>
-          <div class="card kpi-card">
+          <div class="card kpi-card js-card-filter" data-filter-unset="atrasadas" data-filter-set="status=3">
             <div class="card-body">
               <div class="label">Entregues</div>
               <div class="value" id="kpi-op-entregues">{{ dashboard.ordens_entregues }}</div>
             </div>
           </div>
-          <div class="card kpi-card">
+          <div class="card kpi-card js-card-filter" data-filter-unset="atrasadas" data-filter-set="status=9">
             <div class="card-body">
               <div class="label">Canceladas</div>
               <div class="value" id="kpi-op-canceladas">{{ dashboard.ordens_canceladas }}</div>
             </div>
           </div>
-          <div class="card kpi-card">
+          <div class="card kpi-card js-card-filter" data-filter-unset="status" data-filter-set="atrasadas=1">
             <div class="card-body">
               <div class="label">Atrasadas</div>
               <div class="value" id="kpi-op-atrasadas">{{ dashboard.ordens_atrasadas }}</div>

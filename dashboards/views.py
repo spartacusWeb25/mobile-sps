@@ -273,8 +273,36 @@ class DashboardVendasView(APIView):
             data_fim = datetime.strptime(data_fim, '%Y-%m-%d')
             data_fim = datetime.combine(data_fim.date(), time.max)
 
+            empresa = (
+                request.query_params.get("empresa")
+                or request.query_params.get("empresa_id")
+                or request.headers.get("X-Empresa")
+            )
+            filial = (
+                request.query_params.get("filial")
+                or request.query_params.get("filial_id")
+                or request.headers.get("X-Filial")
+            )
+            empresa = str(empresa).strip() if empresa is not None else ""
+            filial = str(filial).strip() if filial is not None else ""
+            if empresa.lower() == "all":
+                empresa = ""
+            if filial.lower() == "all":
+                filial = ""
+
+            itens_qs = Itenspedidovenda.objects.using(slug).filter(
+                iped_data__range=(data_ini, data_fim)
+            )
+            if empresa:
+                itens_qs = itens_qs.filter(iped_empr=empresa)
+            if filial:
+                itens_qs = itens_qs.filter(iped_fili=filial)
 
             pedidos_periodo = PedidoVenda.objects.using(slug).filter(pedi_data__range=(data_ini, data_fim))
+            if empresa:
+                pedidos_periodo = pedidos_periodo.filter(pedi_empr=empresa)
+            if filial:
+                pedidos_periodo = pedidos_periodo.filter(pedi_fili=filial)
             logger.debug(f"Pedidos no período: {pedidos_periodo.count()}")
 
             total_pedidos = pedidos_periodo.count()
@@ -282,18 +310,31 @@ class DashboardVendasView(APIView):
             ticket_medio = total_faturado / total_pedidos if total_pedidos else 0
             logger.debug(f"Total faturado: {total_faturado}, Ticket médio: {ticket_medio}")
 
-            top_vendas = Itenspedidovenda.objects.using(slug).filter(
-                iped_data__range=(data_ini, data_fim)
-            ).values('iped_prod').annotate(
+            top_vendas = list(itens_qs.values('iped_prod').annotate(
                 total=Sum('iped_quan')
-            ).order_by('-total')[:10]
-            logger.debug(f"Top vendas: {list(top_vendas)}")
+            ).order_by('-total')[:10])
+
+            codigos = [str(row.get("iped_prod") or "").strip() for row in top_vendas if row.get("iped_prod") is not None]
+            codigos = [c for c in codigos if c]
+            nomes_map = {}
+            if codigos:
+                prod_qs = Produtos.objects.using(slug).filter(prod_codi__in=codigos)
+                if empresa:
+                    prod_qs = prod_qs.filter(prod_empr=str(empresa))
+                for row in prod_qs.values("prod_codi", "prod_nome"):
+                    nomes_map[str(row.get("prod_codi") or "").strip()] = str(row.get("prod_nome") or "").strip()
+
+            for row in top_vendas:
+                codigo = str(row.get("iped_prod") or "").strip()
+                row["prod_nome"] = nomes_map.get(codigo, "")
+
+            logger.debug(f"Top vendas: {top_vendas}")
 
             return Response({
                 'total_pedidos': total_pedidos,
                 'total_faturado': total_faturado,
                 'ticket_medio': round(ticket_medio, 2),
-                'top_vendas': list(top_vendas),
+                'top_vendas': top_vendas,
             })
 
         except Exception:

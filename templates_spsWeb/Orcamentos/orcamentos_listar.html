@@ -44,7 +44,7 @@
   <div class="row g-2 g-md-3 mb-3 cards-resumo-grid">
     {% for c in cards_resumo %}
     <div class="col-4 col-sm-6 col-md-3">
-      <div class="card resumo-card" style="--card-color: {{ c.color }};">
+      <div class="card resumo-card js-card-filter" style="--card-color: {{ c.color }};" {% if forloop.first %}data-filter-unset="status"{% endif %}>
         <div class="card-body py-2">
           <div class="d-flex justify-content-between align-items-center">
             <span class="fw-semibold resumo-label">{{ c.label }}</span>
@@ -59,7 +59,7 @@
     {% endfor %}
     {% for c in cards_por_status %}
     <div class="col-4 col-sm-6 col-md-3">
-      <div class="card resumo-card" style="--card-color: {{ c.color }};">
+      <div class="card resumo-card js-card-filter" style="--card-color: {{ c.color }};" data-filter-set="status={{ c.status }}">
         <div class="card-body py-2">
           <div class="d-flex justify-content-between align-items-center">
             <span class="fw-semibold resumo-label">{{ c.label }}</span>

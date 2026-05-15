@@ -214,3 +214,17 @@ class Itenspedidospisos(models.Model):
         managed = False
         db_table = 'itenspedidospisos'
         unique_together = (('item_empr', 'item_fili', 'item_pedi', 'item_ambi', 'item_prod'),)
+
+
+
+
+class PedidosPisosArquivos(models.Model):
+    arqu_empr = models.IntegerField(primary_key=True)
+    arqu_pedi = models.IntegerField(unique=True)
+    arqu_arqu = models.BinaryField(blank=True, null=True)
+    arqu_nome_arqu = models.CharField(max_length=100, blank=True, null=True)
+    arqu_cod_arqu = models.IntegerField(blank=True, null=True) 
+    class Meta:
+        managed = False
+        db_table = 'pedidospisosarquivos'
+        unique_together = (('arqu_empr', 'arqu_pedi', 'arqu_arqu'),)

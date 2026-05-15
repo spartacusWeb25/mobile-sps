@@ -70,7 +70,8 @@
             <div class="collapse" id="kpiCollapse">
                 <div class="row g-3 kpi-row">
                     <div class="col-md-3 kpi-col">
-                        <div class="card h-100 border-0 dashboard-card position-relative total-cte-card">
+                        <div class="card h-100 border-0 dashboard-card position-relative total-cte-card js-card-filter"
+                            data-filter-unset="f">
                             <div class="card-body d-flex flex-column justify-content-between p-3">
                                 <div>
                                     <h6 class="text-uppercase small fw-bold mb-2" style="opacity: 0.9;">Total de CT-e
@@ -82,8 +83,8 @@
                         </div>
                     </div>
                     <div class="col-md-3 kpi-col">
-                        <div class="card h-100 border-0 dashboard-card position-relative"
-                            id="total-cte-autorizados-card">
+                        <div class="card h-100 border-0 dashboard-card position-relative total-cte-autorizados-card js-card-filter"
+                            id="total-cte-autorizados-card" data-filter-set="f=autorizados">
                             <div class="card-body d-flex flex-column justify-content-between p-3">
                                 <div>
                                     <h6 class="text-uppercase small fw-bold mb-2" style="opacity: 0.9;">Autorizados</h6>
@@ -94,7 +95,8 @@
                         </div>
                     </div>
                     <div class="col-md-3 kpi-col">
-                        <div class="card h-100 border-0 dashboard-card position-relative total-cte-emitidos-card">
+                        <div class="card h-100 border-0 dashboard-card position-relative total-cte-emitidos-card js-card-filter"
+                            data-filter-set="f=emitidos">
                             <div class="card-body d-flex flex-column justify-content-between p-3">
                                 <div>
                                     <h6 class="text-uppercase small fw-bold mb-2" style="opacity: 0.9;">Emitidos</h6>
@@ -131,7 +133,7 @@
         <div class="d-none d-md-block">
             <div class="row g-3">
                 <div class="col-md-3">
-                    <div class="card h-100 border-0 dashboard-card position-relative total-cte-card">
+                    <div class="card h-100 border-0 dashboard-card position-relative total-cte-card js-card-filter" data-filter-unset="f">
                         <div class="card-body d-flex flex-column justify-content-between p-3">
                             <div>
                                 <h6 class="text-uppercase small fw-bold mb-2" style="opacity: 0.9;">Total de CT-e</h6>
@@ -142,7 +144,7 @@
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="card h-100 border-0 dashboard-card position-relative total-cte-autorizados-card">
+                    <div class="card h-100 border-0 dashboard-card position-relative total-cte-autorizados-card js-card-filter" data-filter-set="f=autorizados">
                         <div class="card-body d-flex flex-column justify-content-between p-3">
                             <div>
                                 <h6 class="text-uppercase small fw-bold mb-2" style="opacity: 0.9;">Autorizados</h6>
@@ -153,7 +155,7 @@
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="card h-100 border-0 dashboard-card position-relative total-cte-emitidos-card">
+                    <div class="card h-100 border-0 dashboard-card position-relative total-cte-emitidos-card js-card-filter" data-filter-set="f=emitidos">
                         <div class="card-body d-flex flex-column justify-content-between p-3">
                             <div>
                                 <h6 class="text-uppercase small fw-bold mb-2" style="opacity: 0.9;">Emitidos</h6>

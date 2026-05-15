@@ -57,6 +57,13 @@ class CteListView(CteBaseMixin, ListView):
 
     def get_queryset(self):
         qs = super().get_queryset()
+        f = (self.request.GET.get("f") or "").strip().lower()
+        if f == "autorizados":
+            qs = qs.filter(status="AUT")
+        elif f == "emitidos":
+            qs = qs.exclude(status="RAS").exclude(status__isnull=True).exclude(status="")
+        elif f == "rascunhos":
+            qs = qs.filter(status="RAS")
         ordering = self.get_ordering()
         if ordering:
             return qs.order_by(*ordering)

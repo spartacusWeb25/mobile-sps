@@ -1,0 +1,27 @@
+<div class="modal fade" id="modal-subgrupo" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Cadastrar Subgrupo</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-2">
+          <div class="col-4">
+            <label class="form-label">Código</label>
+            <input type="text" class="form-control" id="modal-subgrupo-codigo" placeholder="(auto)">
+          </div>
+          <div class="col-8">
+            <label class="form-label">Descrição</label>
+            <input type="text" class="form-control" id="modal-subgrupo-descricao" placeholder="Ex: Parafusos">
+          </div>
+        </div>
+        <div class="text-danger small mt-2 d-none" id="modal-subgrupo-erro"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-outline-primary" id="modal-subgrupo-salvar">Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>

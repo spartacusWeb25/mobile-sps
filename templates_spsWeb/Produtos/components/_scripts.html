@@ -180,6 +180,14 @@
 
       // Hide original select
       selectEl.style.display = 'none';
+      if (selectEl.value) {
+        const opt = Array.from(selectEl.options).find(o => String(o.value) === String(selectEl.value));
+        if (opt && opt.textContent && inputEl.value && String(inputEl.value).trim() === String(selectEl.value).trim()) {
+          inputEl.value = opt.textContent;
+        } else if (opt && opt.textContent && !inputEl.value) {
+          inputEl.value = opt.textContent;
+        }
+      }
 
       inputEl.addEventListener('input', e => {
         const term = e.target.value.trim();
@@ -259,7 +267,7 @@
     };
 
     // =================================================================
-    // 4. Inicialização dos Autocompletes
+    // 4. Inicialização dos Autocompletes e Modals
     // =================================================================
     const urls = {
       unidades: "{% url 'autocomplete_unidades' slug=slug %}",
@@ -268,6 +276,11 @@
       familias: "{% url 'autocomplete_familias' slug=slug %}",
       marcas: "{% url 'autocomplete_marcas' slug=slug %}",
       ncms: "{% url 'autocomplete_ncms' slug=slug %}",
+      createGrupo: "{% url 'ajax_create_grupo' slug=slug %}",
+      createSubgrupo: "{% url 'ajax_create_subgrupo' slug=slug %}",
+      createFamilia: "{% url 'ajax_create_familia' slug=slug %}",
+      createMarca: "{% url 'ajax_create_marca' slug=slug %}",
+      movEstoque: "{% url 'ajax_movimentar_estoque' slug=slug %}",
     };
 
     setupTextAutocomplete({ inputEl: document.getElementById('id_prod_unme'), url: urls.unidades });
@@ -282,6 +295,216 @@
     setupSelectAutocomplete({ inputEl: document.getElementById('autocomplete-subgrupo'), selectEl: document.getElementById('id_prod_sugr'), url: urls.subgrupos });
     setupSelectAutocomplete({ inputEl: document.getElementById('autocomplete-familia'), selectEl: document.getElementById('id_prod_fami'), url: urls.familias });
     setupSelectAutocomplete({ inputEl: document.getElementById('autocomplete-marca'), selectEl: document.getElementById('id_prod_marc'), url: urls.marcas });
+
+    function setModalError(el, message) {
+      if (!el) return;
+      if (!message) {
+        el.textContent = '';
+        el.classList.add('d-none');
+        return;
+      }
+      el.textContent = message;
+      el.classList.remove('d-none');
+    }
+
+    async function postJson(url, payload) {
+      const csrf = document.querySelector('[name=csrfmiddlewaretoken]')?.value || (document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '');
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
+        credentials: 'same-origin',
+        body: JSON.stringify(payload || {}),
+      });
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok) throw new Error(data.detail || 'Falha ao salvar.');
+      return data;
+    }
+
+    function openCadastroModal(entity) {
+      if (!window.bootstrap) return;
+      const map = {
+        grupo: { modalId: 'modal-grupo', inputId: 'autocomplete-grupo', selectId: 'id_prod_grup', url: urls.createGrupo },
+        subgrupo: { modalId: 'modal-subgrupo', inputId: 'autocomplete-subgrupo', selectId: 'id_prod_sugr', url: urls.createSubgrupo },
+        familia: { modalId: 'modal-familia', inputId: 'autocomplete-familia', selectId: 'id_prod_fami', url: urls.createFamilia },
+        marca: { modalId: 'modal-marca', inputId: 'autocomplete-marca', selectId: 'id_prod_marc', url: urls.createMarca },
+      };
+      const cfg = map[entity];
+      if (!cfg) return;
+      const modalEl = document.getElementById(cfg.modalId);
+      if (!modalEl) return;
+
+      const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+      const typed = (document.getElementById(cfg.inputId)?.value || '').trim();
+
+      if (entity === 'marca') {
+        const nomeEl = document.getElementById('modal-marca-nome');
+        const errEl = document.getElementById('modal-marca-erro');
+        if (nomeEl && typed && !nomeEl.value) nomeEl.value = typed;
+        setModalError(errEl, '');
+      } else {
+        const descId = `modal-${entity}-descricao`;
+        const codeId = `modal-${entity}-codigo`;
+        const errId = `modal-${entity}-erro`;
+        const descEl = document.getElementById(descId);
+        const codeEl = document.getElementById(codeId);
+        const errEl = document.getElementById(errId);
+        if (descEl && typed && !descEl.value) descEl.value = typed;
+        if (codeEl) codeEl.value = '';
+        setModalError(errEl, '');
+      }
+
+      modal.show();
+    }
+
+    document.querySelectorAll('.js-open-prod-cadastro').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        openCadastroModal(btn.dataset.entity);
+      });
+    });
+
+    async function salvarCadastro(entity) {
+      const map = {
+        grupo: { modalId: 'modal-grupo', inputId: 'autocomplete-grupo', selectId: 'id_prod_grup', url: urls.createGrupo },
+        subgrupo: { modalId: 'modal-subgrupo', inputId: 'autocomplete-subgrupo', selectId: 'id_prod_sugr', url: urls.createSubgrupo },
+        familia: { modalId: 'modal-familia', inputId: 'autocomplete-familia', selectId: 'id_prod_fami', url: urls.createFamilia },
+        marca: { modalId: 'modal-marca', inputId: 'autocomplete-marca', selectId: 'id_prod_marc', url: urls.createMarca },
+      };
+      const cfg = map[entity];
+      if (!cfg) return;
+      const selectEl = document.getElementById(cfg.selectId);
+      const inputEl = document.getElementById(cfg.inputId);
+      const modalEl = document.getElementById(cfg.modalId);
+      if (!modalEl || !selectEl || !inputEl) return;
+
+      let payload = {};
+      let errEl = null;
+
+      if (entity === 'marca') {
+        const nomeEl = document.getElementById('modal-marca-nome');
+        errEl = document.getElementById('modal-marca-erro');
+        payload = { nome: (nomeEl?.value || '').trim() };
+        if (!payload.nome) { setModalError(errEl, 'Nome é obrigatório.'); return; }
+      } else {
+        const codeEl = document.getElementById(`modal-${entity}-codigo`);
+        const descEl = document.getElementById(`modal-${entity}-descricao`);
+        errEl = document.getElementById(`modal-${entity}-erro`);
+        payload = { codigo: (codeEl?.value || '').trim(), descricao: (descEl?.value || '').trim() };
+        if (!payload.descricao) { setModalError(errEl, 'Descrição é obrigatória.'); return; }
+      }
+
+      try {
+        setModalError(errEl, '');
+        const created = await postJson(cfg.url, payload);
+        ensureOption(selectEl, created.value, created.label);
+        selectEl.value = created.value;
+        inputEl.value = created.label;
+        bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+      } catch (err) {
+        setModalError(errEl, err.message || 'Erro ao salvar.');
+      }
+    }
+
+    document.getElementById('modal-grupo-salvar')?.addEventListener('click', () => salvarCadastro('grupo'));
+    document.getElementById('modal-subgrupo-salvar')?.addEventListener('click', () => salvarCadastro('subgrupo'));
+    document.getElementById('modal-familia-salvar')?.addEventListener('click', () => salvarCadastro('familia'));
+    document.getElementById('modal-marca-salvar')?.addEventListener('click', () => salvarCadastro('marca'));
+
+    function openMovEstoque(tipo, produto) {
+      if (!window.bootstrap) return;
+      const modalEl = document.getElementById('modal-mov-estoque');
+      if (!modalEl) return;
+      const titleEl = document.getElementById('modal-mov-estoque-title');
+      const tipoEl = document.getElementById('modal-mov-estoque-tipo');
+      const prodEl = document.getElementById('modal-mov-estoque-produto');
+      const dataEl = document.getElementById('modal-mov-estoque-data');
+      const entidadeEl = document.getElementById('modal-mov-estoque-entidade');
+      const qtdEl = document.getElementById('modal-mov-estoque-qtd');
+      const unitEl = document.getElementById('modal-mov-estoque-unit');
+      const totalEl = document.getElementById('modal-mov-estoque-total');
+      const obsEl = document.getElementById('modal-mov-estoque-obs');
+      const errEl = document.getElementById('modal-mov-estoque-erro');
+      const okEl = document.getElementById('modal-mov-estoque-ok');
+
+      if (titleEl) titleEl.textContent = (tipo === 'SAIDA' ? 'Saída rápida de estoque' : 'Entrada rápida de estoque');
+      if (tipoEl) tipoEl.value = tipo || '';
+      if (prodEl) prodEl.value = produto || '';
+      if (dataEl) dataEl.valueAsDate = new Date();
+      if (entidadeEl) entidadeEl.value = '';
+      if (qtdEl) qtdEl.value = '';
+      if (unitEl) unitEl.value = '';
+      if (totalEl) totalEl.value = '';
+      if (obsEl) obsEl.value = '';
+      setModalError(errEl, '');
+      setModalError(okEl, '');
+
+      bootstrap.Modal.getOrCreateInstance(modalEl).show();
+    }
+
+    document.querySelectorAll('.js-mov-estoque').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        openMovEstoque(btn.dataset.tipo, btn.dataset.produto);
+      });
+    });
+
+    function recalcTotalMov() {
+      const qtdEl = document.getElementById('modal-mov-estoque-qtd');
+      const unitEl = document.getElementById('modal-mov-estoque-unit');
+      const totalEl = document.getElementById('modal-mov-estoque-total');
+      if (!qtdEl || !unitEl || !totalEl) return;
+      const qtd = parseFloat(String(qtdEl.value || '').replace(',', '.')) || 0;
+      const unit = parseFloat(String(unitEl.value || '').replace(',', '.')) || 0;
+      if (qtd > 0 && unit > 0 && (!totalEl.value || parseFloat(totalEl.value) === 0)) {
+        totalEl.value = (qtd * unit).toFixed(2);
+      }
+    }
+
+    document.getElementById('modal-mov-estoque-qtd')?.addEventListener('input', recalcTotalMov);
+    document.getElementById('modal-mov-estoque-unit')?.addEventListener('input', recalcTotalMov);
+
+    document.getElementById('modal-mov-estoque-salvar')?.addEventListener('click', async () => {
+      const tipo = (document.getElementById('modal-mov-estoque-tipo')?.value || '').trim().toUpperCase();
+      const produto = (document.getElementById('modal-mov-estoque-produto')?.value || '').trim();
+      const data = document.getElementById('modal-mov-estoque-data')?.value || '';
+      const entidade = (document.getElementById('modal-mov-estoque-entidade')?.value || '').trim();
+      const qtd = document.getElementById('modal-mov-estoque-qtd')?.value || '';
+      const total = document.getElementById('modal-mov-estoque-total')?.value || '';
+      const obs = (document.getElementById('modal-mov-estoque-obs')?.value || '').trim();
+      const errEl = document.getElementById('modal-mov-estoque-erro');
+      const okEl = document.getElementById('modal-mov-estoque-ok');
+
+      setModalError(errEl, '');
+      setModalError(okEl, '');
+
+      if (!produto) { setModalError(errEl, 'Produto não informado.'); return; }
+      if (!tipo || (tipo !== 'ENTRADA' && tipo !== 'SAIDA')) { setModalError(errEl, 'Tipo inválido.'); return; }
+      if (!qtd || parseFloat(String(qtd).replace(',', '.')) <= 0) { setModalError(errEl, 'Quantidade deve ser maior que zero.'); return; }
+
+      try {
+        const resp = await postJson(urls.movEstoque, {
+          tipo: tipo,
+          produto: produto,
+          data: data,
+          entidade: entidade,
+          quantidade: qtd,
+          total: total,
+          observacao: obs,
+        });
+        const saldo = resp?.resultado?.saldo;
+        const msg = saldo === null || saldo === undefined ? 'Movimentação registrada.' : `Movimentação registrada. Saldo: ${saldo}`;
+        if (okEl) {
+          okEl.textContent = msg;
+          okEl.classList.remove('d-none');
+        }
+        setTimeout(() => {
+          const modalEl = document.getElementById('modal-mov-estoque');
+          if (modalEl) bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+        }, 600);
+      } catch (err) {
+        setModalError(errEl, err.message || 'Erro ao registrar.');
+      }
+    });
 
     // Inicializar defaults se já houver valor (Edição ou Reload)
     const existingNcm = document.getElementById('autocomplete-ncm') || document.getElementById('id_prod_ncm');

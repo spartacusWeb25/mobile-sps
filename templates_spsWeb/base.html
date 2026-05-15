@@ -97,25 +97,25 @@
         defer
         onerror="(function(){var s=document.createElement('script');s.src='https://unpkg.com/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js';s.defer=true;document.body.appendChild(s);})();"></script>
     {% block auto_messages %}
-        {% if messages %}
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                try {
-                    {% for message in messages %}
-                    (function () {
-                        var tag = "{{ message.tags|default:'info' }}";
-                        if (tag.indexOf('error') >= 0) tag = 'danger';
-                        else if (tag.indexOf('warning') >= 0) tag = 'warning';
-                        else if (tag.indexOf('success') >= 0) tag = 'success';
-                        else if (tag.indexOf('info') >= 0) tag = 'info';
-                        else if (tag.indexOf('debug') >= 0) tag = 'secondary';
-                        window.showToast("{{ message|escapejs }}", { variant: tag, delay: 3500 });
-                    })();
-                    {% endfor %}
-                } catch (e) { }
-            });
-        </script>
-        {% endif %}
+    {% if messages %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            try {
+                {% for message in messages %}
+                (function () {
+                    var tag = "{{ message.tags|default:'info' }}";
+                    if (tag.indexOf('error') >= 0) tag = 'danger';
+                    else if (tag.indexOf('warning') >= 0) tag = 'warning';
+                    else if (tag.indexOf('success') >= 0) tag = 'success';
+                    else if (tag.indexOf('info') >= 0) tag = 'info';
+                    else if (tag.indexOf('debug') >= 0) tag = 'secondary';
+                    window.showToast("{{ message|escapejs }}", { variant: tag, delay: 3500 });
+                })();
+                {% endfor %}
+            } catch (e) { }
+        });
+    </script>
+    {% endif %}
     {% endblock %}
     <script>
         window.showToast = function (message, opts) {
@@ -207,6 +207,49 @@
     <script>
         document.body.addEventListener('htmx:configRequest', (event) => {
             event.detail.headers['X-CSRFToken'] = '{{ csrf_token }}';
+        });
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            function splitKeys(s) {
+                return String(s || '')
+                    .split(',')
+                    .map(function (x) { return x.trim(); })
+                    .filter(Boolean);
+            }
+
+            function applyCardFilter(el) {
+                var url = new URL(window.location.href);
+                url.searchParams.delete('page');
+
+                splitKeys(el.dataset.filterUnset).forEach(function (k) { url.searchParams.delete(k); });
+
+                var set = new URLSearchParams(el.dataset.filterSet || '');
+                set.forEach(function (v, k) {
+                    if (v === '' || v === '__clear__') url.searchParams.delete(k);
+                    else url.searchParams.set(k, v);
+                });
+
+                window.location.href = url.toString();
+            }
+
+            document.querySelectorAll('[data-filter-set],[data-filter-unset],.js-card-filter').forEach(function (el) {
+                if (el.tagName === 'A' && el.getAttribute('href') && el.getAttribute('href') !== '#') return;
+                if (el.dataset.filterSet === undefined && el.dataset.filterUnset === undefined) return;
+                el.style.cursor = 'pointer';
+                el.addEventListener('click', function (e) {
+                    try { e.preventDefault(); } catch (_) { }
+                    applyCardFilter(el);
+                });
+                el.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        try { e.preventDefault(); } catch (_) { }
+                        applyCardFilter(el);
+                    }
+                });
+                if (!el.getAttribute('tabindex')) el.setAttribute('tabindex', '0');
+                if (!el.getAttribute('role')) el.setAttribute('role', 'button');
+            });
         });
     </script>
     {% block extra_js %}{% endblock %}

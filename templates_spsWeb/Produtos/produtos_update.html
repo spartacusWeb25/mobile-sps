@@ -42,6 +42,16 @@
   <div class="page-header-custom">
     <h2 class="page-title"><i class="bi bi-box"></i> Editar Produto</h2>
     <div class="page-actions d-flex gap-2">
+      {% if form.instance and form.instance.prod_codi %}
+      <button type="button" class="btn btn-outline-success btn-sm js-mov-estoque" data-tipo="ENTRADA"
+        data-produto="{{ form.instance.prod_codi }}">
+        <i class="bi bi-box-arrow-in-down"></i> Entrada
+      </button>
+      <button type="button" class="btn btn-outline-warning btn-sm js-mov-estoque" data-tipo="SAIDA"
+        data-produto="{{ form.instance.prod_codi }}">
+        <i class="bi bi-box-arrow-up"></i> Saída
+      </button>
+      {% endif %}
       <a href="{% url 'produtos_web' slug=slug %}" class="btn btn-outline-secondary btn-sm">
         <i class="bi bi-arrow-left justify-content-end"></i> Voltar à Lista
       </a>
@@ -173,6 +183,11 @@
 </div>
 
 {% include "Produtos/components/_scripts.html" %}
+{% include "Produtos/components/_modal_grupo.html" %}
+{% include "Produtos/components/_modal_subgrupo.html" %}
+{% include "Produtos/components/_modal_familia.html" %}
+{% include "Produtos/components/_modal_marca.html" %}
+{% include "Produtos/components/_modal_mov_estoque.html" %}
 {% endblock %}
 {% if messages %}
 <div class="container" style="margin-top: 10px;">

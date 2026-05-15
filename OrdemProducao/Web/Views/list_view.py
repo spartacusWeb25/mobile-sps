@@ -4,6 +4,7 @@ from ...models import Ordemproducao
 from ...services import OrdemProducaoFilhosService, OrdemProducaoService
 from .base import OrdemProducaoWebMixin
 from django.core.paginator import Paginator
+from django.utils import timezone
 
 
 class OrdemproducaoListView(OrdemProducaoWebMixin, ListView):
@@ -18,10 +19,13 @@ class OrdemproducaoListView(OrdemProducaoWebMixin, ListView):
 
         status = self.request.GET.get('status')
         tipo = self.request.GET.get('tipo')
+        atrasadas = (self.request.GET.get('atrasadas') or '').strip().lower()
         if status:
             qs = qs.filter(orpr_stat=status)
         if tipo:
             qs = qs.filter(orpr_tipo=tipo)
+        if atrasadas in ('1', 'true', 'sim'):
+            qs = qs.filter(orpr_prev__lt=timezone.now(), orpr_stat__in=['1', '2'])
         return qs.order_by('-orpr_codi')
 
     def get_context_data(self, **kwargs):

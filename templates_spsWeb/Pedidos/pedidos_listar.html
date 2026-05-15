@@ -45,7 +45,7 @@
   <div class="row g-2 g-md-3 mb-3 cards-resumo-grid">
     {% for c in cards_resumo %}
     <div class="col-4 col-sm-6 col-md-3">
-      <div class="card resumo-card" style="--card-color: {{ c.color }};">
+      <div class="card resumo-card js-card-filter" style="--card-color: {{ c.color }};" {% if c.label == 'Total de Pedidos' %}data-filter-unset="status"{% endif %}>
         <div class="card-body py-2">
           <div class="d-flex justify-content-between align-items-center">
             <span class="fw-semibold resumo-label">{{ c.label }}</span>
@@ -66,7 +66,7 @@
     {% endfor %}
     {% for c in cards_por_status %}
     <div class="col-4 col-sm-6 col-md-3">
-      <div class="card resumo-card" style="--card-color: {{ c.color }};">
+      <div class="card resumo-card js-card-filter" style="--card-color: {{ c.color }};" data-filter-set="status={{ c.status }}">
         <div class="card-body py-2">
           <div class="d-flex justify-content-between align-items-center">
             <span class="fw-semibold resumo-label">{{ c.label }}</span>
@@ -98,9 +98,9 @@
     <div class="col-md-3">
       <select name="status" class="form-select">
         <option value="todos" {% if request.GET.status == 'todos' or not request.GET.status %}selected{% endif %}>Todos</option>
-        <option value="A" {% if request.GET.status == 'A' %}selected{% endif %}>Aberto</option>
-        <option value="F" {% if request.GET.status == 'F' %}selected{% endif %}>Faturado</option>
-        <option value="C" {% if request.GET.status == 'C' %}selected{% endif %}>Cancelado</option>
+        {% for st in status_pedidos %}
+        <option value="{{ st.value }}" {% if request.GET.status == st.value|stringformat:"s" %}selected{% endif %}>{{ st.label }}</option>
+        {% endfor %}
       </select>
     </div>
     <div class="col-md-2 mt-3 ">
@@ -130,11 +130,15 @@
           <td>{{ p.vendedor_nome|default:p.pedi_vend }}</td>
           <td class="text-end">{{ p.pedi_tota|brl }}</td>
           <td>
-            {% if p.pedi_stat == 'A' %}
-              <span class="badge bg-warning text-dark">Aberto</span>
-            {% elif p.pedi_stat == 'F' %}
-              <span class="badge bg-success">Faturado</span>
-            {% elif p.pedi_stat == 'C' %}
+            {% if p.pedi_stat == 0 %}
+              <span class="badge bg-warning text-dark">Pendente</span>
+            {% elif p.pedi_stat == 1 %}
+              <span class="badge bg-primary">Processando</span>
+            {% elif p.pedi_stat == 2 %}
+              <span class="badge bg-info text-dark">Enviado</span>
+            {% elif p.pedi_stat == 3 %}
+              <span class="badge bg-success">Concluído</span>
+            {% elif p.pedi_stat == 4 %}
               <span class="badge bg-secondary">Cancelado</span>
             {% else %}
               <span class="badge bg-light text-dark">{{ p.pedi_stat }}</span>

@@ -218,6 +218,10 @@
                     <label class="form-label">Unidade (código)</label>
                     <input type="text" class="form-control" id="op-cr-unme" placeholder="Ex: UN">
                   </div>
+                  <div class="mb-3">
+                    <label class="form-label">NCM (código)</label>
+                    <input type="text" class="form-control" id="op-cr-ncm" placeholder="Ex: 94036000">
+                  </div>
                   <div class="text-muted small">Empresa: ${empresaId} | Filial: ${filialId}</div>
                 </div>
                 <div class="modal-footer">
@@ -240,14 +244,17 @@
                 document.getElementById('modal-op-save').addEventListener('click', async () => {
                     const nome = document.getElementById('op-cr-nome').value.trim();
                     const unme = document.getElementById('op-cr-unme').value.trim();
-                    if (!nome) return;
+                    const ncm = document.getElementById('op-cr-ncm').value.trim();
+                    if (!nome) { alert('Informe o nome do produto.'); return; }
+                    if (!unme) { alert('Informe a unidade (código).'); return; }
+                    if (!ncm) { alert('Informe o NCM.'); return; }
                     try {
                         const csrf = (document.querySelector('[name=csrfmiddlewaretoken]')?.value) || (document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '');
                         const resp = await fetch(`/api/{{ slug }}/produtos/produtos/cadastro_rapido/`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
                             credentials: 'same-origin',
-                            body: JSON.stringify({ prod_nome: nome, unme: unme })
+                            body: JSON.stringify({ prod_nome: nome, unme: unme, ncm: ncm })
                         });
                         const json = await resp.json();
                         if (resp.ok) {

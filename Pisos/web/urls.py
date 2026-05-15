@@ -10,6 +10,7 @@ from Pisos.web.views.orcamentos_listar import OrcamentoPisosListView
 from Pisos.web.views.orcamentos_visualizar import visualizar_orcamento_pisos
 from Pisos.web.views.calcular_item_view import api_calcular_item
 from Pisos.web.views.impressao import imprimir_pedido_pisos, imprimir_orcamento_pisos
+from Pisos.web.views.arquivos import download_pedido_pisos_arquivo, upload_pedido_pisos_arquivo
 
 from Pisos.web.views.utils import autocomplete_clientes, autocomplete_vendedores, autocomplete_produtos
 from Pisos.web.views.comissao_view import ComissaoVendedorView
@@ -23,6 +24,8 @@ urlpatterns = [
     path("pedidos-pisos/<int:pk>/", visualizar_pedido_pisos, name="pedidos_pisos_visualizar"),
     path("pedidos-pisos/<int:pk>/editar/", editar_pedido_pisos, name="pedidos_pisos_editar"),
     path("pedidos-pisos/<int:pk>/imprimir/", imprimir_pedido_pisos, name="pedidos_pisos_imprimir"),
+    path("pedidos-pisos/<int:pk>/arquivos/upload/", upload_pedido_pisos_arquivo, name="pedidos_pisos_arquivos_upload"),
+    path("pedidos-pisos/<int:pk>/arquivos/<int:codigo>/", download_pedido_pisos_arquivo, name="pedidos_pisos_arquivos_download"),
     path("autocompletes/clientes/", autocomplete_clientes, name="autocomplete_clientes"),
     path("autocompletes/vendedores/", autocomplete_vendedores, name="autocomplete_vendedores"),
     path("autocompletes/produtos/", autocomplete_produtos, name="autocomplete_produtos"),

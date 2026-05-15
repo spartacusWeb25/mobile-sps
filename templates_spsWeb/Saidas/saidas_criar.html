@@ -248,6 +248,10 @@
                   <label class="form-label">Unidade (código)</label>
                   <input type="text" class="form-control" id="saidas-cr-unme" placeholder="Ex: UN">
                 </div>
+                <div class="mb-3">
+                  <label class="form-label">NCM (código)</label>
+                  <input type="text" class="form-control" id="saidas-cr-ncm" placeholder="Ex: 94036000">
+                </div>
                 <div class="row g-2">
                   <div class="col-md-6">
                     <label class="form-label">Preço à vista (opcional)</label>
@@ -280,9 +284,12 @@
           document.getElementById('modal-saidas-save').addEventListener('click', async () => {
             const nome = document.getElementById('saidas-cr-nome').value.trim();
             const unme = document.getElementById('saidas-cr-unme').value.trim();
+            const ncm = document.getElementById('saidas-cr-ncm').value.trim();
             const precoVista = document.getElementById('saidas-cr-preco-vista').value;
             const precoPrazo = document.getElementById('saidas-cr-preco-prazo').value;
-            if (!nome) return;
+            if (!nome) { toastError('Informe o nome do produto.'); return; }
+            if (!unme) { toastError('Informe a unidade (código).'); return; }
+            if (!ncm) { toastError('Informe o NCM.'); return; }
             const csrf = (document.querySelector('[name=csrfmiddlewaretoken]')?.value) || (document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '');
             try {
               const resp = await fetch(`/api/{{ slug }}/produtos/produtos/cadastro_rapido/`, {
@@ -292,6 +299,7 @@
                 body: JSON.stringify({
                   prod_nome: nome,
                   unme: unme,
+                  ncm: ncm,
                   preco_vista: precoVista,
                   preco_prazo: precoPrazo,
                 })

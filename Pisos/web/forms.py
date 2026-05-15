@@ -1,7 +1,7 @@
 from django import forms
 from django.forms import formset_factory
 
-from Pisos.models import Pedidospisos, Orcamentopisos
+from Pisos.models import Pedidospisos, Orcamentopisos, PedidosPisosArquivos
 
 
 PEDIDO_STATUS_CHOICES = (
@@ -181,3 +181,25 @@ class WorkflowForm(forms.ModelForm):
             "pedi_desc_ence_work": "Encerramento Pedido",
             "pedi_data_ence_work": "Data Encerramento Pedido",
         }
+
+
+class PedidosPisosArquivosForm(forms.ModelForm):
+    arqu_arqu = forms.FileField(
+        required=False,
+        widget=forms.FileInput(attrs={"class": "form-control form-control-sm"}),
+        label="Arquivo",
+    )
+
+    class Meta:
+        model = PedidosPisosArquivos
+        fields = [
+            "arqu_empr", "arqu_pedi", "arqu_nome_arqu", "arqu_cod_arqu",
+        ]
+        labels = {
+            "arqu_empr": "Empresa",
+            "arqu_pedi": "Pedido",
+
+            "arqu_cod_arqu": "Código Arquivo",
+        }
+        widgets = {}
+        

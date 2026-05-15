@@ -760,12 +760,12 @@
 
     <!-- KPIs -->
     <div class="nf-kpis">
-      <div class="kpi-card green">
+      <div class="kpi-card green js-card-filter" data-filter-set="status=100">
         <div class="kpi-icon"><i class="bi bi-check-circle-fill"></i></div>
         <div class="kpi-label">Emitidas</div>
         <div class="kpi-value">{{ kpis.emitidas }}</div>
       </div>
-      <div class="kpi-card red">
+      <div class="kpi-card red js-card-filter" data-filter-set="status=101">
         <div class="kpi-icon"><i class="bi bi-x-circle-fill"></i></div>
         <div class="kpi-label">Canceladas</div>
         <div class="kpi-value">{{ kpis.canceladas_distintas }}</div>

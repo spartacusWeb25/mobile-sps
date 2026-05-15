@@ -106,7 +106,7 @@ class PedidopisosListView(VendedorEntidadeMixin, ListView):
         context["metricas"] = {
             "total_pedidos": base_qs.count(),
             "total_valor": base_qs.aggregate(total=Sum("pedi_tota")).get("total") or 0,
-            "total_concluidos": base_qs.filter(pedi_stat=2).count(),
+            "total_concluidos": base_qs.filter(pedi_stat=6).count(),
             "total_abertos": base_qs.filter(pedi_stat=0).count(),
         }
 

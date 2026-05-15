@@ -348,6 +348,8 @@
             const rowDesc = row ? row.querySelector("input[name$='-movm_desc']") : descEl;
             const rowUnid = row ? row.querySelector("input[name$='-movm_unid']") : unidEl;
             const unme = ((rowUnid && rowUnid.value) ? String(rowUnid.value).trim() : "UN") || "UN";
+            const ncm = (prompt("NCM (código):") || "").trim();
+            if (!ncm) return;
             const empresa = (document.querySelector("input[name$='movm_empr']") || {}).value || "";
             const filial = (document.querySelector("input[name$='movm_fili']") || {}).value || "";
 
@@ -361,7 +363,7 @@
                     "X-Empresa": empresa ? String(empresa) : "",
                     "X-Filial": filial ? String(filial) : "",
                 },
-                body: JSON.stringify({ prod_nome: term, unme }),
+                body: JSON.stringify({ prod_nome: term, unme, ncm }),
             });
             const data = await resp.json().catch(() => ({}));
             if (!resp.ok) {

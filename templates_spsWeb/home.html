@@ -23,6 +23,9 @@
 
     .chart-card {
         background: var(--bs-card-bg);
+        background-image:
+            radial-gradient(circle at 15% 15%, rgba(142, 196, 212, 0.12), transparent 55%),
+            radial-gradient(circle at 85% 10%, rgba(13, 110, 253, 0.08), transparent 45%);
         box-shadow: 0 4px 14px rgba(142, 196, 212, 0.733);
         border-radius: 12px;
         border: 1px solid var(--bs-border-color)
@@ -122,7 +125,8 @@
                                         </div>
                                         <div>
                                             <div class="text-muted small">Total vendido</div>
-                                            <div id="kpi-total-vendido" class="fs-6 fw-semibold text-success">{{ kpis.total_valor|brl }}</div>
+                                            <div id="kpi-total-vendido" class="fs-6 fw-semibold text-success">{{
+                                                kpis.total_valor|brl }}</div>
                                         </div>
                                     </div>
                                 </div>
@@ -136,7 +140,8 @@
                                         </div>
                                         <div>
                                             <div class="text-muted small">Lucro (%)</div>
-                                            <div id="kpi-lucro-percent" class="fs-6 fw-semibold text-info">{{ kpis.lucro_percent|floatformat:2 }}%</div>
+                                            <div id="kpi-lucro-percent" class="fs-6 fw-semibold text-info">{{
+                                                kpis.lucro_percent|floatformat:2 }}%</div>
                                         </div>
                                     </div>
                                 </div>
@@ -150,7 +155,8 @@
                                         </div>
                                         <div>
                                             <div class="text-muted small">Ticket médio</div>
-                                            <div id="kpi-ticket-medio" class="fs-6 fw-semibold text-warning">{{ kpis.ticket_medio|brl }}</div>
+                                            <div id="kpi-ticket-medio" class="fs-6 fw-semibold text-warning">{{
+                                                kpis.ticket_medio|brl }}</div>
                                         </div>
                                     </div>
                                 </div>
@@ -164,7 +170,8 @@
                                         </div>
                                         <div>
                                             <div class="text-muted small">Pedidos</div>
-                                            <div id="kpi-pedidos" class="fs-6 fw-semibold text-primary">{{ kpis.qtd_pedidos }}</div>
+                                            <div id="kpi-pedidos" class="fs-6 fw-semibold text-primary">{{
+                                                kpis.qtd_pedidos }}</div>
                                         </div>
                                     </div>
                                 </div>
@@ -178,7 +185,8 @@
                                         </div>
                                         <div>
                                             <div class="text-muted small">Itens vendidos</div>
-                                            <div id="kpi-itens-vendidos" class="fs-6 fw-semibold" style="color:#6f42c1">{{ kpis.itens_contagem}}
+                                            <div id="kpi-itens-vendidos" class="fs-6 fw-semibold" style="color:#6f42c1">
+                                                {{ kpis.itens_contagem}}
                                             </div>
                                         </div>
                                     </div>
@@ -197,7 +205,8 @@
                                         </div>
                                         <div>
                                             <div class="text-muted small">Clientes distintos</div>
-                                            <div id="kpi-clientes-distintos" class="fs-6 fw-semibold text-info">{{ kpis.clientes_distintos }}</div>
+                                            <div id="kpi-clientes-distintos" class="fs-6 fw-semibold text-info">{{
+                                                kpis.clientes_distintos }}</div>
                                         </div>
                                     </div>
                                 </div>
@@ -211,7 +220,8 @@
                                         </div>
                                         <div>
                                             <div class="text-muted small">Itens por pedido</div>
-                                            <div id="kpi-itens-por-pedido" class="fs-6 fw-semibold" style="color:#6610f2">{{ kpis.itens_por_pedido|floatformat:2 }}</div>
+                                            <div id="kpi-itens-por-pedido" class="fs-6 fw-semibold"
+                                                style="color:#6610f2">{{ kpis.itens_por_pedido|floatformat:2 }}</div>
                                         </div>
                                     </div>
                                 </div>
@@ -225,7 +235,8 @@
                                         </div>
                                         <div>
                                             <div class="text-muted small">Valor médio item</div>
-                                            <div id="kpi-valor-medio-item" class="fs-6 fw-semibold text-danger">{{ kpis.valor_medio_item|brl }}
+                                            <div id="kpi-valor-medio-item" class="fs-6 fw-semibold text-danger">{{
+                                                kpis.valor_medio_item|brl }}
                                             </div>
                                         </div>
                                     </div>
@@ -240,7 +251,8 @@
                                         </div>
                                         <div>
                                             <div class="text-muted small">Pedidos/dia</div>
-                                            <div id="kpi-pedidos-por-dia" class="fs-6 fw-semibold text-success">{{ kpis.pedidos_por_dia|floatformat:2 }}</div>
+                                            <div id="kpi-pedidos-por-dia" class="fs-6 fw-semibold text-success">{{
+                                                kpis.pedidos_por_dia|floatformat:2 }}</div>
                                         </div>
                                     </div>
                                 </div>
@@ -446,6 +458,11 @@
     let chartValorVendedor = null;
     let chartPedidosPeriodo = null;
     let chartItensVendidos = null;
+    const dashboardChartState = {
+        pedidosPeriodo: { labels: [], contagens: [] },
+        pedidosVendedor: { labels: [], contagens: [], valores: [] },
+        topItens: { labels: [], quantidades: [], nomes: [] }
+    };
 
     function createBarGradient(ctx) {
         const g = ctx.createLinearGradient(0, ctx.canvas.height, 0, 0);
@@ -459,6 +476,71 @@
         beforeDatasetsDraw(chart) { const c = chart.ctx; c.save(); c.shadowColor = 'rgba(142, 196, 212, 0.733)'; c.shadowBlur = 8; c.shadowOffsetY = 4; },
         afterDatasetsDraw(chart) { chart.ctx.restore(); }
     };
+
+    const inlineBarLabelsPlugin = {
+        id: 'inlineBarLabels',
+        afterDatasetsDraw(chart, args, opts) {
+            try {
+                const datasetIndex = Number(opts?.datasetIndex ?? 0);
+                const meta = chart.getDatasetMeta(datasetIndex);
+                const ds = chart.data.datasets?.[datasetIndex];
+                if (!meta?.data?.length || !ds) return;
+                const names = Array.isArray(ds.__names) ? ds.__names : [];
+                const labels = Array.isArray(chart.data.labels) ? chart.data.labels : [];
+                const ctx = chart.ctx;
+                const dark = isDarkTheme();
+                const color = opts?.color || (dark ? '#f8f9fa' : '#0b0f14');
+                const strokeColor = opts?.strokeColor || (dark ? 'rgba(0,0,0,0.65)' : 'rgba(255,255,255,0.85)');
+                const padding = Number(opts?.padding ?? 10);
+                const maxLen = Number(opts?.maxLen ?? 64);
+                ctx.save();
+                ctx.font = opts?.font || '600 12px system-ui';
+                ctx.fillStyle = color;
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'middle';
+                ctx.lineJoin = 'round';
+                ctx.miterLimit = 2;
+                meta.data.forEach((bar, i) => {
+                    const code = String(labels[i] ?? '');
+                    const name = String(names[i] ?? '').trim();
+                    let text = name ? `${code} - ${name}` : code;
+                    if (!text) return;
+                    if (text.length > maxLen) text = `${text.slice(0, maxLen - 1)}…`;
+                    const props = bar.getProps(['x', 'y', 'base', 'width', 'height'], true);
+                    const x0 = Number(props.base ?? 0);
+                    const x1 = Number(props.x ?? 0);
+                    const y = Number(props.y ?? 0);
+                    const left = Math.min(x0, x1);
+                    const right = Math.max(x0, x1);
+                    const available = right - left - padding * 2;
+                    if (available <= 18) return;
+                    while (ctx.measureText(text).width > available && text.length > 1) {
+                        text = `${text.slice(0, -2)}…`;
+                    }
+                    const xText = left + padding;
+                    const strokeWidth = Number(opts?.strokeWidth ?? 3);
+                    if (strokeWidth > 0) {
+                        ctx.lineWidth = strokeWidth;
+                        ctx.strokeStyle = strokeColor;
+                        ctx.strokeText(text, xText, y);
+                    }
+                    ctx.fillText(text, xText, y);
+                });
+                ctx.restore();
+            } catch (e) { }
+        }
+    };
+
+    let __chartPluginsRegistered = false;
+    function ensureChartPluginsRegistered() {
+        if (__chartPluginsRegistered) return;
+        try {
+            if (window.Chart && typeof Chart.register === 'function') {
+                Chart.register(inlineBarLabelsPlugin);
+                __chartPluginsRegistered = true;
+            }
+        } catch (e) { }
+    }
 
     function isDarkTheme() {
         const t = (document.documentElement.getAttribute('data-bs-theme') || document.body.getAttribute('data-bs-theme') || '').toLowerCase();
@@ -476,77 +558,240 @@
     }
 
     function upsertPedidosPeriodo(labels, valoresCount) {
+        dashboardChartState.pedidosPeriodo.labels = Array.isArray(labels) ? labels : [];
+        dashboardChartState.pedidosPeriodo.contagens = Array.isArray(valoresCount) ? valoresCount : [];
         const ctx = chartPedidosPeriodoCtx ? chartPedidosPeriodoCtx.getContext('2d') : null;
         const safeLabels = Array.isArray(labels) && labels.length ? labels : ['Sem dados'];
         const safeValores = Array.isArray(valoresCount) && valoresCount.length ? valoresCount : [0];
         const countData = {
             labels: safeLabels,
-            datasets: [{ label: 'Pedidos', data: safeValores, backgroundColor: ctx ? createBarGradient(ctx) : '#82a0ff', borderColor: '#fff', borderWidth: 1, borderRadius: 6 }]
+            datasets: [{
+                label: 'Pedidos',
+                data: safeValores,
+                backgroundColor: ctx ? createBarGradient(ctx) : '#82a0ff',
+                borderColor: '#fff',
+                borderWidth: 1,
+                borderRadius: 10,
+                borderSkipped: false
+            }]
         };
         const axis = themeAxis();
         if (chartPedidosPeriodo) {
             chartPedidosPeriodo.data = countData;
+            chartPedidosPeriodo.options.scales.y.grid.display = false;
             chartPedidosPeriodo.options.scales.y.grid.color = axis.gridColor;
             chartPedidosPeriodo.options.scales.y.ticks.color = axis.tickColor;
+            chartPedidosPeriodo.options.scales.x.grid.display = false;
             chartPedidosPeriodo.options.scales.x.grid.color = axis.gridColor;
             chartPedidosPeriodo.options.scales.x.ticks.color = axis.tickColor;
             chartPedidosPeriodo.update();
         } else if (ctx) {
             chartPedidosPeriodo = new Chart(ctx, {
                 type: 'bar', data: countData,
-                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: axis.gridColor }, ticks: { color: axis.tickColor } }, x: { grid: { color: axis.gridColor }, ticks: { color: axis.tickColor } } }, plugins: { legend: { display: false } } },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, grid: { display: false, color: axis.gridColor }, ticks: { color: axis.tickColor } },
+                        x: { grid: { display: false, color: axis.gridColor }, ticks: { color: axis.tickColor } }
+                    },
+                    plugins: { legend: { display: false } }
+                },
                 plugins: [shadowPlugin]
             });
         }
     }
 
     function upsertPedidosVendedor(labels, contagens, valores) {
+        dashboardChartState.pedidosVendedor.labels = Array.isArray(labels) ? labels : [];
+        dashboardChartState.pedidosVendedor.contagens = Array.isArray(contagens) ? contagens : [];
+        dashboardChartState.pedidosVendedor.valores = Array.isArray(valores) ? valores : [];
         const ctxCount = chartPedidosVendedorCtx ? chartPedidosVendedorCtx.getContext('2d') : null;
         const ctxValor = chartValorVendedorCtx ? chartValorVendedorCtx.getContext('2d') : null;
         const axis = themeAxis();
+        const dark = isDarkTheme();
+        const donutBorder = dark ? '#1f2428' : '#ffffff';
         const palette = ['#8bb4ff', '#78a8ff', '#659cff', '#5290ff', '#1a5e7e', '#1b3f50', '#004766', '#003a52', '#002d44', '#00243a', '#001a26', '#001119'];
         const safeLabels = Array.isArray(labels) && labels.length ? labels : ['Sem dados'];
         const safeContagens = Array.isArray(contagens) && contagens.length ? contagens : [0];
         const safeValores = Array.isArray(valores) && valores.length ? valores : [0];
-        const countData = { labels: safeLabels, datasets: [{ label: 'Pedidos', data: safeContagens, backgroundColor: safeLabels.map((_, i) => palette[i % palette.length]), borderColor: '#ffffff', borderWidth: 1 }] };
-        const valorData = { labels: safeLabels, datasets: [{ label: 'Valor dos Pedidos', data: safeValores, backgroundColor: 'rgba(13,110,253,.35)', borderColor: 'rgba(13,110,253,.9)', borderWidth: 1.5, borderRadius: 6 }] };
-        if (chartPedidosVendedor && chartPedidosVendedor.config?.type !== 'pie') { chartPedidosVendedor.destroy(); chartPedidosVendedor = null; }
+        const countData = {
+            labels: safeLabels,
+            datasets: [{
+                label: 'Pedidos',
+                data: safeContagens,
+                backgroundColor: safeLabels.map((_, i) => palette[i % palette.length]),
+                borderColor: donutBorder,
+                borderWidth: 4,
+                borderRadius: 8,
+                hoverOffset: 14,
+                spacing: 4,
+                cutout: '66%',
+            }]
+        };
+        const valorData = {
+            labels: safeLabels,
+            datasets: [{
+                label: 'Valor dos Pedidos',
+                data: safeValores,
+                backgroundColor: 'rgba(13,110,253,.35)',
+                borderColor: 'rgba(13,110,253,.9)',
+                borderWidth: 1.5,
+                borderRadius: 10,
+                borderSkipped: false
+            }]
+        };
+        if (chartPedidosVendedor && chartPedidosVendedor.config?.type !== 'doughnut') { chartPedidosVendedor.destroy(); chartPedidosVendedor = null; }
         if (chartPedidosVendedor) {
             chartPedidosVendedor.data = countData;
             if (chartPedidosVendedor.options?.plugins?.legend?.labels) chartPedidosVendedor.options.plugins.legend.labels.color = axis.legendColor;
             chartPedidosVendedor.update();
         } else if (ctxCount) {
-            chartPedidosVendedor = new Chart(ctxCount, { type: 'pie', data: countData, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: axis.legendColor } } } } });
+            chartPedidosVendedor = new Chart(ctxCount, {
+                type: 'doughnut',
+                data: countData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: axis.legendColor,
+                                usePointStyle: true,
+                                pointStyle: 'rectRounded',
+                                boxWidth: 10,
+                                boxHeight: 10,
+                                padding: 12
+                            }
+                        }
+                    }
+                }
+            });
         }
         if (chartValorVendedor) {
             chartValorVendedor.data = valorData;
+            chartValorVendedor.options.scales.y.grid.display = false;
             chartValorVendedor.options.scales.y.grid.color = axis.gridColor;
             chartValorVendedor.options.scales.y.ticks.color = axis.tickColor;
+            chartValorVendedor.options.scales.x.grid.display = false;
             chartValorVendedor.options.scales.x.grid.color = axis.gridColor;
             chartValorVendedor.options.scales.x.ticks.color = axis.tickColor;
             chartValorVendedor.update();
         } else if (ctxValor) {
-            chartValorVendedor = new Chart(ctxValor, { type: 'bar', data: valorData, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: axis.gridColor }, ticks: { color: axis.tickColor } }, x: { grid: { color: axis.gridColor }, ticks: { color: axis.tickColor } } }, plugins: { legend: { display: false } } } });
+            chartValorVendedor = new Chart(ctxValor, {
+                type: 'bar',
+                data: valorData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, grid: { display: false, color: axis.gridColor }, ticks: { color: axis.tickColor } },
+                        x: { grid: { display: false, color: axis.gridColor }, ticks: { color: axis.tickColor } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
         }
     }
 
-    function upsertTopItens(labels, quantities) {
+    function upsertTopItens(labels, quantities, names) {
+        ensureChartPluginsRegistered();
+        dashboardChartState.topItens.labels = Array.isArray(labels) ? labels : [];
+        dashboardChartState.topItens.quantidades = Array.isArray(quantities) ? quantities : [];
+        dashboardChartState.topItens.nomes = Array.isArray(names) ? names : [];
         const ctx = chartItensVendidosCtx ? chartItensVendidosCtx.getContext('2d') : null;
         const palette = ['#8bb4ff', '#78a8ff', '#659cff', '#5290ff', '#1a5e7e', '#1b3f50', '#004766', '#003a52', '#002d44', '#00243a', '#001a26', '#001119'];
-        const data = { labels, datasets: [{ label: 'Quantidade', data: quantities, backgroundColor: labels.map((_, i) => palette[i % palette.length]), borderColor: '#ffffff', borderWidth: 1 }] };
+        const safeNames = Array.isArray(names) ? names : [];
+        const data = {
+            labels,
+            datasets: [{
+                label: 'Quantidade',
+                data: quantities,
+                backgroundColor: labels.map((_, i) => palette[i % palette.length]),
+                borderColor: '#ffffff',
+                borderWidth: 1,
+                borderRadius: 10,
+                borderSkipped: false,
+                __names: safeNames
+            }]
+        };
         const axis = themeAxis();
+        const dark = isDarkTheme();
+        const inlineOpts = {
+            datasetIndex: 0,
+            padding: 10,
+            strokeWidth: 3,
+            color: dark ? '#f8f9fa' : '#0b0f14',
+            strokeColor: dark ? 'rgba(0,0,0,0.65)' : 'rgba(255,255,255,0.85)'
+        };
         if (chartItensVendidos) {
             chartItensVendidos.data = data;
             chartItensVendidos.options.indexAxis = 'y';
-            chartItensVendidos.options.plugins.legend.labels.color = axis.legendColor;
-            chartItensVendidos.options.scales = { x: { beginAtZero: true, grid: { color: axis.gridColor }, ticks: { color: axis.tickColor } }, y: { grid: { color: axis.gridColor }, ticks: { color: axis.tickColor } } };
+            if (chartItensVendidos.options?.plugins?.legend?.labels) {
+                chartItensVendidos.options.plugins.legend.labels.color = axis.legendColor;
+            }
+            chartItensVendidos.options.plugins = chartItensVendidos.options.plugins || {};
+            chartItensVendidos.options.plugins.inlineBarLabels = inlineOpts;
+            chartItensVendidos.options.scales = {
+                x: { beginAtZero: true, grid: { display: false, color: axis.gridColor }, ticks: { color: axis.tickColor } },
+                y: { grid: { display: false, color: axis.gridColor }, ticks: { color: axis.tickColor } }
+            };
             chartItensVendidos.update();
         } else if (ctx) {
-            chartItensVendidos = new Chart(ctx, { type: 'bar', data, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, grid: { color: axis.gridColor }, ticks: { color: axis.tickColor } }, y: { grid: { color: axis.gridColor }, ticks: { color: axis.tickColor } } } } });
+            chartItensVendidos = new Chart(ctx, {
+                type: 'bar',
+                data,
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        inlineBarLabels: inlineOpts
+                    },
+                    scales: {
+                        x: { beginAtZero: true, grid: { display: false, color: axis.gridColor }, ticks: { color: axis.tickColor } },
+                        y: { grid: { display: false, color: axis.gridColor }, ticks: { color: axis.tickColor } }
+                    }
+                },
+                plugins: [inlineBarLabelsPlugin]
+            });
         }
     }
 
+    function refreshChartsTheme() {
+        try {
+            upsertPedidosPeriodo(dashboardChartState.pedidosPeriodo.labels, dashboardChartState.pedidosPeriodo.contagens);
+        } catch (e) { }
+        try {
+            upsertPedidosVendedor(
+                dashboardChartState.pedidosVendedor.labels,
+                dashboardChartState.pedidosVendedor.contagens,
+                dashboardChartState.pedidosVendedor.valores
+            );
+        } catch (e) { }
+        try {
+            upsertTopItens(dashboardChartState.topItens.labels, dashboardChartState.topItens.quantidades, dashboardChartState.topItens.nomes);
+        } catch (e) { }
+    }
+
+    function observeThemeChanges() {
+        try {
+            const root = document.documentElement;
+            let lastTheme = root.getAttribute('data-bs-theme') || '';
+            const obs = new MutationObserver(() => {
+                const current = root.getAttribute('data-bs-theme') || '';
+                if (current === lastTheme) return;
+                lastTheme = current;
+                refreshChartsTheme();
+            });
+            obs.observe(root, { attributes: true, attributeFilter: ['data-bs-theme'] });
+        } catch (e) { }
+    }
+
     async function loadData(paramsOverride = {}) {
+        ensureChartPluginsRegistered();
         const slug = localStorage.getItem('slug');
         const token = localStorage.getItem('access');
         if (!slug || !token) { alert('Necessário estar logado.'); return; }
@@ -613,10 +858,14 @@
             if (!respTop.ok) throw new Error(`Erro ${respTop.status}`);
             const dadosTop = await respTop.json();
             const top = Array.isArray(dadosTop?.top_vendas) ? dadosTop.top_vendas : [];
-            upsertTopItens(top.map(t => t.iped_prod), top.map(t => Number(t.total || 0)));
+            upsertTopItens(
+                top.map(t => t.iped_prod),
+                top.map(t => Number(t.total || 0)),
+                top.map(t => t.prod_nome || '')
+            );
         } catch (err) {
             console.error('Falha ao carregar itens mais vendidos:', err);
-            upsertTopItens([], []);
+            upsertTopItens([], [], []);
         }
     }
 
@@ -673,6 +922,7 @@
             }
         } catch (e) { }
 
+        observeThemeChanges();
         loadData();
         carregarVendedores();
 

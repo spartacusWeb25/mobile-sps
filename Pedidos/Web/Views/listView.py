@@ -149,6 +149,7 @@ class PedidosListView(ModuloRequeridoMixin, ListView):
             {'value': 3, 'label': 'Concluído'},
             {'value': 4, 'label': 'Cancelado'},
         ]
+        context['status_pedidos'] = STATUS_PEDIDOS
         MAP_CORES_PED = {
             0: '#FFC107',
             1: '#007BFF',

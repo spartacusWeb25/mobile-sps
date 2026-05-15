@@ -1,0 +1,68 @@
+<div id="tab-arquivos" class="tab-content">
+  {% if modo != 'editar' or not pedido %}
+  <div class="alert alert-secondary">Salve o pedido para anexar arquivos.</div>
+  {% else %}
+  <div class="row g-2">
+    <div class="col-12 col-lg-6">
+      <div class="section-title mb-2"><i class="bi bi-paperclip me-1"></i>Anexar arquivo</div>
+      <form method="post" enctype="multipart/form-data"
+        action="{% url 'PisosWeb:pedidos_pisos_arquivos_upload' slug=slug pk=pedido.pedi_nume %}">
+        {% csrf_token %}
+        <div class="row g-2">
+          <div class="col-4">
+            <label>Código</label>
+            {{ arquivos_form.arqu_cod_arqu }}
+          </div>
+          <div class="col-8">
+            <label>Nome</label>
+            {{ arquivos_form.arqu_nome_arqu }}
+          </div>
+          <div class="col-12">
+            <label>Arquivo</label>
+            {{ arquivos_form.arqu_arqu }}
+          </div>
+          <div class="col-12">
+            <button type="submit" class="btn btn-sm btn-outline-primary">
+              <i class="bi bi-upload"></i> Enviar
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div class="col-12 col-lg-6">
+      <div class="section-title mb-2"><i class="bi bi-folder2-open me-1"></i>Arquivos do pedido</div>
+      {% if arquivos %}
+      <div class="table-responsive">
+        <table class="table table-sm table-dark table-hover align-middle mb-0">
+          <thead>
+            <tr>
+              <th style="width:90px">Código</th>
+              <th>Nome</th>
+              <th style="width:90px"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for a in arquivos %}
+            <tr>
+              <td class="text-muted">{{ a.arqu_cod_arqu|default:"-" }}</td>
+              <td>{{ a.arqu_nome_arqu|default:"-" }}</td>
+              <td class="text-end">
+                <a class="btn btn-sm btn-outline-secondary"
+                  href="{% url 'PisosWeb:pedidos_pisos_arquivos_download' slug=slug pk=pedido.pedi_nume codigo=a.arqu_cod_arqu|default:0 %}"
+                  target="_blank">
+                  <i class="bi bi-download"></i>
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="alert alert-info mb-0">Nenhum arquivo anexado.</div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>

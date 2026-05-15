@@ -8,7 +8,8 @@ from core.mixins.vendedor_mixin import VendedorEntidadeMixin
 from Entidades.models import Entidades
 from Pisos.models import Pedidospisos, Itenspedidospisos
 from Pisos.services.cliente_service import ClienteEnderecoService
-from Pisos.web.forms import PedidoPisosForm, ItemPedidoPisosFormSet
+from Pisos.web.forms import PedidoPisosForm, ItemPedidoPisosFormSet, PedidosPisosArquivosForm
+from Pisos.services.pedido_arquivos_service import PedidoPisosArquivosService
 from Pisos.services.pedido_atualizar_service import PedidoAtualizarService
 
 
@@ -89,4 +90,27 @@ def editar_pedido_pisos(request, slug, pk):
         except Exception as exc:
             messages.error(request, f"Erro ao atualizar pedido: {PedidoAtualizarService.normalizar_erro(exc)}")
 
-    return render(request, "Pisos/form.html", {"slug": slug, "form": form, "formset": formset, "modo": "editar", "pedido": pedido, "cliente_label": cliente_label, "vendedor_label": vendedor_label})
+    arquivos = []
+    arquivos_form = None
+    try:
+        arquivos = PedidoPisosArquivosService.listar(banco, empresa_id=pedido.pedi_empr, pedido_numero=pedido.pedi_nume)
+        arquivos_form = PedidosPisosArquivosForm(initial={"arqu_empr": pedido.pedi_empr, "arqu_pedi": pedido.pedi_nume})
+    except Exception:
+        arquivos = []
+        arquivos_form = PedidosPisosArquivosForm(initial={"arqu_empr": pedido.pedi_empr, "arqu_pedi": pedido.pedi_nume})
+
+    return render(
+        request,
+        "Pisos/form.html",
+        {
+            "slug": slug,
+            "form": form,
+            "formset": formset,
+            "modo": "editar",
+            "pedido": pedido,
+            "cliente_label": cliente_label,
+            "vendedor_label": vendedor_label,
+            "arquivos": arquivos,
+            "arquivos_form": arquivos_form,
+        },
+    )

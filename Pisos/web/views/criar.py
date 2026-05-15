@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.shortcuts import redirect, render
 
 from core.utils import get_db_from_slug
-from Pisos.web.forms import PedidoPisosForm, ItemPedidoPisosFormSet
+from Pisos.web.forms import PedidoPisosForm, ItemPedidoPisosFormSet, PedidosPisosArquivosForm
 from Pisos.services.pedido_criar_service import PedidoCriarService
 
 
@@ -22,7 +22,11 @@ def criar_pedido_pisos(request, slug):
         messages.error(request, "Sessão inválida: empresa/filial não informadas.")
         form = PedidoPisosForm(None, initial={"pedi_empr": empresa_id, "pedi_fili": filial_id})
         formset = ItemPedidoPisosFormSet(None, prefix="itens")
-        return render(request, "Pisos/form.html", {"slug": slug, "form": form, "formset": formset, "modo": "criar"})
+        return render(
+            request,
+            "Pisos/form.html",
+            {"slug": slug, "form": form, "formset": formset, "modo": "criar", "arquivos": [], "arquivos_form": PedidosPisosArquivosForm()},
+        )
 
     if is_post:
         post_data = request.POST.copy()
@@ -89,4 +93,8 @@ def criar_pedido_pisos(request, slug):
         if formset.non_form_errors():
             messages.error(request, f"Erros nos itens: {formset.non_form_errors()}")
 
-    return render(request, "Pisos/form.html", {"slug": slug, "form": form, "formset": formset, "modo": "criar"})
+    return render(
+        request,
+        "Pisos/form.html",
+        {"slug": slug, "form": form, "formset": formset, "modo": "criar", "arquivos": [], "arquivos_form": PedidosPisosArquivosForm()},
+    )
