@@ -24,8 +24,10 @@ def upload_pedido_pisos_arquivo(request, slug, pk):
         messages.error(request, "Selecione um arquivo para enviar.")
         return redirect("PisosWeb:pedidos_pisos_editar", slug=slug, pk=pk)
 
+    nome_original = getattr(arquivo, "name", "") or ""
     if not nome:
-        nome = getattr(arquivo, "name", "") or "arquivo"
+        nome = nome_original or "arquivo"
+    nome = PedidoPisosArquivosService.normalizar_nome(nome, nome_original_upload=nome_original)
 
     try:
         conteudo = arquivo.read()
@@ -67,7 +69,43 @@ def download_pedido_pisos_arquivo(request, slug, pk, codigo):
     nome = (getattr(obj, "arqu_nome_arqu", "") or f"arquivo_{codigo}").strip()
     content_type = PedidoPisosArquivosService.guess_content_type(nome)
 
-    resp = HttpResponse(obj.arqu_arqu, content_type=content_type)
-    resp["Content-Disposition"] = f'inline; filename="{nome}"'
+    download = str(request.GET.get("download") or "").lower() in {"1", "true", "sim", "yes"}
+    if download and not PedidoPisosArquivosService.pode_baixar(nome):
+        raise Http404()
+    if (not download) and (not PedidoPisosArquivosService.pode_exibir(nome)):
+        return HttpResponse("Arquivo não suportado para exibição.", content_type="text/plain", status=415)
+
+    conteudo = obj.arqu_arqu
+    if isinstance(conteudo, memoryview):
+        conteudo = conteudo.tobytes()
+
+    disp = "attachment" if download else "inline"
+    safe_nome = (nome or "arquivo").replace('"', "")
+    resp = HttpResponse(conteudo, content_type=content_type)
+    resp["Content-Disposition"] = f'{disp}; filename="{safe_nome}"'
     return resp
+
+
+def excluir_pedido_pisos_arquivo(request, slug, pk, codigo):
+    if request.method != "POST":
+        raise Http404()
+
+    banco = get_db_from_slug(slug)
+    empresa_id = request.session.get("empresa_id")
+    if not empresa_id:
+        messages.error(request, "Sessão inválida: empresa não informada.")
+        return redirect("PisosWeb:pedidos_pisos_editar", slug=slug, pk=pk)
+
+    ok = PedidoPisosArquivosService.excluir(
+        banco,
+        empresa_id=empresa_id,
+        pedido_numero=pk,
+        codigo_arquivo=codigo,
+    )
+    if ok:
+        messages.success(request, "Arquivo removido com sucesso.")
+    else:
+        messages.error(request, "Não foi possível remover o arquivo.")
+
+    return redirect("PisosWeb:pedidos_pisos_editar", slug=slug, pk=pk)
 

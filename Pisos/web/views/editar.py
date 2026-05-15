@@ -98,6 +98,10 @@ def editar_pedido_pisos(request, slug, pk):
     except Exception:
         arquivos = []
         arquivos_form = PedidosPisosArquivosForm(initial={"arqu_empr": pedido.pedi_empr, "arqu_pedi": pedido.pedi_nume})
+    for a in arquivos:
+        nome = (getattr(a, "arqu_nome_arqu", "") or "").strip()
+        setattr(a, "pode_exibir", PedidoPisosArquivosService.pode_exibir(nome))
+        setattr(a, "pode_baixar", PedidoPisosArquivosService.pode_baixar(nome))
 
     return render(
         request,

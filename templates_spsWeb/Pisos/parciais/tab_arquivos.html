@@ -5,29 +5,26 @@
   <div class="row g-2">
     <div class="col-12 col-lg-6">
       <div class="section-title mb-2"><i class="bi bi-paperclip me-1"></i>Anexar arquivo</div>
-      <form method="post" enctype="multipart/form-data"
-        action="{% url 'PisosWeb:pedidos_pisos_arquivos_upload' slug=slug pk=pedido.pedi_nume %}">
-        {% csrf_token %}
-        <div class="row g-2">
-          <div class="col-4">
-            <label>Código</label>
-            {{ arquivos_form.arqu_cod_arqu }}
-          </div>
-          <div class="col-8">
-            <label>Nome</label>
-            {{ arquivos_form.arqu_nome_arqu }}
-          </div>
-          <div class="col-12">
-            <label>Arquivo</label>
-            {{ arquivos_form.arqu_arqu }}
-          </div>
-          <div class="col-12">
-            <button type="submit" class="btn btn-sm btn-outline-primary">
-              <i class="bi bi-upload"></i> Enviar
-            </button>
-          </div>
+      <div class="row g-2" id="arquivos-upload"
+        data-upload-url="{% url 'PisosWeb:pedidos_pisos_arquivos_upload' slug=slug pk=pedido.pedi_nume %}">
+        <div class="col-4">
+          <label>Código</label>
+          {{ arquivos_form.arqu_cod_arqu }}
         </div>
-      </form>
+        <div class="col-8">
+          <label>Nome</label>
+          {{ arquivos_form.arqu_nome_arqu }}
+        </div>
+        <div class="col-12">
+          <label>Arquivo</label>
+          {{ arquivos_form.arqu_arqu }}
+        </div>
+        <div class="col-12">
+          <button type="button" class="btn btn-sm btn-outline-primary" id="btn-upload-arquivo">
+            <i class="bi bi-upload"></i> Enviar
+          </button>
+        </div>
+      </div>
     </div>
 
     <div class="col-12 col-lg-6">
@@ -39,7 +36,7 @@
             <tr>
               <th style="width:90px">Código</th>
               <th>Nome</th>
-              <th style="width:90px"></th>
+              <th style="width:120px"></th>
             </tr>
           </thead>
           <tbody>
@@ -48,11 +45,30 @@
               <td class="text-muted">{{ a.arqu_cod_arqu|default:"-" }}</td>
               <td>{{ a.arqu_nome_arqu|default:"-" }}</td>
               <td class="text-end">
+                {% if a.pode_exibir %}
                 <a class="btn btn-sm btn-outline-secondary"
                   href="{% url 'PisosWeb:pedidos_pisos_arquivos_download' slug=slug pk=pedido.pedi_nume codigo=a.arqu_cod_arqu|default:0 %}"
                   target="_blank">
+                  <i class="bi bi-eye"></i>
+                </a>
+                {% else %}
+                <button type="button" class="btn btn-sm btn-outline-secondary" disabled>
+                  <i class="bi bi-eye-slash"></i>
+                </button>
+                {% endif %}
+
+                {% if a.pode_baixar %}
+                <a class="btn btn-sm btn-outline-secondary"
+                  href="{% url 'PisosWeb:pedidos_pisos_arquivos_download' slug=slug pk=pedido.pedi_nume codigo=a.arqu_cod_arqu|default:0 %}?download=1">
                   <i class="bi bi-download"></i>
                 </a>
+                {% endif %}
+
+                <button type="button" class="btn btn-sm btn-outline-danger btn-arquivo-excluir"
+                  data-delete-url="{% url 'PisosWeb:pedidos_pisos_arquivos_excluir' slug=slug pk=pedido.pedi_nume codigo=a.arqu_cod_arqu|default:0 %}"
+                  data-nome="{{ a.arqu_nome_arqu|default:'' }}">
+                  <i class="bi bi-trash"></i>
+                </button>
               </td>
             </tr>
             {% endfor %}
@@ -66,3 +82,85 @@
   </div>
   {% endif %}
 </div>
+
+<script>
+  (function () {
+    const wrap = document.getElementById('arquivos-upload');
+    const btn = document.getElementById('btn-upload-arquivo');
+    if (!wrap || !btn) return;
+
+    const uploadUrl = wrap.getAttribute('data-upload-url');
+    if (!uploadUrl) return;
+
+    btn.addEventListener('click', async function () {
+      const fileInput = wrap.querySelector('input[type="file"][name="arqu_arqu"]');
+      const codigoInput = wrap.querySelector('[name="arqu_cod_arqu"]');
+      const nomeInput = wrap.querySelector('[name="arqu_nome_arqu"]');
+      const csrfInput = document.querySelector('input[name="csrfmiddlewaretoken"]');
+
+      const file = fileInput && fileInput.files ? fileInput.files[0] : null;
+      if (!file) {
+        window.alert('Selecione um arquivo para enviar.');
+        return;
+      }
+
+      const fd = new FormData();
+      if (csrfInput && csrfInput.value) fd.append('csrfmiddlewaretoken', csrfInput.value);
+      if (codigoInput) fd.append('arqu_cod_arqu', codigoInput.value || '');
+      if (nomeInput) fd.append('arqu_nome_arqu', nomeInput.value || '');
+      fd.append('arqu_arqu', file);
+
+      btn.disabled = true;
+      try {
+        const resp = await fetch(uploadUrl, {
+          method: 'POST',
+          body: fd,
+          credentials: 'same-origin',
+        });
+        if (resp.redirected) {
+          window.location.href = resp.url;
+          return;
+        }
+        window.location.reload();
+      } catch (e) {
+        window.alert('Falha ao enviar o arquivo.');
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    document.addEventListener('click', async function (ev) {
+      const el = ev.target && ev.target.closest ? ev.target.closest('.btn-arquivo-excluir') : null;
+      if (!el) return;
+
+      const deleteUrl = el.getAttribute('data-delete-url');
+      if (!deleteUrl) return;
+
+      const nome = (el.getAttribute('data-nome') || '').trim();
+      const msg = nome ? `Excluir o arquivo "${nome}"?` : 'Excluir o arquivo?';
+      if (!window.confirm(msg)) return;
+
+      const csrfInput = document.querySelector('input[name="csrfmiddlewaretoken"]');
+      const fd = new FormData();
+      if (csrfInput && csrfInput.value) fd.append('csrfmiddlewaretoken', csrfInput.value);
+
+      el.disabled = true;
+      try {
+        const resp = await fetch(deleteUrl, {
+          method: 'POST',
+          body: fd,
+          credentials: 'same-origin',
+        });
+        if (resp.redirected) {
+          window.location.href = resp.url;
+          return;
+        }
+        window.location.reload();
+      } catch (e) {
+        window.alert('Falha ao excluir o arquivo.');
+      } finally {
+        el.disabled = false;
+      }
+    });
+  })();
+</script>
