@@ -12,30 +12,19 @@
         border-radius: 12px;
         height: 100%;
         color: #fff;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.10);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.10);
         transition: transform 0.15s ease, box-shadow 0.15s ease;
     }
 
     .stat-card:hover {
         transform: translateY(-3px);
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
     }
 
-    .stat-total {
-        background: linear-gradient(135deg, #7182cf, #431a8a);
-    }
-
-    .stat-clientes {
-        background: linear-gradient(135deg, #71ac98, #145843);
-    }
-
-    .stat-fornecedores {
-        background: linear-gradient(135deg, #b68e4a, #ffa43c);
-    }
-
-    .stat-ambos {
-        background: linear-gradient(135deg, #7099ac, #0e5c83);
-    }
+    .stat-total        { background: linear-gradient(135deg, #7182cf, #431a8a); }
+    .stat-clientes     { background: linear-gradient(135deg, #71ac98, #145843); }
+    .stat-fornecedores { background: linear-gradient(135deg, #b68e4a, #ffa43c); }
+    .stat-ambos        { background: linear-gradient(135deg, #7099ac, #0e5c83); }
 
     .stat-icon {
         font-size: 2rem;
@@ -61,12 +50,10 @@
         font-weight: 700;
         line-height: 1.1;
     }
-
     #btn-nova-entidade {
         margin-top: 10px;
         margin-left: auto;
     }
-
     #btn-filtrar-entidades {
         margin-top: 10px;
         margin-left: auto;
@@ -86,8 +73,7 @@
         <div class="container mt-3">
             <div class="row g-3 align-items-stretch">
                 <div class="col-6 col-md-3">
-                    <div class="stat-card stat-total" data-filter-unset="enti_tipo_enti" role="button" tabindex="0"
-                        aria-label="Remover filtro de tipo e mostrar todas as entidades">
+                    <div class="stat-card stat-total" data-filter-unset="enti_tipo_enti" role="button" tabindex="0" aria-label="Remover filtro de tipo e mostrar todas as entidades">
                         <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
                         <div class="stat-info">
                             <span class="stat-label">Total de Entidades</span>
@@ -96,8 +82,7 @@
                     </div>
                 </div>
                 <div class="col-6 col-md-3">
-                    <div class="stat-card stat-clientes" data-filter-set="enti_tipo_enti=CL" role="button" tabindex="0"
-                        aria-label="Filtrar apenas clientes">
+                    <div class="stat-card stat-clientes" data-filter-set="enti_tipo_enti=CL" role="button" tabindex="0" aria-label="Filtrar apenas clientes">
                         <div class="stat-icon"><i class="bi bi-person-check-fill"></i></div>
                         <div class="stat-info">
                             <span class="stat-label">Clientes</span>
@@ -106,8 +91,7 @@
                     </div>
                 </div>
                 <div class="col-6 col-md-3">
-                    <div class="stat-card stat-fornecedores" data-filter-set="enti_tipo_enti=FO" role="button"
-                        tabindex="0" aria-label="Filtrar apenas fornecedores">
+                    <div class="stat-card stat-fornecedores" data-filter-set="enti_tipo_enti=FO" role="button" tabindex="0" aria-label="Filtrar apenas fornecedores">
                         <div class="stat-icon"><i class="bi bi-truck"></i></div>
                         <div class="stat-info">
                             <span class="stat-label">Fornecedores</span>
@@ -116,8 +100,7 @@
                     </div>
                 </div>
                 <div class="col-6 col-md-3">
-                    <div class="stat-card stat-ambos" data-filter-set="enti_tipo_enti=AM" role="button" tabindex="0"
-                        aria-label="Filtrar entidades do tipo ambos">
+                    <div class="stat-card stat-ambos" data-filter-set="enti_tipo_enti=AM" role="button" tabindex="0" aria-label="Filtrar entidades do tipo ambos">
                         <div class="stat-icon"><i class="bi bi-arrow-left-right"></i></div>
                         <div class="stat-info">
                             <span class="stat-label">Ambos</span>
@@ -127,96 +110,94 @@
                 </div>
             </div>
         </div>
-        <a href="{% url 'entidade_form_web' slug=slug %}" class="btn btn-success" id="btn-nova-entidade">
-            <i class="bi bi-plus"></i> Nova Entidade
-        </a>
+         <a href="{% url 'entidade_form_web' slug=slug %}" class="btn btn-success" id="btn-nova-entidade">
+         <i class="bi bi-plus"></i> Nova Entidade
+         </a>
     </div>
-
+    
     <div class="card card-corporate mb-3">
         <div class="card-body">
             {% if messages %}
-            {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">
-                {{ message }}
-            </div>
-            {% endfor %}
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                </div>
+                {% endfor %}
             {% endif %}
-
-            <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse"
-                data-bs-target="#filtrosVisitas" aria-expanded="true" aria-controls="filtrosVisitas">
-                <i class="fas fa-sliders-h me-1"></i> Filtros
-            </button>
-            <div id="filtrosVisitas" class="collapse">
-
-                <form method="get" class="mb-0">
-                    <div class="row g-2">
-                        <div class="col-md-2">
-                            <label for="enti_nome" class="form-label">Nome</label>
-                            <input type="text" id="enti_nome" name="enti_nome" class="form-control"
-                                value="{{ request.GET.enti_nome }}" placeholder="Filtrar por nome">
-                        </div>
-                        <div class="col-md-2">
-                            <label for="enti_clie" class="form-label">ID</label>
-                            <input type="text" id="enti_clie" name="enti_clie" class="form-control"
-                                value="{{ request.GET.enti_clie }}" placeholder="Filtrar por ID">
-                        </div>
-                        <div class="col-md-2">
-                            <label for="enti_tipo_enti" class="form-label">Tipo</label>
-                            <select id="enti_tipo_enti" name="enti_tipo_enti" class="form-select">
-                                <option value="">Todos</option>
-                                {% for codigo, descricao in tipos_entidade %}
-                                <option value="{{ codigo }}" {% if codigo==tipo_selecionado %}selected{% endif %}>
-                                    {{ descricao }}
-                                </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label for="enti_situ" class="form-label">Situação</label>
-                            <select id="enti_situ" name="enti_situ" class="form-select">
-                                <option value="">Todas</option>
-                                {% for codigo, descricao in situacoes_entidade %}
-                                <option value="{{ codigo }}" {% if codigo==situacao_selecionada %}selected{% endif %}>
-                                    {{ descricao }}
-                                </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label for="enti_espe_enti" class="form-label">Classificação</label>
-                            <select id="enti_espe_enti" name="enti_espe_enti" class="form-select">
-                                <option value="">Todas</option>
-                                {% for codigo, descricao in classificacoes_tributarias %}
-                                <option value="{{ codigo }}" {% if codigo==classificacao_selecionada %}selected{% endif
-                                    %}>
-                                    {{ codigo }} - {{ descricao }}
-                                </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label for="enti_vend" class="form-label">Vendedor</label>
-                            <select id="enti_vend" name="enti_vend" class="form-select">
-                                <option value="">Todos</option>
-                                {% for codigo, descricao in vendedores_entidade %}
-                                <option value="{{ codigo }}" {% if codigo==vendedor_responsavel_selecionado %}selected{%
-                                    endif %}>
-                                    {{ descricao }}
-                                </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-2 d-flex align-items-end gap-2">
-                            <button type="submit" class="btn btn-outline-primary" id="btn-filtrar-entidades">
-                                <i class="bi bi-search"></i> Filtrar
-                            </button>
-
-                        </div>
+           
+                 <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#filtrosVisitas" aria-expanded="true" aria-controls="filtrosVisitas">
+                    <i class="fas fa-sliders-h me-1"></i> Filtros
+                </button>
+                <div id="filtrosVisitas" class="collapse">
+           
+            <form method="get" class="mb-0">
+                <div class="row g-2">
+                    <div class="col-md-2">
+                        <label for="enti_nome" class="form-label">Nome</label>
+                        <input type="text" id="enti_nome" name="enti_nome" class="form-control"
+                            value="{{ request.GET.enti_nome }}" placeholder="Filtrar por nome">
                     </div>
-                </form>
-            </div>
+                    <div class="col-md-2">
+                        <label for="enti_clie" class="form-label">ID</label>
+                        <input type="text" id="enti_clie" name="enti_clie" class="form-control"
+                            value="{{ request.GET.enti_clie }}" placeholder="Filtrar por ID">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="enti_tipo_enti" class="form-label">Tipo</label>
+                        <select id="enti_tipo_enti" name="enti_tipo_enti" class="form-select">
+                            <option value="">Todos</option>
+                            {% for codigo, descricao in tipos_entidade %}
+                            <option value="{{ codigo }}" {% if codigo == tipo_selecionado %}selected{% endif %}>
+                                {{ descricao }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="enti_situ" class="form-label">Situação</label>
+                        <select id="enti_situ" name="enti_situ" class="form-select">
+                            <option value="">Todas</option>
+                            {% for codigo, descricao in situacoes_entidade %}
+                            <option value="{{ codigo }}" {% if codigo == situacao_selecionada %}selected{% endif %}>
+                                {{ descricao }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="enti_espe_enti" class="form-label">Classificação</label>
+                        <select id="enti_espe_enti" name="enti_espe_enti" class="form-select">
+                            <option value="">Todas</option>
+                            {% for codigo, descricao in classificacoes_tributarias %}
+                            <option value="{{ codigo }}" {% if codigo == classificacao_selecionada %}selected{% endif %}>
+                                {{ codigo }} - {{ descricao }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="enti_vend" class="form-label">Vendedor</label>
+                        <select id="enti_vend" name="enti_vend" class="form-select">
+                            <option value="">Todos</option>
+                            {% for codigo, descricao in vendedores_entidade %}
+                            <option value="{{ codigo }}" {% if codigo == vendedor_responsavel_selecionado %}selected{% endif %}>
+                                {{ descricao }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end gap-2">
+                        <button type="submit" class="btn btn-outline-primary" id="btn-filtrar-entidades">
+                            <i class="bi bi-search"></i> Filtrar
+                        </button>
+                       
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
+     </div>
     <div class="card card-corporate">
         <div class="card-body">
             {% if entidades %}
@@ -234,8 +215,7 @@
                             <p class="text-body-secondary mb-2">ID {{ entidade.enti_clie|default_if_none:"" }}</p>
                             <div class="small">
                                 {% if entidade.enti_espe_enti %}
-                                <div><i class="bi bi-receipt"></i> Classificação: {{ entidade.enti_espe_enti }} - {{
-                                    entidade.get_enti_espe_enti_display|default_if_none:"" }}</div>
+                                <div><i class="bi bi-receipt"></i> Classificação: {{ entidade.enti_espe_enti }} - {{ entidade.get_enti_espe_enti_display|default_if_none:"" }}</div>
                                 {% endif %}
                                 {% if entidade.enti_cpf %}
                                 <div><i class="bi bi-person-badge"></i> CPF: {{ entidade.enti_cpf }}</div>
@@ -244,8 +224,7 @@
                                 <div><i class="bi bi-building"></i> CNPJ: {{ entidade.enti_cnpj }}</div>
                                 {% endif %}
                                 {% if entidade.enti_cida or entidade.enti_esta %}
-                                <div><i class="bi bi-geo-alt"></i> {{ entidade.enti_cida|default_if_none:"" }}{% if
-                                    entidade.enti_esta %}/{{ entidade.enti_esta }}{% endif %}</div>
+                                <div><i class="bi bi-geo-alt"></i> {{ entidade.enti_cida|default_if_none:"" }}{% if entidade.enti_esta %}/{{ entidade.enti_esta }}{% endif %}</div>
                                 {% endif %}
                                 {% if entidade.enti_fone %}
                                 <div><i class="bi bi-telephone"></i> {{ entidade.enti_fone }}</div>
@@ -257,8 +236,7 @@
                                 <div><i class="bi bi-envelope"></i> {{ entidade.enti_emai }}</div>
                                 {% endif %}
                                 {% if entidade.enti_vend %}
-                                <div><i class="bi bi-person"></i> {{ entidade.enti_vend }} - {{
-                                    entidade.vendedor_responsavel_nome|default_if_none:"" }}</div>
+                                <div><i class="bi bi-person"></i> {{ entidade.enti_vend }} - {{ entidade.vendedor_responsavel_nome|default_if_none:"" }}</div>
                                 {% endif %}
                             </div>
                         </div>
