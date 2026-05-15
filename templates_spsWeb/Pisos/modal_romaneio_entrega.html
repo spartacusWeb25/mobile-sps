@@ -1,0 +1,42 @@
+<div class="modal fade" id="romaneioEntregaModal" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered">
+    <div class="modal-content" style="background:var(--panel); color:var(--text); border:1px solid var(--border2);">
+      <div class="modal-header">
+        <h6 class="modal-title">Romaneio de Entrega{% if pedido %} — Pedido #{{ pedido.pedi_nume }}{% endif %}</h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="table-responsive">
+          <table class="table table-sm table-hover align-middle mb-2" style="color:var(--text);">
+            <thead>
+              <tr>
+                <th>Ambiente</th>
+                <th>Produto</th>
+                <th>Nome Produto</th>
+                <th class="text-end">Qtd</th>
+                <th class="text-end">Entregue</th>
+                <th class="text-end">Pendente</th>
+                <th style="width:140px">Entregar</th>
+                <th class="text-end">Cx</th>
+                <th class="text-end">Cx Ent.</th>
+                <th class="text-end">Cx Pend.</th>
+                <th style="width:120px">Cx Entregar</th>
+              </tr>
+            </thead>
+            <tbody id="romaneio-entrega-body"></tbody>
+          </table>
+        </div>
+
+        <div class="mt-2">
+          <label class="form-label">Observações</label>
+          <textarea id="romaneio-entrega-observacao" class="form-control form-control-sm" rows="2"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <div class="me-auto small" id="romaneio-entrega-info" style="color:var(--muted);"></div>
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-sm btn-success" id="btn-romaneio-entrega-salvar">Entregar</button>
+      </div>
+    </div>
+  </div>
+</div>

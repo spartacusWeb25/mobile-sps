@@ -10,5 +10,9 @@ def visualizar_pedido_pisos(request, slug, pk):
     mix.request = request
     qs = mix.filter_por_vendedor(Pedidospisos.objects.using(banco), 'pedi_vend')
     pedido = get_object_or_404(qs, pedi_nume=pk)
-    itens = Itenspedidospisos.objects.using(banco).filter(item_pedi=pk)
+    itens = Itenspedidospisos.objects.using(banco).filter(
+        item_empr=pedido.pedi_empr,
+        item_fili=pedido.pedi_fili,
+        item_pedi=pk,
+    )
     return render(request, "Pisos/visualizar.html", {"slug": slug, "pedido": pedido, "itens": itens})

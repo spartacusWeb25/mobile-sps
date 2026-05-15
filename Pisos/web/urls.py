@@ -15,6 +15,7 @@ from Pisos.web.views.arquivos import download_pedido_pisos_arquivo, excluir_pedi
 from Pisos.web.views.utils import autocomplete_clientes, autocomplete_vendedores, autocomplete_produtos
 from Pisos.web.views.comissao_view import ComissaoVendedorView
 from Pisos.web.views.workflow_pedido import PedidoWorkflowAjaxView
+from Pisos.web.views.romaneio_entrega import RomaneioEntregaAjaxView
 
 app_name = "PisosWeb"
 
@@ -43,4 +44,9 @@ urlpatterns = [
     path("calcular-item/", api_calcular_item, name="api_calcular_item"),
     path("comissoes-vendedores/", ComissaoVendedorView.as_view(), name="comissoes_vendedores"),
     path("pedidos-pisos/<int:pk>/workflow/", PedidoWorkflowAjaxView.as_view(), name="pedidos_pisos_workflow_ajax"),
+    path(
+        "pedidos-pisos/<int:pk>/romaneio-entrega/",
+        RomaneioEntregaAjaxView.as_view(),
+        name="pedidos_pisos_romaneio_entrega_ajax",
+    ),
 ]

@@ -425,3 +425,14 @@ class PedidospisosSerializer(BancoContextMixin, serializers.ModelSerializer):
             )
         except ValueError as exc:
             raise ValidationError(str(exc))
+
+
+class RomaneioEntregaLinhaSerializer(serializers.Serializer):
+    item_nume = serializers.IntegerField()
+    quantidade = serializers.DecimalField(max_digits=16, decimal_places=4, required=False, allow_null=True)
+    caixas = serializers.DecimalField(max_digits=16, decimal_places=2, required=False, allow_null=True)
+
+
+class RomaneioEntregaPostSerializer(serializers.Serializer):
+    entregas = RomaneioEntregaLinhaSerializer(many=True, required=False)
+    pedi_obse_roma = serializers.CharField(required=False, allow_null=True, allow_blank=True)

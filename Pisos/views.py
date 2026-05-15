@@ -17,7 +17,8 @@ from .serializers import (
     OrcamentopisosSerializer, 
     PedidospisosSerializer, 
     ItensorcapisosSerializer, 
-    ItenspedidospisosSerializer
+    ItenspedidospisosSerializer,
+    RomaneioEntregaPostSerializer,
 )
 from django.db import transaction
 from core.mixins.vendedor_mixin import VendedorEntidadeMixin
@@ -29,6 +30,7 @@ from Entidades.models import Entidades
 from Pisos.services.orcamento_exportar_service import OrcamentoExportarPedidoService
 from Pisos.services.metragem_service import MetragemProdutoService
 from Pisos.services.credito_troca_service import CreditoTrocaPisosService
+from Pisos.services.romaneio_entrega_service import RomaneioEntregaService
 from contas_a_receber.models import Titulosreceber, FORMA_RECEBIMENTO
 from rest_framework.authentication import SessionAuthentication, BaseAuthentication
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -573,6 +575,64 @@ class PedidospisosViewSet(BaseMultiDBModelViewSet, VendedorEntidadeMixin):
                 "condicao": condicao,
                 "entrada": float(entrada),
                 "total_titulos": float(Decimal(str(total_titulos or 0)).quantize(Decimal("0.01"))),
+            }
+        )
+
+    @action(detail=True, methods=["get", "post"], url_path="romaneio-entrega")
+    def romaneio_entrega(self, request, *args, **kwargs):
+        banco = self.get_banco()
+        pedido = self.get_object()
+
+        if request.method.upper() == "GET":
+            itens = RomaneioEntregaService.listar_itens(
+                banco=banco,
+                pedido_numero=getattr(pedido, "pedi_nume"),
+                empresa=getattr(pedido, "pedi_empr", None),
+                filial=getattr(pedido, "pedi_fili", None),
+            )
+            return Response(
+                {
+                    "pedido": int(getattr(pedido, "pedi_nume")),
+                    "pedi_obse_roma": (getattr(pedido, "pedi_obse_roma", "") or "").strip(),
+                    "itens": itens,
+                }
+            )
+
+        serializer = RomaneioEntregaPostSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        usuario_id = None
+        try:
+            usuario_id = self._get_user_code()
+        except Exception:
+            usuario_id = None
+
+        try:
+            resumo = RomaneioEntregaService.entregar(
+                banco=banco,
+                pedido_numero=getattr(pedido, "pedi_nume"),
+                empresa=getattr(pedido, "pedi_empr", None),
+                filial=getattr(pedido, "pedi_fili", None),
+                entregas=data.get("entregas") or [],
+                usuario_id=usuario_id,
+                pedido_observacao=data.get("pedi_obse_roma", None),
+            )
+        except ValueError as e:
+            raise ValidationError(str(e))
+
+        itens = RomaneioEntregaService.listar_itens(
+            banco=banco,
+            pedido_numero=getattr(pedido, "pedi_nume"),
+            empresa=getattr(pedido, "pedi_empr", None),
+            filial=getattr(pedido, "pedi_fili", None),
+        )
+
+        return Response(
+            {
+                "ok": True,
+                "resumo": resumo,
+                "itens": itens,
             }
         )
 

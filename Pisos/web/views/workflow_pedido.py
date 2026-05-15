@@ -2,6 +2,7 @@ from django.views import View
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from datetime import date
 from django.utils.dateparse import parse_date
 import json
 from json import JSONDecodeError
@@ -39,7 +40,13 @@ class PedidoWorkflowAjaxView(View):
                 return JsonResponse({"ok": False, "erro": "Data inválida."}, status=400)
             data_work = parsed.isoformat()
         else:
-            data_work = timezone.localdate().isoformat()
+            try:
+                data_work = timezone.localdate().isoformat()
+            except Exception:
+                try:
+                    data_work = timezone.now().date().isoformat()
+                except Exception:
+                    data_work = date.today().isoformat()
 
         if etapa not in self.CAMPOS:
             return JsonResponse({"ok": False, "erro": "Etapa inválida."}, status=400)

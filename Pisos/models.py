@@ -203,10 +203,12 @@ class Itenspedidospisos(models.Model):
     item_stat_manu = models.CharField(max_length=30, blank=True, null=True)
     item_desc = models.DecimalField(max_digits=15, decimal_places=4, blank=True, null=True)
     item_queb = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
+    
+    
+    #romaneio de entrega
     item_stat_manu_data = models.DateField(blank=True, null=True)
     item_stat_manu_user = models.IntegerField(blank=True, null=True)
     item_prod_nome = models.CharField(max_length=100, blank=True, null=True)
-    #item_inst_incl = models.BooleanField(blank=True, null=True)
     item_quan_entr = models.DecimalField(max_digits=16, decimal_places=2, blank=True, null=True)
     item_caix_entr = models.DecimalField(max_digits=16, decimal_places=2, blank=True, null=True)
 

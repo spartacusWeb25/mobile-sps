@@ -667,10 +667,15 @@
       <a class="btn btn-outline-danger btn-sm" href="{% url 'PisosWeb:pedidos_pisos_listar' slug=slug %}">
         <i class="bi bi-x-lg"></i> Cancelar
       </a>
+      <button class="btn btn-outline-success btn-sm" type="button" id="btn_romaneio_entrega"
+        onclick="showRomaneioEntregaModal()">
+        <i class="bi bi-box-seam"></i> Romaneio de Entrega
+      </button>
     </div>
   </form>
 </div>
 {% include 'Pisos/modal_workflow.html' %}
+{% include 'Pisos/modal_romaneio_entrega.html' %}
 
 
 <script>
@@ -684,6 +689,7 @@
   const EXCLUIR_PEDIDO = "{% if pedido %}{{ pedido.pedi_nume }}{% endif %}";
   const PEDIDO_NUME = "{% if pedido %}{{ pedido.pedi_nume }}{% endif %}";
   const URL_TITULOS_PISOS = PEDIDO_NUME ? `/api/${SLUG}/pisos/pedidos-pisos/${PEDIDO_NUME}/financeiro/` : null;
+  const URL_ROMANEIO_ENTREGA = "{% if pedido %}{% url 'PisosWeb:pedidos_pisos_romaneio_entrega_ajax' slug=slug pk=pedido.pedi_nume %}{% endif %}";
 
   /* ── Utilitários ── */
   function fmtBRL(v) {
@@ -1339,6 +1345,159 @@
     });
   }
 
+  function fmtQtdBR(v, maxCasas = 4) {
+    const n = parseNumberBR(v);
+    return n.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: maxCasas });
+  }
+
+  function renderRomaneioEntrega(itens) {
+    const body = document.getElementById('romaneio-entrega-body');
+    const info = document.getElementById('romaneio-entrega-info');
+    if (!body) return;
+
+    const lista = Array.isArray(itens) ? itens : [];
+    const pendentes = lista.filter(x => parseNumberBR(x?.item_quan_pend) > 0 || parseNumberBR(x?.item_caix_pend) > 0);
+
+    body.innerHTML = '';
+    if (pendentes.length === 0) {
+      body.innerHTML = `<tr><td colspan="11" class="text-center" style="color:var(--muted);">Nenhum item pendente para entrega.</td></tr>`;
+      if (info) info.textContent = '';
+      return;
+    }
+
+    pendentes.forEach(it => {
+      const maxQtd = Math.max(parseNumberBR(it.item_quan_pend), 0);
+      const maxCx = Math.max(parseNumberBR(it.item_caix_pend), 0);
+      const entregarQtd = maxQtd > 0 ? maxQtd : 0;
+      const entregarCx = maxCx > 0 ? maxCx : 0;
+
+      const tr = document.createElement('tr');
+      tr.dataset.itemNume = String(it.item_nume ?? '');
+
+      tr.innerHTML = `
+        <td>${String(it.item_nome_ambi || '').trim()}</td>
+        <td>${String(it.item_prod || '').trim()}</td>
+        <td>${String(it.item_prod_nome || '').trim()}</td>
+        <td class="text-end">${fmtQtdBR(it.item_quan)}</td>
+        <td class="text-end">${fmtQtdBR(it.item_quan_entr)}</td>
+        <td class="text-end">${fmtQtdBR(it.item_quan_pend)}</td>
+        <td>
+          <input type="number" class="form-control form-control-sm rom-qtd" step="0.01" min="0" max="${maxQtd}" value="${entregarQtd}">
+        </td>
+        <td class="text-end">${fmtQtdBR(it.item_caix, 2)}</td>
+        <td class="text-end">${fmtQtdBR(it.item_caix_entr, 2)}</td>
+        <td class="text-end">${fmtQtdBR(it.item_caix_pend, 2)}</td>
+        <td>
+          <input type="number" class="form-control form-control-sm rom-cx" step="1" min="0" max="${maxCx}" value="${entregarCx}">
+        </td>
+      `;
+      body.appendChild(tr);
+    });
+
+    if (info) info.textContent = `${pendentes.length} item(ns) pendente(s)`;
+  }
+
+  async function carregarRomaneioEntrega() {
+    if (!URL_ROMANEIO_ENTREGA || !PEDIDO_NUME) return;
+    const body = document.getElementById('romaneio-entrega-body');
+    const obs = document.getElementById('romaneio-entrega-observacao');
+    const info = document.getElementById('romaneio-entrega-info');
+    if (body) body.innerHTML = `<tr><td colspan="11" class="text-center" style="color:var(--muted);">Carregando...</td></tr>`;
+    if (info) info.textContent = '';
+    try {
+      const resp = await fetch(URL_ROMANEIO_ENTREGA, { headers: { 'Accept': 'application/json' } });
+      const payload = await resp.json();
+      if (!resp.ok || !payload.ok) {
+        showToast(payload.erro || 'Erro ao carregar romaneio.', 'danger');
+        return;
+      }
+      if (obs) obs.value = String(payload.pedi_obse_roma || '');
+      renderRomaneioEntrega(payload.itens || []);
+    } catch (e) {
+      showToast('Erro ao carregar romaneio.', 'danger');
+    }
+  }
+
+  async function enviarRomaneioEntrega() {
+    if (!URL_ROMANEIO_ENTREGA || !PEDIDO_NUME) return;
+
+    const btn = document.getElementById('btn-romaneio-entrega-salvar');
+    const rows = Array.from(document.querySelectorAll('#romaneio-entrega-body tr'));
+    const obs = document.getElementById('romaneio-entrega-observacao');
+
+    const entregas = [];
+    for (const tr of rows) {
+      const itemNume = String(tr.dataset.itemNume || '').trim();
+      if (!itemNume) continue;
+
+      const qtdEl = tr.querySelector('.rom-qtd');
+      const cxEl = tr.querySelector('.rom-cx');
+      const qtd = parseNumberBR(qtdEl?.value);
+      const cx = parseNumberBR(cxEl?.value);
+      const maxQtd = parseNumberBR(qtdEl?.max);
+      const maxCx = parseNumberBR(cxEl?.max);
+
+      if (qtd < 0 || cx < 0) {
+        showToast('Informe valores maiores ou iguais a zero.', 'danger');
+        return;
+      }
+      if (qtd > maxQtd + 1e-9) {
+        showToast(`Quantidade a entregar maior que a pendente no item ${itemNume}.`, 'danger');
+        return;
+      }
+      if (cx > maxCx + 1e-9) {
+        showToast(`Caixas a entregar maior que a pendente no item ${itemNume}.`, 'danger');
+        return;
+      }
+
+      if (qtd > 0 || cx > 0) {
+        entregas.push({ item_nume: Number(itemNume), quantidade: String(qtd), caixas: String(cx) });
+      }
+    }
+
+    if (entregas.length === 0) {
+      showToast('Informe ao menos um item para entregar.', 'danger');
+      return;
+    }
+
+    try {
+      if (btn) { btn.disabled = true; btn.textContent = 'Entregando...'; }
+      const resp = await fetch(URL_ROMANEIO_ENTREGA, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': CSRF,
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({ entregas, pedi_obse_roma: obs ? obs.value : '' })
+      });
+      const payload = await resp.json();
+      if (!resp.ok || !payload.ok) {
+        showToast(payload.erro || 'Erro ao salvar entrega.', 'danger');
+        return;
+      }
+      showToast('Entrega registrada com sucesso.', 'success');
+      if (obs) obs.value = String(payload.pedi_obse_roma || obs.value || '');
+      renderRomaneioEntrega(payload.itens || []);
+    } catch (e) {
+      showToast('Erro ao salvar entrega.', 'danger');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Entregar'; }
+    }
+  }
+
+  function showRomaneioEntregaModal() {
+    if (!PEDIDO_NUME || !URL_ROMANEIO_ENTREGA) {
+      showToast('Grave o pedido antes de abrir o romaneio de entrega.', 'danger');
+      return;
+    }
+    const modalEl = document.getElementById('romaneioEntregaModal');
+    if (!modalEl) return;
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+    carregarRomaneioEntrega();
+  }
+
   /* ── Init ── */
   document.addEventListener('DOMContentLoaded', () => {
     bindTabs();
@@ -1422,6 +1581,7 @@
       if (chk && chk.checked) aplicarCreditoAuto();
       atualizarTotais();
     });
+    document.getElementById('btn-romaneio-entrega-salvar')?.addEventListener('click', enviarRomaneioEntrega);
     bindRemoveButtons();
     {% if form.errors or formset.errors or formset.non_form_errors %}
     showToast('O formulário voltou com erros. Revise os campos destacados.', 'danger');
