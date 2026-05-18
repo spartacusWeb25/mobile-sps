@@ -302,7 +302,29 @@ class ProdutoListView(DBAndSlugMixin, ListView):
         ncm = (self.request.GET.get('ncm') or '').strip()
         if ncm:
             qs = qs.filter(prod_ncm__icontains=ncm)
-        return qs.order_by('prod_empr', 'prod_codi')
+
+        qs = qs.annotate(
+            prod_codi_int=Cast('prod_codi', IntegerField())
+        )
+
+        ordenar = self.request.GET.get('ordenar', 'codigo')
+
+        ordenacoes = {
+            'codigo': 'prod_codi_int',
+            'nome': 'prod_nome',
+            'nome_desc': '-prod_nome',
+            'estoque': '-saldo_estoque',
+            'menor_preco': 'preco_vista',
+            'maior_preco': '-preco_vista',
+        }
+
+        campo_ordenacao = ordenacoes.get(ordenar, 'prod_codi')
+
+        if ordenar == 'codigo':
+            qs = qs.order_by(campo_ordenacao, 'prod_codi')
+        else:
+            qs = qs.order_by(campo_ordenacao)
+        return qs
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -312,6 +334,7 @@ class ProdutoListView(DBAndSlugMixin, ListView):
         ctx['estoque'] = (self.request.GET.get('estoque') or '').strip()
         ctx['sem_preco'] = (self.request.GET.get('sem_preco') or '').strip()
         ctx['ncm'] = (self.request.GET.get('ncm') or '').strip()
+        ctx['ordenar'] = (self.request.GET.get('ordenar') or 'codigo').strip()
         # Preservar filtros na paginação
         extra_parts = []
         if ctx['prod_nome']:
@@ -324,6 +347,15 @@ class ProdutoListView(DBAndSlugMixin, ListView):
             extra_parts.append('&sem_preco=' + quote_plus(ctx['sem_preco']))
         if ctx['ncm']:
             extra_parts.append('&ncm=' + quote_plus(ctx['ncm']))
+        if ctx['ordenar']:
+            extra_parts.append('&ordenar=' + quote_plus(ctx['ordenar']))
+        page = (self.request.GET.get('page') or '').strip()
+        size = (self.request.GET.get('size') or '').strip()
+        if page:
+            extra_parts.append('&page=' + quote_plus(page))
+        if size:
+            extra_parts.append('&size=' + quote_plus(size))
+        
         ctx['extra_query'] = ''.join(extra_parts)
         # Popular pseudo-relacionamento de preços para o template existente (tabelaprecos_set.all)
         class _ManagerLike:

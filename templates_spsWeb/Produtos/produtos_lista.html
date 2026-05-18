@@ -134,17 +134,28 @@
                 </div>
 
                 <div class="row g-3 mb-3">
-                    <div class="col-md-5">
+                    <div class="col-md-4">
                         <label for="prod_nome" class="form-label">Nome do Produto</label>
                         <input type="text" id="prod_nome" name="prod_nome" class="form-control" value="{{ prod_nome }}"
                             placeholder="Buscar por nome...">
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label for="prod_codi" class="form-label">Código</label>
                         <input type="number" id="prod_codi" name="prod_codi" class="form-control"
                             value="{{ prod_codi }}" placeholder="Código">
                     </div>
-                    <div class="col-md-4 d-flex align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label">Ordenar</label>
+                        <select name="ordenar" class="form-select" onchange="this.form.submit()">
+                            <option value="codigo" {% if ordenar == 'codigo' %}selected{% endif %}>Código</option>
+                            <option value="nome" {% if ordenar == 'nome' %}selected{% endif %}>Nome A-Z</option>
+                            <option value="nome_desc" {% if ordenar == 'nome_desc' %}selected{% endif %}>Nome Z-A</option>
+                            <option value="estoque" {% if ordenar == 'estoque' %}selected{% endif %}>Maior Estoque</option>
+                            <option value="menor_preco" {% if ordenar == 'menor_preco' %}selected{% endif %}>Menor Preço</option>
+                            <option value="maior_preco" {% if ordenar == 'maior_preco' %}selected{% endif %}>Maior Preço</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
                         <button type="submit" class="btn btn-primary w-100">
                             <i class="bi bi-search"></i> Filtrar
                         </button>
