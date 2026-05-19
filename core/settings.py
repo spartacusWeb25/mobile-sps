@@ -150,6 +150,7 @@ INSTALLED_APPS = [
     'Pedidos',
     'perfilweb',
     'Pisos',
+    'planocontas',
     'planogerencial',
     'planos',
     'processos',
