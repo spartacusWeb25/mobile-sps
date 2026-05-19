@@ -36,11 +36,12 @@ from .Views.web_views import (
     SimularImpostosView,
     ZerarEstoqueView
 )
+from .Views.servicos_views import ServicosListView, ServicosCreateView, ServicosUpdateView, ServicosDeleteView
 from .Views.preco_massa_view import PrecoMassaTemplateView
 from ..views.preco_massa_views import PrecoMassaAPIView
 from .Views.produtos_massa_view import ProdutosMassaTemplateView
 from ..views.produtos_massa_views import ProdutosMassaAPIView
-from .Views.autocompletes import autocomplete_unidades, autocomplete_grupos, autocomplete_marcas, autocomplete_subgrupos, autocomplete_familias, autocomplete_ncms
+from .Views.autocompletes import autocomplete_unidades, autocomplete_grupos, autocomplete_marcas, autocomplete_subgrupos, autocomplete_familias, autocomplete_ncms, autocomplete_cnaes, autocomplete_servicos
 from .Views.etiquetas import EtiquetasView
 from .Views.ajax_create import ajax_create_grupo, ajax_create_subgrupo, ajax_create_familia, ajax_create_marca
 from .Views.ajax_estoque import ajax_movimentar_estoque
@@ -110,7 +111,13 @@ urlpatterns = [
     path('precos-massa/api/', PrecoMassaAPIView.as_view(), name='precos_massa_api_web'),
     path('produtos-massa/', ProdutosMassaTemplateView.as_view(), name='produtos_massa_web'),
     path('produtos-massa/api/', ProdutosMassaAPIView.as_view(), name='produtos_massa_api_web'),
+    path('servicos/', ServicosListView.as_view(), name='servicos_web'),
+    path('servicos/new/', ServicosCreateView.as_view(), name='servicos_create_web'),
+    path('servicos/<int:prod_codi>/edit/', ServicosUpdateView.as_view(), name='servicos_edit_web'),
+    path('servicos/<int:prod_codi>/delete/', ServicosDeleteView.as_view(), name='servicos_delete_web'),
     path('ajax/grupos/create/', ajax_create_grupo, name='ajax_create_grupo'),
+    path('autocomplete/cnaes/', autocomplete_cnaes, name='autocomplete_cnaes'),
+    path('autocomplete/servicos/', autocomplete_servicos, name='autocomplete_servicos'),
     path('ajax/subgrupos/create/', ajax_create_subgrupo, name='ajax_create_subgrupo'),
     path('ajax/familias/create/', ajax_create_familia, name='ajax_create_familia'),
     path('ajax/marcas/create/', ajax_create_marca, name='ajax_create_marca'),

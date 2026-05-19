@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Lista de Serviços{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/list.css' %}">
+
+<div class="container page-container">
+    <div class="page-header-custom">
+        <div class="container align-items-center">
+            <h2 class="page-title">
+                <i class="bi bi-briefcase"></i> Serviços
+            </h2>
+        </div>
+        <div class="container d-flex justify-content-end">
+            <div class="page-actions">
+                <a href="{% url 'servicos_create_web' slug=slug %}" class="btn btn-success">
+                    <i class="bi bi-plus-lg"></i> Novo Serviço
+                </a>
+            </div>
+        </div>
+    </div>
+
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <div class="card">
+        <div class="card-body">
+            <form method="get">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <label for="nome" class="form-label">Descrição</label>
+                        <input type="text" id="nome" name="nome" class="form-control" value="{{ nome }}" placeholder="Buscar por descrição...">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="codigo" class="form-label">Código</label>
+                        <input type="text" id="codigo" name="codigo" class="form-control" value="{{ codigo }}" placeholder="Buscar por código...">
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-search"></i> Filtrar
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            {% if page_obj %}
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped align-middle">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th class="text-end">Ações</th>
+                            <th>Código</th>
+                            <th>Descrição</th>
+                            <th>Unidade</th>
+                            <th>CNAE</th>
+                            <th>Código Serviço</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for servico in page_obj %}
+                        <tr>
+                            <td class="text-end">
+                                <a href="{% url 'servicos_edit_web' slug=slug prod_codi=servico.prod_codi %}" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a href="{% url 'servicos_delete_web' slug=slug prod_codi=servico.prod_codi %}" class="btn btn-outline-danger btn-sm">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </td>
+                            <td>{{ servico.prod_codi }}</td>
+                            <td>{{ servico.prod_desc_serv|default:servico.prod_desc }}</td>
+                            <td>{{ servico.prod_unme }}</td>
+                            <td>{{ servico.prod_cnae }}</td>
+                            <td>{{ servico.prod_codi_serv }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p>Não há serviços cadastrados.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

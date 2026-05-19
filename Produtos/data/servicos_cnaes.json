@@ -1,0 +1,47 @@
+{
+  "cnaes": [
+    { "value": "01113", "label": "01113 - Cultivo de cereais" },
+    {
+      "value": "62015",
+      "label": "62015 - Desenvolvimento de programas de computador sob encomenda"
+    },
+    {
+      "value": "74901",
+      "label": "74901 - Atividades profissionais, científicas e técnicas"
+    },
+    {
+      "value": "82997",
+      "label": "82997 - Outros serviços prestados principalmente às empresas"
+    },
+    {
+      "value": "84132",
+      "label": "84132 - Regulação das atividades econômicas"
+    },
+    {
+      "value": "29492",
+      "label": "29492 - Fabricação de peças e acessórios para veículos automotores"
+    },
+    { "value": "43210", "label": "43210 - Instalações elétricas" },
+    { "value": "56112", "label": "56112 - Restaurantes e similares" },
+    {
+      "value": "62020",
+      "label": "62020 - Desenvolvimento e licenciamento de programas"
+    },
+    { "value": "71111", "label": "71111 - Atividades de arquitetura" }
+  ],
+  "servicos": [
+    { "value": "01.01.01", "label": "01.01.01 - Análise de sistemas" },
+    { "value": "01.01.02", "label": "01.01.02 - Desenvolvimento de sistemas" },
+    { "value": "01.02.01", "label": "01.02.01 - Programação" },
+    { "value": "01.03.01", "label": "01.03.01 - Processamento de dados" },
+    { "value": "02.01.01", "label": "02.01.01 - Consultoria técnica" },
+    { "value": "03.01.01", "label": "03.01.01 - Serviços de manutenção" },
+    { "value": "04.01.01", "label": "04.01.01 - Serviços de limpeza" },
+    { "value": "05.01.01", "label": "05.01.01 - Transporte de cargas" },
+    { "value": "06.01.01", "label": "06.01.01 - Projetos de engenharia" },
+    { "value": "07.01.01", "label": "07.01.01 - Atividades contábeis" },
+    { "value": "08.01.01", "label": "08.01.01 - Assessoria jurídica" },
+    { "value": "09.01.01", "label": "09.01.01 - Publicidade e propaganda" },
+    { "value": "10.01.01", "label": "10.01.01 - Treinamento e capacitação" }
+  ]
+}

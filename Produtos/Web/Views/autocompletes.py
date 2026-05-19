@@ -67,6 +67,35 @@ def autocomplete_marcas(request, slug=None):
 
 
 def autocomplete_ncms(request, slug=None):
+    # Mantém compatibilidade com nome antigo
+    return autocomplete_cnaes(request, slug=slug)
+
+
+def autocomplete_servicos(request, slug=None):
+    banco = get_licenca_db_config(request) or 'default'
+    term = (request.GET.get('term') or request.GET.get('q') or '').strip().lower()
+    import json, os
+    here = os.path.dirname(os.path.abspath(__file__))
+    data_path = os.path.join(here, '..', '..', 'data', 'servicos_cnaes.json')
+    try:
+        with open(os.path.normpath(data_path), 'r', encoding='utf-8') as f:
+            payload = json.load(f)
+            choices = payload.get('servicos', [])
+    except Exception:
+        choices = [
+            {'value': '01.01.01', 'label': '01.01.01 - Análise de sistemas'},
+            {'value': '01.01.02', 'label': '01.01.02 - Desenvolvimento de sistemas'},
+            {'value': '01.02.01', 'label': '01.02.01 - Programação'},
+            {'value': '01.03.01', 'label': '01.03.01 - Processamento de dados'},
+        ]
+    if term:
+        filtered = [c for c in choices if term in c.get('label','').lower() or term in c.get('value','').lower()]
+    else:
+        filtered = choices
+    return JsonResponse({'results': filtered})
+
+
+def ncm_fiscal_padrao(request, slug=None):
     banco_tenant = get_licenca_db_config(request) or "default"
     banco = get_ncm_master_db(banco_tenant)
     term = (request.GET.get('term') or request.GET.get('q') or '').strip()
@@ -85,6 +114,63 @@ def autocomplete_ncms(request, slug=None):
     qs = qs.order_by('ncm_codi')[:30]
     data = [{'value': obj.ncm_codi, 'label': f"{obj.ncm_codi} - {obj.ncm_desc}"} for obj in qs]
     return JsonResponse({'results': data})
+
+
+def autocomplete_cnaes(request, slug=None):
+    import json, os, re
+    term = (request.GET.get('term') or request.GET.get('q') or '').strip().lower()
+    here = os.path.dirname(os.path.abspath(__file__))
+    data_path = os.path.normpath(os.path.join(here, '..', '..', 'data', 'servicos_cnaes.json'))
+    choices = []
+    # 1) Tenta ler do arquivo local
+    try:
+        with open(data_path, 'r', encoding='utf-8') as f:
+            payload = json.load(f)
+            choices = payload.get('cnaes', [])
+    except Exception:
+        choices = []
+
+    # 2) Se não encontrou no arquivo, tenta buscar no site oficial e atualiza o arquivo
+    if not choices:
+        try:
+            import requests
+            GOV_URL = 'https://www.gov.br/nfse/pt-br/mei-e-demais-empresas/codigos-de-tributacao-nacional-nbs'
+            resp = requests.get(GOV_URL, timeout=10)
+            text = resp.text if resp.status_code == 200 else ''
+            matches = re.findall(r"(\d{6})\s*-\s*([^<\n\r]+)", text)
+            for m in matches:
+                codigo = m[0].strip()
+                desc = m[1].strip()
+                choices.append({'value': codigo, 'label': f"{codigo} - {desc}"})
+            # gravar cache local (silencioso)
+            try:
+                os.makedirs(os.path.dirname(data_path), exist_ok=True)
+                if os.path.exists(data_path):
+                    with open(data_path, 'r', encoding='utf-8') as f:
+                        existing = json.load(f)
+                else:
+                    existing = {}
+                existing['cnaes'] = choices
+                with open(data_path, 'w', encoding='utf-8') as f:
+                    json.dump(existing, f, ensure_ascii=False, indent=2)
+            except Exception:
+                pass
+        except Exception:
+            # fallback para consulta ao master NCM
+            try:
+                banco = get_ncm_master_db(request)
+                qs = Ncm.objects.using(banco).all()
+                qs = qs.order_by('ncm_codi')[:300]
+                choices = [{'value': obj.ncm_codi, 'label': f"{obj.ncm_codi} - {obj.ncm_desc}"} for obj in qs]
+            except Exception:
+                choices = []
+
+    # filtra por termo
+    if term:
+        filtered = [c for c in choices if term in c.get('label','').lower() or term in c.get('value','').lower()]
+    else:
+        filtered = choices[:300]
+    return JsonResponse({'results': filtered})
 
 
 def ncm_fiscal_padrao(request, slug=None):

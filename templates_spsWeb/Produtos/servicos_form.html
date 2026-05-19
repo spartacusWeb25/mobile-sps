@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Cadastro de Serviços{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/form.css' %}">
+
+<div class="container py-4">
+  <div class="card shadow-lg border-0">
+    <div class="card-header text-center py-3">
+      <h3 class="mb-0 d-flex align-items-center justify-content-center">
+        <i class="bi bi-briefcase me-2"></i> Cadastro de Serviços
+      </h3>
+    </div>
+  </div>
+
+  {% if messages %}
+  {% for message in messages %}
+  <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  <div class="card-body p-4">
+    <div class="card">
+      <div class="card-body">
+        <form method="post" novalidate>
+          {% csrf_token %}
+          {% if form.non_field_errors or form.errors %}
+          <div class="alert alert-danger" role="alert">
+            <div class="fw-semibold mb-1">Existem campos obrigatórios ou inválidos. Corrija os itens abaixo e tente
+              novamente.</div>
+            <ul class="mb-0">
+              {% for field in form %}
+              {% for error in field.errors %}
+              <li>{{ field.label }}: {{ error }}</li>
+              {% endfor %}
+              {% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+
+          <div class="row g-3">
+            <div class="col-md-4">
+              {{ form.prod_unme_autocomplete.label_tag }}
+              <input type="text" class="form-control" id="autocomplete-unidade" placeholder="Buscar unidade de medida"
+                autocomplete="off" value="{{ form.prod_unme_autocomplete.value|default_if_none:'' }}">
+              <div style="display:none;">
+                {{ form.prod_unme_autocomplete }}
+                {{ form.prod_unme }}
+              </div>
+            </div>
+            <div class="col-md-4 position-relative">
+              {{ form.prod_codi_serv.label_tag }}
+              <input type="text" class="form-control" id="autocomplete-servico" placeholder="Buscar código de serviço"
+                autocomplete="off">
+              {{ form.prod_codi_serv }}
+              <div id="servico-dropdown" class="autocomplete-dropdown list-group position-absolute w-100"
+                style="z-index:1000; top:100%; display:none;"></div>
+            </div>
+            <div class="col-md-4 position-relative">
+              {{ form.prod_cnae.label_tag }}
+              <input type="text" class="form-control" id="autocomplete-cnae" placeholder="Buscar CNAE"
+                autocomplete="off">
+              {{ form.prod_cnae }}
+              <div id="cnae-dropdown" class="autocomplete-dropdown list-group position-absolute w-100"
+                style="z-index:1000; top:100%; display:none;"></div>
+            </div>
+            <div class="col-12">
+              {{ form.prod_desc_serv.label_tag }}
+              {{ form.prod_desc_serv }}
+            </div>
+            <div class="col-md-4">
+              {{ form.prod_exig_iss.label_tag }}
+              {{ form.prod_exig_iss }}
+            </div>
+            <div class="col-md-4">
+              {{ form.prod_iss.label_tag }}
+              {{ form.prod_iss }}
+            </div>
+            {{ form.prod_e_serv }}
+          </div>
+
+          <div class="mt-4 d-flex gap-2">
+            <button type="submit" class="btn btn-outline-primary"><i class="bi bi-check-circle"></i> Salvar</button>
+            <a href="{% url 'servicos_web' slug=slug %}" class="btn btn-outline-danger">Cancelar</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const unidadeInput = document.getElementById('autocomplete-unidade');
+
+    if (unidadeInput) {
+      const dropdown = document.createElement('div');
+      dropdown.id = 'unidade-dropdown';
+      dropdown.className = 'autocomplete-dropdown list-group position-absolute w-100';
+      dropdown.style.zIndex = '1000';
+      unidadeInput.parentNode.style.position = 'relative';
+      unidadeInput.parentNode.appendChild(dropdown);
+
+      // Setup servico autocomplete
+      const servInput = document.getElementById('autocomplete-servico');
+      const servDropdown = document.getElementById('servico-dropdown');
+      if (servInput) {
+        servInput.addEventListener('input', function () {
+          const term = this.value.trim();
+          servDropdown.style.display = 'none';
+          servDropdown.innerHTML = '';
+          if (term.length < 1) return;
+          fetch(`{% url 'autocomplete_servicos' slug=slug %}?term=${encodeURIComponent(term)}`)
+            .then(r => r.json()).then(d => {
+              (d.results || []).forEach(item => {
+                const el = document.createElement('button');
+                el.type = 'button';
+                el.className = 'list-group-item list-group-item-action';
+                el.textContent = item.label;
+                el.addEventListener('click', () => {
+                  servInput.value = item.label || item.value || '';
+                  const hidden = document.getElementById('{{ form.prod_codi_serv.id_for_label }}');
+                  if (hidden) hidden.value = item.value || '';
+                  servDropdown.innerHTML = '';
+                  servDropdown.style.display = 'none';
+                });
+                servDropdown.appendChild(el);
+              });
+              if ((d.results || []).length) servDropdown.style.display = 'block';
+            }).catch(() => { });
+        });
+      }
+
+      // Setup cnae autocomplete
+      const cnaeInput = document.getElementById('autocomplete-cnae');
+      const cnaeDropdown = document.getElementById('cnae-dropdown');
+      if (cnaeInput) {
+        cnaeInput.addEventListener('input', function () {
+          const term = this.value.trim();
+          cnaeDropdown.style.display = 'none';
+          cnaeDropdown.innerHTML = '';
+          if (term.length < 1) return;
+          fetch(`{% url 'autocomplete_cnaes' slug=slug %}?term=${encodeURIComponent(term)}`)
+            .then(r => r.json()).then(d => {
+              (d.results || []).forEach(item => {
+                const el = document.createElement('button');
+                el.type = 'button';
+                el.className = 'list-group-item list-group-item-action';
+                el.textContent = item.label;
+                el.addEventListener('click', () => {
+                  cnaeInput.value = item.label || item.value || '';
+                  const hidden = document.getElementById('{{ form.prod_cnae.id_for_label }}');
+                  if (hidden) hidden.value = item.value || '';
+                  cnaeDropdown.innerHTML = '';
+                  cnaeDropdown.style.display = 'none';
+                });
+                cnaeDropdown.appendChild(el);
+              });
+              if ((d.results || []).length) cnaeDropdown.style.display = 'block';
+            }).catch(() => { });
+        });
+      }
+
+      let controller = null;
+      const selectValue = (item) => {
+        unidadeInput.value = item.label || item.value || '';
+        const hidden = document.getElementById('{{ form.prod_unme_autocomplete.id_for_label }}');
+        const finalField = document.getElementById('{{ form.prod_unme.id_for_label }}');
+        if (hidden) hidden.value = item.value || '';
+        if (finalField) finalField.value = item.value || '';
+        dropdown.innerHTML = '';
+      };
+
+      unidadeInput.addEventListener('input', function () {
+        const term = this.value.trim();
+        if (controller) controller.abort();
+        if (term.length < 2) {
+          dropdown.innerHTML = '';
+          return;
+        }
+        controller = new AbortController();
+        fetch(`{% url 'autocomplete_unidades' slug=slug %}?term=${encodeURIComponent(term)}`, { signal: controller.signal })
+          .then(response => response.json())
+          .then(data => {
+            dropdown.innerHTML = '';
+            (data.results || []).forEach(item => {
+              const el = document.createElement('button');
+              el.type = 'button';
+              el.className = 'list-group-item list-group-item-action';
+              el.textContent = item.label;
+              el.addEventListener('click', () => selectValue(item));
+              dropdown.appendChild(el);
+            });
+          })
+          .catch(() => { });
+      });
+    }
+  });
+</script>
+{% endblock %}
