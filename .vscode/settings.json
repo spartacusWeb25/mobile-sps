@@ -257,17 +257,6 @@
     {
       "ssh": "Disabled",
       "previewLimit": 50,
-      "server": "localhost",
-      "port": 5432,
-      "driver": "PostgreSQL",
-      "name": "ipa",
-      "database": "ipa",
-      "username": "postgres",
-      "password": "@spartacus201@"
-    },
-    {
-      "ssh": "Disabled",
-      "previewLimit": 50,
       "server": "base.rtalmeida.com.br",
       "port": 5432,
       "driver": "PostgreSQL",
@@ -363,6 +352,17 @@
       "database": "savexml1039",
       "username": "savexml1039",
       "password": "RRRRTTTTTTTT"
+    },
+    {
+      "ssh": "Disabled",
+      "previewLimit": 50,
+      "server": "base.rtalmeida.com.br",
+      "port": 5432,
+      "driver": "PostgreSQL",
+      "name": "ipa",
+      "database": "savexml952",
+      "username": "savexml952",
+      "password": "zzzz22222244"
     }
   ],
   "liveServer.settings.port": 5501
