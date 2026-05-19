@@ -3,7 +3,7 @@ from .Views.listView import TitulosReceberListView, TitulosReceberParcelasListVi
 from .Views.createView import TitulosReceberCreateView, TitulosReceberParcelasCreateView
 from .Views.updateView import TitulosReceberUpdateView
 from .Views.deleteView import TitulosReceberDeleteView
-from .Views.autocompletes import autocomplete_cc, autocomplete_bancos
+from .Views.autocompletes import autocomplete_cc, autocomplete_bancos, autocomplete_planocontas, autocomplete_planodecontas
 
 app_name = 'contas_a_receber_web'
 
@@ -17,5 +17,7 @@ urlpatterns = [
     path('excluir/<str:titu_titu>/', TitulosReceberDeleteView.as_view(), name='excluir'),
     path('autocomplete/clientes/', autocomplete_clientes, name='autocomplete_clientes'),
     path('autocomplete/centrodecustos/', autocomplete_cc, name='autocomplete_centrodecustos'),
+    path('autocomplete/planocontas/', autocomplete_planocontas, name='autocomplete_planocontas'),
+    path('autocomplete/planodecontas/', autocomplete_planodecontas, name='autocomplete_planodecontas'),
     path('autocomplete/bancos/', autocomplete_bancos, name='autocomplete_bancos'),
 ]

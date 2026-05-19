@@ -4,10 +4,12 @@ from planogerencial.web.views.atualizar import PlanoGerencialInativarView
 from planogerencial.web.views.criar import PlanoGerencialCriarView, MascaraGerencialCriarView
 from planogerencial.web.views.editar import PlanoGerencialEditarView, MascaraGerencialEditarView
 from planogerencial.web.views.listar import PlanoGerencialListView, MascaraGerencialListView
+from planogerencial.web.views.autocomplete import autocomplete_planocontas
 
 app_name = "planogerencial"
 
 urlpatterns = [
+    path("autocomplete/planocontas/", autocomplete_planocontas, name="autocomplete_planocontas"),
     path("planos/", PlanoGerencialListView.as_view(), name="plano_listar"),
     path("planos/criar/", PlanoGerencialCriarView.as_view(), name="plano_criar"),
     path("<int:redu>/editar/", PlanoGerencialEditarView.as_view(), name="plano_editar"),
