@@ -1,6 +1,6 @@
 {
-  "debug_id": "2daa802e-5724-445f-abc8-be036e3d98f5",
-  "timestamp_inicio": "2026-05-08T17:02:18.756608Z",
+  "debug_id": "8957f7d1-0a28-4179-a935-528acb56d0cb",
+  "timestamp_inicio": "2026-05-19T13:16:38.318997Z",
   "ambiente": {
     "debug": true,
     "database_alias": "saveweb001"
@@ -9,31 +9,31 @@
     "versao": "Padrão"
   },
   "nota": {
-    "id": 101,
+    "id": 106,
     "modelo": "55",
-    "serie": "005",
-    "numero": "25",
+    "serie": "001",
+    "numero": "4",
     "empresa": "1",
     "filial": "1",
-    "destinatario_id": "6",
+    "destinatario_id": "5",
     "uf_origem": "PR",
     "uf_destino": "PR",
     "regime": "1"
   },
   "itens": [
     {
-      "id": 120,
-      "produto_id": "23",
-      "descricao_produto": "BOLO DE LARANJA",
-      "ncm_produto": null,
+      "id": 133,
+      "produto_id": "42",
+      "descricao_produto": "Cerveja Lager Heineken Garrafa 330 ml",
+      "ncm_produto": "2203****",
       "cfop_inicial": "5102",
-      "quantidade": "1.0000",
-      "unitario": "31.2000",
-      "desconto": "0.2000",
+      "quantidade": "10.0000",
+      "unitario": "5.9900",
+      "desconto": "0.0000",
       "logs": [
         {
-          "id": "a1ff1e2a-77d0-4714-bd3f-6b51f2a3060d",
-          "timestamp": "2026-05-08T17:02:18.848226Z",
+          "id": "a4922238-1720-4b50-a163-6402f3bc5944",
+          "timestamp": "2026-05-19T13:16:38.465081Z",
           "tipo": "antes_calculo_item",
           "mensagem": "Início do cálculo de impostos para o item.",
           "dados": {
@@ -44,7 +44,7 @@
           }
         }
       ],
-      "fonte_tributacao": "CFOP",
+      "fonte_tributacao": "SPARTACUS",
       "cfop_resolvido": "5102",
       "cfop_flags": {
         "exig_icms": false,
@@ -54,198 +54,44 @@
         "exig_ibs": false,
         "gera_st": false
       },
-      "ncm_resolvido": null,
+      "ncm_resolvido": "2203****",
       "bases": {
-        "raiz": "31.00",
-        "icms": null,
+        "raiz": "59.90",
+        "icms": "0.00",
         "st": null
       },
       "aliquotas": {
         "ipi": null,
-        "icms": null,
-        "st": null,
-        "pis": null,
-        "cofins": null,
-        "cbs": null,
-        "ibs": null
-      },
-      "valores_calculados": {
-        "ipi": null,
-        "icms": null,
-        "st": null,
-        "pis": null,
-        "cofins": null,
-        "cbs": null,
-        "ibs": null
-      },
-      "extras": {
-        "mva_st": null
-      },
-      "csts": {
-        "ipi": null,
-        "icms": null,
-        "st": null,
-        "pis": null,
-        "cofins": null,
-        "cbs": null,
-        "ibs": null
-      },
-      "condicionais_aplicadas": {
-        "icms_habilitado_cfop": false,
-        "ipi_habilitado_cfop": false,
-        "pis_cofins_habilitado_cfop": false,
-        "cbs_habilitado_cfop": false,
-        "ibs_habilitado_cfop": false
-      }
-    },
-    {
-      "id": 121,
-      "produto_id": "26",
-      "descricao_produto": "bolo de cenoura",
-      "ncm_produto": null,
-      "cfop_inicial": "5102",
-      "quantidade": "1.0000",
-      "unitario": "36.0000",
-      "desconto": "0.0000",
-      "logs": [
-        {
-          "id": "a70d151a-c15a-4434-b552-8b02cf79fcd9",
-          "timestamp": "2026-05-08T17:02:18.989970Z",
-          "tipo": "antes_calculo_item",
-          "mensagem": "Início do cálculo de impostos para o item.",
-          "dados": {
-            "uf_origem": "PR",
-            "uf_destino": "PR",
-            "regime": "1",
-            "tipo_operacao": "VENDA"
-          }
-        }
-      ],
-      "fonte_tributacao": "CFOP",
-      "cfop_resolvido": "5102",
-      "cfop_flags": {
-        "exig_icms": false,
-        "exig_ipi": false,
-        "exig_pis_cofins": false,
-        "exig_cbs": false,
-        "exig_ibs": false,
-        "gera_st": false
-      },
-      "ncm_resolvido": null,
-      "bases": {
-        "raiz": "36.00",
-        "icms": null,
-        "st": null
-      },
-      "aliquotas": {
-        "ipi": null,
-        "icms": null,
-        "st": null,
-        "pis": null,
-        "cofins": null,
-        "cbs": null,
-        "ibs": null
-      },
-      "valores_calculados": {
-        "ipi": null,
-        "icms": null,
-        "st": null,
-        "pis": null,
-        "cofins": null,
-        "cbs": null,
-        "ibs": null
-      },
-      "extras": {
-        "mva_st": null
-      },
-      "csts": {
-        "ipi": null,
-        "icms": null,
-        "st": null,
-        "pis": null,
-        "cofins": null,
-        "cbs": null,
-        "ibs": null
-      },
-      "condicionais_aplicadas": {
-        "icms_habilitado_cfop": false,
-        "ipi_habilitado_cfop": false,
-        "pis_cofins_habilitado_cfop": false,
-        "cbs_habilitado_cfop": false,
-        "ibs_habilitado_cfop": false
-      }
-    },
-    {
-      "id": 122,
-      "produto_id": "7",
-      "descricao_produto": "Anel de outro",
-      "ncm_produto": "7113****",
-      "cfop_inicial": "5405",
-      "quantidade": "1.0000",
-      "unitario": "409.5000",
-      "desconto": "0.0000",
-      "logs": [
-        {
-          "id": "a3e25096-73d5-4325-bcc7-1027f056cb73",
-          "timestamp": "2026-05-08T17:02:19.131624Z",
-          "tipo": "antes_calculo_item",
-          "mensagem": "Início do cálculo de impostos para o item.",
-          "dados": {
-            "uf_origem": "PR",
-            "uf_destino": "PR",
-            "regime": "1",
-            "tipo_operacao": "VENDA"
-          }
-        }
-      ],
-      "fonte_tributacao": "NCM",
-      "cfop_resolvido": "5405",
-      "cfop_flags": {
-        "exig_icms": true,
-        "exig_ipi": false,
-        "exig_pis_cofins": false,
-        "exig_cbs": false,
-        "exig_ibs": false,
-        "gera_st": true
-      },
-      "ncm_resolvido": "7113****",
-      "bases": {
-        "raiz": "409.50",
-        "icms": "409.50",
-        "st": null
-      },
-      "aliquotas": {
-        "ipi": "0.00",
         "icms": "0.00",
         "st": null,
         "pis": "0.00",
         "cofins": "0.00",
-        "cbs": "0.00",
-        "ibs": "0.00"
+        "cbs": null,
+        "ibs": null
       },
       "valores_calculados": {
-        "ipi": "0",
-        "icms": "0",
+        "ipi": null,
+        "icms": "0.00",
         "st": null,
         "pis": "0",
         "cofins": "0",
-        "cbs": "0",
-        "ibs": "0"
+        "cbs": null,
+        "ibs": null
       },
       "extras": {
         "mva_st": null
       },
       "csts": {
-        "ipi": "99",
+        "ipi": null,
         "icms": "102",
         "st": null,
         "pis": "49",
         "cofins": "49",
-        "cbs": "400",
-        "ibs": "400"
+        "cbs": null,
+        "ibs": null
       },
       "condicionais_aplicadas": {
-        "icms_habilitado_cfop": true,
+        "icms_habilitado_cfop": false,
         "ipi_habilitado_cfop": false,
         "pis_cofins_habilitado_cfop": false,
         "cbs_habilitado_cfop": false,
@@ -255,8 +101,8 @@
   ],
   "logs": [
     {
-      "id": "19587af7-d9a4-4e25-b020-dd39006da232",
-      "timestamp": "2026-05-08T17:02:18.825898Z",
+      "id": "fd118633-40df-4747-ba89-d8a31083fb7c",
+      "timestamp": "2026-05-19T13:16:38.415394Z",
       "tipo": "contexto_nota",
       "mensagem": "Contexto fiscal inicial da nota.",
       "dados": {
@@ -264,5 +110,5 @@
       }
     }
   ],
-  "timestamp_fim": "2026-05-08T17:02:19.470882Z"
+  "timestamp_fim": "2026-05-19T13:16:38.905346Z"
 }

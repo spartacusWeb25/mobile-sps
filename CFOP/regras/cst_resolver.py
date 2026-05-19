@@ -1,7 +1,7 @@
 class CSTResolver:
 
     CST_ICMS = "00"
-    CSOSN = "101"
+    CSOSN = ["101", "102"]
     CST_IPI = "50"
     CST_PIS_COFINS = "01"
 

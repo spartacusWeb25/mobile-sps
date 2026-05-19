@@ -11,6 +11,7 @@ from django.views.generic import ListView, CreateView, UpdateView, DeleteView, T
 from Agricola.service.cadastros_service import CadastrosDomainService
 from .services.entidades_trasportadores import EntidadeTransportadoraServico
 from .services.entidades_motoristas import EntidadeMotoristaServico
+from .services.entidades_tipooutros import EntidadeServico
 from urllib.parse import quote_plus
 from django.db.models import BigIntegerField, Case, When, Value, CharField, IntegerField, OuterRef, Subquery
 from django.db.models.functions import Cast
@@ -296,6 +297,15 @@ class EntidadeCreateView(DBAndSlugMixin, CreateView):
             raise ValueError("Empresa não identificada para o cadastro.")
 
         data['enti_empr'] = empresa
+        entidade_outros = data.get('enti_tipo_enti') == "OU"
+        cadastrar_outros = EntidadeServico.cadastrar_outros
+        if not data.get('enti_cnpj')  and not data.get('enti_cpf') and entidade_outros:
+            return cadastrar_outros(
+                data=data,
+                empresa_id=empresa,
+                filial_id=filial,
+                banco=db_name
+            )
         
         if form.cleaned_data.get('is_transportadora'):
              return EntidadeTransportadoraServico.cadastrar_transportadora(
@@ -319,6 +329,8 @@ class EntidadeCreateView(DBAndSlugMixin, CreateView):
             dados=data,
             using=db_name
         )
+        
+
 
 class EntidadeUpdateView(DBAndSlugMixin, UpdateView):
     template_name = 'Entidades/entidade_form.html'

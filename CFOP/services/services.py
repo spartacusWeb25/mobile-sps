@@ -6,7 +6,7 @@ from .bases import BaseFiscal, FiscalContexto
 
 class ResolverCST:
     CST_ICMS_DEFAULT = "00"
-    CSOSN_DEFAULT = "101"
+    CSOSN_DEFAULT = ["101", "102"]
     CST_IPI_DEFAULT = "50"
     CST_PIS_COFINS_DEFAULT = "01"
 

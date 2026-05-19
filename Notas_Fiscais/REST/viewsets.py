@@ -311,7 +311,6 @@ class NotaViewSet(viewsets.ModelViewSet):
         kwargs["partial"] = True
         return self.update(request, *args, **kwargs)
 
-    # --------- CANCELAR ---------
     @action(detail=True, methods=["post"])
     def consultar(self, request, pk=None, slug=None):
         banco = get_licenca_db_config(request) or "default"

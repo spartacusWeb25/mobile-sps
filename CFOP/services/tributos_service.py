@@ -237,16 +237,33 @@ class TributoService:
         estado = self._normalize_estado(dados["estado"])
         codigo = self._normalize_codigo(dados["codigo"])
 
-        obj, _ = self._qs().update_or_create(
-            trib_empr=self.empresa,
-            trib_fili=self.filial,
-            trib_tipo=tipo,
-            trib_enti=entidade,
-            trib_esta=estado,
-            trib_codi=codigo,
-            defaults=self._defaults_from_data(dados),
+        filtros = {
+            "trib_empr": self.empresa,
+            "trib_fili": self.filial,
+            "trib_tipo": tipo,
+            "trib_enti": entidade,
+            "trib_esta": estado,
+            "trib_codi": codigo,
+        }
+
+        defaults = self._defaults_from_data(dados)
+
+        obj = self._qs().filter(**filtros).first()
+
+        if obj:
+            for campo, valor in defaults.items():
+                setattr(obj, campo, valor)
+
+            obj.save(
+                using=self.banco,
+                update_fields=list(defaults.keys())
+            )
+            return obj
+
+        return self._qs().create(
+            **filtros,
+            **defaults,
         )
-        return obj
 
     def excluir(self, *, codigo: str, estado: str, entidade: str, tipo: str = "P") -> int:
         qs = self._qs().filter(

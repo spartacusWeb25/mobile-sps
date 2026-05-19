@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 900px;">
+
+  <div class="card border-0 shadow-sm" style="border-radius: 16px;">
+    <div class="card-header bg-transparent py-3">
+      <h4 class="mb-1">
+        <i class="bi bi-sliders"></i> Máscara do Plano Gerencial
+      </h4>
+      <small class="text-muted">
+        Monte a estrutura sem escrever JSON. Exemplo final: 1.01.01.001
+      </small>
+    </div>
+
+    <form method="post" id="mascaraForm">
+      {% csrf_token %}
+
+      <div class="card-body">
+        <div class="mb-3">
+          <label class="form-label">Nome</label>
+          {{ form.gere_nome }}
+        </div>
+
+        <div class="mb-3 d-none">
+          {{ form.gere_nive }}
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Níveis da máscara</label>
+
+          <div id="niveis-wrapper" class="d-flex flex-column gap-2"></div>
+
+          <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="btnAddNivel">
+            <i class="bi bi-plus-circle"></i> Adicionar nível
+          </button>
+
+          {% if form.gere_nive.errors %}
+            <div class="text-danger small mt-2">
+              {{ form.gere_nive.errors|striptags }}
+            </div>
+          {% endif %}
+        </div>
+
+        <div class="alert alert-secondary">
+          <strong>Prévia:</strong>
+          <span id="previewMascara" class="fw-bold">-</span>
+          <div class="small text-muted mt-1">
+            O último nível será sempre analítico. Os anteriores serão sintéticos.
+          </div>
+        </div>
+
+        <div class="form-check mb-3">
+          {{ form.gere_ativ }}
+          <label class="form-check-label">Máscara ativa</label>
+        </div>
+      </div>
+
+      <div class="card-footer bg-transparent d-flex justify-content-end gap-2">
+        <a href="{% url 'planogerencial:plano_listar' slug %}" class="btn btn-outline-secondary">
+          Voltar
+        </a>
+        <button class="btn btn-primary">
+          Salvar máscara
+        </button>
+      </div>
+    </form>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  const wrapper = document.getElementById("niveis-wrapper");
+  const btnAdd = document.getElementById("btnAddNivel");
+  const preview = document.getElementById("previewMascara");
+  const hidden = document.querySelector("[name='gere_nive']");
+
+  function getInitialNiveis() {
+    try {
+      const raw = hidden.value;
+
+      if (!raw) {
+        return [
+          { nivel: 1, digitos: 1, tipo: "S" },
+          { nivel: 2, digitos: 2, tipo: "S" },
+          { nivel: 3, digitos: 2, tipo: "S" },
+          { nivel: 4, digitos: 3, tipo: "A" },
+        ];
+      }
+
+      return JSON.parse(raw.replaceAll("'", '"'));
+    } catch (e) {
+      return [
+        { nivel: 1, digitos: 1, tipo: "S" },
+        { nivel: 2, digitos: 2, tipo: "S" },
+        { nivel: 3, digitos: 2, tipo: "S" },
+        { nivel: 4, digitos: 3, tipo: "A" },
+      ];
+    }
+  }
+
+  function render(niveis) {
+    wrapper.innerHTML = "";
+
+    niveis.forEach((item, index) => {
+      const isLast = index === niveis.length - 1;
+
+      const row = document.createElement("div");
+      row.className = "border rounded-3 p-3 d-flex align-items-end gap-2 flex-wrap";
+
+      row.innerHTML = `
+        <div style="width: 90px;">
+          <label class="form-label small mb-1">Nível</label>
+          <input type="text" class="form-control form-control-sm" value="${index + 1}" disabled>
+        </div>
+
+        <div style="width: 140px;">
+          <label class="form-label small mb-1">Dígitos</label>
+          <input type="number"
+                 min="1"
+                 max="10"
+                 class="form-control form-control-sm js-digitos"
+                 value="${item.digitos || 1}">
+        </div>
+
+        <div style="width: 150px;">
+          <label class="form-label small mb-1">Tipo</label>
+          <input type="text"
+                 class="form-control form-control-sm"
+                 value="${isLast ? 'Analítico' : 'Sintético'}"
+                 disabled>
+        </div>
+
+        <button type="button"
+                class="btn btn-sm btn-outline-danger js-remover"
+                ${niveis.length <= 1 ? "disabled" : ""}>
+          <i class="bi bi-trash"></i>
+        </button>
+      `;
+
+      row.querySelector(".js-digitos").addEventListener("input", sync);
+      row.querySelector(".js-remover").addEventListener("click", function () {
+        row.remove();
+        sync();
+      });
+
+      wrapper.appendChild(row);
+    });
+
+    sync();
+  }
+
+  function coletar() {
+    const inputs = wrapper.querySelectorAll(".js-digitos");
+    const niveis = [];
+
+    inputs.forEach((input, index) => {
+      const digitos = parseInt(input.value || "1");
+
+      niveis.push({
+        nivel: index + 1,
+        digitos: digitos > 0 ? digitos : 1,
+        tipo: index === inputs.length - 1 ? "A" : "S",
+      });
+    });
+
+    return niveis;
+  }
+
+  function sync() {
+    const niveis = coletar();
+
+    hidden.value = JSON.stringify(niveis);
+
+    preview.textContent = niveis
+      .map(item => "1".padStart(item.digitos, "0"))
+      .join(".");
+  }
+
+  btnAdd.addEventListener("click", function () {
+    const niveis = coletar();
+    niveis.push({
+      nivel: niveis.length + 1,
+      digitos: 2,
+      tipo: "A",
+    });
+
+    render(niveis);
+  });
+
+  document.getElementById("mascaraForm").addEventListener("submit", sync);
+
+  render(getInitialNiveis());
+})();
+</script>
+{% endblock %}

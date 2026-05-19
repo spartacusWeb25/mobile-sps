@@ -875,25 +875,43 @@
             </td>
             <td style="font-size:12px; color:var(--text-muted);">{{ n.ultimo_protocolo|default:"—" }}</td>
             <td>
-              <div class="action-btns">
+             <div class="action-btns">
                 <a class="btn-act btn-act-info" href="/web/{{ slug }}/notas-fiscais/{{ n.id }}/">Detalhes</a>
+
                 {% if n.status != 100 and n.status != 101 and n.status != 102 %}
-                {% if n.chave_acesso or n.xml_assinado or n.status == 539 or n.status == 204 or n.status == 105 %}
-                <button class="btn-act btn-act-primary" data-consultar data-id="{{ n.id }}"><span
-                    class="spinner-border d-none"></span> Consultar</button>
-                {% else %}
-                <button class="btn-act btn-act-success" data-emitir data-id="{{ n.id }}"><span
-                    class="spinner-border d-none"></span> Emitir</button>
+
+                  {% if n.status == 531 %}
+                    <button class="btn-act btn-act-success" data-emitir data-id="{{ n.id }}">
+                      <span class="spinner-border d-none"></span> Emitir
+                    </button>
+
+                  {% elif n.chave_acesso or n.xml_assinado or n.status == 539 or n.status == 204 or n.status == 105 %}
+                    <button class="btn-act btn-act-primary" data-consultar data-id="{{ n.id }}">
+                      <span class="spinner-border d-none"></span> Consultar
+                    </button>
+
+                  {% else %}
+                    <button class="btn-act btn-act-success" data-emitir data-id="{{ n.id }}">
+                      <span class="spinner-border d-none"></span> Emitir
+                    </button>
+                  {% endif %}
+
+                  <button class="btn-act btn-act-warning" data-inutilizar data-id="{{ n.id }}">
+                    <span class="spinner-border d-none"></span> Inutilizar
+                  </button>
+
+                  <a class="btn-act btn-act-secondary" href="/web/{{ slug }}/notas-fiscais/{{ n.id }}/editar/">Editar</a>
+
                 {% endif %}
-                <button class="btn-act btn-act-warning" data-inutilizar data-id="{{ n.id }}"><span
-                    class="spinner-border d-none"></span> Inutilizar</button>
-                <a class="btn-act btn-act-secondary" href="/web/{{ slug }}/notas-fiscais/{{ n.id }}/editar/">Editar</a>
-                {% endif %}
+
                 {% if n.status == 100 %}
-                <a class="btn-act btn-act-secondary" href="/api/imprimir/{{ slug }}/{{ n.id }}/" target="_blank"><i
-                    class="bi bi-printer"></i> Imprimir</a>
-                <button class="btn-act btn-act-danger" data-cancelar data-id="{{ n.id }}"><span
-                    class="spinner-border d-none"></span> Cancelar</button>
+                  <a class="btn-act btn-act-secondary" href="/api/imprimir/{{ slug }}/{{ n.id }}/" target="_blank">
+                    <i class="bi bi-printer"></i> Imprimir
+                  </a>
+
+                  <button class="btn-act btn-act-danger" data-cancelar data-id="{{ n.id }}">
+                    <span class="spinner-border d-none"></span> Cancelar
+                  </button>
                 {% endif %}
               </div>
             </td>
@@ -934,26 +952,43 @@
         </div>
         <div class="action-btns">
           <a class="btn-act btn-act-info" href="/web/{{ slug }}/notas-fiscais/{{ n.id }}/">Detalhes</a>
+
           {% if n.status != 100 and n.status != 101 and n.status != 102 %}
-          {% if n.chave_acesso or n.xml_assinado or n.status == 539 or n.status == 204 or n.status == 105 %}
-          <button class="btn-act btn-act-primary" data-consultar data-id="{{ n.id }}"><span
-              class="spinner-border d-none"></span> Consultar</button>
-          {% else %}
-          <button class="btn-act btn-act-success" data-emitir data-id="{{ n.id }}"><span
-              class="spinner-border d-none"></span> Emitir</button>
+
+            {% if n.status == 531 %}
+              <button class="btn-act btn-act-success" data-emitir data-id="{{ n.id }}">
+                <span class="spinner-border d-none"></span> Emitir
+              </button>
+
+            {% elif n.chave_acesso or n.xml_assinado or n.status == 539 or n.status == 204 or n.status == 105 %}
+              <button class="btn-act btn-act-primary" data-consultar data-id="{{ n.id }}">
+                <span class="spinner-border d-none"></span> Consultar
+              </button>
+
+            {% else %}
+              <button class="btn-act btn-act-success" data-emitir data-id="{{ n.id }}">
+                <span class="spinner-border d-none"></span> Emitir
+              </button>
+            {% endif %}
+
+            <button class="btn-act btn-act-warning" data-inutilizar data-id="{{ n.id }}">
+              <span class="spinner-border d-none"></span> Inutilizar
+            </button>
+
+            <a class="btn-act btn-act-secondary" href="/web/{{ slug }}/notas-fiscais/{{ n.id }}/editar/">Editar</a>
+
           {% endif %}
-          <button class="btn-act btn-act-warning" data-inutilizar data-id="{{ n.id }}"><span
-              class="spinner-border d-none"></span> Inutilizar</button>
-          <a class="btn-act btn-act-secondary" href="/web/{{ slug }}/notas-fiscais/{{ n.id }}/editar/">Editar</a>
-          {% endif %}
+
           {% if n.status == 100 %}
-          <a class="btn-act btn-act-secondary" href="/api/imprimir/{{ slug }}/{{ n.id }}/" target="_blank"><i
-              class="bi bi-printer"></i> Imprimir</a>
-          <button class="btn-act btn-act-danger" data-cancelar data-id="{{ n.id }}"><span
-              class="spinner-border d-none"></span> Cancelar</button>
+            <a class="btn-act btn-act-secondary" href="/api/imprimir/{{ slug }}/{{ n.id }}/" target="_blank">
+              <i class="bi bi-printer"></i> Imprimir
+            </a>
+
+            <button class="btn-act btn-act-danger" data-cancelar data-id="{{ n.id }}">
+              <span class="spinner-border d-none"></span> Cancelar
+            </button>
           {% endif %}
         </div>
-      </div>
       {% empty %}
       <div class="empty-state" style="background:var(--surface); border-radius:var(--radius); padding:48px 24px;">
         <i class="bi bi-inbox"></i>

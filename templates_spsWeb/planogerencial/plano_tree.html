@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<style>
+  .pg-card {
+    border-radius: 16px;
+    border: 1px solid rgba(120,120,120,.18);
+    box-shadow: 0 8px 24px rgba(0,0,0,.08);
+  }
+
+  .pg-node {
+    border-left: 4px solid #0d6efd;
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    background: var(--bs-body-bg);
+  }
+
+  .pg-code {
+    font-weight: 700;
+    font-family: monospace;
+  }
+
+  .pg-muted {
+    color: var(--bs-secondary-color);
+    font-size: 13px;
+  }
+
+  .pg-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .pg-badge-s {
+    background: #0d6efd;
+  }
+
+  .pg-badge-a {
+    background: #198754;
+  }
+</style>
+
+<div class="container py-4">
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h3 class="mb-1">
+        <i class="bi bi-diagram-3"></i> Plano de Contas Gerencial
+      </h3>
+      <div class="pg-muted">
+        Empresa {{ empresa }}
+        {% if exemplo_mascara %}
+          · Máscara: <strong>{{ exemplo_mascara }}</strong>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="d-flex gap-2">
+      {% if mascara %}
+        <a href="{% url 'planogerencial:mascara_editar' slug mascara.id %}" class="btn btn-outline-secondary">
+          <i class="bi bi-sliders"></i> Máscara
+        </a>
+      {% else %}
+        <a href="{% url 'planogerencial:mascara_criar' slug %}" class="btn btn-warning">
+          <i class="bi bi-exclamation-triangle"></i> Criar máscara
+        </a>
+      {% endif %}
+
+      <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalConta"
+              data-parent="">
+        <i class="bi bi-plus-circle"></i> Nova raiz
+      </button>
+    </div>
+  </div>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="card pg-card">
+    <div class="card-body">
+
+      {% if contas %}
+        {% for conta in contas %}
+          <div class="pg-node" style="margin-left: {{ conta.gere_nive|default:1|add:'-1' }}5px;">
+            <div class="d-flex justify-content-between align-items-start gap-3">
+              <div>
+                <div>
+                  <span class="pg-code">{{ conta.gere_expa }}</span>
+                  <span class="badge {% if conta.gere_anal == 'A' %}pg-badge-a{% else %}pg-badge-s{% endif %}">
+                    {{ conta.gere_anal }}
+                  </span>
+                  {% if conta.gere_inat %}
+                    <span class="badge bg-secondary">Inativa</span>
+                  {% endif %}
+                </div>
+
+                <div class="fw-semibold mt-1">
+                  {{ conta.gere_nome|default:"Sem nome" }}
+                </div>
+
+                <div class="pg-muted">
+                  Reduzido: {{ conta.gere_redu }} · Nível: {{ conta.gere_nive }}
+                </div>
+              </div>
+
+              <div class="pg-actions">
+                {% if conta.gere_anal != "A" %}
+                  <button class="btn btn-sm btn-outline-primary"
+                          data-bs-toggle="modal"
+                          data-bs-target="#modalConta"
+                          data-parent="{{ conta.gere_redu }}">
+                    <i class="bi bi-plus"></i> Filho
+                  </button>
+                {% endif %}
+
+                <a href="{% url 'planogerencial:plano_editar' slug conta.gere_redu %}"
+                   class="btn btn-sm btn-outline-secondary">
+                  <i class="bi bi-pencil"></i>
+                </a>
+
+                {% if not conta.gere_inat %}
+                  <form method="post"
+                        action="{% url 'planogerencial:plano_inativar' slug conta.gere_redu %}">
+                    {% csrf_token %}
+                    <button class="btn btn-sm btn-outline-danger">
+                      <i class="bi bi-x-circle"></i>
+                    </button>
+                  </form>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div class="text-center py-5">
+          <i class="bi bi-inboxes display-5 text-muted"></i>
+          <h5 class="mt-3">Nenhuma conta gerencial cadastrada</h5>
+          <p class="text-muted mb-0">
+            Crie a máscara primeiro. Depois vem a árvore.
+          </p>
+        </div>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="modalConta" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content pg-card">
+      <form method="post" action="{% url 'planogerencial:plano_criar' slug %}">
+        {% csrf_token %}
+
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-plus-circle"></i> Nova conta gerencial
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+          {{ form.parent_redu }}
+          <label class="form-label">Nome da conta</label>
+          {{ form.nome }}
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+            Cancelar
+          </button>
+          <button class="btn btn-primary">
+            Salvar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  const modalConta = document.getElementById("modalConta");
+
+  modalConta.addEventListener("show.bs.modal", function (event) {
+    const button = event.relatedTarget;
+    const parent = button.getAttribute("data-parent") || "";
+    modalConta.querySelector("[name='parent_redu']").value = parent;
+  });
+</script>
+{% endblock %}
