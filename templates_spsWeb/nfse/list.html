@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<div class="container-fluid py-3">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h4 class="mb-0"><i class="bi bi-receipt-cutoff"></i> Painel NFS-e</h4>
+      <small class="text-muted">Notas de Serviço (padrão visual de notas de saída)</small>
+    </div>
+    <a class="btn btn-success" href="{% url 'nfse_web:criar' slug=slug %}">
+      <i class="bi bi-plus-circle"></i> Nova NFS-e
+    </a>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-dark">
+            <tr>
+              <th>ID</th>
+              <th>Número</th>
+              <th>RPS</th>
+              <th>Tomador</th>
+              <th>Valor Serviço</th>
+              <th>Valor Líquido</th>
+              <th>Status</th>
+              <th class="text-end">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for n in notas %}
+            <tr>
+              <td>{{ n.nfse_id }}</td>
+              <td>{{ n.nfse_nume|default:'-' }}</td>
+              <td>{{ n.nfse_rps_nume }}</td>
+              <td>{{ n.nfse_tom_nome|default:'-' }}</td>
+              <td>R$ {{ n.nfse_val_serv }}</td>
+              <td>R$ {{ n.nfse_val_liqu }}</td>
+              <td>
+                <span class="badge {% if n.nfse_statu == 'emitida' %}bg-success{% elif n.nfse_statu == 'erro' %}bg-danger{% elif n.nfse_statu == 'cancelada' %}bg-secondary{% else %}bg-warning text-dark{% endif %}">
+                  {{ n.nfse_statu }}
+                </span>
+              </td>
+              <td class="text-end">
+                <div class="btn-group btn-group-sm">
+                  <form method="post" action="{% url 'nfse_web:consultar' slug=slug pk=n.nfse_id %}">{% csrf_token %}
+                    <button class="btn btn-outline-primary" type="submit">Consultar</button>
+                  </form>
+                  <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#cancelModal{{ n.nfse_id }}">Cancelar</button>
+                  <a class="btn btn-outline-warning" href="{% url 'nfse_web:editar' slug=slug pk=n.nfse_id %}">Editar</a>
+                  <a class="btn btn-outline-secondary" href="{% url 'nfse_web:deletar' slug=slug pk=n.nfse_id %}">Excluir</a>
+                </div>
+              </td>
+            </tr>
+
+            <div class="modal fade" id="cancelModal{{ n.nfse_id }}" tabindex="-1" aria-hidden="true">
+              <div class="modal-dialog">
+                <div class="modal-content">
+                  <div class="modal-header"><h5 class="modal-title">Cancelar NFS-e #{{ n.nfse_id }}</h5></div>
+                  <form method="post" action="{% url 'nfse_web:cancelar' slug=slug pk=n.nfse_id %}">{% csrf_token %}
+                    <div class="modal-body">
+                      <label class="form-label">Motivo</label>
+                      <textarea class="form-control" name="motivo" required></textarea>
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-light" data-bs-dismiss="modal">Fechar</button>
+                      <button type="submit" class="btn btn-danger">Confirmar cancelamento</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+            {% empty %}
+            <tr><td colspan="8" class="text-center py-4 text-muted">Nenhuma NFS-e encontrada.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

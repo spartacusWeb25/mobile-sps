@@ -5,6 +5,7 @@ from django.views.generic import View
 from core.mixin import DBAndSlugMixin
 from nfse.services.cancelamento_service import CancelamentoNfseService
 from nfse.services.context import NfseContext
+from nfse.services.front_error_service import FrontErrorService
 
 
 class NfseCancelarView(DBAndSlugMixin, View):
@@ -17,6 +18,6 @@ class NfseCancelarView(DBAndSlugMixin, View):
             CancelamentoNfseService.cancelar(context, pk, motivo)
             messages.success(request, 'NFS-e cancelada com sucesso.')
         except Exception as exc:
-            messages.error(request, f'Erro ao cancelar NFS-e: {exc}')
+            messages.error(request, FrontErrorService.to_message(exc, 'Não foi possível cancelar a NFS-e.'))
 
-        return redirect('nfse_web:detalhe', slug=self.slug, pk=pk)
+        return redirect('nfse_web:list', slug=self.slug)

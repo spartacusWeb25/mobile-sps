@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container py-4">
+  <div class="card">
+    <div class="card-body">
+      <h5>Excluir NFS-e #{{ nota.nfse_id }}</h5>
+      <p>Confirma exclusão do registro?</p>
+      <form method="post">{% csrf_token %}
+        <a class="btn btn-light" href="{% url 'nfse_web:list' slug=slug %}">Voltar</a>
+        <button class="btn btn-danger" type="submit">Excluir</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

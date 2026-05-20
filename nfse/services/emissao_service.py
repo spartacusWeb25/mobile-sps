@@ -1,6 +1,7 @@
 from django.db import transaction
 
 from nfse.exceptions import NfseClientError
+from nfse.services.calculo_service import CalculoNfseService
 from nfse.services.configuracao_service import ConfiguracaoMunicipioService
 from nfse.services.persistencia_service import PersistenciaNfseService
 from nfse.services.router_service import RouterNfseService
@@ -11,9 +12,9 @@ class EmissaoNfseService:
     @staticmethod
     @transaction.atomic
     def emitir(context, data: dict):
-        ValidacaoNfseService.validar_payload(data)
+        payload = CalculoNfseService.aplicar(data)
+        ValidacaoNfseService.validar_payload(payload)
 
-        payload = dict(data)
         nfse = PersistenciaNfseService.criar_rascunho(context, dict(payload))
 
         try:
