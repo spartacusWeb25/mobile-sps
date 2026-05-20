@@ -1,0 +1,438 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h3 class="mb-0">
+        <i class="bi bi-shop me-2"></i>
+        Produtos com SKU Mercado Livre
+      </h3>
+      <small class="text-muted">
+        Produtos com o campo <strong>prod_codi_merc_livr</strong> preenchido.
+      </small>
+    </div>
+  </div>
+
+  <div class="card border-0 shadow-sm">
+    <div class="card-body table-responsive">
+
+      <table class="table table-hover align-middle">
+        <thead>
+          <tr>
+            <th style="width: 120px;">Código</th>
+            <th>Produto</th>
+            <th style="width: 220px;">SKU Mercado Livre</th>
+            <th style="width: 110px;">Preço Base</th>
+            <th style="width: 110px;">Estoque</th>
+            <th style="width: 180px;">Status</th>
+            <th class="text-end" style="width: 520px;">Ações</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for produto in produtos %}
+          <tr>
+
+            <td>
+              <strong>{{ produto.prod_codi }}</strong>
+            </td>
+
+            <td>{{ produto.prod_nome }}</td>
+
+            <td>
+              <span class="badge bg-info text-dark">
+                {{ produto.prod_codi_merc_livr }}
+              </span>
+            </td>
+
+            <td>
+              {% if produto.preco_base %}
+                <span class="text-success fw-semibold">
+                  R$ {{ produto.preco_base|floatformat:2 }}
+                </span>
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+
+            <td>
+              {% if produto.estoque_base is not None %}
+                <span class="{% if produto.estoque_base > 0 %}text-success{% else %}text-danger{% endif %} fw-semibold">
+                  {{ produto.estoque_base }}
+                </span>
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+
+            <td>
+              {% if produto.marketplace_integracao %}
+                {% if produto.marketplace_integracao.mark_stat == "INTEGRADO" %}
+                  <span class="badge bg-success">{{ produto.marketplace_integracao.mark_stat }}</span>
+                {% elif produto.marketplace_integracao.mark_stat == "PENDENTE" %}
+                  <span class="badge bg-warning text-dark">{{ produto.marketplace_integracao.mark_stat }}</span>
+                {% elif produto.marketplace_integracao.mark_stat == "ERRO" %}
+                  <span class="badge bg-danger">{{ produto.marketplace_integracao.mark_stat }}</span>
+                {% else %}
+                  <span class="badge bg-secondary">{{ produto.marketplace_integracao.mark_stat }}</span>
+                {% endif %}
+              {% else %}
+                <span class="badge bg-dark">NÃO PREPARADO</span>
+              {% endif %}
+            </td>
+
+            <td class="text-end">
+              <div class="d-flex justify-content-end gap-2 flex-wrap">
+
+                <a href="{% url 'produto_edit_web' slug=slug prod_codi=produto.prod_codi %}"
+                   class="btn btn-sm btn-outline-secondary">
+                  <i class="bi bi-pencil"></i>
+                </a>
+
+                <form method="post"
+                      action="{% url 'marketplace:preparar_produto' slug=slug prod_codi=produto.prod_codi %}">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-sm btn-outline-info">
+                    {% if produto.marketplace_integracao %}
+                      <i class="bi bi-arrow-repeat"></i> Atualizar
+                    {% else %}
+                      <i class="bi bi-box-arrow-up"></i> Preparar Integração
+                    {% endif %}
+                  </button>
+                </form>
+
+                {% if produto.marketplace_integracao %}
+
+                  <form method="post"
+                        action="{% url 'marketplace:gerar_rascunho_anuncio' slug=slug marketplace_produto_id=produto.marketplace_integracao.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-warning">
+                      <i class="bi bi-file-earmark-plus"></i> Gerar Rascunho
+                    </button>
+                  </form>
+
+                  <button type="button"
+                          class="btn btn-sm btn-outline-primary"
+                          data-bs-toggle="modal"
+                          data-bs-target="#modalAnuncios{{ produto.marketplace_integracao.id }}">
+                    <i class="bi bi-layers"></i> Gerar em Lote
+                  </button>
+
+                {% endif %}
+
+                {% if produto.marketplace_anuncios and produto.marketplace_anuncios|length > 0 %}
+                  <div class="btn-group" role="group" aria-label="Ações de publicação">
+                    {% for r in produto.marketplace_anuncios %}
+                      {% if r.maan_stat == "RASCUNHO" %}
+                        <form method="post" style="display:inline-block; margin-right:6px;" action="{% url 'marketplace:publicar_anuncio' slug=slug anuncio_id=r.id %}">
+                          {% csrf_token %}
+                          <button type="submit" class="btn btn-sm btn-outline-success">
+                            <i class="bi bi-cloud-upload"></i> Publicar #{{ r.id }}
+                          </button>
+                        </form>
+                      {% endif %}
+                    {% endfor %}
+
+                    <form method="post" action="{% url 'marketplace:publicar_todos_rascunhos' slug=slug marketplace_produto_id=produto.marketplace_integracao.id %}">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-sm btn-success">
+                        <i class="bi bi-cloud-upload"></i> Publicar Todos
+                      </button>
+                    </form>
+
+                  </div>
+                {% endif %}
+
+              </div>
+            </td>
+
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="7" class="text-center text-muted py-5">
+              <div class="d-flex flex-column align-items-center">
+                <i class="bi bi-box text-muted" style="font-size: 42px;"></i>
+                <div class="mt-3">Nenhum produto com SKU Mercado Livre encontrado.</div>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+    </div>
+  </div>
+
+</div>
+
+{# ─── Modals fora da tabela para evitar overflow/z-index e bug do JS ─── #}
+{% for produto in produtos %}
+  {% if produto.marketplace_integracao %}
+
+  <div class="modal fade"
+       id="modalAnuncios{{ produto.marketplace_integracao.id }}"
+       tabindex="-1"
+       aria-hidden="true">
+
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+      <div class="modal-content">
+
+        <form method="post"
+              class="form-anuncios-lote"
+              action="{% url 'marketplace:gerar_rascunhos_lote' slug=slug marketplace_produto_id=produto.marketplace_integracao.id %}">
+
+          {% csrf_token %}
+
+          {# Este input será preenchido pelo JS no submit #}
+          <input type="hidden" name="anuncios_json" class="anuncios-json" value="[]">
+
+          <div class="modal-header">
+            <div>
+              <h5 class="modal-title mb-0">Criar anúncios em lote</h5>
+              <small class="text-muted">
+                {{ produto.prod_codi }} — {{ produto.prod_nome }}
+              </small>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+          </div>
+
+          <div class="modal-body">
+
+            <div class="alert alert-light border mb-3">
+              <div class="row g-2">
+                <div class="col-auto">
+                  <strong>SKU:</strong> {{ produto.prod_codi_merc_livr }}
+                </div>
+                {% if produto.preco_base %}
+                <div class="col-auto">
+                  <strong>Preço base:</strong>
+                  <span class="text-success">R$ {{ produto.preco_base|floatformat:2 }}</span>
+                </div>
+                {% endif %}
+                {% if produto.estoque_base is not None %}
+                <div class="col-auto">
+                  <strong>Estoque:</strong>
+                  <span class="{% if produto.estoque_base > 0 %}text-success{% else %}text-danger{% endif %}">
+                    {{ produto.estoque_base }}
+                  </span>
+                </div>
+                {% endif %}
+              </div>
+              <small class="text-muted d-block mt-1">
+                Deixe Preço/Estoque em branco para usar os valores base acima.
+                Cada linha vira um rascunho separado.
+              </small>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <strong>Estratégias de anúncio</strong>
+              <button type="button" class="btn btn-sm btn-outline-primary btn-add-anuncio">
+                <i class="bi bi-plus"></i> Adicionar anúncio
+              </button>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table table-sm align-middle">
+                <thead>
+                  <tr>
+                    <th>Título</th>
+                    <th style="width: 170px;">Tipo</th>
+                    <th style="width: 160px;">
+                      Preço
+                      {% if produto.preco_base %}
+                        <small class="text-muted">(base: R$ {{ produto.preco_base|floatformat:2 }})</small>
+                      {% endif %}
+                    </th>
+                    <th style="width: 130px;">
+                      Estoque
+                      {% if produto.estoque_base is not None %}
+                        <small class="text-muted">(base: {{ produto.estoque_base }})</small>
+                      {% endif %}
+                    </th>
+                    <th style="width: 60px;"></th>
+                  </tr>
+                </thead>
+
+                <tbody class="anuncios-linhas"
+                       data-nome="{{ produto.prod_nome }}"
+                       data-preco="{{ produto.preco_base|default:'' }}"
+                       data-estoque="{{ produto.estoque_base|default:'' }}">
+
+                  {# Linha 1 — Clássico #}
+                  <tr>
+                    <td>
+                      <input type="text" class="form-control anuncio-titulo"
+                             value="{{ produto.prod_nome }}">
+                    </td>
+                    <td>
+                      <select class="form-select anuncio-tipo">
+                        <option value="gold_special" selected>Clássico</option>
+                        <option value="gold_pro">Premium</option>
+                      </select>
+                    </td>
+                    <td>
+                      <input type="number" step="0.01" class="form-control anuncio-preco"
+                             placeholder="Base{% if produto.preco_base %} (R$ {{ produto.preco_base|floatformat:2 }}){% endif %}">
+                    </td>
+                    <td>
+                      <input type="number" step="1" class="form-control anuncio-estoque"
+                             placeholder="Base{% if produto.estoque_base is not None %} ({{ produto.estoque_base }}){% endif %}">
+                    </td>
+                    <td class="text-end">
+                      <button type="button" class="btn btn-sm btn-outline-danger btn-remove-anuncio">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+
+                  {# Linha 2 — Premium #}
+                  <tr>
+                    <td>
+                      <input type="text" class="form-control anuncio-titulo"
+                             value="{{ produto.prod_nome }} Premium">
+                    </td>
+                    <td>
+                      <select class="form-select anuncio-tipo">
+                        <option value="gold_special">Clássico</option>
+                        <option value="gold_pro" selected>Premium</option>
+                      </select>
+                    </td>
+                    <td>
+                      <input type="number" step="0.01" class="form-control anuncio-preco"
+                             placeholder="Base{% if produto.preco_base %} (R$ {{ produto.preco_base|floatformat:2 }}){% endif %}">
+                    </td>
+                    <td>
+                      <input type="number" step="1" class="form-control anuncio-estoque"
+                             placeholder="Base{% if produto.estoque_base is not None %} ({{ produto.estoque_base }}){% endif %}">
+                    </td>
+                    <td class="text-end">
+                      <button type="button" class="btn btn-sm btn-outline-danger btn-remove-anuncio">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+
+                  {# Linha 3 — Kit #}
+                  <tr>
+                    <td>
+                      <input type="text" class="form-control anuncio-titulo"
+                             value="Kit 2x {{ produto.prod_nome }}">
+                    </td>
+                    <td>
+                      <select class="form-select anuncio-tipo">
+                        <option value="gold_special" selected>Clássico</option>
+                        <option value="gold_pro">Premium</option>
+                      </select>
+                    </td>
+                    <td>
+                      <input type="number" step="0.01" class="form-control anuncio-preco"
+                             placeholder="Base{% if produto.preco_base %} (R$ {{ produto.preco_base|floatformat:2 }}){% endif %}">
+                    </td>
+                    <td>
+                      <input type="number" step="1" class="form-control anuncio-estoque"
+                             placeholder="Base{% if produto.estoque_base is not None %} ({{ produto.estoque_base }}){% endif %}">
+                    </td>
+                    <td class="text-end">
+                      <button type="button" class="btn btn-sm btn-outline-danger btn-remove-anuncio">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+              Cancelar
+            </button>
+            <button type="submit" class="btn btn-success">
+              <i class="bi bi-check2-circle"></i> Gerar Rascunhos
+            </button>
+          </div>
+
+        </form>
+
+      </div>
+    </div>
+  </div>
+
+  {% endif %}
+{% endfor %}
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+  document.querySelectorAll(".form-anuncios-lote").forEach(function (form) {
+    const tbody    = form.querySelector(".anuncios-linhas");
+    const btnAdd   = form.querySelector(".btn-add-anuncio");
+    // NÃO captura jsonInput aqui — captura dentro do submit para evitar problemas de referência
+
+    const nomePadrao    = tbody.dataset.nome    || "";
+    const precoPadrao   = tbody.dataset.preco   || "";
+    const estoquePadrao = tbody.dataset.estoque || "";
+
+    // ── Adicionar linha ──────────────────────────────────────────────────────
+    btnAdd.addEventListener("click", function () {
+      const novaLinha = tbody.querySelector("tr").cloneNode(true);
+
+      novaLinha.querySelector(".anuncio-titulo").value  = "";
+      novaLinha.querySelector(".anuncio-preco").value   = "";
+      novaLinha.querySelector(".anuncio-estoque").value = "";
+
+      const select = novaLinha.querySelector(".anuncio-tipo");
+      if (select) select.value = "gold_special";
+
+      tbody.appendChild(novaLinha);
+    });
+
+    // ── Remover linha ────────────────────────────────────────────────────────
+    tbody.addEventListener("click", function (event) {
+      const btn = event.target.closest(".btn-remove-anuncio");
+      if (!btn) return;
+      if (tbody.querySelectorAll("tr").length > 1) {
+        btn.closest("tr").remove();
+      }
+    });
+
+    // ── Submit: serializa as linhas no hidden input ──────────────────────────
+    form.addEventListener("submit", function (e) {
+      const anuncios = [];
+
+      tbody.querySelectorAll("tr").forEach(function (linha) {
+        const titulo   = linha.querySelector(".anuncio-titulo").value.trim();
+        const tipo     = linha.querySelector(".anuncio-tipo").value;
+        const precoRaw = linha.querySelector(".anuncio-preco").value.trim();
+        const estoqRaw = linha.querySelector(".anuncio-estoque").value.trim();
+
+        if (!titulo) return; // ignora linhas sem título
+
+        anuncios.push({
+          titulo:       titulo,
+          tipo_anuncio: tipo,
+          preco:        precoRaw !== "" ? precoRaw : null,
+          estoque:      estoqRaw !== "" ? estoqRaw : null,
+        });
+      });
+
+      if (anuncios.length === 0) {
+        e.preventDefault();
+        alert("Adicione pelo menos um anúncio com título.");
+        return;
+      }
+
+      // Busca o input dentro do próprio form (que está dentro do modal, no body)
+      const jsonInput = form.querySelector(".anuncios-json");
+      jsonInput.value = JSON.stringify(anuncios);
+    });
+  });
+
+});
+</script>
+
+{% endblock %}

@@ -45,6 +45,7 @@ from .Views.autocompletes import autocomplete_unidades, autocomplete_grupos, aut
 from .Views.etiquetas import EtiquetasView
 from .Views.ajax_create import ajax_create_grupo, ajax_create_subgrupo, ajax_create_familia, ajax_create_marca
 from .Views.ajax_estoque import ajax_movimentar_estoque
+from .Views.integra_mercado_livre import GerarCodigoMercadoLivreView
 
 
 urlpatterns = [
@@ -122,4 +123,9 @@ urlpatterns = [
     path('ajax/familias/create/', ajax_create_familia, name='ajax_create_familia'),
     path('ajax/marcas/create/', ajax_create_marca, name='ajax_create_marca'),
     path('ajax/estoque/movimentar/', ajax_movimentar_estoque, name='ajax_movimentar_estoque'),
+    path(
+    "produtos/<str:prod_codi>/gerar-codigo-mercado-livre/",
+    GerarCodigoMercadoLivreView.as_view(),
+    name="gerar_codigo_mercado_livre",
+)
 ]

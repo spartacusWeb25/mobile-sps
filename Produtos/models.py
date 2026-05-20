@@ -329,6 +329,13 @@ class Produtos(models.Model):
     prod_desc_serv = models.CharField(max_length=255, db_column='prod_desc_serv', blank=True, null=True)
     prod_cnae = models.CharField(max_length=50, db_column='prod_cnae', blank=True, null=True)
     prod_list_tabe_prec = models.BooleanField(db_column='prod_list_tabe_prec', blank=True, null=True, default=False)
+    prod_codi_merc_livr = models.CharField(
+    "Código Mercado Livre",
+    max_length=60,
+    db_column="prod_codi_merc_livr",
+    blank=True,
+    null=True,
+)
     
 
 

@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h3 class="mb-0">
+        <i class="bi bi-sliders me-2"></i>
+        Configurações de Marketplace
+      </h3>
+      <small class="text-muted">
+        Gerencie contas conectadas por empresa e filial.
+      </small>
+    </div>
+
+    <a href="{% url 'marketplace:produtos_integraveis' slug=slug %}"
+       class="btn btn-outline-primary btn-sm">
+      <i class="bi bi-shop"></i>
+      Produtos Integráveis
+    </a>
+  </div>
+
+  <div class="row g-3">
+
+    <div class="col-md-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+          <div>
+            <strong>Mercado Livre</strong>
+            <div class="small text-muted">Conta oficial de integração ML</div>
+          </div>
+
+          {% if marketplaces.mercado_livre.ativo %}
+            <span class="badge bg-success">Configurado</span>
+          {% else %}
+            <span class="badge bg-secondary">Não configurado</span>
+          {% endif %}
+        </div>
+
+        <div class="card-body">
+          <form method="post"
+                action="{% url 'marketplace:ml_salvar_conta' slug=slug %}">
+            {% csrf_token %}
+
+            <div class="mb-3">
+              <label class="form-label">Access Token</label>
+              <input type="text"
+                     name="ml_access_token"
+                     class="form-control"
+                     value="{{ marketplaces.mercado_livre.conta.ml_access_token|default:'' }}"
+                     placeholder="APP_USR-...">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Refresh Token</label>
+              <input type="text"
+                     name="ml_refresh_token"
+                     class="form-control"
+                     value="{{ marketplaces.mercado_livre.conta.ml_refresh_token|default:'' }}"
+                     placeholder="TG-...">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Expira em segundos</label>
+              <input type="number"
+                     name="ml_expires_in"
+                     class="form-control"
+                     value="{{ marketplaces.mercado_livre.conta.ml_expires_in|default:0 }}">
+            </div>
+
+            <button type="submit" class="btn btn-outline-success">
+              <i class="bi bi-check2-circle"></i>
+              Salvar Mercado Livre
+            </button>
+            <button type="submit"
+                    class="btn btn-outline-warning"
+                    formaction="{% url 'marketplace:ml_renovar_token' slug=slug %}">
+              <i class="bi bi-repeat"></i>
+              Renovar Token
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card border-0 shadow-sm h-100 opacity-75">
+        <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+          <div>
+            <strong>Shopee</strong>
+            <div class="small text-muted">Preparado para próxima integração</div>
+          </div>
+
+          <span class="badge bg-dark">Em breve</span>
+        </div>
+
+        <div class="card-body">
+          <p class="text-muted mb-0">
+            Estrutura reservada para configurar conta Shopee depois.
+          </p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}

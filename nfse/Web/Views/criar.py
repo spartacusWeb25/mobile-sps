@@ -26,14 +26,10 @@ class NfseCreateView(DBAndSlugMixin, View):
         item_formset = NfseItemFormSet(request.POST, prefix='itens')
 
         if not form.is_valid() or not item_formset.is_valid():
-            return render(request, self.template_name, {
-                'form': form,
-                'item_formset': item_formset,
-                'slug': self.slug,
-                'error': form.errors.as_json(),
-                'item_error': item_formset.errors.as_json(),
-                'modo': 'criar',
-            })
+            context = self.get_context_data(form=form, item_formset=item_formset)
+            context['error'] = form.errors.as_json()
+            context['item_error'] = item_formset.errors.as_json()
+            return render(request, self.template_name, context)
 
         itens = []
         for item_form in item_formset:
@@ -68,3 +64,8 @@ class NfseCreateView(DBAndSlugMixin, View):
                 'slug': self.slug,
                 'modo': 'criar',
             })
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['slug'] = self.slug
+        context['modo'] = 'criar'
+        return context
