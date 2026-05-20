@@ -1,3 +1,4 @@
+from django.contrib import messages
 from django.shortcuts import redirect, render, get_object_or_404
 from django.views.generic import View
 
@@ -32,4 +33,4 @@ class NfseDeleteView(DBAndSlugMixin, View):
         nota = self.get_obj(pk)
         nota.delete(using=request.db_alias)
         messages.success(request, 'Registro removido com sucesso.')
-        return redirect('nfse_web:listar', slug=self.slug)
+        return redirect('nfse_web:list', slug=self.slug)
