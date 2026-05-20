@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from nfse.models import Nfse, NfseItem
+from nfse.services.calculo_service import CalculoNfseService
 
 
 class NfseItemSerializer(serializers.ModelSerializer):
@@ -50,9 +51,17 @@ class NfseSerializer(serializers.ModelSerializer):
     lc116_codigo = serializers.CharField(source='nfse_serv_lc116', required=False, allow_null=True, allow_blank=True)
 
     valor_servico = serializers.DecimalField(source='nfse_val_serv', max_digits=15, decimal_places=2)
+    valor_deducao = serializers.DecimalField(source='nfse_val_dedu', max_digits=15, decimal_places=2, read_only=True)
+    valor_desconto = serializers.DecimalField(source='nfse_val_desc', max_digits=15, decimal_places=2, read_only=True)
+    valor_inss = serializers.DecimalField(source='nfse_val_inss', max_digits=15, decimal_places=2, read_only=True)
+    valor_irrf = serializers.DecimalField(source='nfse_val_irrf', max_digits=15, decimal_places=2, read_only=True)
+    valor_csll = serializers.DecimalField(source='nfse_val_csll', max_digits=15, decimal_places=2, read_only=True)
+    valor_cofins = serializers.DecimalField(source='nfse_val_cofi', max_digits=15, decimal_places=2, read_only=True)
+    valor_pis = serializers.DecimalField(source='nfse_val_pis', max_digits=15, decimal_places=2, read_only=True)
     valor_iss = serializers.DecimalField(source='nfse_val_iss', max_digits=15, decimal_places=2, read_only=True)
     valor_liquido = serializers.DecimalField(source='nfse_val_liqu', max_digits=15, decimal_places=2, read_only=True)
     aliquota_iss = serializers.DecimalField(source='nfse_aliq_iss', max_digits=7, decimal_places=4, read_only=True)
+    iss_retido = serializers.BooleanField(source='nfse_iss_ret', read_only=True)
 
     class Meta:
         model = Nfse
@@ -75,9 +84,17 @@ class NfseSerializer(serializers.ModelSerializer):
             'cnae_codigo',
             'lc116_codigo',
             'valor_servico',
+            'valor_deducao',
+            'valor_desconto',
+            'valor_inss',
+            'valor_irrf',
+            'valor_csll',
+            'valor_cofins',
+            'valor_pis',
             'valor_iss',
             'valor_liquido',
             'aliquota_iss',
+            'iss_retido',
         ]
 
 
@@ -168,22 +185,4 @@ class EmitirNfseSerializer(serializers.Serializer):
     itens = EmitirNfseItemSerializer(many=True, required=False)
 
     def validate(self, attrs):
-        itens = attrs.get('itens') or []
-
-        if itens:
-            total_itens = sum(item['valor_total'] for item in itens)
-            if not attrs.get('valor_servico'):
-                attrs['valor_servico'] = total_itens
-
-        if not attrs.get('valor_liquido'):
-            attrs['valor_liquido'] = (
-                attrs.get('valor_servico', 0)
-                - attrs.get('valor_iss', 0)
-                - attrs.get('valor_inss', 0)
-                - attrs.get('valor_irrf', 0)
-                - attrs.get('valor_csll', 0)
-                - attrs.get('valor_cofins', 0)
-                - attrs.get('valor_pis', 0)
-            )
-
-        return attrs
+        return CalculoNfseService.aplicar(attrs)

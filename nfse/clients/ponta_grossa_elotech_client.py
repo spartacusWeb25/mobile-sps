@@ -4,6 +4,7 @@ from nfse.builders import ElotechXmlBuilder
 from nfse.clients.base_client import BaseNfseClient
 from nfse.clients.http_client import HttpClient
 from nfse.exceptions import NfseClientError, NfseParseError, NfseSoapError
+from nfse.services.error_normalizer_service import ErrorNormalizerService
 
 
 class PontaGrossaElotechClient(BaseNfseClient):
@@ -108,12 +109,13 @@ class PontaGrossaElotechClient(BaseNfseClient):
 
         fault = self._find_first_text(root, ['faultstring'])
         if fault:
+            erro_normalizado = ErrorNormalizerService.normalize_elotech(message=fault, raw={'faultstring': fault})
             raise NfseSoapError(
-                f'Erro SOAP na emissão: {fault}',
+                f"Erro SOAP na emissão: {erro_normalizado['message']}",
                 payload=payload,
                 xml_envio=xml_envio,
                 xml_retorno=xml_text,
-                resposta={'faultstring': fault},
+                resposta=erro_normalizado,
             )
 
         return {
@@ -131,12 +133,13 @@ class PontaGrossaElotechClient(BaseNfseClient):
 
         fault = self._find_first_text(root, ['faultstring'])
         if fault:
+            erro_normalizado = ErrorNormalizerService.normalize_elotech(message=fault, raw={'faultstring': fault})
             raise NfseSoapError(
-                f'Erro SOAP na consulta: {fault}',
+                f"Erro SOAP na consulta: {erro_normalizado['message']}",
                 payload=payload,
                 xml_envio=xml_envio,
                 xml_retorno=xml_text,
-                resposta={'faultstring': fault},
+                resposta=erro_normalizado,
             )
 
         return {
@@ -153,12 +156,13 @@ class PontaGrossaElotechClient(BaseNfseClient):
 
         fault = self._find_first_text(root, ['faultstring'])
         if fault:
+            erro_normalizado = ErrorNormalizerService.normalize_elotech(message=fault, raw={'faultstring': fault})
             raise NfseSoapError(
-                f'Erro SOAP no cancelamento: {fault}',
+                f"Erro SOAP no cancelamento: {erro_normalizado['message']}",
                 payload=payload,
                 xml_envio=xml_envio,
                 xml_retorno=xml_text,
-                resposta={'faultstring': fault},
+                resposta=erro_normalizado,
             )
 
         return {

@@ -135,6 +135,62 @@ class NfseForm(forms.Form):
         initial=Decimal('0.00'),
         widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'})
     )
+    valor_deducao = forms.DecimalField(
+        label='Valor Dedução',
+        max_digits=15,
+        decimal_places=2,
+        required=False,
+        initial=Decimal('0.00'),
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'})
+    )
+    valor_desconto = forms.DecimalField(
+        label='Valor Desconto',
+        max_digits=15,
+        decimal_places=2,
+        required=False,
+        initial=Decimal('0.00'),
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'})
+    )
+    valor_inss = forms.DecimalField(
+        label='Valor INSS',
+        max_digits=15,
+        decimal_places=2,
+        required=False,
+        initial=Decimal('0.00'),
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'})
+    )
+    valor_irrf = forms.DecimalField(
+        label='Valor IRRF',
+        max_digits=15,
+        decimal_places=2,
+        required=False,
+        initial=Decimal('0.00'),
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'})
+    )
+    valor_csll = forms.DecimalField(
+        label='Valor CSLL',
+        max_digits=15,
+        decimal_places=2,
+        required=False,
+        initial=Decimal('0.00'),
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'})
+    )
+    valor_cofins = forms.DecimalField(
+        label='Valor COFINS',
+        max_digits=15,
+        decimal_places=2,
+        required=False,
+        initial=Decimal('0.00'),
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'})
+    )
+    valor_pis = forms.DecimalField(
+        label='Valor PIS',
+        max_digits=15,
+        decimal_places=2,
+        required=False,
+        initial=Decimal('0.00'),
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'})
+    )
     valor_iss = forms.DecimalField(
         label='Valor ISS',
         max_digits=15,
@@ -174,7 +230,17 @@ class NfseForm(forms.Form):
         valor_liquido = cleaned_data.get('valor_liquido')
 
         if not valor_liquido:
-            cleaned_data['valor_liquido'] = valor_servico - valor_iss
+            cleaned_data['valor_liquido'] = (
+                valor_servico
+                - (cleaned_data.get('valor_deducao') or Decimal('0.00'))
+                - (cleaned_data.get('valor_desconto') or Decimal('0.00'))
+                - valor_iss
+                - (cleaned_data.get('valor_inss') or Decimal('0.00'))
+                - (cleaned_data.get('valor_irrf') or Decimal('0.00'))
+                - (cleaned_data.get('valor_csll') or Decimal('0.00'))
+                - (cleaned_data.get('valor_cofins') or Decimal('0.00'))
+                - (cleaned_data.get('valor_pis') or Decimal('0.00'))
+            )
 
         return cleaned_data
 
