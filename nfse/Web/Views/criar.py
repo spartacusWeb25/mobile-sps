@@ -1,3 +1,4 @@
+from django.contrib import messages
 from django.shortcuts import render, redirect
 from django.views import View
 
@@ -5,6 +6,7 @@ from core.mixin import DBAndSlugMixin
 from nfse.Web.forms import NfseForm, NfseItemFormSet
 from nfse.services.context import NfseContext
 from nfse.services.emissao_service import EmissaoNfseService
+from nfse.services.front_error_service import FrontErrorService
 
 
 class NfseCreateView(DBAndSlugMixin, View):
@@ -54,6 +56,15 @@ class NfseCreateView(DBAndSlugMixin, View):
         data['itens'] = itens
 
         context = NfseContext.from_request(request, self.slug)
-        EmissaoNfseService.emitir(context, data)
-
-        return redirect('nfse_web:listar', slug=self.slug)
+        try:
+            EmissaoNfseService.emitir(context, data)
+            messages.success(request, 'NFS-e enviada para emissão com sucesso.')
+            return redirect('nfse_web:list', slug=self.slug)
+        except Exception as exc:
+            messages.error(request, FrontErrorService.to_message(exc, 'Não foi possível emitir a NFS-e.'))
+            return render(request, self.template_name, {
+                'form': form,
+                'item_formset': item_formset,
+                'slug': self.slug,
+                'modo': 'criar',
+            })

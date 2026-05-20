@@ -10,9 +10,9 @@ from nfse.Web.Views.cancelar import NfseCancelarView
 app_name = 'nfse_web'
 
 urlpatterns = [
-    path('<slug:slug>/nfse/', NfseListView.as_view(), name='list'),
-    path('<slug:slug>/nfse/novo/', NfseCreateView.as_view(), name='criar'),
-    path('<slug:slug>/nfse/<int:pk>/deletar/', NfseDeleteView.as_view(), name='deletar'),
-    path('<slug:slug>/nfse/<int:pk>/consultar/', NfseConsultarView.as_view(), name='consultar'),
-    path('<slug:slug>/nfse/<int:pk>/cancelar/', NfseCancelarView.as_view(), name='cancelar'),
+    path('nfse/', NfseListView.as_view(), name='list'),
+    path('nfse/novo/', NfseCreateView.as_view(), name='criar'),
+    path('nfse/<int:pk>/deletar/', NfseDeleteView.as_view(), name='deletar'),
+    path('nfse/<int:pk>/consultar/', NfseConsultarView.as_view(), name='consultar'),
+    path('nfse/<int:pk>/cancelar/', NfseCancelarView.as_view(), name='cancelar'),
 ]
