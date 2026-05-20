@@ -10,13 +10,14 @@ import logging
 from django.db import transaction
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment
-from django.db.models import DecimalField, IntegerField, OuterRef, Subquery
+from django.db.models import DecimalField, BigIntegerField, OuterRef, Subquery
 from django.db.models.functions import Cast, Coalesce
 logger = logging.getLogger(__name__)
 
 from core.utils import get_licenca_db_config
 from core.middleware import get_licenca_slug
 from django.db.models import Subquery, OuterRef, DecimalField, Value as V, IntegerField
+from django.db.models.expressions import RawSQL
 from django.db.models.functions import Coalesce, Cast
 
 from ...models import (
@@ -253,6 +254,7 @@ class ProdutoListView(DBAndSlugMixin, ListView):
         if prod_nome:
             qs = qs.filter(prod_nome__icontains=prod_nome)
         if prod_codi:
+            # Sanitize prod_codi: allow alphanumeric searches; avoid passing empty strings to integer filters
             qs = qs.filter(prod_codi__icontains=prod_codi)
         # Anotar saldo de estoque via subquery (por empresa/filial quando disponíveis)
         saldo_qs = SaldoProduto.objects.using(self.db_alias).filter(
@@ -304,7 +306,7 @@ class ProdutoListView(DBAndSlugMixin, ListView):
             qs = qs.filter(prod_ncm__icontains=ncm)
 
         qs = qs.annotate(
-            prod_codi_int=Cast('prod_codi', IntegerField())
+            prod_codi_int=RawSQL("CASE WHEN prod_codi ~ %s THEN prod_codi::bigint ELSE NULL END", ('^[0-9]+$',), output_field=BigIntegerField())
         )
 
         ordenar = self.request.GET.get('ordenar', 'codigo')

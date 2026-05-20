@@ -363,6 +363,17 @@
       "database": "savexml952",
       "username": "savexml952",
       "password": "zzzz22222244"
+    },
+    {
+      "ssh": "Disabled",
+      "previewLimit": 50,
+      "server": "base.rtalmeida.com.br",
+      "port": 5432,
+      "driver": "PostgreSQL",
+      "name": "ventana",
+      "database": "savexml2031",
+      "username": "savexml2031",
+      "password": "y11111333333"
     }
   ],
   "liveServer.settings.port": 5501
