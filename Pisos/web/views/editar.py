@@ -54,7 +54,46 @@ def editar_pedido_pisos(request, slug, pk):
     if request.method != "POST":
         for i in Itenspedidospisos.objects.using(banco).filter(item_empr=pedido.pedi_empr, item_fili=pedido.pedi_fili, item_pedi=pk).order_by("item_nume"):
             initial_itens.append({k: getattr(i, k) for k in ["item_ambi", "item_nome_ambi", "item_prod", "item_prod_nome", "item_m2", "item_quan", "item_caix", "item_unit", "item_suto", "item_desc", "item_queb", "item_obse"]})
+    from decimal import Decimal, InvalidOperation
+    from Produtos.models import Produtos
+    from Pisos.services.calculo_services import calcular_item
 
+    for it in initial_itens:
+        try:
+            prod_id = it.get("item_prod")
+            produto = None
+            if prod_id:
+                produto = Produtos.objects.using(banco).filter(prod_codi=prod_id).first()
+
+            class ItemProxy:
+                pass
+
+            ip = ItemProxy()
+            ip.item_m2 = it.get("item_m2") or 0
+            ip.item_queb = it.get("item_queb") or 0
+            ip.item_unit = it.get("item_unit") or 0
+
+            resultado = calcular_item(ip, produto=produto)
+            kg_total = resultado.get("quilos_total") or resultado.get("kg_total") or 0
+            # garantir Decimal
+            it["item_kg"] = Decimal(str(kg_total)) if kg_total is not None else Decimal(0)
+        except Exception:
+            it["item_kg"] = Decimal(0)
+
+    # Normalizar valores para inicial do formset (usar strings com ponto decimal)
+    for it in initial_itens:
+        for fld in ("item_m2", "item_quan", "item_kg"):
+            v = it.get(fld)
+            if v is None:
+                continue
+            try:
+                it[fld] = str(v)
+            except Exception:
+                pass
+
+    item_kg = initial_itens[0].get("item_kg") if initial_itens else 0
+    item = initial_itens[0] if initial_itens else {}
+    
     form = PedidoPisosForm(request.POST or None, instance=pedido)
     formset = ItemPedidoPisosFormSet(request.POST or None, prefix="itens", initial=initial_itens)
 
@@ -116,5 +155,7 @@ def editar_pedido_pisos(request, slug, pk):
             "vendedor_label": vendedor_label,
             "arquivos": arquivos,
             "arquivos_form": arquivos_form,
+            "item_kg": item_kg,
+            "item": initial_itens[0],
         },
     )

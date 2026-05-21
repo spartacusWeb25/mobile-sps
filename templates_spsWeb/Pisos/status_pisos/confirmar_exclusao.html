@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 620px;">
+
+  <div class="card border-0 shadow-sm">
+    <div class="card-header bg-transparent">
+      <h4 class="mb-0 text-danger">
+        Excluir Status
+      </h4>
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+
+      <div class="card-body">
+        <p class="mb-0">
+          Deseja excluir o status
+          <strong>{{ object.stat_desc }}</strong>?
+        </p>
+      </div>
+
+      <div class="card-footer bg-transparent d-flex justify-content-between">
+        <a href="{% url 'PisosWeb:status_pisos_listar' slug %}" class="btn btn-outline-secondary">
+          Cancelar
+        </a>
+
+        <button class="btn btn-danger">
+          Excluir
+        </button>
+      </div>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

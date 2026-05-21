@@ -636,6 +636,25 @@ class PedidospisosViewSet(BaseMultiDBModelViewSet, VendedorEntidadeMixin):
             }
         )
 
+    @action(detail=True, methods=["get"], url_path="nfe-itens")
+    def nfe_itens(self, request, *args, **kwargs):
+        banco = self.get_banco()
+        pedido = self.get_object()
+        try:
+            from Pisos.services.pedido_emitir_nfe_service import PedidoEmitirNFeService
+            service = PedidoEmitirNFeService(
+                banco=banco,
+                pedido=pedido,
+                empresa=getattr(pedido, "pedi_empr"),
+                filial=getattr(pedido, "pedi_fili"),
+            )
+            dados = service.listar_itens_nfe()
+            return Response({"ok": True, **dados})
+        except Exception as e:
+            logger.exception("Erro ao obter itens nfe para pedido %s: %s", getattr(pedido, "pedi_nume", "?"), e)
+            return Response({"ok": False, "erro": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 class ItensorcapisosViewSet(BaseMultiDBModelViewSet):
     modulo_necessario = 'Pisos'
     serializer_class = ItensorcapisosSerializer

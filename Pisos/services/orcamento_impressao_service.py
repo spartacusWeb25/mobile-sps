@@ -145,6 +145,17 @@ class OrcamentoPisosImpressaoService:
             prod = mapa.get(getattr(item, "item_prod", None))
             caixas = getattr(item, "item_caix", None)
             setattr(item, "item_caixas", caixas if caixas is not None else 0)
+            kg_total = getattr(item, "item_kg", None)
+            if not kg_total:
+                kg_total = getattr(item, "item_kg_total", None)
+            if not kg_total and prod:
+                kg_por_caixa = getattr(prod, "prod_cera_kgcx", None)
+                if kg_por_caixa not in (None, ""):
+                    try:
+                        kg_total = Decimal(str(kg_por_caixa)) * Decimal(str(caixas or 0))
+                    except Exception:
+                        kg_total = None
+            setattr(item, "item_kg_total", kg_total if kg_total is not None else Decimal("0"))
             if not prod:
                 setattr(item, "item_marc", "")
                 setattr(item, "item_unid", "")
@@ -153,7 +164,11 @@ class OrcamentoPisosImpressaoService:
             unid = getattr(getattr(prod, "prod_unme", None), "unid_codi", "") or ""
             setattr(item, "item_marc", marca)
             setattr(item, "item_unid", unid)
-
+            descricao = getattr(item, "item_prod_nome", None) or getattr(prod, "prod_nome", "") or getattr(item, "item_nome", "") or ""
+            setattr(item, "item_prod_nome", descricao)
+            nome_item = getattr(item, "item_nome", "") or ""
+            setattr(item, "item_nome", nome_item)
+    
     @staticmethod
     def _calcular_subtotal(orcamento) -> Decimal:
         total = Decimal(str(getattr(orcamento, "orca_tota", 0) or 0))

@@ -16,6 +16,15 @@ from Pisos.web.views.utils import autocomplete_clientes, autocomplete_vendedores
 from Pisos.web.views.comissao_view import ComissaoVendedorView
 from Pisos.web.views.workflow_pedido import PedidoWorkflowAjaxView
 from Pisos.web.views.romaneio_entrega import RomaneioEntregaAjaxView
+from Pisos.web.views.pedido_emitir_nfe_view import PedidoPisosEmitirNFeView
+from Pisos.web.views.status_pisos_views import (
+    StatusPisosListView,
+    StatusPisosCreateView,
+    StatusPisosUpdateView,
+    StatusPisosDeleteView,
+    criar_status_padrao_view,
+)
+
 
 app_name = "PisosWeb"
 
@@ -48,5 +57,36 @@ urlpatterns = [
         "pedidos-pisos/<int:pk>/romaneio-entrega/",
         RomaneioEntregaAjaxView.as_view(),
         name="pedidos_pisos_romaneio_entrega_ajax",
+    ),
+    path(
+        "pedidos-pisos/<int:pk>/emitir-nfe/",
+        PedidoPisosEmitirNFeView.as_view(),
+        name="pedidos_pisos_emitir_nfe",
+    ),
+    
+     path(
+        "status-pisos/",
+        StatusPisosListView.as_view(),
+        name="status_pisos_listar"
+    ),
+    path(
+        "status-pisos/novo/",
+        StatusPisosCreateView.as_view(),
+        name="status_pisos_criar"
+    ),
+    path(
+        "status-pisos/<int:pk>/editar/",
+        StatusPisosUpdateView.as_view(),
+        name="status_pisos_editar"
+    ),
+    path(
+        "status-pisos/<int:pk>/excluir/",
+        StatusPisosDeleteView.as_view(),
+        name="status_pisos_excluir"
+    ),
+    path(
+        "status-pisos/criar-padrao/",
+        criar_status_padrao_view,
+        name="status_pisos_criar_padrao"
     ),
 ]

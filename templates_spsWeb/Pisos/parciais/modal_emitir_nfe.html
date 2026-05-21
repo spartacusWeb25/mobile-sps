@@ -1,0 +1,1096 @@
+<div class="modal fade" id="emitirNFeModal" tabindex="-1" aria-labelledby="emitirNFeLabelModal" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content nfe-modal-content">
+
+      <!-- Header -->
+      <div class="modal-header nfe-modal-header">
+        <div class="nfe-modal-title-block">
+          <div class="nfe-modal-eyebrow">Emissão Fiscal</div>
+          <h5 class="modal-title nfe-modal-title" id="emitirNFeLabelModal">
+            <i class="bi bi-file-earmark-check me-2"></i>Emitir NF-e
+            {% if pedido %}
+            <span class="nfe-pedido-num">#{{ pedido.pedi_nume }}</span>
+            {% endif %}
+          </h5>
+        </div>
+        <div class="nfe-modal-header-right">
+          <span id="nfe-status-badge" class="nfe-status-badge d-none"></span>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+      </div>
+
+      <!-- Body -->
+      <div class="modal-body nfe-modal-body" id="nfe-modal-body">
+
+        <!-- Loading state -->
+        <div id="nfe-loading" class="nfe-loading-state">
+          <div class="nfe-loading-icon">
+            <div class="nfe-spinner"></div>
+          </div>
+          <p class="nfe-loading-text">Carregando itens do pedido...</p>
+        </div>
+
+        <!-- Erro de carregamento -->
+        <div id="nfe-load-error" class="nfe-error-state d-none">
+          <i class="bi bi-exclamation-triangle nfe-error-icon"></i>
+          <p id="nfe-load-error-msg" class="nfe-error-text">Erro ao carregar os itens.</p>
+          <button class="btn btn-sm btn-outline-warning"
+            onclick="window.carregarItensNFe && window.carregarItensNFe()">Tentar novamente</button>
+        </div>
+
+        <!-- Conteúdo principal -->
+        <div id="nfe-conteudo" class="d-none">
+
+          <!-- Barra de info do pedido -->
+          <div class="nfe-info-bar">
+            <div class="nfe-info-item">
+              <span class="nfe-info-label">Pedido</span>
+              <span class="nfe-info-val" id="nfe-info-pedido">—</span>
+            </div>
+            <div class="nfe-info-item">
+              <span class="nfe-info-label">Cliente</span>
+              <span class="nfe-info-val" id="nfe-info-cliente">—</span>
+            </div>
+            <div class="nfe-info-item">
+              <span class="nfe-info-label">Status NF-e</span>
+              <span class="nfe-info-val" id="nfe-info-status">—</span>
+            </div>
+            <div class="nfe-info-item">
+              <span class="nfe-info-label">Itens</span>
+              <span class="nfe-info-val" id="nfe-info-itens">—</span>
+            </div>
+            <div class="nfe-info-item ms-auto">
+              <span class="nfe-info-label">Total a emitir</span>
+              <span class="nfe-info-val nfe-total-highlight" id="nfe-total-emitir">R$ 0,00</span>
+            </div>
+          </div>
+
+          <!-- Ação rápida (emissão total) -->
+          <div class="nfe-quick-bar" id="nfe-quick-bar">
+            <div class="nfe-quick-msg">
+              <i class="bi bi-lightning-charge-fill me-1" style="color:#f59e0b"></i>
+              <span id="nfe-quick-msg-text">Todos os itens com saldo disponível selecionados.</span>
+            </div>
+            <div class="d-flex gap-2">
+              <button class="btn btn-sm nfe-btn-sel-all" type="button" onclick="window.nfeSelAll && window.nfeSelAll()">
+                <i class="bi bi-check2-all me-1"></i>Selecionar tudo
+              </button>
+              <button class="btn btn-sm nfe-btn-clear" type="button"
+                onclick="window.nfeClearAll && window.nfeClearAll()">
+                <i class="bi bi-x-circle me-1"></i>Limpar
+              </button>
+            </div>
+          </div>
+
+          <!-- Tabela de itens -->
+          <div class="nfe-table-wrap">
+            <table class="table table-sm nfe-table mb-0">
+              <thead>
+                <tr>
+                  <th style="width:36px">
+                    <input type="checkbox" id="nfe-chk-all" class="form-check-input nfe-chk"
+                      onchange="window.nfeToggleAll && window.nfeToggleAll(this.checked)" title="Selecionar todos">
+                  </th>
+                  <th>Ambiente</th>
+                  <th>Produto</th>
+                  <th>Descrição</th>
+                  <th class="text-end">Qtd Total</th>
+                  <th class="text-end">Já Emitido</th>
+                  <th class="text-end">Saldo</th>
+                  <th style="min-width:130px">Qtd a Emitir</th>
+                  <th class="text-end">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody id="nfe-itens-tbody">
+                <!-- preenchido via JS -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Alertas de validação -->
+          <div id="nfe-alert" class="nfe-alert d-none"></div>
+
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="modal-footer nfe-modal-footer">
+        <div class="nfe-footer-left" id="nfe-footer-info">
+          <i class="bi bi-shield-check me-1" style="color:var(--nfe-accent)"></i>
+          <span id="nfe-footer-text">Selecione os itens para emitir</span>
+        </div>
+        <div class="d-flex gap-2">
+          <button type="button" class="btn nfe-btn-cancel" data-bs-dismiss="modal">
+            <i class="bi bi-x me-1"></i>Cancelar
+          </button>
+          <button type="button" class="btn nfe-btn-emit" id="nfe-btn-emit"
+            onclick="window.confirmarEmissaoNFe && window.confirmarEmissaoNFe()" disabled>
+            <i class="bi bi-send me-1"></i>Emitir NF-e
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<div class="modal fade" id="nfeConfirmModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:460px">
+    <div class="modal-content nfe-modal-content">
+      <div class="modal-header nfe-modal-header" style="border-bottom:1px solid var(--nfe-border)">
+        <h6 class="modal-title" style="color:var(--nfe-accent);font-weight:700">
+          <i class="bi bi-send-check me-2"></i>Confirmar Emissão
+        </h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" style="padding:20px">
+        <p style="color:var(--nfe-text);font-size:13px;margin:0 0 12px">
+          Você está prestes a enviar a NF-e para a <strong style="color:var(--nfe-accent)">SEFAZ</strong>.
+          Essa ação não pode ser desfeita.
+        </p>
+        <div class="nfe-confirm-summary" id="nfe-confirm-summary">
+          <!-- preenchido via JS -->
+        </div>
+      </div>
+      <div class="modal-footer" style="border-top:1px solid var(--nfe-border);padding:12px 20px;gap:8px">
+        <button type="button" class="btn nfe-btn-cancel" data-bs-dismiss="modal">Voltar</button>
+        <button type="button" class="btn nfe-btn-emit" id="nfe-btn-confirm-emit"
+          onclick="window.executarEmissaoNFe && window.executarEmissaoNFe()">
+          <i class="bi bi-send me-1"></i>Confirmar e Emitir
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  :root {
+    --nfe-bg: #111622;
+    --nfe-bg2: #171e30;
+    --nfe-bg3: #1e2640;
+    --nfe-border: #2a3560;
+    --nfe-border2: #344080;
+    --nfe-accent: #4f8ef7;
+    --nfe-accent2: #6ea6ff;
+    --nfe-glow: rgba(79, 142, 247, 0.15);
+    --nfe-text: #dde6f8;
+    --nfe-muted: #8898c0;
+    --nfe-success: #22c55e;
+    --nfe-danger: #ef4444;
+    --nfe-warning: #f59e0b;
+    --nfe-row-hover: rgba(79, 142, 247, 0.06);
+    --nfe-row-selected: rgba(79, 142, 247, 0.10);
+    --nfe-row-zero: rgba(255, 255, 255, 0.02);
+  }
+
+  [data-bs-theme="light"] {
+    --nfe-bg: #f4f7fb;
+    --nfe-bg2: #ffffff;
+    --nfe-bg3: #f0f4fa;
+    --nfe-border: #d0d9ee;
+    --nfe-border2: #bbc6e0;
+    --nfe-accent: #1a5fd4;
+    --nfe-accent2: #2563eb;
+    --nfe-glow: rgba(26, 95, 212, 0.12);
+    --nfe-text: #1e2a45;
+    --nfe-muted: #5a6e96;
+    --nfe-success: #16a34a;
+    --nfe-danger: #dc2626;
+    --nfe-warning: #d97706;
+    --nfe-row-hover: rgba(26, 95, 212, 0.05);
+    --nfe-row-selected: rgba(26, 95, 212, 0.08);
+    --nfe-row-zero: rgba(0, 0, 0, 0.02);
+  }
+
+  .nfe-modal-content {
+    background: var(--nfe-bg) !important;
+    border: 1px solid var(--nfe-border2) !important;
+    border-radius: 14px !important;
+    color: var(--nfe-text);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, .55), 0 0 0 1px rgba(79, 142, 247, .08);
+  }
+
+  .nfe-modal-header {
+    background: var(--nfe-bg2);
+    border-bottom: 1px solid var(--nfe-border) !important;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .nfe-modal-title-block {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .nfe-modal-eyebrow {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    color: var(--nfe-muted);
+  }
+
+  .nfe-modal-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--nfe-accent);
+    margin: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  .nfe-pedido-num {
+    font-size: 13px;
+    color: var(--nfe-muted);
+    font-weight: 400;
+    margin-left: 6px;
+  }
+
+  .nfe-modal-header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .nfe-status-badge {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    padding: 3px 10px;
+    border-radius: 20px;
+    border: 1px solid;
+  }
+
+  .nfe-status-badge.parcial {
+    color: var(--nfe-warning);
+    border-color: var(--nfe-warning);
+    background: rgba(245, 158, 11, .1);
+  }
+
+  .nfe-status-badge.emitido {
+    color: var(--nfe-success);
+    border-color: var(--nfe-success);
+    background: rgba(34, 197, 94, .1);
+  }
+
+  .nfe-status-badge.pendente {
+    color: var(--nfe-muted);
+    border-color: var(--nfe-border2);
+    background: transparent;
+  }
+
+  .nfe-modal-body {
+    background: var(--nfe-bg);
+    padding: 0;
+    min-height: 220px;
+  }
+
+  .nfe-loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    gap: 14px;
+  }
+
+  .nfe-spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid var(--nfe-border2);
+    border-top-color: var(--nfe-accent);
+    border-radius: 50%;
+    animation: nfeSpin .7s linear infinite;
+  }
+
+  @keyframes nfeSpin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .nfe-loading-text {
+    color: var(--nfe-muted);
+    font-size: 13px;
+    margin: 0;
+  }
+
+  .nfe-error-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    gap: 10px;
+  }
+
+  .nfe-error-icon {
+    font-size: 32px;
+    color: var(--nfe-warning);
+  }
+
+  .nfe-error-text {
+    color: var(--nfe-muted);
+    font-size: 13px;
+    margin: 0;
+  }
+
+  .nfe-info-bar {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--nfe-border);
+    background: var(--nfe-bg2);
+    flex-wrap: wrap;
+  }
+
+  .nfe-info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    padding: 10px 18px;
+    border-right: 1px solid var(--nfe-border);
+  }
+
+  .nfe-info-item:last-child {
+    border-right: none;
+  }
+
+  .nfe-info-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--nfe-muted);
+  }
+
+  .nfe-info-val {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--nfe-text);
+  }
+
+  .nfe-total-highlight {
+    color: #6ee7b7 !important;
+    font-size: 14px !important;
+  }
+
+  .nfe-quick-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 16px;
+    background: rgba(79, 142, 247, .06);
+    border-bottom: 1px solid var(--nfe-border);
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .nfe-quick-msg {
+    font-size: 11px;
+    color: var(--nfe-muted);
+  }
+
+  .nfe-btn-sel-all {
+    font-size: 11px;
+    color: var(--nfe-accent);
+    border: 1px solid var(--nfe-border2);
+    background: transparent;
+    padding: 3px 10px;
+    border-radius: 5px;
+  }
+
+  .nfe-btn-sel-all:hover {
+    background: var(--nfe-glow);
+  }
+
+  .nfe-btn-clear {
+    font-size: 11px;
+    color: var(--nfe-muted);
+    border: 1px solid var(--nfe-border);
+    background: transparent;
+    padding: 3px 10px;
+    border-radius: 5px;
+  }
+
+  .nfe-btn-clear:hover {
+    background: rgba(255, 255, 255, .04);
+  }
+
+  .nfe-table-wrap {
+    overflow: auto;
+    max-height: clamp(280px, calc(100vh - 420px), 500px);
+  }
+
+  .nfe-table {
+    color: var(--nfe-text) !important;
+    font-size: 12px;
+  }
+
+  .nfe-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--nfe-bg3) !important;
+    color: var(--nfe-muted);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    white-space: nowrap;
+    padding: 8px 10px;
+    border-color: var(--nfe-border) !important;
+  }
+
+  .nfe-table tbody tr {
+    transition: background .1s;
+    border-color: var(--nfe-border) !important;
+  }
+
+  .nfe-table tbody tr:hover {
+    background: var(--nfe-row-hover);
+  }
+
+  .nfe-table tbody tr.nfe-row-selected {
+    background: var(--nfe-row-selected);
+  }
+
+  .nfe-table tbody tr.nfe-row-zero {
+    opacity: .45;
+  }
+
+  .nfe-table td {
+    vertical-align: middle;
+    padding: 5px 10px !important;
+    border-color: var(--nfe-border) !important;
+  }
+
+  .nfe-qtd-input {
+    background: var(--nfe-bg) !important;
+    border: 1px solid var(--nfe-border2) !important;
+    color: var(--nfe-text) !important;
+    font-size: 12px !important;
+    border-radius: 5px !important;
+    padding: 3px 8px !important;
+    width: 110px;
+    text-align: right;
+    transition: border-color .15s, box-shadow .15s;
+  }
+
+  .nfe-qtd-input:focus {
+    border-color: var(--nfe-accent) !important;
+    box-shadow: 0 0 0 .15rem var(--nfe-glow) !important;
+    outline: none;
+  }
+
+  .nfe-qtd-input:disabled {
+    opacity: .35;
+    cursor: not-allowed;
+  }
+
+  .nfe-qtd-input.nfe-over {
+    border-color: var(--nfe-danger) !important;
+    box-shadow: 0 0 0 .1rem rgba(239, 68, 68, .2) !important;
+  }
+
+  .nfe-chk {
+    width: 15px;
+    height: 15px;
+    accent-color: var(--nfe-accent);
+    cursor: pointer;
+  }
+
+  .nfe-badge-zero {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 4px;
+    font-size: 10px;
+    background: rgba(255, 255, 255, .05);
+    color: var(--nfe-muted);
+    border: 1px solid var(--nfe-border);
+  }
+
+  .nfe-saldo-val {
+    color: var(--nfe-accent2);
+    font-weight: 600;
+  }
+
+  .nfe-emitido-val {
+    color: var(--nfe-warning);
+  }
+
+  .nfe-subtotal-val {
+    color: #6ee7b7;
+    font-weight: 600;
+  }
+
+  .nfe-alert {
+    margin: 12px 16px 0;
+    padding: 10px 14px;
+    border-radius: 7px;
+    font-size: 12px;
+    border: 1px solid;
+  }
+
+  .nfe-alert.danger {
+    color: var(--nfe-danger);
+    border-color: var(--nfe-danger);
+    background: rgba(239, 68, 68, .08);
+  }
+
+  .nfe-alert.warning {
+    color: var(--nfe-warning);
+    border-color: var(--nfe-warning);
+    background: rgba(245, 158, 11, .08);
+  }
+
+  .nfe-alert.success {
+    color: var(--nfe-success);
+    border-color: var(--nfe-success);
+    background: rgba(34, 197, 94, .08);
+  }
+
+  .nfe-modal-footer {
+    background: var(--nfe-bg2);
+    border-top: 1px solid var(--nfe-border) !important;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .nfe-footer-left {
+    font-size: 11px;
+    color: var(--nfe-muted);
+  }
+
+  .nfe-btn-cancel {
+    font-size: 12px;
+    color: var(--nfe-muted);
+    border: 1px solid var(--nfe-border2);
+    background: transparent;
+    padding: 6px 16px;
+    border-radius: 6px;
+  }
+
+  .nfe-btn-cancel:hover {
+    color: var(--nfe-text);
+    background: rgba(255, 255, 255, .04);
+  }
+
+  .nfe-btn-emit {
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+    background: var(--nfe-accent);
+    border: none;
+    padding: 6px 20px;
+    border-radius: 6px;
+    transition: background .15s, box-shadow .15s, opacity .15s;
+  }
+
+  .nfe-btn-emit:hover:not(:disabled) {
+    background: var(--nfe-accent2);
+    box-shadow: 0 0 16px var(--nfe-glow);
+  }
+
+  .nfe-btn-emit:disabled {
+    opacity: .4;
+    cursor: not-allowed;
+  }
+
+  .nfe-btn-emit.sending {
+    background: #334;
+    cursor: not-allowed;
+    opacity: .7;
+  }
+
+  .nfe-confirm-summary {
+    background: var(--nfe-bg3);
+    border: 1px solid var(--nfe-border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .nfe-confirm-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+  }
+
+  .nfe-confirm-row span:first-child {
+    color: var(--nfe-muted);
+  }
+
+  .nfe-confirm-row span:last-child {
+    color: var(--nfe-text);
+    font-weight: 600;
+  }
+
+  .nfe-confirm-total span:last-child {
+    color: #6ee7b7;
+    font-size: 14px;
+  }
+</style>
+
+<script>
+  {% if pedido %}
+  (function () {
+    /* ── Constantes ── */
+    var PEDIDO_NUME_NFE = {{ pedido.pedi_nume }};
+    var URL_NFE_ITENS = "/web/{{ slug }}/pisos/pedidos-pisos/" + PEDIDO_NUME_NFE + "/emitir-nfe/";
+    var URL_NFE_EMITIR = "/web/{{ slug }}/pisos/pedidos-pisos/" + PEDIDO_NUME_NFE + "/emitir-nfe/";
+
+    /* ── Estado local ── */
+  var _itensNFe = [];
+
+  /* ── Helpers ── */
+  function _fmtQ(v, dec) {
+    dec = (dec === undefined) ? 3 : dec;
+    var n = (typeof v === 'number') ? v : (parseFloat(String(v || '0').replace(',', '.')) || 0);
+    return n.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: dec });
+  }
+
+  function _parseQ(v) {
+    return parseFloat(String(v || '0').replace(',', '.')) || 0;
+  }
+
+  function _fmtBRL(v) {
+    var n = (typeof v === 'number') ? v : _parseQ(v);
+    return 'R$ ' + n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function _show(id) {
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('d-none');
+  }
+
+  function _hide(id) {
+    var el = document.getElementById(id);
+    if (el) el.classList.add('d-none');
+  }
+
+  function _setAlert(msg, tipo) {
+    tipo = tipo || 'danger';
+    var el = document.getElementById('nfe-alert');
+    if (!el) return;
+    el.className = 'nfe-alert ' + tipo;
+    el.innerHTML = msg;
+    el.classList.remove('d-none');
+  }
+
+  function _clearAlert() {
+    var el = document.getElementById('nfe-alert');
+    if (el) { el.className = 'nfe-alert d-none'; el.innerHTML = ''; }
+  }
+
+  function _setText(id, v) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = v;
+  }
+
+  function _esc(s) {
+    return String(s || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  /* ── Abre o modal ── */
+  window.showEmitirNFeModal = function () {
+    var modalEl = document.getElementById('emitirNFeModal');
+    if (!modalEl) {
+      console.error('[NFE] #emitirNFeModal não encontrado no DOM');
+      return;
+    }
+    bootstrap.Modal.getOrCreateInstance(modalEl).show();
+    window.carregarItensNFe();
+  };
+
+  /* ── Carrega itens via API ── */
+  window.carregarItensNFe = async function () {
+    _hide('nfe-conteudo');
+    _hide('nfe-load-error');
+    _show('nfe-loading');
+    _clearAlert();
+
+    try {
+      console.debug('[NFE] fetching', URL_NFE_ITENS);
+      var resp = await fetch(URL_NFE_ITENS, {
+        headers: { 'Accept': 'application/json' },
+        credentials: 'same-origin'
+      });
+
+      var data = null;
+      try { data = await resp.json(); } catch (e) { data = null; }
+
+      console.debug('[NFE] response', resp.status, data);
+
+      if (resp.status === 401) {
+        _hide('nfe-loading');
+        _setAlert('Não autorizado (401). Verifique se você está autenticado.', 'danger');
+        return;
+      }
+
+      if (!resp.ok || (data && data.ok === false)) {
+        var msg = data ? (data.erro || data.detail || ('HTTP ' + resp.status)) : ('HTTP ' + resp.status);
+        throw new Error(msg);
+      }
+
+      var payload = data || {};
+      _itensNFe = Array.isArray(payload.itens) ? payload.itens
+        : (Array.isArray(payload) ? payload : []);
+      if (_itensNFe.length === 0 && Array.isArray(payload.results)) {
+        _itensNFe = payload.results;
+      }
+
+      _renderItens(payload);
+      _hide('nfe-loading');
+      _show('nfe-conteudo');
+
+    } catch (e) {
+      console.error('[NFE] erro ao carregar:', e);
+      _hide('nfe-loading');
+      var errEl = document.getElementById('nfe-load-error-msg');
+      if (errEl) errEl.textContent = e.message || 'Erro ao carregar itens.';
+      _show('nfe-load-error');
+    }
+  };
+
+  /* ── Renderiza a tabela ── */
+  function _renderItens(data) {
+    _setText('nfe-info-pedido', '#' + (data.pedido_nume || PEDIDO_NUME_NFE));
+    _setText('nfe-info-cliente', data.cliente_nome || '—');
+    _setText('nfe-info-itens', _itensNFe.length + ' item(ns)');
+
+    var badge = document.getElementById('nfe-status-badge');
+    var statMap = { N: ['pendente', 'Não emitido'], P: ['parcial', 'Parcial'], E: ['emitido', 'Emitido'] };
+    var st = statMap[data.status_nfe] || ['pendente', '—'];
+    badge.className = 'nfe-status-badge ' + st[0];
+    badge.textContent = st[1];
+    badge.classList.remove('d-none');
+    _setText('nfe-info-status', st[1]);
+
+    var pendentes = _itensNFe.filter(function (i) { return _parseQ(i.saldo) > 0; }).length;
+    _setText('nfe-quick-msg-text',
+      pendentes === _itensNFe.length
+        ? 'Todos os itens com saldo disponível selecionados.'
+        : pendentes + ' de ' + _itensNFe.length + ' item(ns) com saldo para emitir.'
+    );
+
+    var tbody = document.getElementById('nfe-itens-tbody');
+    tbody.innerHTML = '';
+
+    _itensNFe.forEach(function (item, idx) {
+      var saldo = _parseQ(item.saldo);
+      var emitido = _parseQ(item.quantidade_emitida);
+      var total = _parseQ(item.quantidade_total);
+      var unit = _parseQ(item.unitario);
+      var semSaldo = saldo <= 0;
+      var subtotalInit = semSaldo ? 0 : (saldo * unit);
+
+      var tr = document.createElement('tr');
+      tr.dataset.idx = idx;
+      if (semSaldo) tr.classList.add('nfe-row-zero');
+
+      var valorInput = semSaldo ? '' : _fmtQ(saldo, 3).replace(/\./g, '').replace(',', '.');
+
+      tr.innerHTML =
+        '<td>' +
+        '<input type="checkbox" class="form-check-input nfe-chk nfe-item-chk"' +
+        ' data-idx="' + idx + '"' +
+        (semSaldo ? ' disabled' : ' checked') +
+        ' onchange="window.nfeItemToggle(' + idx + ', this.checked)">' +
+        '</td>' +
+        '<td style="color:var(--nfe-muted)">' + _esc(item.ambiente || '—') + '</td>' +
+        '<td style="font-family:monospace;font-size:11px">' + _esc(item.produto_codigo || '—') + '</td>' +
+        '<td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"' +
+        ' title="' + _esc(item.produto_nome || '') + '">' + _esc(item.produto_nome || '—') + '</td>' +
+        '<td class="text-end">' + _fmtQ(total) + '</td>' +
+        '<td class="text-end' + (emitido > 0 ? ' nfe-emitido-val' : '') + '">' +
+        (emitido > 0 ? _fmtQ(emitido) : '<span class="nfe-badge-zero">—</span>') + '</td>' +
+        '<td class="text-end' + (saldo > 0 ? ' nfe-saldo-val' : '') + '">' +
+        (saldo > 0 ? _fmtQ(saldo) : '<span class="nfe-badge-zero">0</span>') + '</td>' +
+        '<td>' +
+        '<input type="number" step="0.001" min="0" max="' + saldo + '"' +
+        ' class="nfe-qtd-input"' +
+        ' id="nfe-qtd-' + idx + '"' +
+        ' data-idx="' + idx + '"' +
+        ' data-saldo="' + saldo + '"' +
+        ' data-unit="' + unit + '"' +
+        ' value="' + valorInput + '"' +
+        (semSaldo ? ' disabled' : '') +
+        ' oninput="window.nfeQtdInput(' + idx + ')">' +
+        '</td>' +
+        '<td class="text-end nfe-subtotal-val" id="nfe-sub-' + idx + '">' +
+        (semSaldo ? '<span class="nfe-badge-zero">—</span>' : _fmtBRL(subtotalInit)) +
+        '</td>';
+
+      tbody.appendChild(tr);
+    });
+
+    _atualizarTotal();
+    _atualizarBtnEmitir();
+  }
+
+  /* ── Checkbox geral ── */
+  window.nfeToggleAll = function (checked) {
+    document.querySelectorAll('.nfe-item-chk:not(:disabled)').forEach(function (chk) {
+      var idx = parseInt(chk.dataset.idx, 10);
+      chk.checked = checked;
+      _itemToggleInternal(idx, checked);
+    });
+    _atualizarTotal();
+    _atualizarBtnEmitir();
+  };
+
+  window.nfeSelAll = function () {
+    document.querySelectorAll('.nfe-item-chk:not(:disabled)').forEach(function (chk) {
+      chk.checked = true;
+      var idx = parseInt(chk.dataset.idx, 10);
+      var inp = document.getElementById('nfe-qtd-' + idx);
+      if (inp) {
+        inp.value = parseFloat(inp.dataset.saldo || 0).toFixed(3);
+        _qtdInputInternal(idx);
+      }
+    });
+    var all = document.getElementById('nfe-chk-all');
+    if (all) all.checked = true;
+    _atualizarTotal();
+    _atualizarBtnEmitir();
+  };
+
+  window.nfeClearAll = function () {
+    document.querySelectorAll('.nfe-item-chk:not(:disabled)').forEach(function (chk) {
+      chk.checked = false;
+      var idx = parseInt(chk.dataset.idx, 10);
+      var inp = document.getElementById('nfe-qtd-' + idx);
+      if (inp) inp.value = '';
+      _setSubtotal(idx, 0);
+    });
+    var all = document.getElementById('nfe-chk-all');
+    if (all) all.checked = false;
+    _atualizarTotal();
+    _atualizarBtnEmitir();
+  };
+
+  function _itemToggleInternal(idx, checked) {
+    var inp = document.getElementById('nfe-qtd-' + idx);
+    if (!inp) return;
+    var tr = inp.closest('tr');
+    if (checked) {
+      inp.disabled = false;
+      if (!inp.value || parseFloat(inp.value) <= 0) {
+        inp.value = parseFloat(inp.dataset.saldo || 0).toFixed(3);
+      }
+      if (tr) tr.classList.add('nfe-row-selected');
+    } else {
+      inp.value = '';
+      inp.disabled = true;
+      if (tr) tr.classList.remove('nfe-row-selected');
+    }
+    _setSubtotal(idx, checked ? _parseQ(inp.value) * _parseQ(inp.dataset.unit) : 0);
+  }
+
+  window.nfeItemToggle = function (idx, checked) {
+    _itemToggleInternal(idx, checked);
+    _atualizarTotal();
+    _atualizarBtnEmitir();
+    _syncChkAll();
+  };
+
+  function _qtdInputInternal(idx) {
+    var inp = document.getElementById('nfe-qtd-' + idx);
+    if (!inp) return;
+    var qtd = _parseQ(inp.value);
+    var saldo = _parseQ(inp.dataset.saldo);
+    var unit = _parseQ(inp.dataset.unit);
+    var chk = document.querySelector('.nfe-item-chk[data-idx="' + idx + '"]');
+
+    if (qtd > saldo + 1e-9) {
+      inp.classList.add('nfe-over');
+    } else {
+      inp.classList.remove('nfe-over');
+    }
+
+    if (chk) chk.checked = qtd > 0;
+
+    var tr = inp.closest('tr');
+    if (qtd > 0) { if (tr) tr.classList.add('nfe-row-selected'); }
+    else { if (tr) tr.classList.remove('nfe-row-selected'); }
+
+    _setSubtotal(idx, qtd * unit);
+  }
+
+  window.nfeQtdInput = function (idx) {
+    _qtdInputInternal(idx);
+    _atualizarTotal();
+    _atualizarBtnEmitir();
+    _syncChkAll();
+  };
+
+  function _setSubtotal(idx, valor) {
+    var el = document.getElementById('nfe-sub-' + idx);
+    if (!el) return;
+    el.innerHTML = valor > 0 ? _fmtBRL(valor) : '<span class="nfe-badge-zero">—</span>';
+  }
+
+  function _syncChkAll() {
+    var chks = Array.from(document.querySelectorAll('.nfe-item-chk:not(:disabled)'));
+    var all = document.getElementById('nfe-chk-all');
+    if (all) all.checked = chks.length > 0 && chks.every(function (c) { return c.checked; });
+  }
+
+  function _atualizarTotal() {
+    var total = 0;
+    _itensNFe.forEach(function (item, idx) {
+      var inp = document.getElementById('nfe-qtd-' + idx);
+      var qtd = (inp && !inp.disabled) ? _parseQ(inp.value) : 0;
+      total += qtd * _parseQ(item.unitario);
+    });
+    _setText('nfe-total-emitir', _fmtBRL(total));
+  }
+
+  function _buildPayload() {
+    var out = [];
+    _itensNFe.forEach(function (item, idx) {
+      var inp = document.getElementById('nfe-qtd-' + idx);
+      if (!inp || inp.disabled) return;
+      var qtd = _parseQ(inp.value);
+      if (qtd > 0) out.push({ item_nume: item.item_nume, quantidade: qtd });
+    });
+    return out;
+  }
+
+  function _atualizarBtnEmitir() {
+    var btn = document.getElementById('nfe-btn-emit');
+    if (!btn) return;
+    var temValido = _buildPayload().length > 0;
+    var temErro = !!document.querySelector('.nfe-qtd-input.nfe-over');
+    btn.disabled = !temValido || temErro;
+    var sel = _buildPayload().length;
+    _setText('nfe-footer-text', sel > 0
+      ? sel + ' item(ns) selecionado(s) para emissão'
+      : 'Selecione os itens para emitir'
+    );
+  }
+
+  /* ── Confirmar ── */
+  window.confirmarEmissaoNFe = function () {
+    _clearAlert();
+    var payload = _buildPayload();
+    if (!payload.length) { _setAlert('Selecione ao menos um item.', 'warning'); return; }
+    if (document.querySelector('.nfe-qtd-input.nfe-over')) {
+      _setAlert('Corrija as quantidades marcadas em vermelho.', 'danger');
+      return;
+    }
+
+    var summary = document.getElementById('nfe-confirm-summary');
+    var totalVal = 0;
+    var rows = '';
+
+    payload.forEach(function (p) {
+      var item = _itensNFe.find(function (i) { return String(i.item_nume) === String(p.item_nume); });
+      if (!item) return;
+      var sub = p.quantidade * _parseQ(item.unitario);
+      totalVal += sub;
+      rows += '<div class="nfe-confirm-row">' +
+        '<span>' + _esc(item.produto_nome || item.produto_codigo || ('Item ' + p.item_nume)) + '</span>' +
+        '<span>' + _fmtQ(p.quantidade) + ' × ' + _fmtBRL(item.unitario) + ' = ' + _fmtBRL(sub) + '</span>' +
+        '</div>';
+    });
+
+    rows += '<hr style="border-color:var(--nfe-border);margin:8px 0">' +
+      '<div class="nfe-confirm-row nfe-confirm-total">' +
+      '<span>Total da NF-e</span><span>' + _fmtBRL(totalVal) + '</span></div>';
+
+    if (summary) summary.innerHTML = rows;
+
+    var confEl = document.getElementById('nfeConfirmModal');
+    if (confEl) bootstrap.Modal.getOrCreateInstance(confEl).show();
+  };
+
+  /* ── Executa a emissão ── */
+  window.executarEmissaoNFe = async function () {
+    var payload = _buildPayload();
+    if (!payload.length) return;
+
+    var btnConf = document.getElementById('nfe-btn-confirm-emit');
+    var btnEmit = document.getElementById('nfe-btn-emit');
+
+    [btnConf, btnEmit].forEach(function (b) {
+      if (b) { b.disabled = true; b.classList.add('sending'); }
+    });
+    if (btnConf) btnConf.innerHTML =
+      '<span class="nfe-spinner" style="width:14px;height:14px;border-width:2px;' +
+      'display:inline-block;vertical-align:middle;margin-right:6px"></span>Enviando...';
+
+    var confEl = document.getElementById('nfeConfirmModal');
+    if (confEl) {
+      var inst = bootstrap.Modal.getInstance(confEl);
+      if (inst) inst.hide();
+    }
+
+    try {
+      var csrf = (typeof CSRF !== 'undefined') ? CSRF : '';
+      var resp = await fetch(URL_NFE_EMITIR, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrf,
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ itens_emitir: payload })
+      });
+
+      var data = await resp.json();
+
+      if (!resp.ok) {
+        throw new Error(data.erro || data.detail || ('HTTP ' + resp.status));
+      }
+
+      var sefaz = data.sefaz || {};
+      var status = String(sefaz.status || '');
+
+      if (status === '100' || status === '204') {
+        if (typeof showToast === 'function') {
+          showToast('NF-e autorizada! Chave: ' + (sefaz.chave || '—'), 'success');
+        }
+        var mainEl = document.getElementById('emitirNFeModal');
+        if (mainEl) {
+          var mainInst = bootstrap.Modal.getInstance(mainEl);
+          if (mainInst) mainInst.hide();
+        }
+        setTimeout(function () { window.location.reload(); }, 800);
+      } else {
+        _setAlert(
+          '<i class="bi bi-x-circle me-1"></i><strong>Rejeição SEFAZ ' + status + ':</strong> ' +
+          (sefaz.motivo || 'Sem mensagem'), 'danger'
+        );
+        [btnConf, btnEmit].forEach(function (b) {
+          if (b) { b.disabled = false; b.classList.remove('sending'); }
+        });
+        if (btnConf) btnConf.innerHTML = '<i class="bi bi-send me-1"></i>Confirmar e Emitir';
+      }
+
+    } catch (e) {
+      _setAlert(
+        '<i class="bi bi-exclamation-triangle me-1"></i>' + (e.message || 'Erro ao emitir NF-e.'),
+        'danger'
+      );
+      [btnConf, btnEmit].forEach(function (b) {
+        if (b) { b.disabled = false; b.classList.remove('sending'); }
+      });
+      if (btnConf) btnConf.innerHTML = '<i class="bi bi-send me-1"></i>Confirmar e Emitir';
+    }
+  };
+
+}) ();
+  {% endif %}
+</script>

@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h3 class="mb-0">
+        <i class="bi bi-diagram-3"></i> Status Pisos
+      </h3>
+      <small class="text-muted">
+        Status usados no workflow de orçamentos e pedidos.
+      </small>
+    </div>
+
+    <div class="d-flex gap-2">
+      <a href="{% url 'PisosWeb:status_pisos_criar_padrao' slug %}" class="btn btn-outline-secondary">
+        Criar padrão
+      </a>
+
+      <a href="{% url 'PisosWeb:status_pisos_criar' slug %}" class="btn btn-primary">
+        <i class="bi bi-plus"></i> Novo
+      </a>
+    </div>
+  </div>
+
+  <form method="get" class="card border-0 shadow-sm mb-3">
+    <div class="card-body row g-2 align-items-end">
+
+      <div class="col-md-4">
+        <label class="form-label">Tipo</label>
+        <select name="tipo" class="form-select">
+          <option value="">Todos</option>
+          <option value="0" {% if tipo == "0" %}selected{% endif %}>Orçamento</option>
+          <option value="1" {% if tipo == "1" %}selected{% endif %}>Pedido</option>
+        </select>
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">Ativo</label>
+        <select name="ativo" class="form-select">
+          <option value="">Todos</option>
+          <option value="1" {% if ativo == "1" %}selected{% endif %}>Ativos</option>
+          <option value="0" {% if ativo == "0" %}selected{% endif %}>Inativos</option>
+        </select>
+      </div>
+
+      <div class="col-md-4">
+        <button class="btn btn-dark w-100">
+          Filtrar
+        </button>
+      </div>
+
+    </div>
+  </form>
+
+  <div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Código</th>
+            <th>Descrição</th>
+            <th>Tipo</th>
+            <th>Ativo</th>
+            <th class="text-end">Ações</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for item in status %}
+          <tr>
+            <td>{{ item.stat_codigo }}</td>
+            <td>{{ item.stat_desc }}</td>
+            <td>{{ item.get_stat_tipo_display }}</td>
+            <td>
+              {% if item.stat_ativo %}
+              <span class="badge bg-success">Ativo</span>
+              {% else %}
+              <span class="badge bg-secondary">Inativo</span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <a href="{% url 'PisosWeb:status_pisos_editar' slug item.stat_id %}"
+                class="btn btn-sm btn-outline-primary">
+                Editar
+              </a>
+
+              <a href="{% url 'PisosWeb:status_pisos_excluir' slug item.stat_id %}" class="btn btn-sm btn-outline-danger">
+                Excluir
+              </a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="5" class="text-center text-muted py-4">
+              Nenhum status cadastrado.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

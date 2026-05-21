@@ -338,6 +338,7 @@
           <th style="width:64px">Código</th>
           <th>Descrição</th>
           <th style="width:52px">Caixas</th>
+          <th style="width:56px">KG</th>
           <th style="width:66px">Marca</th>
           <th style="width:44px">U.M</th>
           <th style="width:72px">Valor Unit.</th>
@@ -347,7 +348,7 @@
       <tbody>
         {% for grupo in grupos %}
         <tr class="grupo">
-          <td colspan="8">{{ grupo.nome }}</td>
+          <td colspan="9">{{ grupo.nome }}</td>
         </tr>
         {% for i in grupo.itens %}
         <tr>
@@ -355,6 +356,7 @@
           <td class="cen">{{ i.item_prod }}</td>
           <td>{{ i.item_prod_nome|default:i.item_prod }}{% if i.item_obse %}<br>{{ i.item_obse|linebreaksbr }}{% endif %}</td>
           <td class="cen">{{ i.item_caixas|default:0 }}</td>
+          <td class="num">{{ i.item_kg_total|default:"0"|numbr }}</td>
           <td class="cen">{{ i.item_marc|default:"" }}</td>
           <td class="cen">{{ i.item_unid|default:"" }}</td>
           <td class="num">{{ i.item_unit|numbr }}</td>
@@ -362,7 +364,7 @@
         </tr>
         {% endfor %}
         <tr>
-          <td colspan="6"></td>
+          <td colspan="7"></td>
           <td class="num"><b>Total Amb:</b></td>
           <td class="num"><b>{{ grupo.total|numbr }}</b></td>
         </tr>

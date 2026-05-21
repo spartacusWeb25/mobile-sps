@@ -1,7 +1,31 @@
 from django import forms
 from django.forms import formset_factory
+from Pisos.models import Pedidospisos, Orcamentopisos, PedidosPisosArquivos, StatusPisos
 
-from Pisos.models import Pedidospisos, Orcamentopisos, PedidosPisosArquivos
+
+
+class StatusPisosForm(forms.ModelForm):
+    class Meta:
+        model = StatusPisos
+        fields = [
+            "stat_codigo",
+            "stat_desc",
+            "stat_tipo",
+            "stat_ativo",
+        ]
+
+        widgets = {
+            "stat_codigo": forms.NumberInput(attrs={"class": "form-control"}),
+            "stat_desc": forms.TextInput(attrs={"class": "form-control"}),
+            "stat_tipo": forms.Select(attrs={"class": "form-select"}),
+            "stat_ativo": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+        }
+        labels = {
+            "stat_codigo": "Código",
+            "stat_desc": "Descrição",
+            "stat_tipo": "Tipo",
+            "stat_ativo": "Ativo",
+        }
 
 
 PEDIDO_STATUS_CHOICES = (
@@ -13,10 +37,6 @@ PEDIDO_STATUS_CHOICES = (
     (5, "Cancelado"),
     (6, "Concluído"),
 )
-
-
-
-
 
 class PedidoPisosForm(forms.ModelForm):
     class Meta:
@@ -87,6 +107,7 @@ class ItemPedidoPisosForm(forms.Form):
     item_prod_nome = forms.CharField(required=False, max_length=100)
     item_m2 = forms.DecimalField(required=False, decimal_places=4, max_digits=15)
     item_quan = forms.DecimalField(required=False, decimal_places=4, max_digits=15)
+    item_kg = forms.DecimalField(required=False, decimal_places=4, max_digits=15)
     item_caix = forms.IntegerField(required=False)
     item_unit = forms.DecimalField(required=False, decimal_places=4, max_digits=15)
     item_suto = forms.DecimalField(required=False, decimal_places=4, max_digits=15)

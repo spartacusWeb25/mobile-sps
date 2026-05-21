@@ -496,8 +496,9 @@
                     <th style="min-width:100px">Ambiente</th>
                     <th style="min-width:60px">Caixas</th>
                     <th style="min-width:80px">M²</th>
+                    <th style="min-width:80px">KG</th>
                     <th style="min-width:140px">Produto</th>
-                    <th style="min-width:160px">Nome Produto</th>
+                    <th style="min-width:160px">Descrição do Item</th>
                     <th style="min-width:90px">Quant.</th>
                     <th style="min-width:90px">Unitário</th>
                     <th style="min-width:80px">Desc %</th>
@@ -525,6 +526,13 @@
                         class="form-control form-control-sm item-m2" value="{{ f.item_m2.value|default:'' }}"
                         data-index="{{ forloop.counter0 }}" placeholder="0,00">
                       <div class="d-none">{{ f.item_m2 }}</div>
+                      <div class="calc-spinner" id="spin-{{ forloop.counter0 }}"></div>
+                    </td>
+                    <td class="position-relative">
+                      <input id="kg-{{ forloop.counter0 }}" class="form-control form-control-sm item-kg calc-field"
+                        placeholder="0,00" data-index="{{ forloop.counter0 }}" value="{{ f.item_kg.value|default:'' }}"
+                        readonly tabindex="-1">
+                      <div class="d-none">{{ f.item_kg }}</div>
                       <div class="calc-spinner" id="spin-{{ forloop.counter0 }}"></div>
                     </td>
                     <td class="position-relative">
@@ -821,6 +829,8 @@
   async function calcularItem(index) {
     const prodInput = document.getElementById(`id_itens-${index}-item_prod`);
     const m2Input = document.getElementById(`m2-${index}`);
+    const kgInput = document.getElementById(`kg-${index}`);
+    const sutoInput = document.getElementById(`suto-${index}`);
     const unitInput = document.getElementById(`unit-${index}`);
     const quebInput = document.getElementById(`queb-${index}`);
     const spinner = document.getElementById(`spin-${index}`);
@@ -854,13 +864,16 @@
       const sutoInput = document.getElementById(`suto-${index}`);
       const hiddenCaix = document.querySelector(`#itens-table tr[data-index="${index}"] input[name$="-item_caix"]`);
       const hiddenQuan = document.querySelector(`#id_itens-${index}-item_quan`);
+      const hiddenKg = document.querySelector(`#id_itens-${index}-item_kg`);
       const hiddenUnit = document.getElementById(`id_itens-${index}-item_unit`);
 
       if (badgeCaix) badgeCaix.textContent = data.caixas || '—';
       if (quanInput) quanInput.value = data.quantidade || '';
+      if (kgInput) kgInput.value = data.kg || data.kg_total || '';
       if (sutoInput) sutoInput.value = parseFloat(data.total || 0).toFixed(2);
       if (hiddenCaix) hiddenCaix.value = data.caixas || '';
       if (hiddenQuan) hiddenQuan.value = data.quantidade || '';
+      if (hiddenKg) hiddenKg.value = data.kg || data.kg_total || '';
       if (precisaPreco && unitInput && data.preco_unitario) {
         unitInput.value = String(data.preco_unitario).replace(',', '.');
         unitInput.dataset.autoPrice = '1';
@@ -1010,6 +1023,11 @@
         <div class="calc-spinner" id="spin-${index}"></div>
       </td>
       <td class="position-relative">
+        <input id="kg-${index}" class="form-control form-control-sm item-kg calc-field" placeholder="0,00" data-index="${index}" readonly tabindex="-1">
+        <input type="hidden" name="${prefix}-item_kg" id="id_itens-${index}-item_kg" value="">
+        <div class="calc-spinner" id="spin-${index}"></div>
+      </td>
+      <td class="position-relative">
         <input id="produto_busca_${index}" class="form-control form-control-sm" placeholder="Buscar produto" data-index="${index}">
         <input type="hidden" name="${prefix}-item_prod" id="id_itens-${index}-item_prod" value="">
       </td>
@@ -1045,7 +1063,10 @@
         "{% url 'PisosWeb:autocomplete_produtos' slug=slug %}",
         (selected) => {
           const nomeInput = document.getElementById(`id_itens-${index}-item_prod_nome`);
-          if (nomeInput) nomeInput.value = selected.label || selected.text || '';
+          const descricao = selected.descricao || selected.description || selected.label || selected.text || '';
+          if (nomeInput) nomeInput.value = descricao;
+          const visualNome = document.getElementById(`produto_busca_${index}`);
+          if (visualNome) visualNome.value = descricao;
           calcularItem(index);
         }
       );

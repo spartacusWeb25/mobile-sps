@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 720px;">
+
+  <div class="card border-0 shadow-sm">
+    <div class="card-header bg-transparent">
+      <h4 class="mb-0">
+        {% if object %}Editar Status{% else %}Novo Status{% endif %}
+      </h4>
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+
+      <div class="card-body">
+
+        <div class="mb-3">
+          <label class="form-label">Código</label>
+          {{ form.stat_codigo }}
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Descrição</label>
+          {{ form.stat_desc }}
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Tipo</label>
+          {{ form.stat_tipo }}
+        </div>
+
+        <div class="form-check mb-3">
+          {{ form.stat_ativo }}
+          <label class="form-check-label">
+            Ativo
+          </label>
+        </div>
+
+      </div>
+
+      <div class="card-footer bg-transparent d-flex justify-content-between">
+        <a href="{% url 'PisosWeb:status_pisos_listar' slug %}" class="btn btn-outline-secondary">
+          Voltar
+        </a>
+
+        <button class="btn btn-primary">
+          Salvar
+        </button>
+      </div>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

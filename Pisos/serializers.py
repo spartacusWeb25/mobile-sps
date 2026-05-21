@@ -371,6 +371,7 @@ class PedidospisosSerializer(BancoContextMixin, serializers.ModelSerializer):
                 item_unit=item_data.get("item_unit") or 0,
                 item_desc=item_data.get("item_desc") or 0,
                 item_obse=item_data.get("item_obse", ""),
+                item_kg=resultado.get("quilos_total") or resultado.get("kg_total") or 0,
                 # ↓ Preenchidos pelo service
                 item_caix=resultado["caixas_necessarias"] or 0,
                 item_quan=resultado["metragem_real"],

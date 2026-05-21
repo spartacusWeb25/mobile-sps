@@ -2,6 +2,48 @@
 from django.db import models
 
 
+class StatusPisos(models.Model):
+    TIPO_ORCAMENTO = 0
+    TIPO_PEDIDO = 1
+
+    TIPO_CHOICES = [
+        (TIPO_ORCAMENTO, "ORCAMENTO"),
+        (TIPO_PEDIDO, "PEDIDO"),
+    ]
+
+    stat_id = models.AutoField(primary_key=True)
+
+    stat_empr = models.IntegerField()
+    stat_fili = models.IntegerField()
+
+    stat_codigo = models.IntegerField()
+    stat_desc = models.CharField(max_length=40)
+
+    stat_tipo = models.IntegerField(
+        choices=TIPO_CHOICES,
+        default=TIPO_ORCAMENTO
+    )
+    stat_ativo = models.BooleanField(
+        default=True
+    )
+
+
+
+
+    class Meta:
+        db_table = "status_pisos"
+
+        ordering = ["stat_tipo", "stat_codigo"]
+
+        unique_together = (
+            "stat_empr",
+            "stat_fili",
+            "stat_tipo",
+            "stat_codigo",
+        )
+
+    def __str__(self):
+        return self.stat_desc
 
 STATUS_ORCAMENTO = [
     (0, 'ABERTO'),
@@ -9,6 +51,7 @@ STATUS_ORCAMENTO = [
     (2, 'EXPORTADO PEDIDO'),
    
 ]
+
 
 class Orcamentopisos(models.Model):
     orca_empr = models.IntegerField()
@@ -100,7 +143,6 @@ class Itensorcapisos(models.Model):
     class Meta:
         managed = False
         db_table = 'itensorcapisos'
-
 
 
 
@@ -203,8 +245,6 @@ class Itenspedidospisos(models.Model):
     item_stat_manu = models.CharField(max_length=30, blank=True, null=True)
     item_desc = models.DecimalField(max_digits=15, decimal_places=4, blank=True, null=True)
     item_queb = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
-    
-    
     #romaneio de entrega
     item_stat_manu_data = models.DateField(blank=True, null=True)
     item_stat_manu_user = models.IntegerField(blank=True, null=True)

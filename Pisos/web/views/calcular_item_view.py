@@ -32,29 +32,50 @@ def api_calcular_item(request, slug):
     def _normalizar_unidade(produto_obj):
         if not produto_obj:
             return None
+
         m2cx = parse_decimal(getattr(produto_obj, "prod_cera_m2cx", None) or 0)
         pccx = parse_decimal(getattr(produto_obj, "prod_cera_pccx", None) or 0)
+        kgcx = parse_decimal(getattr(produto_obj, "prod_cera_kgcx", None) or 0)
+
         if m2cx > 0:
             return "M2"
         if pccx > 0:
             return "PC"
+        if kgcx > 0:
+            return "KG"
+
         un = getattr(produto_obj, "prod_unme", None)
         if un is None:
             return None
+
         codigo = getattr(un, "unid_codi", None) or getattr(un, "unid_desc", None) or str(un)
         codigo = str(codigo).strip().upper()
+
         if codigo in {"METRO QUADRADO", "M²", "M2", "MT2", "M"}:
             return "M2"
         if codigo in {"PEÇA", "PECA", "PÇ", "PC", "UNIDADE", "UNIDADES"}:
             return "PC"
+        if codigo in {"KG", "K", "KILOGRAMA", "KILOGRAMAS"}:
+            return "KG"
+
         return codigo or None
 
     caixas = parse_decimal(resultado.get("caixas_necessarias") or 0)
     m2_por_caixa = parse_decimal(resultado.get("m2_por_caixa") or 0)
     pc_por_caixa = parse_decimal(resultado.get("pc_por_caixa") or 0)
+    kg_por_caixa = parse_decimal(resultado.get("kg_por_caixa") or 0)
+
     metragem_com_perda = parse_decimal(resultado.get("metragem_com_perda") or 0)
     metragem_real = parse_decimal(resultado.get("metragem_real") or 0)
+
+    quantidade_kg = resultado.get("quilos_total")
+    if quantidade_kg is None:
+        quantidade_kg = (caixas * kg_por_caixa) if (caixas > 0 and kg_por_caixa > 0) else 0
+    if quantidade_kg is None or parse_decimal(quantidade_kg) == 0:
+        quantidade_kg = parse_decimal(body.get("item_kg") or 0)
     preco_unit = parse_decimal(body.get("item_unit") or 0)
+    
+    
     if prod_id and preco_unit <= 0:
         try:
             preco_unit = get_preco_produto(banco, prod_id, condicao)
@@ -78,4 +99,8 @@ def api_calcular_item(request, slug):
         "preco_unitario": str(arredondar(preco_unit, 2)),
         "m2_por_caixa": str(arredondar(m2_por_caixa, 2)),
         "pc_por_caixa": str(arredondar(pc_por_caixa, 2)),
-    })
+        "kg": str(arredondar(quantidade_kg, 2)),
+        "kg_total": str(arredondar(quantidade_kg, 2)),
+        "kg_por_caixa": str(arredondar(kg_por_caixa, 2)),
+        })
+

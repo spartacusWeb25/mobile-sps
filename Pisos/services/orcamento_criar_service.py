@@ -113,6 +113,7 @@ class OrcamentoCriarService:
                 item_nume=idx,
                 item_ambi=dados_item.get("item_ambi") or 1,
                 item_suto=subtotal,
+                item_kg=parse_decimal(dados_item.get("item_kg") or dados_item.get("kg_total") or dados_item.get("quilos_total")),
                 **{
                     chave: valor
                     for chave, valor in dados_item.items()

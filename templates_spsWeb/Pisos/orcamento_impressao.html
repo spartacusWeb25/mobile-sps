@@ -318,6 +318,7 @@
           <th>DESCRIÇÃO</th>
           <th style="width:58px">QTDE.</th>
           <th style="width:56px">CAIXAS</th>
+          <th style="width:58px">KG</th>
           <th style="width:70px">MARCA</th>
           <th style="width:48px">U.M</th>
           <th style="width:64px">UNIT.</th>
@@ -327,7 +328,7 @@
       <tbody>
         {% for grupo in grupos %}
         <tr class="grupo">
-          <td colspan="8">{{ grupo.nome }}</td>
+          <td colspan="9">{{ grupo.nome }}</td>
         </tr>
         {% for i in grupo.itens %}
         <tr>
@@ -337,6 +338,7 @@
           </td>
           <td class="num">{{ i.item_quan|numbr:"auto" }}</td>
           <td class="cen">{{ i.item_caixas|default:0 }}</td>
+          <td class="num">{{ i.item_kg_total|default:"0"|numbr }}</td>
           <td class="cen">{{ i.item_marc|default:"" }}</td>
           <td class="cen">{{ i.item_unid|default:"" }}</td>
           <td class="num">{{ i.item_unit|numbr }}</td>
@@ -344,7 +346,7 @@
         </tr>
         {% endfor %}
         <tr class="total-amb">
-          <td colspan="7" class="label">TOTAL AMBIENTE</td>
+          <td colspan="8" class="label">TOTAL AMBIENTE</td>
           <td class="num"><b>{{ grupo.total|numbr }}</b></td>
         </tr>
         {% endfor %}
