@@ -9,18 +9,18 @@ Fluxo:
   3. Chama EmissaoNotaService — que cria a nota, calcula impostos do zero
      com os itens parciais e envia para SEFAZ.
   4. Após autorização, registra a quantidade emitida em cada item
-     (campo iped_quan_emit) e, se o pedido ficar totalmente emitido,
+     (campo item_quan_emit) e, se o pedido ficar totalmente emitido,
      marca pedi_stat_nfe = 'E'; caso contrário, 'P' (pendente).
 
 Modelos assumidos
 ─────────────────
   Itenspedidospisos:
-    iped_quan      – quantidade total do item
-    iped_quan_emit – quantidade já emitida (default 0)   # TODO: adicionar campo se não existir
-    iped_unit      – valor unitário
-    iped_desc      – desconto unitário
-    iped_prod      – FK / id do produto
-    iped_empr / iped_fili / iped_pedi / iped_nume
+    item_quan      – quantidade total do item
+    item_quan_emit – quantidade já emitida (default 0)   # TODO: adicionar campo se não existir
+    item_unit      – valor unitário
+    item_desc      – desconto unitário
+    item_prod      – FK / id do produto
+    item_empr / item_fili / item_pedi / item_nume
 
   Pedidospisos:
     pedi_stat_nfe  – 'N' = não emitido | 'P' = parcial | 'E' = totalmente emitido
@@ -73,11 +73,11 @@ def _cfop_para_tipo(tipo_oper: str) -> str:
 
 def _quantidade_emitida(item) -> Decimal:
     """Retorna quanto já foi emitido no item, com fallback seguro."""
-    return parse_decimal(getattr(item, "iped_quan_emit", None) or 0)
+    return parse_decimal(getattr(item, "item_quan_emit", None) or 0)
 
 
 def _saldo_disponivel(item) -> Decimal:
-    total = parse_decimal(item.iped_quan or 0)
+    total = parse_decimal(item.item_quan or 0)
     emitido = _quantidade_emitida(item)
     return max(total - emitido, Decimal("0"))
 
@@ -161,20 +161,32 @@ class PedidoEmitirNFeService:
             subtotal = saldo * unitario
             total += subtotal
             itens.append({
-                "item_nume": item.iped_nume,
+                "item_nume": item.item_nume,
                 "ambiente": getattr(item, "item_nome_ambi", None) or getattr(item, "item_ambi", None) or "",
-                "produto_codigo": item.iped_prod,
+                "produto_codigo": item.item_prod,
                 "produto_nome": produto_nome,
-                "quantidade_total": str(parse_decimal(getattr(item, "iped_quan", 0))),
+                "quantidade_total": str(parse_decimal(getattr(item, "item_quan", 0))),
                 "quantidade_emitida": str(emitido),
                 "saldo": str(saldo),
                 "unitario": str(unitario),
                 "subtotal": str(subtotal),
             })
 
+        try:
+            from Entidades.models import Entidades
+            cliente_nome = Entidades.objects.using(self.banco).filter(
+                enti_clie=self.pedido.pedi_clie,
+                enti_empr=self.pedido.pedi_empr,
+            ).values_list('enti_nome', flat=True).first()
+        except Exception:
+            cliente_nome = None
+
+        if not cliente_nome:
+            cliente_nome = str(self.pedido.pedi_clie) if getattr(self.pedido, 'pedi_clie', None) is not None else ""
+
         return {
             "pedido_nume": int(self.pedido.pedi_nume),
-            "cliente_nome": getattr(getattr(self.pedido, "cliente", None), "enti_nome", None) or "",
+            "cliente_nome": cliente_nome,
             "status_nfe": str(getattr(self.pedido, "pedi_stat_nfe", "N") or "N"),
             "total": str(total),
             "itens": itens,
@@ -186,12 +198,34 @@ class PedidoEmitirNFeService:
 
     def _carregar_itens(self) -> dict[int, Itenspedidospisos]:
         qs = Itenspedidospisos.objects.using(self.banco).filter(
-            iped_empr=self.empresa,
-            iped_fili=self.filial,
-            iped_pedi=self.pedido.pedi_nume,
-        ).select_related("produto")
+            item_empr=self.empresa,
+            item_fili=self.filial,
+            item_pedi=self.pedido.pedi_nume,
+        ).only('item_empr','item_fili','item_pedi','item_prod','item_nume','item_nome_ambi','item_quan','item_unit','item_suto','item_caix')
 
-        return {item.iped_nume: item for item in qs}
+        items = list(qs)
+
+        # Pré-carrega objetos Produtos correspondentes aos códigos encontrados
+        codigos = {str(getattr(i, 'item_prod', '')).strip() for i in items if getattr(i, 'item_prod', None) is not None}
+        empresas_itens = {str(getattr(i, 'item_empr', '')).strip() for i in items if getattr(i, 'item_empr', None) is not None}
+        produtos_map = {}
+        if codigos:
+            try:
+                from Produtos.models import Produtos
+                produtos_qs = Produtos.objects.using(self.banco).filter(
+                    prod_codi__in=list(codigos),
+                    prod_empr__in=list(empresas_itens) if empresas_itens else list(empresas_itens),
+                ).only('prod_empr', 'prod_codi', 'prod_nome')
+                produtos_map = { (str(p.prod_empr), str(p.prod_codi)): p for p in produtos_qs }
+            except Exception:
+                produtos_map = {}
+
+        # Anexa atributo 'produto' nos itens para compatibilidade com o restante do serviço
+        for it in items:
+            key = (str(getattr(it, 'item_empr', '')).strip(), str(getattr(it, 'item_prod', '')).strip())
+            it.produto = produtos_map.get(key)
+
+        return {item.item_nume: item for item in items}
 
     # ------------------------------------------------------------------
     # Resolve quais quantidades emitir
@@ -245,43 +279,197 @@ class PedidoEmitirNFeService:
 
     def _montar_nota_data(self, dtos: list[ItemEmissaoDTO]) -> dict:
         pedido = self.pedido
-        cliente = pedido.cliente
+        # Resolver cliente pelo campo pedi_clie (legacy) — Pedidospisos não tem relação direta
+        cliente = None
+        try:
+            from Entidades.models import Entidades
+            cliente = Entidades.objects.using(self.banco).filter(
+                enti_clie=pedido.pedi_clie,
+                enti_empr=pedido.pedi_empr,
+            ).first()
+        except Exception:
+            cliente = None
+
         if not cliente:
             raise ValidationError("Cliente não encontrado no pedido.")
 
-        cfop = _cfop_para_tipo(str(pedido.pedi_tipo_oper or ""))
-        tpag = MAPA_TPAG.get(str(pedido.pedi_form_rece or "54"), "01")
+        tipo_oper = str(getattr(pedido, 'pedi_tipo_oper', 'VENDA') or 'VENDA')
+        cfop = _cfop_para_tipo(tipo_oper)
+        tpag = MAPA_TPAG.get(str(getattr(pedido, 'pedi_form_rece', '54')), "01")
+
+        try:
+            from CFOP.motor_fiscal.fiscal import FiscalEngine
+            fiscal_engine = FiscalEngine(banco=self.banco)
+        except Exception:
+            fiscal_engine = None
 
         itens = []
         for dto in dtos:
             item = dto.item_obj
             prod = item.produto
             if not prod:
-                raise ValidationError(
-                    f"Produto do item {item.iped_nume} não encontrado."
-                )
+                raise ValidationError(f"Produto do item {item.item_nume} não encontrado.")
 
             try:
-                prod_id = int(item.iped_prod)
+                prod_id = int(item.item_prod)
             except (TypeError, ValueError):
-                raise ValidationError(
-                    f"Produto inválido no item {item.iped_nume}: {item.iped_prod}"
-                )
+                raise ValidationError(f"Produto inválido no item {item.item_nume}: {item.item_prod}")
+
+            # Tentativa 1: usar tributos armazenados no item (se existirem)
+            cst_icms = getattr(item, 'item_cst_icms', None) or getattr(item, 'item_cst', None)
+            aliq_icms = getattr(item, 'item_aliq_icms', None) or getattr(item, 'item_aliq', None)
+            cst_pis = getattr(item, 'item_cst_pis', None)
+            aliq_pis = getattr(item, 'item_aliq_pis', None)
+            cst_cofins = getattr(item, 'item_cst_cofins', None)
+            aliq_cofins = getattr(item, 'item_aliq_cofins', None)
+            cst_cbs = getattr(item, 'item_cst_cbs', None)
+            aliq_cbs = getattr(item, 'item_aliq_cbs', None)
+            cst_ibs = getattr(item, 'item_cst_ibs', None)
+            aliq_ibs = getattr(item, 'item_aliq_ibs', None)
+            cest = getattr(item, 'item_cest', None)
+
+            # Se não existirem tributos no item, tentar resolver via fiscal padrao (produto/ncm/cfop)
+            # Usar NCM do cadastro do produto (prod.prod_ncm) como fonte primária
+            ncm_code = getattr(prod, 'prod_ncm', None) or getattr(item, 'item_ncm', None)
+            uf_dest = getattr(cliente, 'enti_esta', None) if cliente else None
+
+            if not any([cst_icms, aliq_icms, cst_pis, cst_cofins, cst_cbs, cst_ibs, cest]) and fiscal_engine:
+                try:
+                    fiscal_padrao, fonte = fiscal_engine.resolver_fiscal_padrao(
+                        prod,
+                        ncm_code,
+                        None if not cfop else cfop,
+                        uf_origem=None,
+                        uf_destino=uf_dest,
+                        tipo_entidade=None,
+                        filial_id=self.filial,
+                    )
+                    if fiscal_padrao:
+                        cst_icms = cst_icms or getattr(fiscal_padrao, 'cst_icms', None)
+                        aliq_icms = aliq_icms or getattr(fiscal_padrao, 'aliq_icms', None)
+                        cst_pis = cst_pis or getattr(fiscal_padrao, 'cst_pis', None)
+                        aliq_pis = aliq_pis or getattr(fiscal_padrao, 'aliq_pis', None)
+                        cst_cofins = cst_cofins or getattr(fiscal_padrao, 'cst_cofins', None)
+                        aliq_cofins = aliq_cofins or getattr(fiscal_padrao, 'aliq_cofins', None)
+                        cst_cbs = cst_cbs or getattr(fiscal_padrao, 'cst_cbs', None)
+                        aliq_cbs = aliq_cbs or getattr(fiscal_padrao, 'aliq_cbs', None)
+                        cst_ibs = cst_ibs or getattr(fiscal_padrao, 'cst_ibs', None)
+                        aliq_ibs = aliq_ibs or getattr(fiscal_padrao, 'aliq_ibs', None)
+                        if hasattr(fiscal_padrao, 'cest'):
+                            cest = cest or getattr(fiscal_padrao, 'cest', None)
+                except Exception:
+                    # resolver fiscal falhou — seguir com valores nulos/fallbacks
+                    pass
+
+            # Normalização / conversões
+            try:
+                aliq_icms = float(aliq_icms) if aliq_icms is not None else None
+            except Exception:
+                aliq_icms = None
+            try:
+                aliq_pis = float(aliq_pis) if aliq_pis is not None else None
+            except Exception:
+                aliq_pis = None
+            try:
+                aliq_cofins = float(aliq_cofins) if aliq_cofins is not None else None
+            except Exception:
+                aliq_cofins = None
+            try:
+                aliq_cbs = float(aliq_cbs) if aliq_cbs is not None else None
+            except Exception:
+                aliq_cbs = None
+            try:
+                aliq_ibs = float(aliq_ibs) if aliq_ibs is not None else None
+            except Exception:
+                aliq_ibs = None
 
             itens.append({
                 "produto": prod_id,
                 "quantidade": float(dto.quantidade),
-                "unitario": float(parse_decimal(item.iped_unit or 0)),
-                "desconto": float(parse_decimal(item.iped_desc or 0)),
+                "unitario": float(parse_decimal(item.item_unit or 0)),
+                "desconto": float(parse_decimal(getattr(item, 'item_desc', 0) or 0)),
                 "cfop": cfop,
-                "ncm": prod.prod_ncm,
-                "cest": None,
-                "cst_icms": "000",
-                "cst_pis": "01",
-                "cst_cofins": "01",
+                "ncm": ncm_code,
+                "cest": cest,
+                "cst_icms": str(cst_icms) if cst_icms is not None else None,
+                "aliq_icms": aliq_icms,
+                "cst_pis": str(cst_pis) if cst_pis is not None else None,
+                "aliq_pis": aliq_pis,
+                "cst_cofins": str(cst_cofins) if cst_cofins is not None else None,
+                "aliq_cofins": aliq_cofins,
+                "cst_cbs": str(cst_cbs) if cst_cbs is not None else None,
+                "aliq_cbs": aliq_cbs,
+                "cst_ibs": str(cst_ibs) if cst_ibs is not None else None,
+                "aliq_ibs": aliq_ibs,
             })
 
-        return {
+        # Montar destinatário mínimo (esperado pelos validadores)
+        destinatario_dict = {
+            "documento": (getattr(cliente, 'enti_cnpj', None) or getattr(cliente, 'enti_cpf', None) or str(getattr(cliente, 'enti_clie', ''))),
+            "uf": getattr(cliente, 'enti_esta', None) or getattr(self.pedido, 'pedi_esta', None) or '',
+        }
+
+        # Montar emitente mínimo (dados da filial/emitente)
+        emitente_dict = None
+        try:
+            from Licencas.models import Filiais
+            filial_obj = Filiais.objects.using(self.banco).defer('empr_cert_digi').filter(
+                empr_empr=self.empresa, empr_codi=self.filial
+            ).first()
+            if filial_obj:
+                emitente_dict = {
+                    "cnpj": (getattr(filial_obj, 'empr_docu', '') or '').strip(),
+                    "uf": getattr(filial_obj, 'empr_esta', '') or '',
+                }
+        except Exception:
+            emitente_dict = None
+
+        # Garantir formato dos itens compatível com validadores (codigo, descricao, quantidade, valor_unit)
+        itens_payload = []
+        missing_ncms = []
+        for it in itens:
+            # it currently contains produto (prod_id), quantidade, unitario, desconto, cfop, ncm etc.
+            prod_obj = None
+            try:
+                from Produtos.models import Produtos
+                prod_obj = Produtos.objects.using(self.banco).filter(prod_codi=str(it.get('produto'))).first()
+            except Exception:
+                prod_obj = None
+
+            codigo = prod_obj.prod_codi if prod_obj else str(it.get('produto'))
+            descricao = (getattr(prod_obj, 'prod_nome', None) or '') if prod_obj else ''
+
+            ncm_val = it.get('ncm')
+            if not ncm_val:
+                missing_ncms.append(codigo)
+
+            itens_payload.append({
+                "codigo": codigo,
+                "descricao": descricao or '',
+                "quantidade": it.get('quantidade'),
+                "valor_unit": it.get('unitario'),
+                # repassa os campos fiscais se existirem
+                "cfop": it.get('cfop'),
+                "ncm": ncm_val,
+                "cest": it.get('cest'),
+                "cst_icms": it.get('cst_icms'),
+                "aliq_icms": it.get('aliq_icms'),
+                "cst_pis": it.get('cst_pis'),
+                "aliq_pis": it.get('aliq_pis'),
+                "cst_cofins": it.get('cst_cofins'),
+                "aliq_cofins": it.get('aliq_cofins'),
+                "cst_cbs": it.get('cst_cbs'),
+                "aliq_cbs": it.get('aliq_cbs'),
+                "cst_ibs": it.get('cst_ibs'),
+                "aliq_ibs": it.get('aliq_ibs'),
+            })
+
+        if missing_ncms:
+            # Normalizar erro: lançar ValidationError com mensagem clara sobre quais itens faltam NCM
+            list_str = ', '.join(str(x) for x in missing_ncms)
+            raise ValidationError(f"Itens sem NCM no pedido: {list_str}. Impossível emitir sem NCM.")
+
+        payload = {
             "modelo": "55",
             "serie": "1",
             "numero": 0,
@@ -290,10 +478,13 @@ class PedidoEmitirNFeService:
             "tipo_operacao": 1,
             "finalidade": 1,
             "ambiente": 2,
-            "destinatario": cliente.enti_clie,
-            "itens": itens,
+            "emitente": emitente_dict,
+            "destinatario": destinatario_dict,
+            "itens": itens_payload,
             "tpag": tpag,
         }
+
+        return payload
 
     # ------------------------------------------------------------------
     # Registra o que foi emitido e atualiza status do pedido
@@ -301,7 +492,7 @@ class PedidoEmitirNFeService:
 
     def _registrar_emissao(self, dtos: list[ItemEmissaoDTO]) -> None:
         """
-        Incrementa iped_quan_emit em cada item emitido e
+        Incrementa item_quan_emit em cada item emitido e
         recalcula pedi_stat_nfe no pedido.
         """
         for dto in dtos:
@@ -309,13 +500,13 @@ class PedidoEmitirNFeService:
             atual = _quantidade_emitida(item)
             nova = atual + dto.quantidade
 
-            # TODO: garantir que iped_quan_emit existe no model e migration
+            # TODO: garantir que item_quan_emit existe no model e migration
             Itenspedidospisos.objects.using(self.banco).filter(
-                iped_empr=item.iped_empr,
-                iped_fili=item.iped_fili,
-                iped_pedi=item.iped_pedi,
-                iped_nume=item.iped_nume,
-            ).update(iped_quan_emit=nova)
+                item_empr=item.item_empr,
+                item_fili=item.item_fili,
+                item_pedi=item.item_pedi,
+                item_nume=item.item_nume,
+            ).update(item_quan_emit=nova)
 
         self._atualizar_status_pedido()
 
@@ -325,9 +516,9 @@ class PedidoEmitirNFeService:
         pedi_stat_nfe: 'N' → 'P' (parcial) ou 'E' (totalmente emitido)
         """
         itens = Itenspedidospisos.objects.using(self.banco).filter(
-            iped_empr=self.empresa,
-            iped_fili=self.filial,
-            iped_pedi=self.pedido.pedi_nume,
+            item_empr=self.empresa,
+            item_fili=self.filial,
+            item_pedi=self.pedido.pedi_nume,
         )
 
         totalmente_emitido = all(

@@ -23,18 +23,17 @@ class StatusPisos(models.Model):
         choices=TIPO_CHOICES,
         default=TIPO_ORCAMENTO
     )
-    stat_ativo = models.BooleanField(
-        default=True
+
+    stat_cor = models.CharField(
+        max_length=20,
+        default="#6c757d"
     )
 
-
-
+    stat_ativo = models.BooleanField(default=True)
 
     class Meta:
         db_table = "status_pisos"
-
         ordering = ["stat_tipo", "stat_codigo"]
-
         unique_together = (
             "stat_empr",
             "stat_fili",
@@ -64,7 +63,7 @@ class Orcamentopisos(models.Model):
     field_log_data = models.DateField(db_column='_log_data', blank=True, null=True)  
     field_log_time = models.TimeField(db_column='_log_time', blank=True, null=True)  
     orca_vend = models.IntegerField(blank=True, null=True)
-    orca_stat = models.IntegerField(blank=True, null=True, choices=STATUS_ORCAMENTO, default=0)
+    orca_stat = models.IntegerField(blank=True, null=True, default=0)
     orca_moti_repr = models.CharField(max_length=225, blank=True, null=True)
     orca_pedi = models.IntegerField(blank=True, null=True)
     orca_desc = models.DecimalField(max_digits=15, decimal_places=4, blank=True, null=True)
@@ -165,7 +164,7 @@ class Pedidospisos(models.Model):
     pedi_vend = models.IntegerField(blank=True, null=True)
     field_log_data = models.DateField(db_column='_log_data', blank=True, null=True)  # Field renamed because it started with '_'.
     field_log_time = models.TimeField(db_column='_log_time', blank=True, null=True)  # Field renamed because it started with '_'.
-    pedi_stat = models.IntegerField(blank=True, null=True)
+    pedi_stat = models.IntegerField(blank=True, null=True, default=0)
     pedi_orca = models.IntegerField(blank=True, null=True)
     pedi_fech = models.DateField(blank=True, null=True)
     pedi_form_paga = models.IntegerField(blank=True, null=True)

@@ -1,6 +1,6 @@
 {
-  "debug_id": "8957f7d1-0a28-4179-a935-528acb56d0cb",
-  "timestamp_inicio": "2026-05-19T13:16:38.318997Z",
+  "debug_id": "0361e27a-9ca7-44d3-ba1c-65e8a35a5640",
+  "timestamp_inicio": "2026-05-22T12:30:12.779504Z",
   "ambiente": {
     "debug": true,
     "database_alias": "saveweb001"
@@ -9,10 +9,10 @@
     "versao": "Padrão"
   },
   "nota": {
-    "id": 106,
+    "id": 116,
     "modelo": "55",
     "serie": "001",
-    "numero": "4",
+    "numero": "11",
     "empresa": "1",
     "filial": "1",
     "destinatario_id": "5",
@@ -22,18 +22,18 @@
   },
   "itens": [
     {
-      "id": 133,
-      "produto_id": "42",
-      "descricao_produto": "Cerveja Lager Heineken Garrafa 330 ml",
-      "ncm_produto": "2203****",
+      "id": 154,
+      "produto_id": "26",
+      "descricao_produto": "bolo de cenoura",
+      "ncm_produto": "5601****",
       "cfop_inicial": "5102",
-      "quantidade": "10.0000",
-      "unitario": "5.9900",
+      "quantidade": "1.0000",
+      "unitario": "36.0000",
       "desconto": "0.0000",
       "logs": [
         {
-          "id": "a4922238-1720-4b50-a163-6402f3bc5944",
-          "timestamp": "2026-05-19T13:16:38.465081Z",
+          "id": "69558e3b-1c4c-4fa2-b24e-f18825666bd4",
+          "timestamp": "2026-05-22T12:30:12.870606Z",
           "tipo": "antes_calculo_item",
           "mensagem": "Início do cálculo de impostos para o item.",
           "dados": {
@@ -54,9 +54,86 @@
         "exig_ibs": false,
         "gera_st": false
       },
-      "ncm_resolvido": "2203****",
+      "ncm_resolvido": "5601****",
       "bases": {
-        "raiz": "59.90",
+        "raiz": "36.00",
+        "icms": "0.00",
+        "st": null
+      },
+      "aliquotas": {
+        "ipi": null,
+        "icms": "0.00",
+        "st": null,
+        "pis": "0.00",
+        "cofins": "0.00",
+        "cbs": null,
+        "ibs": null
+      },
+      "valores_calculados": {
+        "ipi": null,
+        "icms": "0.00",
+        "st": null,
+        "pis": "0",
+        "cofins": "0",
+        "cbs": null,
+        "ibs": null
+      },
+      "extras": {
+        "mva_st": null
+      },
+      "csts": {
+        "ipi": null,
+        "icms": "102",
+        "st": null,
+        "pis": "49",
+        "cofins": "49",
+        "cbs": null,
+        "ibs": null
+      },
+      "condicionais_aplicadas": {
+        "icms_habilitado_cfop": false,
+        "ipi_habilitado_cfop": false,
+        "pis_cofins_habilitado_cfop": false,
+        "cbs_habilitado_cfop": false,
+        "ibs_habilitado_cfop": false
+      }
+    },
+    {
+      "id": 155,
+      "produto_id": "28",
+      "descricao_produto": "SOLEO DE PISO",
+      "ncm_produto": "6901****",
+      "cfop_inicial": "5102",
+      "quantidade": "55.3500",
+      "unitario": "169.4700",
+      "desconto": "0.0000",
+      "logs": [
+        {
+          "id": "5d858e57-18e7-4f2f-86e2-7c90d2a9017c",
+          "timestamp": "2026-05-22T12:30:13.358222Z",
+          "tipo": "antes_calculo_item",
+          "mensagem": "Início do cálculo de impostos para o item.",
+          "dados": {
+            "uf_origem": "PR",
+            "uf_destino": "PR",
+            "regime": "1",
+            "tipo_operacao": "VENDA"
+          }
+        }
+      ],
+      "fonte_tributacao": "SPARTACUS",
+      "cfop_resolvido": "5102",
+      "cfop_flags": {
+        "exig_icms": false,
+        "exig_ipi": false,
+        "exig_pis_cofins": false,
+        "exig_cbs": false,
+        "exig_ibs": false,
+        "gera_st": false
+      },
+      "ncm_resolvido": "6901****",
+      "bases": {
+        "raiz": "9380.16",
         "icms": "0.00",
         "st": null
       },
@@ -101,8 +178,8 @@
   ],
   "logs": [
     {
-      "id": "fd118633-40df-4747-ba89-d8a31083fb7c",
-      "timestamp": "2026-05-19T13:16:38.415394Z",
+      "id": "5b37205f-f58d-4dfc-b591-549ea9593e66",
+      "timestamp": "2026-05-22T12:30:12.848226Z",
       "tipo": "contexto_nota",
       "mensagem": "Contexto fiscal inicial da nota.",
       "dados": {
@@ -110,5 +187,5 @@
       }
     }
   ],
-  "timestamp_fim": "2026-05-19T13:16:38.905346Z"
+  "timestamp_fim": "2026-05-22T12:30:13.806209Z"
 }

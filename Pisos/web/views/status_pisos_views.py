@@ -9,6 +9,7 @@ from core.utils import get_db_from_slug
 from Pisos.models import StatusPisos
 from Pisos.web.forms import StatusPisosForm
 from Pisos.services.status_pisos_seed_service import StatusPisosSeedService
+from Pisos.services.status_criar import StatusCriar
 
 
 class StatusPisosBaseMixin:
@@ -47,6 +48,7 @@ class StatusPisosListView(StatusPisosBaseMixin, ListView):
             stat_empr=self.get_empresa(),
             stat_fili=self.get_filial(),
         )
+        
 
         tipo = self.request.GET.get("tipo")
         ativo = self.request.GET.get("ativo")
@@ -73,9 +75,19 @@ class StatusPisosCreateView(StatusPisosBaseMixin, CreateView):
     def form_valid(self, form):
         form.instance.stat_empr = self.get_empresa()
         form.instance.stat_fili = self.get_filial()
+
+        last = StatusPisos.objects.using(self.get_banco()).filter(
+            stat_empr=self.get_empresa(),
+            stat_fili=self.get_filial(),
+        ).order_by("-stat_codigo").first()
+
+        form.instance.stat_codigo = last.stat_codigo + 1 if last else 1
+
         form.instance.save(using=self.get_banco())
 
         messages.success(self.request, "Status criado com sucesso.")
+        StatusCriar.status_orcamentos_criar(self.get_banco(), self.get_empresa(), self.get_filial())
+        StatusCriar.status_pedidos_criar(self.get_banco(), self.get_empresa(), self.get_filial())
         return redirect(self.get_success_url())
 
 

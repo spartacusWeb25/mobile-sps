@@ -194,7 +194,7 @@ class EmissaoServiceCore:
                         pfx_bytes = f.read()
 
         if not pfx_bytes:
-            raise ErroImissao("Filial não possui certificado digital (nem banco, nem arquivo).")
+            raise ErroEmissao("Filial não possui certificado digital (nem banco, nem arquivo).")
 
         # Senha continua criptografada no banco
         from Licencas.crypto import decrypt_str

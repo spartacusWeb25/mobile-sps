@@ -367,7 +367,21 @@
     </div>
     <div class="pedido-header-right">
       <span class="status-label">Status</span>
-      {{ form.pedi_stat }}
+      <span id="statusAtualBadge"
+            class="badge px-3 py-2"
+            style="background-color: {{ status_atual.stat_cor|default:'#6c757d' }};">
+        {{ status_atual.stat_desc|default:'Sem status' }}
+      </span>
+
+      {% if pedido %}
+      <button type="button"
+              class="btn btn-sm btn-outline-primary"
+              onclick="abrirModalStatus()">
+        Alterar
+      </button>
+      {% else %}
+      <span class="small text-muted">Disponível após gravar</span>
+      {% endif %}
     </div>
   </div>
 
@@ -434,7 +448,6 @@
             {% include 'Pisos/parciais/tab_arquivos.html' %}
             {% include 'Pisos/parciais/tab_servicos.html' %}
             {% include 'Pisos/parciais/tab_workflow.html' %}
-            {# ← REMOVIDO: include do modal_emitir_nfe.html daqui #}
           </div>
         </div>
 
@@ -458,7 +471,7 @@
                     <th style="min-width:60px">Caixas</th>
                     <th style="min-width:80px">M²</th>
                     <th style="min-width:80px">KG</th>
-                    <th style="min-width:140px">Produto</th>
+                    <th style="min-width:140px"><a href="{% url 'produtos_web' slug=slug %}" title="Ir para a listagem de produtos" class="prod-link">Produto</a></th>
                     <th style="min-width:160px">Nome Produto</th>
                     <th style="min-width:90px">Quant.</th>
                     <th style="min-width:90px">Unitário</th>
@@ -489,7 +502,7 @@
                       <div class="d-none">{{ f.item_m2 }}</div>
                       <div class="calc-spinner" id="spin-{{ forloop.counter0 }}"></div>
                     </td>
-                    <td class="position-relative">
+                    <td>
                       <input id="kg-{{ forloop.counter0 }}" class="form-control form-control-sm item-kg calc-field"
                         placeholder="0,00" data-index="{{ forloop.counter0 }}" value="{{ f.item_kg.value|default:'' }}"
                         readonly tabindex="-1">
@@ -587,48 +600,100 @@
   </form>
 </div>
 
+{# ── Modais — TODOS fora do <form> ── #}
 {% include 'Pisos/modal_workflow.html' %}
 {% include 'Pisos/modal_romaneio_entrega.html' %}
-{# ← ÚNICO include do modal NF-e, sempre fora do <form> e depois de todos os outros includes #}
 {% include 'Pisos/parciais/modal_emitir_nfe.html' %}
-
+{% include 'Pisos/modal_alterar_status.html' %}
 
 <script>
   const SLUG          = "{{ slug }}";
   const URL_CALCULAR  = "{% url 'PisosWeb:api_calcular_item' slug=slug %}";
   const CSRF          = "{{ csrf_token }}";
-  const URL_AUTO_CLIENTES  = "{% url 'PisosWeb:autocomplete_clientes' slug=slug %}";
+  const URL_AUTO_CLIENTES   = "{% url 'PisosWeb:autocomplete_clientes' slug=slug %}";
   const URL_AUTO_VENDEDORES = "{% url 'PisosWeb:autocomplete_vendedores' slug=slug %}";
-  const URL_AUTO_PRODUTOS  = "{% url 'PisosWeb:autocomplete_produtos' slug=slug %}";
-  const URL_CREDITO   = `/api/${SLUG}/pisos/credito-troca/`;
-  const EXCLUIR_PEDIDO = "{% if pedido %}{{ pedido.pedi_nume }}{% endif %}";
-  const PEDIDO_NUME   = "{% if pedido %}{{ pedido.pedi_nume }}{% endif %}";
-  const URL_TITULOS_PISOS = PEDIDO_NUME
+  const URL_AUTO_PRODUTOS   = "{% url 'PisosWeb:autocomplete_produtos' slug=slug %}";
+  const URL_CREDITO         = `/api/${SLUG}/pisos/credito-troca/`;
+  const EXCLUIR_PEDIDO      = "{% if pedido %}{{ pedido.pedi_nume }}{% endif %}";
+  const PEDIDO_NUME         = "{% if pedido %}{{ pedido.pedi_nume }}{% endif %}";
+  const URL_TITULOS_PISOS   = PEDIDO_NUME
     ? `/api/${SLUG}/pisos/pedidos-pisos/${PEDIDO_NUME}/financeiro/`
     : null;
   const URL_ROMANEIO_ENTREGA = "{% if pedido %}{% url 'PisosWeb:pedidos_pisos_romaneio_entrega_ajax' slug=slug pk=pedido.pedi_nume %}{% endif %}";
+  const URL_ALTERAR_STATUS   = "{% if pedido %}{% url 'PisosWeb:pedidos_pisos_alterar_status' slug=slug pk=pedido.pedi_nume %}{% endif %}";
+  const STATUS_EMPRESA       = "{{ pedido.pedi_empr|default:'' }}";
+  const STATUS_FILIAL        = "{{ pedido.pedi_fili|default:'' }}";
 
-  /* ── showEmitirNFeModal ──────────────────────────────────────────────────
-   * NÃO redefine carregarItensNFe aqui — ela é definida no partial (IIFE).
-   * Usa window.carregarItensNFe para garantir que pega a versão do partial.
-   * ----------------------------------------------------------------------- */
+  /* ── Modal NF-e ── */
   function showEmitirNFeModal() {
     {% if not pedido %}
     showToast('Grave o pedido antes de emitir a NF-e.', 'danger');
     return;
     {% endif %}
-
     var modalEl = document.getElementById('emitirNFeModal');
-    if (!modalEl) {
-      console.error('[NFE] #emitirNFeModal não encontrado no DOM');
-      return;
-    }
+    if (!modalEl) { console.error('[NFE] #emitirNFeModal não encontrado no DOM'); return; }
     bootstrap.Modal.getOrCreateInstance(modalEl).show();
-
     if (typeof window.carregarItensNFe === 'function') {
       window.carregarItensNFe();
     } else {
       console.error('[NFE] carregarItensNFe indefinida — verifique o partial modal_emitir_nfe.html');
+    }
+  }
+
+  /* ── Modal Alterar Status ── */
+  function abrirModalStatus() {
+    var modalEl = document.getElementById('modalAlterarStatus');
+    if (!modalEl) { console.error('Modal #modalAlterarStatus não encontrado'); return; }
+    atualizarPreviewStatus();
+    bootstrap.Modal.getOrCreateInstance(modalEl).show();
+  }
+
+  function atualizarPreviewStatus() {
+    var select  = document.getElementById('novoStatusWorkflow');
+    var preview = document.getElementById('previewStatusWorkflow');
+
+    if (!select || !preview) return;
+
+    if (!select.options.length || select.selectedIndex < 0) {
+      preview.textContent = 'Nenhum status disponível';
+      preview.style.backgroundColor = '#6c757d';
+      return;
+    }
+
+    var option = select.options[select.selectedIndex];
+
+    preview.textContent = option.textContent.trim();
+    preview.style.backgroundColor = option.dataset.cor || '#6c757d';
+  }
+
+  async function salvarStatusWorkflow() {
+    var select = document.getElementById('novoStatusWorkflow');
+    if (!select) return;
+    try {
+      var response = await fetch(URL_ALTERAR_STATUS, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': CSRF,
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          status:  select.value,
+          empresa: STATUS_EMPRESA,
+          filial:  STATUS_FILIAL,
+        }),
+      });
+      var data = await response.json();
+      if (!response.ok || !data.ok) { showToast(data.erro || 'Erro ao alterar status.', 'danger'); return; }
+      var badge = document.getElementById('statusAtualBadge');
+      if (badge) {
+        badge.textContent             = data.status_desc;
+        badge.style.backgroundColor   = data.status_cor || '#6c757d';
+      }
+      bootstrap.Modal.getInstance(document.getElementById('modalAlterarStatus')).hide();
+      showToast('Status alterado com sucesso.', 'success');
+    } catch (e) {
+      showToast('Erro ao alterar status.', 'danger');
     }
   }
 
@@ -678,15 +743,15 @@
   function gerarTitulosFinanceiro() {
     var body = document.getElementById('fin-titulos-body');
     if (!body) return;
-    var total   = parseFloat(document.getElementById('id_pedi_tota')?.value || 0) || 0;
-    var entrada = parseFloat(document.getElementById('fin-entrada')?.value || 0) || 0;
+    var total    = parseFloat(document.getElementById('id_pedi_tota')?.value || 0) || 0;
+    var entrada  = parseFloat(document.getElementById('fin-entrada')?.value  || 0) || 0;
     var restante = Math.max(total - entrada, 0);
     var parcelas = Math.max(parseInt(document.getElementById('fin-parcelas')?.value || '1', 10), 1);
-    var cond = (document.getElementById('fin-condicao')?.value || '').trim();
-    var dias = cond ? cond.split(/\s+/).map(x => parseInt(x, 10)).filter(x => !isNaN(x)) : [];
+    var cond     = (document.getElementById('fin-condicao')?.value || '').trim();
+    var dias     = cond ? cond.split(/\s+/).map(x => parseInt(x, 10)).filter(x => !isNaN(x)) : [];
     var valorParcela = restante / parcelas;
     var base = new Date();
-    var formaEl = document.getElementById('id_pedi_form_paga');
+    var formaEl    = document.getElementById('id_pedi_form_paga');
     var formaLabel = formaEl?.selectedOptions?.[0]?.text || '-';
     body.innerHTML = '';
     for (var i = 0; i < parcelas; i++) {
@@ -715,21 +780,17 @@
       var resp = await fetch(URL_TITULOS_PISOS, { headers: { 'Accept': 'application/json' } });
       if (!resp.ok) return;
       var data = await resp.json();
-
-      var entradaEl   = document.getElementById('fin-entrada');
-      var parcelasEl  = document.getElementById('fin-parcelas');
-      var condEl      = document.getElementById('fin-condicao');
-      var restanteEl  = document.getElementById('fin-restante');
-
-      var entrada = parseNumberBR(data.entrada);
+      var entradaEl  = document.getElementById('fin-entrada');
+      var parcelasEl = document.getElementById('fin-parcelas');
+      var condEl     = document.getElementById('fin-condicao');
+      var restanteEl = document.getElementById('fin-restante');
+      var entrada    = parseNumberBR(data.entrada);
       if (entradaEl)  entradaEl.value  = entrada.toFixed(2);
       if (parcelasEl) parcelasEl.value = String(data.parcelas || 1);
       if (condEl)     condEl.value     = String(data.condicao || '').trim();
-
       var total    = parseNumberBR(document.getElementById('id_pedi_tota')?.value);
       var restante = Math.max(total - entrada, 0);
       if (restanteEl) restanteEl.value = fmtBRL(restante);
-
       var titulos = Array.isArray(data.titulos) ? data.titulos : [];
       body.innerHTML = '';
       titulos.forEach(function (t) {
@@ -1220,7 +1281,7 @@
     var body = document.getElementById('romaneio-entrega-body');
     var info = document.getElementById('romaneio-entrega-info');
     if (!body) return;
-    var lista    = Array.isArray(itens) ? itens : [];
+    var lista     = Array.isArray(itens) ? itens : [];
     var pendentes = lista.filter(function (x) {
       return parseNumberBR(x?.item_quan_pend) > 0 || parseNumberBR(x?.item_caix_pend) > 0;
     });
@@ -1231,10 +1292,10 @@
       return;
     }
     pendentes.forEach(function (it) {
-      var maxQtd       = Math.max(parseNumberBR(it.item_quan_pend), 0);
-      var maxCx        = Math.max(parseNumberBR(it.item_caix_pend), 0);
-      var entregarQtd  = maxQtd > 0 ? maxQtd : 0;
-      var entregarCx   = maxCx  > 0 ? maxCx  : 0;
+      var maxQtd      = Math.max(parseNumberBR(it.item_quan_pend), 0);
+      var maxCx       = Math.max(parseNumberBR(it.item_caix_pend), 0);
+      var entregarQtd = maxQtd > 0 ? maxQtd : 0;
+      var entregarCx  = maxCx  > 0 ? maxCx  : 0;
       var tr = document.createElement('tr');
       tr.dataset.itemNume = String(it.item_nume || '');
       tr.innerHTML =
@@ -1326,6 +1387,13 @@
     validateBeforeSubmit();
     markServerErrors();
     bindPrecoCondicao();
+
+    /* Inicializar preview do status no select do modal */
+    var selectStatus = document.getElementById('novoStatusWorkflow');
+    if (selectStatus) {
+      selectStatus.addEventListener('change', atualizarPreviewStatus);
+      atualizarPreviewStatus();
+    }
 
     document.getElementById('fin-gerar')?.addEventListener('click', gerarTitulosFinanceiro);
     document.getElementById('fin-limpar')?.addEventListener('click', function () {

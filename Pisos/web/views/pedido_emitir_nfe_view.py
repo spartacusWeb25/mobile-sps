@@ -57,33 +57,43 @@ class PedidoPisosEmitirNFeView(View):
         itens_emitir = self._parse_itens(request)
         return self._processar(request, slug, pk, itens_emitir=itens_emitir)
 
+    def _is_ajax(self, request):
+        accept = request.headers.get("Accept", "")
+        content = request.content_type or ""
+        return "application/json" in accept or "application/json" in content
+
     def _itens_json(self, request, slug, pk):
         banco = get_licenca_db_config(request) or "default"
         empresa_id = int(request.session.get("empresa_id", 1))
         filial_id = int(request.session.get("filial_id", 1))
 
-        pedido = get_object_or_404(
-            Pedidospisos.objects.using(banco).filter(
-                pedi_empr=empresa_id,
-                pedi_fili=filial_id,
-            ),
-            pedi_nume=int(pk),
-        )
+        try:
+            pedido = get_object_or_404(
+                Pedidospisos.objects.using(banco).filter(
+                    pedi_empr=empresa_id,
+                    pedi_fili=filial_id,
+                ),
+                pedi_nume=int(pk),
+            )
 
-        from Pisos.services.pedido_emitir_nfe_service import PedidoEmitirNFeService
+            from Pisos.services.pedido_emitir_nfe_service import PedidoEmitirNFeService
 
-        service = PedidoEmitirNFeService(
-            banco=banco,
-            pedido=pedido,
-            empresa=empresa_id,
-            filial=filial_id,
-        )
-        dados = service.listar_itens_nfe()
-        return JsonResponse({"ok": True, **dados})
+            service = PedidoEmitirNFeService(
+                banco=banco,
+                pedido=pedido,
+                empresa=empresa_id,
+                filial=filial_id,
+            )
+            dados = service.listar_itens_nfe()
+            return JsonResponse({"ok": True, **dados})
+        except Exception as exc:
+            logger.exception("Erro ao carregar itens NF-e pedido %s", pk)
+            return JsonResponse({"ok": False, "erro": str(exc)}, status=500)
 
     # ------------------------------------------------------------------
 
     def _processar(self, request, slug, pk, itens_emitir):
+        is_ajax = self._is_ajax(request)
         banco = get_licenca_db_config(request) or "default"
         empresa_id = int(request.session.get("empresa_id", 1))
         filial_id = int(request.session.get("filial_id", 1))
@@ -113,22 +123,30 @@ class PedidoPisosEmitirNFeView(View):
                 msg = f"NF-e autorizada! Chave: {chave}"
                 if status == "204":
                     msg = f"NF-e autorizada (duplicidade SEFAZ). Chave: {chave}"
+                if is_ajax:
+                    return JsonResponse({"ok": True, "sefaz": sefaz, "msg": msg})
                 messages.success(request, msg)
             else:
-                messages.warning(
-                    request,
-                    f"Rejeição SEFAZ: {status} — {sefaz.get('motivo', '')}",
-                )
+                motivo = sefaz.get("motivo", "")
+                if is_ajax:
+                    return JsonResponse(
+                        {"ok": False, "sefaz": sefaz, "erro": f"Rejeição SEFAZ: {status} — {motivo}"},
+                        status=422,
+                    )
+                messages.warning(request, f"Rejeição SEFAZ: {status} — {motivo}")
 
         except ValidationError as exc:
-            # Erros de validação de negócio (saldo insuficiente, item inválido…)
             detail = "; ".join(exc.messages) if hasattr(exc, "messages") else str(exc)
-            messages.error(request, f"Erro de validação: {detail}")
             logger.warning("Validação ao emitir NF-e pedido %s: %s", pk, detail)
+            if is_ajax:
+                return JsonResponse({"ok": False, "erro": f"Erro de validação: {detail}"}, status=422)
+            messages.error(request, f"Erro de validação: {detail}")
 
         except Exception as exc:
-            messages.error(request, f"Erro ao emitir NF-e: {exc}")
             logger.exception("Erro inesperado ao emitir NF-e pedido %s", pk)
+            if is_ajax:
+                return JsonResponse({"ok": False, "erro": f"Erro ao emitir NF-e: {exc}"}, status=500)
+            messages.error(request, f"Erro ao emitir NF-e: {exc}")
 
         return self._redirect(slug)
 

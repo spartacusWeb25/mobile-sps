@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container py-4">
+<div class="container px-4 py-3">
 
   <div class="d-flex justify-content-between align-items-center mb-3">
     <div>
@@ -14,11 +14,11 @@
     </div>
 
     <div class="d-flex gap-2">
-      <a href="{% url 'PisosWeb:status_pisos_criar_padrao' slug %}" class="btn btn-outline-secondary">
-        Criar padrão
+      <a href="{% url 'PisosWeb:status_pisos_criar_padrao' slug %}" class="btn btn-outline-success">
+       <i class="bi bi-plus"></i> Criar padrão
       </a>
 
-      <a href="{% url 'PisosWeb:status_pisos_criar' slug %}" class="btn btn-primary">
+      <a href="{% url 'PisosWeb:status_pisos_criar' slug %}" class="btn btn-outline-primary">
         <i class="bi bi-plus"></i> Novo
       </a>
     </div>
@@ -46,7 +46,7 @@
       </div>
 
       <div class="col-md-4">
-        <button class="btn btn-dark w-100">
+        <button class="btn btn-outline-info w-100">
           Filtrar
         </button>
       </div>
@@ -63,6 +63,7 @@
             <th>Descrição</th>
             <th>Tipo</th>
             <th>Ativo</th>
+            <th>Cor</th>
             <th class="text-end">Ações</th>
           </tr>
         </thead>
@@ -73,6 +74,7 @@
             <td>{{ item.stat_codigo }}</td>
             <td>{{ item.stat_desc }}</td>
             <td>{{ item.get_stat_tipo_display }}</td>
+            <td>{{ item.stat_cor|default:"" }}</td>
             <td>
               {% if item.stat_ativo %}
               <span class="badge bg-success">Ativo</span>

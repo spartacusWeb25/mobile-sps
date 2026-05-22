@@ -7,6 +7,7 @@ from Pisos.services.utils_service import parse_decimal, arredondar
 from Pisos.services.credito_troca_service import CreditoTrocaPisosService
 
 
+
 class OrcamentoAtualizarService:
     def executar(self, *, banco, orcamento, dados, itens):
         if not itens:
@@ -20,6 +21,17 @@ class OrcamentoAtualizarService:
             dados_orcamento.pop("parametros", None)
             dados_orcamento.pop("usar_credito", None)
             dados_orcamento.pop("valor_credito", None)
+
+            # Garantir que qualquer alteração concorrente ao status seja carregada
+            try:
+                orcamento.refresh_from_db(using=banco)
+            except Exception:
+                # Se refresh falhar por algum motivo, prosseguir conservadoramente
+                pass
+
+            # Se o formulário não enviou explicitamente orca_stat (campo vazio), não sobrescrever
+            if 'orca_stat' in dados_orcamento and (dados_orcamento.get('orca_stat') is None or str(dados_orcamento.get('orca_stat')).strip() == ""):
+                dados_orcamento.pop('orca_stat', None)
 
             for campo, valor in dados_orcamento.items():
                 setattr(orcamento, campo, valor)

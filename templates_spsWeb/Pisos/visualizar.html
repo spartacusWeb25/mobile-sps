@@ -13,6 +13,18 @@
     --muted: #9aa8c7;
   }
 
+  [data-bs-theme="light"] {
+    --bg: #fff;
+    --bg2: #f9f9f9;
+    --panel: #f5f5f5;
+    --border: #e5e5e5;
+    --border2: #d5d5d5;
+    --accent: #4f8ef7;
+    --text: #000;
+    --muted: #9aa999;
+
+  }
+
   .page-wrap {
     max-width: calc(100vw - 48px);
     margin: 18px auto;
@@ -72,6 +84,12 @@
     --bs-table-color: var(--text);
     --bs-table-border-color: rgba(255, 255, 255, .08);
   }
+
+  .btn-outline-primary-white {
+    --bs-btn-bg: transparent;
+    --bs-btn-color: var(--accent);
+    --bs-btn-border-color: var(--accent);
+  }
 </style>
 
 <div class="page-wrap">
@@ -81,20 +99,23 @@
       <span style="color:var(--muted);font-weight:400">#{{ pedido.pedi_nume }}</span>
     </div>
     <div class="d-flex gap-2 flex-wrap">
-      <a class="btn btn-outline-secondary btn-sm" href="{% url 'PisosWeb:pedidos_pisos_listar' slug=slug %}">Listar</a>
+      <a class="btn btn-outline-secondary btn-sm" href="{% url 'PisosWeb:pedidos_pisos_listar' slug=slug %}"><i
+          class="bi bi-list"></i> Listar</a>
       <a class="btn btn-outline-primary btn-sm"
-        href="{% url 'PisosWeb:pedidos_pisos_editar' slug=slug pk=pedido.pedi_nume %}">Editar</a>
-      <a class="btn btn-outline-dark btn-sm" target="_blank"
-        href="{% url 'PisosWeb:pedidos_pisos_imprimir' slug=slug pk=pedido.pedi_nume %}">Imprimir</a>
+        href="{% url 'PisosWeb:pedidos_pisos_editar' slug=slug pk=pedido.pedi_nume %}"><i class="bi bi-pencil"></i>
+        Editar</a>
+      <a class="btn btn-outline-primary-white btn-sm" target="_blank"
+        href="{% url 'PisosWeb:pedidos_pisos_imprimir' slug=slug pk=pedido.pedi_nume %}"><i class="bi bi-printer"></i>
+        Imprimir</a>
     </div>
   </div>
 
-  <div class="page-body">
+  <div class="page-body {% if request.GET.white %} white {% endif %}">
     <div class="row g-3 mb-3">
       <div class="col-12 col-lg-4">
         <div class="cardx">
           <div class="label">Cliente</div>
-          <div class="value">{{ pedido.pedi_clie|default:"—" }}</div>
+          <div class="value">{{ pedido.pedi_clie|default:"—" }} - {{ cliente_nome|default:"—" }}</div>
         </div>
       </div>
       <div class="col-12 col-lg-4">
@@ -143,7 +164,10 @@
         <table class="table table-sm table-dark table-striped align-middle mb-0">
           <thead>
             <tr>
-              <th>Produto</th>
+              <th><a href="{% url 'produtos_web' slug=slug %}" title="Ir para a listagem de produtos"
+                  class="prod-link">Produto</a></th>
+              <th class="text-start">Nome Produto</th>
+              <th class="text-start">NCM</th>
               <th class="text-end">Qtd</th>
               <th class="text-end">Unit</th>
               <th class="text-end">Total</th>
@@ -153,13 +177,15 @@
             {% for i in itens %}
             <tr>
               <td>{{ i.item_prod }}</td>
+              <td>{{ i.item_prod_nome }}</td>
+              <td>{{ i.item_prod_ncm }}</td>
               <td class="text-end">{{ i.item_quan }}</td>
               <td class="text-end">{{ i.item_unit }}</td>
               <td class="text-end">{{ i.item_suto }}</td>
             </tr>
             {% empty %}
             <tr>
-              <td colspan="4">Sem itens</td>
+              <td colspan="8">Sem itens</td>
             </tr>
             {% endfor %}
           </tbody>

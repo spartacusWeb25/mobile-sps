@@ -1,9 +1,19 @@
-<li class="nav-item" data-modulo="O_S" data-modulo="ordemservico" data-modulo-requerido="ordemdeservico"
-    data-modulo-requerido="O_S">
-    <a class="nav-link" href="/web/login/" data-slug-route="/web/{slug}/os/">
+<li class="nav-item" data-modulo="O_S">
+    <a class="nav-link collapsed" data-bs-toggle="collapse" href="#" role="button" data-bs-target="#collapseO_S"
+        aria-expanded="false" data-modulo-requerido="O_S" aria-controls="collapseO_S">
         <i class="bi bi-wrench-adjustable fs-4"></i> Ordens de Serviço
     </a>
-    <a class="nav-link" href="/web/login/" data-slug-route="/web/{slug}/osexterna/">
-        <i class="bi bi-truck fs-4"></i> O.S. Externa
-    </a>
+    <div class="collapse" id="collapseO_S">
+    <ul class="list-unstyled ps-5">
+        <li class="nav-item">
+        <a class="nav-link" href="/web/login/" data-slug-route="/web/{slug}/os/">
+            <i class="bi bi-wrench-adjustable fs-4"></i> Ordens de Serviço
+        </a>
+        </li>
+        <li class="nav-item">
+        <a class="nav-link" href="/web/login/" data-slug-route="/web/{slug}/osexterna/">
+            <i class="bi bi-truck fs-4"></i> O.S. Externa
+        </a>
+        </li>
+    </div>
 </li>

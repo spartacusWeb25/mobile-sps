@@ -24,6 +24,9 @@ from Pisos.web.views.status_pisos_views import (
     StatusPisosDeleteView,
     criar_status_padrao_view,
 )
+from Pisos.web.views.status_workflow_views import alterar_status_pedido_pisos, alterar_status_orcamento_pisos
+
+
 
 
 app_name = "PisosWeb"
@@ -88,5 +91,18 @@ urlpatterns = [
         "status-pisos/criar-padrao/",
         criar_status_padrao_view,
         name="status_pisos_criar_padrao"
+    ),
+    # Pisos/urls.py
+
+    path(
+        "pedidos-pisos/<int:pk>/alterar-status/",
+        alterar_status_pedido_pisos,
+        name="pedidos_pisos_alterar_status",
+    ),
+
+    path(
+        "orcamentos-pisos/<int:pk>/alterar-status/",
+        alterar_status_orcamento_pisos,
+        name="orcamentos_pisos_alterar_status",
     ),
 ]

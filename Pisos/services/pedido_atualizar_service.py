@@ -24,6 +24,16 @@ class PedidoAtualizarService:
             dados_pedido.pop("valor_credito", None)
 
             # Atualiza campos
+            # Garantir que temos o estado mais recente (evita sobrescrever status mudado por modal/ajax)
+            try:
+                pedido.refresh_from_db(using=banco)
+            except Exception:
+                pass
+
+            # Se o formulário não enviou explicitamente pedi_stat (campo vazio), não sobrescrever
+            if 'pedi_stat' in dados_pedido and (dados_pedido.get('pedi_stat') is None or str(dados_pedido.get('pedi_stat')).strip() == ""):
+                dados_pedido.pop('pedi_stat', None)
+
             for campo, valor in dados_pedido.items():
                 setattr(pedido, campo, valor)
 

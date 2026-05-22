@@ -2,22 +2,113 @@
 {% load staticfiles %}
 {% load finance_tags %}
 {% block content %}
+<style>
+  :root {
+    --bg: #151925;
+    --bg2: #202640;
+    --panel: #171b2a;
+    --border: #303a6b;
+    --border2: #344078;
+    --accent: #4f8ef7;
+    --text: #e2e8f8;
+    --muted: #9aa8c7;
+  }
+
+  [data-bs-theme="light"] {
+    --bg: #fff;
+    --bg2: #f9f9f9;
+    --panel: #f5f5f5;
+    --border: #e5e5e5;
+    --border2: #d5d5d5;
+    --accent: #4f8ef7;
+    --text: #000;
+    --muted: #9aa999;
+
+  }
+
+  .page-wrap {
+    max-width: calc(100vw - 48px);
+    margin: 18px auto;
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: 12px;
+    color: var(--text);
+    overflow: hidden;
+  }
+
+  .page-head {
+    padding: 10px 18px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border2);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .page-title {
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .page-body {
+    padding: 16px;
+  }
+
+  .cardx {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+  }
+
+  .label {
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+
+  .value {
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .table-dark {
+    --bs-table-bg: transparent;
+    --bs-table-striped-bg: rgba(255, 255, 255, .03);
+    --bs-table-color: var(--text);
+    --bs-table-border-color: rgba(255, 255, 255, .08);
+  }
+  .btn-outline-primary-white {
+    --bs-btn-bg: transparent;
+    --bs-btn-color: var(--accent);
+    --bs-btn-border-color: var(--accent);
+  }
+</style>
 
 <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h3>Orçamento Pisos #{{ orcamento.orca_nume }}</h3>
+        <h3><i class="bi bi-clipboard2-minus"></i> Orçamento Pisos #{{ orcamento.orca_nume }}</h3>
         <div class="d-flex gap-2 flex-wrap">
             <a class="btn btn-outline-secondary" href="{% url 'PisosWeb:orcamentos_pisos_listar' slug=slug %}"><i
                     class="bi bi-list"></i> Listar</a>
             <a class="btn btn-outline-primary"
                 href="{% url 'PisosWeb:orcamentos_pisos_editar' slug=slug pk=orcamento.orca_nume %}"><i
                     class="bi bi-pencil"></i> Editar</a>
-            <a class="btn btn-outline-light" target="_blank"
+            <a class="btn btn-outline-primary-white" target="_blank"
                 href="{% url 'PisosWeb:orcamentos_pisos_imprimir' slug=slug pk=orcamento.orca_nume %}"><i
                     class="bi bi-printer"></i> Imprimir</a>
             {% if orcamento.orca_stat != 2 %}
             <a class="btn btn-outline-success"
-                href="{% url 'PisosWeb:orcamentos_pisos_exportar' slug=slug numero=orcamento.orca_nume %}">Exportar para
+                href="{% url 'PisosWeb:orcamentos_pisos_exportar' slug=slug numero=orcamento.orca_nume %}">
+                <i class="bi bi-clipboard2-plus"></i>
+                Exportar para
                 Pedido</a>
             {% else %}
             {% if orcamento.orca_pedi %}
@@ -32,8 +123,8 @@
     <div class="row g-3 mb-3">
         <div class="col-12 col-lg-4">
             <div class="card card-body">
-                <div><b>Cliente:</b> {{ orcamento.orca_clie }}</div>
-                <div><b>Vendedor:</b> {{ orcamento.orca_vend }}</div>
+                <div><b>Cliente:</b> {{ cliente_nome|default:orcamento.orca_clie }} </div>
+                <div><b>Vendedor:</b> {{ vendedor_nome|default:orcamento.orca_vend }} </div>
                 <div><b>Data:</b> {{ orcamento.orca_data }}</div>
             </div>
         </div>
@@ -47,7 +138,7 @@
         </div>
         <div class="col-12 col-lg-4">
             <div class="card card-body">
-                <div><b>Status:</b> {{ orcamento.get_orca_stat_display|default:orcamento.orca_stat }}</div>
+                <div><b>Status:</b> {% if orcamento.orca_stat %}{{ orcamento.get_orca_stat_display|default:orcamento.orca_stat }} {% else %} — {% endif %}</div>
                 <div><b>Pedido:</b> {% if orcamento.orca_pedi %} Exportado para o Pedido Nº {{ orcamento.orca_pedi }}  {% else %} — {% endif %} </div>
                 <div><b>Prev. Entrega:</b> {{ orcamento.orca_data_prev_entr|default:"—" }}</div>
             </div>
@@ -65,7 +156,10 @@
             <thead>
                 <tr>
                     <th>Ambiente</th>
-                    <th>Desc</th>
+                    <th>Produto</th>
+
+                    <th class="text-start">Desc</th>
+                    <th class="text-start">NCM</th>
                     <th class="text-end">Caixas</th>
                     <th class="text-end">M²</th>
                     <th class="text-end">Qtd</th>
@@ -78,7 +172,8 @@
                 <tr>
                     <td>{{ i.item_nome_ambi|default:i.item_ambi }}</td>
                     <td>{{ i.item_prod }}</td>
-                    <td class="text-end">{{ i.item_desc|default:0 }}</td>
+                    <td class="text-start">{{ i.item_prod_nome|default:i.item_prod|default:0 }}</td>
+                    <td class="text-start">{{ i.item_prod_ncm|default:i.item_prod|default:0 }}</td>
                     <td class="text-end">{{ i.item_caixas|default:0 }}</td>
                     <td class="text-end">{{ i.item_m2 }}</td>
                     <td class="text-end">{{ i.item_quan }}</td>
@@ -87,7 +182,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="6">Sem itens.</td>
+                    <td colspan="9">Sem itens.</td>
                 </tr>
                 {% endfor %}
             </tbody>

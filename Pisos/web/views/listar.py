@@ -5,7 +5,10 @@ from django.views.generic import ListView
 
 from core.utils import get_db_from_slug
 from core.mixins.vendedor_mixin import VendedorEntidadeMixin
-from Pisos.models import Pedidospisos
+
+from Pisos.models import Pedidospisos, StatusPisos
+from Pisos.services.status_pisos_service import StatusPisosService
+
 from Entidades.models import Entidades
 
 
@@ -13,16 +16,6 @@ class PedidopisosListView(VendedorEntidadeMixin, ListView):
     template_name = "Pisos/listar.html"
     context_object_name = "pedidos"
     paginate_by = 50
-
-    status_nome = {
-        0: "Aguardando Financeiro",
-        1: "Aguardando Compras",
-        2: "Compra Efetuada",
-        3: "Material Disponível",
-        4: "Logística",
-        5: "Cancelado",
-        6: "Concluído",
-    }
 
     def get_queryset(self):
         self.banco = get_db_from_slug(self.kwargs["slug"])
@@ -33,6 +26,8 @@ class PedidopisosListView(VendedorEntidadeMixin, ListView):
             .using(self.banco)
             .filter(pedi_data__gte=data_min)
             .only(
+                "pedi_empr",
+                "pedi_fili",
                 "pedi_nume",
                 "pedi_clie",
                 "pedi_vend",
@@ -42,7 +37,8 @@ class PedidopisosListView(VendedorEntidadeMixin, ListView):
             )
             .order_by("-pedi_nume")
         )
-        qs = self.filter_por_vendedor(qs, 'pedi_vend')
+
+        qs = self.filter_por_vendedor(qs, "pedi_vend")
 
         numero = self.request.GET.get("pedi_nume")
         cliente_nome = self.request.GET.get("cliente_nome")
@@ -70,8 +66,8 @@ class PedidopisosListView(VendedorEntidadeMixin, ListView):
             qs = qs.filter(pedi_vend__in=list(vendedores_ids))
 
         rows = list(qs)
-        entidades_ids = set()
 
+        entidades_ids = set()
         for p in rows:
             if p.pedi_clie:
                 entidades_ids.add(p.pedi_clie)
@@ -87,10 +83,26 @@ class PedidopisosListView(VendedorEntidadeMixin, ListView):
             for e in entidades
         }
 
+        if rows:
+            empresa = rows[0].pedi_empr
+            filial = rows[0].pedi_fili
+
+            status_map = StatusPisosService.mapa_status(
+                banco=self.banco,
+                empresa=empresa,
+                filial=filial,
+                tipo=StatusPisos.TIPO_PEDIDO,
+            )
+        else:
+            status_map = {}
+
         for p in rows:
+            status_obj = status_map.get(p.pedi_stat)
+
             p.cliente_nome = nomes.get(p.pedi_clie, "")
             p.vendedor_nome = nomes.get(p.pedi_vend, "")
-            p.status_nome = self.status_nome.get(p.pedi_stat, "")
+            p.status_desc = status_obj.stat_desc if status_obj else "Sem status"
+            p.status_cor = status_obj.stat_cor if status_obj else "#6c757d"
 
         return rows
 
@@ -98,8 +110,10 @@ class PedidopisosListView(VendedorEntidadeMixin, ListView):
         context = super().get_context_data(**kwargs)
         data_min = date(2020, 1, 1)
 
-        base_qs = Pedidospisos.objects.using(self.banco).filter(pedi_data__gte=data_min)
-        base_qs = self.filter_por_vendedor(base_qs, 'pedi_vend')
+        base_qs = Pedidospisos.objects.using(self.banco).filter(
+            pedi_data__gte=data_min
+        )
+        base_qs = self.filter_por_vendedor(base_qs, "pedi_vend")
 
         context["slug"] = self.kwargs["slug"]
 

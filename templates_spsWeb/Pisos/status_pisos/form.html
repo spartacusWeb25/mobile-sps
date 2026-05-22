@@ -1,11 +1,14 @@
 {% extends "base.html" %}
 
 {% block content %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/form.css' %}">
 <div class="container py-4" style="max-width: 720px;">
 
   <div class="card border-0 shadow-sm">
     <div class="card-header bg-transparent">
       <h4 class="mb-0">
+        <i class="bi bi-clipboard2-plus"></i>
         {% if object %}Editar Status{% else %}Novo Status{% endif %}
       </h4>
     </div>
@@ -14,11 +17,14 @@
       {% csrf_token %}
 
       <div class="card-body">
-
+        {% if object %}
         <div class="mb-3">
-          <label class="form-label">Código</label>
+          <label class="form-label">Código<span class="text-danger"> (Gerado automaticamente)</span></label>
           {{ form.stat_codigo }}
         </div>
+        {% else %}
+        {% endif %}
+
 
         <div class="mb-3">
           <label class="form-label">Descrição</label>
@@ -29,7 +35,17 @@
           <label class="form-label">Tipo</label>
           {{ form.stat_tipo }}
         </div>
+        <div class="mb-3">
+          <label class="form-label">Cor do Status</label>
+          <div class="d-flex align-items-center gap-3">
+            {{ form.stat_cor }}
 
+            <span id="preview-status" class="badge px-3 py-2"
+              style="background-color: {{ form.stat_cor.value|default:'#6c757d' }};">
+              Prévia do Status
+            </span>
+          </div>
+        </div>
         <div class="form-check mb-3">
           {{ form.stat_ativo }}
           <label class="form-check-label">
@@ -52,4 +68,16 @@
   </div>
 
 </div>
+<script>
+  const inputCor = document.getElementById("id_stat_cor");
+  const preview = document.getElementById("preview-status");
+
+  if (inputCor && preview) {
+    preview.style.backgroundColor = inputCor.value || "#6c757d";
+
+    inputCor.addEventListener("input", function () {
+      preview.style.backgroundColor = this.value;
+    });
+  }
+</script>
 {% endblock %}

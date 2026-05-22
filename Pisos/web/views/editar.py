@@ -5,56 +5,130 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from core.utils import get_db_from_slug
 from core.mixins.vendedor_mixin import VendedorEntidadeMixin
+
 from Entidades.models import Entidades
-from Pisos.models import Pedidospisos, Itenspedidospisos
+from Pisos.models import Pedidospisos, Itenspedidospisos, StatusPisos
+
 from Pisos.services.cliente_service import ClienteEnderecoService
-from Pisos.web.forms import PedidoPisosForm, ItemPedidoPisosFormSet, PedidosPisosArquivosForm
+from Pisos.services.status_pisos_service import StatusPisosService
+from Pisos.services.status_listar import StatusPisosServices
+
 from Pisos.services.pedido_arquivos_service import PedidoPisosArquivosService
 from Pisos.services.pedido_atualizar_service import PedidoAtualizarService
+
+from Pisos.web.forms import (
+    PedidoPisosForm,
+    ItemPedidoPisosFormSet,
+    PedidosPisosArquivosForm,
+)
 
 
 def editar_pedido_pisos(request, slug, pk):
     banco = get_db_from_slug(slug)
+
     mix = VendedorEntidadeMixin()
     mix.request = request
-    qs = mix.filter_por_vendedor(Pedidospisos.objects.using(banco), 'pedi_vend')
+
+    qs = mix.filter_por_vendedor(
+        Pedidospisos.objects.using(banco),
+        "pedi_vend"
+    )
+
     pedido = get_object_or_404(qs, pedi_nume=pk)
+
+    status_opcoes = StatusPisosServices.listar_status(
+        banco=banco,
+        empresa=pedido.pedi_empr,
+        filial=pedido.pedi_fili,
+        tipo=StatusPisos.TIPO_PEDIDO,
+    )
+
+    status_atual = StatusPisosServices.get_status_atual(
+        banco=banco,
+        empresa=pedido.pedi_empr,
+        filial=pedido.pedi_fili,
+        tipo=StatusPisos.TIPO_PEDIDO,
+        codigo=pedido.pedi_stat,
+    )
 
     if request.method != "POST" and getattr(pedido, "pedi_clie", None):
         precisa = any(
             not getattr(pedido, campo, None)
-            for campo in ["pedi_ende", "pedi_nume_ende", "pedi_bair", "pedi_cida", "pedi_esta"]
-            if hasattr(pedido, campo)
-        )
-        if precisa:
-            ClienteEnderecoService.preencher_pedido(banco=banco, pedido=pedido)
-            pedido.save(using=banco, update_fields=[
+            for campo in [
                 "pedi_ende",
                 "pedi_nume_ende",
                 "pedi_bair",
                 "pedi_cida",
                 "pedi_esta",
-                "pedi_comp",
-                "pedi_comp_fone",
-            ])
+            ]
+            if hasattr(pedido, campo)
+        )
+
+        if precisa:
+            ClienteEnderecoService.preencher_pedido(
+                banco=banco,
+                pedido=pedido
+            )
+
+            pedido.save(
+                using=banco,
+                update_fields=[
+                    "pedi_ende",
+                    "pedi_nume_ende",
+                    "pedi_bair",
+                    "pedi_cida",
+                    "pedi_esta",
+                    "pedi_comp",
+                    "pedi_comp_fone",
+                ],
+            )
 
     cliente_label = ""
     if pedido.pedi_clie:
-        ent = Entidades.objects.using(banco).filter(enti_clie=pedido.pedi_clie).first()
+        ent = Entidades.objects.using(banco).filter(
+            enti_clie=pedido.pedi_clie
+        ).first()
+
         if ent:
             cliente_label = f"{ent.enti_clie} - {ent.enti_nome}"
 
     vendedor_label = ""
     if pedido.pedi_vend:
-        vend = Entidades.objects.using(banco).filter(enti_clie=pedido.pedi_vend).first()
+        vend = Entidades.objects.using(banco).filter(
+            enti_clie=pedido.pedi_vend
+        ).first()
+
         if vend:
             vendedor_label = f"{vend.enti_clie} - {vend.enti_nome}"
 
     initial_itens = []
+
     if request.method != "POST":
-        for i in Itenspedidospisos.objects.using(banco).filter(item_empr=pedido.pedi_empr, item_fili=pedido.pedi_fili, item_pedi=pk).order_by("item_nume"):
-            initial_itens.append({k: getattr(i, k) for k in ["item_ambi", "item_nome_ambi", "item_prod", "item_prod_nome", "item_m2", "item_quan", "item_caix", "item_unit", "item_suto", "item_desc", "item_queb", "item_obse"]})
-    from decimal import Decimal, InvalidOperation
+        for i in Itenspedidospisos.objects.using(banco).filter(
+            item_empr=pedido.pedi_empr,
+            item_fili=pedido.pedi_fili,
+            item_pedi=pk,
+        ).order_by("item_nume"):
+
+            initial_itens.append({
+                k: getattr(i, k)
+                for k in [
+                    "item_ambi",
+                    "item_nome_ambi",
+                    "item_prod",
+                    "item_prod_nome",
+                    "item_m2",
+                    "item_quan",
+                    "item_caix",
+                    "item_unit",
+                    "item_suto",
+                    "item_desc",
+                    "item_queb",
+                    "item_obse",
+                ]
+            })
+
+    from decimal import Decimal
     from Produtos.models import Produtos
     from Pisos.services.calculo_services import calcular_item
 
@@ -62,8 +136,11 @@ def editar_pedido_pisos(request, slug, pk):
         try:
             prod_id = it.get("item_prod")
             produto = None
+
             if prod_id:
-                produto = Produtos.objects.using(banco).filter(prod_codi=prod_id).first()
+                produto = Produtos.objects.using(banco).filter(
+                    prod_codi=prod_id
+                ).first()
 
             class ItemProxy:
                 pass
@@ -74,18 +151,28 @@ def editar_pedido_pisos(request, slug, pk):
             ip.item_unit = it.get("item_unit") or 0
 
             resultado = calcular_item(ip, produto=produto)
-            kg_total = resultado.get("quilos_total") or resultado.get("kg_total") or 0
-            # garantir Decimal
-            it["item_kg"] = Decimal(str(kg_total)) if kg_total is not None else Decimal(0)
+            kg_total = (
+                resultado.get("quilos_total")
+                or resultado.get("kg_total")
+                or 0
+            )
+
+            it["item_kg"] = (
+                Decimal(str(kg_total))
+                if kg_total is not None
+                else Decimal(0)
+            )
+
         except Exception:
             it["item_kg"] = Decimal(0)
 
-    # Normalizar valores para inicial do formset (usar strings com ponto decimal)
     for it in initial_itens:
         for fld in ("item_m2", "item_quan", "item_kg"):
             v = it.get(fld)
+
             if v is None:
                 continue
+
             try:
                 it[fld] = str(v)
             except Exception:
@@ -93,13 +180,19 @@ def editar_pedido_pisos(request, slug, pk):
 
     item_kg = initial_itens[0].get("item_kg") if initial_itens else 0
     item = initial_itens[0] if initial_itens else {}
-    
+
     form = PedidoPisosForm(request.POST or None, instance=pedido)
-    formset = ItemPedidoPisosFormSet(request.POST or None, prefix="itens", initial=initial_itens)
+
+    formset = ItemPedidoPisosFormSet(
+        request.POST or None,
+        prefix="itens",
+        initial=initial_itens,
+    )
 
     if request.method == "POST" and form.is_valid() and formset.is_valid():
         parametros = {}
         raw_parametros = (request.POST.get("parametros") or "").strip()
+
         if raw_parametros:
             try:
                 parametros = json.loads(raw_parametros) or {}
@@ -107,36 +200,76 @@ def editar_pedido_pisos(request, slug, pk):
                 parametros = {}
 
         itens = []
+
         for f in formset:
             if not f.cleaned_data or f.cleaned_data.get("DELETE"):
                 continue
-            item = {k: v for k, v in f.cleaned_data.items() if k != "DELETE"}
-            if item.get("item_prod"):
-                if not item.get("item_ambi"):
-                    item["item_ambi"] = len(itens) + 1
-                itens.append(item)
+
+            item_form = {
+                k: v
+                for k, v in f.cleaned_data.items()
+                if k != "DELETE"
+            }
+
+            if item_form.get("item_prod"):
+                if not item_form.get("item_ambi"):
+                    item_form["item_ambi"] = len(itens) + 1
+
+                itens.append(item_form)
 
         try:
-            dados = {**form.cleaned_data, "parametros": parametros}
+            dados = {
+                **form.cleaned_data,
+                "parametros": parametros,
+            }
+
             PedidoAtualizarService().executar(
                 banco=banco,
                 pedido=pedido,
                 dados=dados,
                 itens=itens,
             )
+
             messages.success(request, f"Pedido {pk} atualizado com sucesso.")
-            return redirect("PisosWeb:pedidos_pisos_visualizar", slug=slug, pk=pk)
+
+            return redirect(
+                "PisosWeb:pedidos_pisos_visualizar",
+                slug=slug,
+                pk=pk,
+            )
+
         except Exception as exc:
-            messages.error(request, f"Erro ao atualizar pedido: {PedidoAtualizarService.normalizar_erro(exc)}")
+            messages.error(
+                request,
+                f"Erro ao atualizar pedido: {PedidoAtualizarService.normalizar_erro(exc)}"
+            )
 
     arquivos = []
-    arquivos_form = None
+
     try:
-        arquivos = PedidoPisosArquivosService.listar(banco, empresa_id=pedido.pedi_empr, pedido_numero=pedido.pedi_nume)
-        arquivos_form = PedidosPisosArquivosForm(initial={"arqu_empr": pedido.pedi_empr, "arqu_pedi": pedido.pedi_nume})
+        arquivos = PedidoPisosArquivosService.listar(
+            banco,
+            empresa_id=pedido.pedi_empr,
+            pedido_numero=pedido.pedi_nume,
+        )
+
+        arquivos_form = PedidosPisosArquivosForm(
+            initial={
+                "arqu_empr": pedido.pedi_empr,
+                "arqu_pedi": pedido.pedi_nume,
+            }
+        )
+
     except Exception:
         arquivos = []
-        arquivos_form = PedidosPisosArquivosForm(initial={"arqu_empr": pedido.pedi_empr, "arqu_pedi": pedido.pedi_nume})
+
+        arquivos_form = PedidosPisosArquivosForm(
+            initial={
+                "arqu_empr": pedido.pedi_empr,
+                "arqu_pedi": pedido.pedi_nume,
+            }
+        )
+
     for a in arquivos:
         nome = (getattr(a, "arqu_nome_arqu", "") or "").strip()
         setattr(a, "pode_exibir", PedidoPisosArquivosService.pode_exibir(nome))
@@ -156,6 +289,9 @@ def editar_pedido_pisos(request, slug, pk):
             "arquivos": arquivos,
             "arquivos_form": arquivos_form,
             "item_kg": item_kg,
-            "item": initial_itens[0],
+            "item": item,
+            "status_opcoes": status_opcoes,
+            "status_codigo_atual": pedido.pedi_stat,
+            "status_atual": status_atual,
         },
     )

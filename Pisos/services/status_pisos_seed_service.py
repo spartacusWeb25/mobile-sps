@@ -33,6 +33,7 @@ class StatusPisosSeedService:
                 stat_tipo=StatusPisos.TIPO_ORCAMENTO,
                 stat_codigo=item["codigo"],
                 stat_desc=item["desc"],
+                stat_cor="#007bff",  # Default color for orçamentos
             ))
 
         for item in STATUS_PEDIDO:
@@ -42,6 +43,7 @@ class StatusPisosSeedService:
                 stat_tipo=StatusPisos.TIPO_PEDIDO,
                 stat_codigo=item["codigo"],
                 stat_desc=item["desc"],
+                stat_cor="#28a745",  # Default color for pedidos
             ))
 
         return StatusPisos.objects.using(banco).bulk_create(

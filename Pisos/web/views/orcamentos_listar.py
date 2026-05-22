@@ -5,7 +5,10 @@ from django.views.generic import ListView
 
 from core.utils import get_db_from_slug
 from core.mixins.vendedor_mixin import VendedorEntidadeMixin
-from Pisos.models import Orcamentopisos
+
+from Pisos.models import Orcamentopisos, StatusPisos
+from Pisos.services.status_pisos_service import StatusPisosService
+
 from Entidades.models import Entidades
 
 
@@ -23,10 +26,21 @@ class OrcamentoPisosListView(VendedorEntidadeMixin, ListView):
             Orcamentopisos.objects
             .using(self.banco)
             .filter(orca_data__gte=data_min)
+            .only(
+                "orca_empr",
+                "orca_fili",
+                "orca_nume",
+                "orca_clie",
+                "orca_vend",
+                "orca_data",
+                "orca_tota",
+                "orca_stat",
+            )
             .order_by("-orca_nume")
         )
-        qs = self.filter_por_vendedor(qs, 'orca_vend')
-        
+
+        qs = self.filter_por_vendedor(qs, "orca_vend")
+
         numero = self.request.GET.get("orca_nume")
         cliente_nome = self.request.GET.get("cliente_nome")
         vendedor_nome = self.request.GET.get("vendedor_nome")
@@ -50,11 +64,12 @@ class OrcamentoPisosListView(VendedorEntidadeMixin, ListView):
                 enti_nome__icontains=vendedor_nome
             ).values_list("enti_clie", flat=True)
 
-            qs = qs.filter(orca_vend__in=list(vendedores_ids))  
+            qs = qs.filter(orca_vend__in=list(vendedores_ids))
+
+        rows = list(qs)
 
         entidades_ids = set()
-
-        for o in qs:
+        for o in rows:
             if o.orca_clie:
                 entidades_ids.add(o.orca_clie)
             if o.orca_vend:
@@ -69,26 +84,47 @@ class OrcamentoPisosListView(VendedorEntidadeMixin, ListView):
             for e in entidades
         }
 
-        for o in qs:
+        if rows:
+            empresa = rows[0].orca_empr
+            filial = rows[0].orca_fili
+
+            status_map = StatusPisosService.mapa_status(
+                banco=self.banco,
+                empresa=empresa,
+                filial=filial,
+                tipo=StatusPisos.TIPO_ORCAMENTO,
+            )
+        else:
+            status_map = {}
+
+        for o in rows:
+            status_obj = status_map.get(o.orca_stat)
+
             o.cliente_nome = nomes.get(o.orca_clie, "")
             o.vendedor_nome = nomes.get(o.orca_vend, "")
+            o.status_desc = status_obj.stat_desc if status_obj else "Sem status"
+            o.status_cor = status_obj.stat_cor if status_obj else "#6c757d"
 
-        return qs
+        return rows
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         data_min = date(2020, 1, 1)
 
-        base_qs = Orcamentopisos.objects.using(self.banco).filter(orca_data__gte=data_min)
-        base_qs = self.filter_por_vendedor(base_qs, 'orca_vend')
+        base_qs = Orcamentopisos.objects.using(self.banco).filter(
+            orca_data__gte=data_min
+        )
+        base_qs = self.filter_por_vendedor(base_qs, "orca_vend")
 
         context["slug"] = self.kwargs["slug"]
+
         context["metricas"] = {
             "total_orcamentos": base_qs.count(),
             "total_valor": base_qs.aggregate(total=Sum("orca_tota")).get("total") or 0,
             "total_exportados": base_qs.filter(orca_stat=2).count(),
             "total_cancelados": base_qs.filter(orca_stat=3).count(),
         }
+
         context["filtros"] = {
             "orca_nume": self.request.GET.get("orca_nume", ""),
             "cliente_nome": self.request.GET.get("cliente_nome", ""),

@@ -3,7 +3,6 @@ from django.forms import formset_factory
 from Pisos.models import Pedidospisos, Orcamentopisos, PedidosPisosArquivos, StatusPisos
 
 
-
 class StatusPisosForm(forms.ModelForm):
     class Meta:
         model = StatusPisos
@@ -12,21 +11,29 @@ class StatusPisosForm(forms.ModelForm):
             "stat_desc",
             "stat_tipo",
             "stat_ativo",
+            "stat_cor",
         ]
 
         widgets = {
-            "stat_codigo": forms.NumberInput(attrs={"class": "form-control"}),
-            "stat_desc": forms.TextInput(attrs={"class": "form-control"}),
-            "stat_tipo": forms.Select(attrs={"class": "form-select"}),
-            "stat_ativo": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+            "stat_codigo": forms.TextInput(attrs={
+                "class": "form-control",
+                "readonly": True
+            }),
+            "stat_desc": forms.TextInput(attrs={
+                "class": "form-control"
+            }),
+            "stat_tipo": forms.Select(attrs={
+                "class": "form-select"
+            }),
+            "stat_ativo": forms.CheckboxInput(attrs={
+                "class": "form-check-input"
+            }),
+            "stat_cor": forms.TextInput(attrs={
+                "type": "color",
+                "class": "form-control form-control-color",
+                "style": "width: 70px; height: 42px;",
+            }),
         }
-        labels = {
-            "stat_codigo": "Código",
-            "stat_desc": "Descrição",
-            "stat_tipo": "Tipo",
-            "stat_ativo": "Ativo",
-        }
-
 
 PEDIDO_STATUS_CHOICES = (
     (0, "Aguardando Financeiro"),

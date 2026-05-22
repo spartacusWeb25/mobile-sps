@@ -1,9 +1,21 @@
 <li class="nav-item" data-modulo="planogerencial">
-    <a class="nav-link" href="/web/login/" data-slug-route="/web/{slug}/planogerencial/planos/">
-        <i class="bi bi-arrow-counterclockwise fs-4"></i> Planos Gerenciais
+    <a class="nav-link collapsed" data-bs-toggle="collapse" href="#" role="button"
+        data-bs-target="#collapsePlanogerencial" aria-expanded="false" data-modulo-requerido="planogerencial"
+        aria-controls="collapsePlanogerencial">
+        <i class="bi bi-arrow-counterclockwise fs-5"></i> Planos Gerenciais
     </a>
-    <a class="nav-link" href="/web/login/" data-slug-route="/web/{slug}/planogerencial/mascara/">
-        <i class="bi bi-sliders fs-4"></i> Máscara do Plano Gerencial
-    </a>
-
+        <div class="collapse" id="collapsePlanogerencial">
+            <ul class="list-unstyled ps-5">
+                <li class="nav-item">
+                        <a class="nav-link collapsed" href="/web/login/" data-slug-route="/web/{slug}/planogerencial/planos/">
+                            <i class="bi bi-arrow-counterclockwise fs-4"></i> Planos Gerenciais
+                        </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link collapsed" href="/web/login/" data-slug-route="/web/{slug}/planogerencial/mascara/">
+                        <i class="bi bi-sliders fs-4"></i> Máscara do Plano Gerencial
+                    </a>
+                </li>
+            </ul>
+        </div>
 </li>
