@@ -48,5 +48,5 @@ class MascaraGerencialListView(PlanoGerencialContextMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         context["slug"] = self.get_slug()
         context["empresa"] = self.get_empresa()
-        context["form"] = MascaraGerencialForm()
+        context["form"] = MascaraGerencialForm(empresa=self.get_empresa())
         return context
