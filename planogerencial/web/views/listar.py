@@ -1,5 +1,5 @@
 from .contexto import PlanoGerencialContextMixin
-from ..forms import PlanoGerencialForm
+from ..forms import PlanoGerencialForm, PlanoGerencialMascaraForm as MascaraGerencialForm
 from ...services.mascara_service import MascaraGerencialService
 from ...models import PlanoGerencialMascara, PlanoGerencialConta
 from django.views.generic import TemplateView
