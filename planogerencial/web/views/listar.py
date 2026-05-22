@@ -34,7 +34,7 @@ class PlanoGerencialListView(PlanoGerencialContextMixin, TemplateView):
         return context
 
 class MascaraGerencialListView(PlanoGerencialContextMixin, TemplateView):
-    template_name = "planogerencial/mascara_tree.html"
+    template_name = "planogerencial/mascara_form.html"
     context_object_name = "contas"
     paginate_by = 10
     ordering = ["gere_nivel"]
