@@ -40,7 +40,7 @@ class StatusPisosBaseMixin:
 
 
 class StatusPisosListView(StatusPisosBaseMixin, ListView):
-    template_name = "pisos/status_pisos/listar.html"
+    template_name = "Pisos/status_pisos/listar.html"
     context_object_name = "status"
 
     def get_queryset(self):
@@ -70,7 +70,7 @@ class StatusPisosListView(StatusPisosBaseMixin, ListView):
 
 
 class StatusPisosCreateView(StatusPisosBaseMixin, CreateView):
-    template_name = "pisos/status_pisos/form.html"
+    template_name = "Pisos/status_pisos/form.html"
 
     def form_valid(self, form):
         form.instance.stat_empr = self.get_empresa()
@@ -92,7 +92,7 @@ class StatusPisosCreateView(StatusPisosBaseMixin, CreateView):
 
 
 class StatusPisosUpdateView(StatusPisosBaseMixin, UpdateView):
-    template_name = "pisos/status_pisos/form.html"
+    template_name = "Pisos/status_pisos/form.html"
     pk_url_kwarg = "pk"
 
     def get_queryset(self):
@@ -108,7 +108,7 @@ class StatusPisosUpdateView(StatusPisosBaseMixin, UpdateView):
 
 
 class StatusPisosDeleteView(StatusPisosBaseMixin, DeleteView):
-    template_name = "pisos/status_pisos/confirmar_exclusao.html"
+    template_name = "Pisos/status_pisos/confirmar_exclusao.html"
     pk_url_kwarg = "pk"
 
     def get_queryset(self):
