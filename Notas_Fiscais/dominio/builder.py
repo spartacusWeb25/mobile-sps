@@ -4,6 +4,16 @@ from Licencas.models import Filiais
 from Produtos.models import Produtos
 import re
 
+try:
+    from decouple import config
+except Exception:
+    def config(name, default=None):
+        return default
+
+from datetime import datetime
+from dotenv import load_dotenv
+
+load_dotenv()
 
 class NotaBuilder:
     def __init__(self, nota: Nota, database: str | None = None):
@@ -200,8 +210,6 @@ class NotaBuilder:
     # RESPONSÁVEL TÉCNICO
     # -------------------------------
     def build_responsavel_tecnico(self):
-        from decouple import config
-        
         f = self.filial
         fone = self._somente_digitos(f.empr_fone)
         if not fone:
@@ -243,10 +251,17 @@ class NotaBuilder:
         if not csrt_key and hasattr(f, 'empr_csrt_key'):
             csrt_key = getattr(f, 'empr_csrt_key')
             
+        # Usar CNPJ/contato/email hardcoded testados por ambiente
+        # Para homologação e produção os valores já foram testados e aprovados.
+        # Mantemos o padrão atual (hardcoded) salvo se houver override via .env ou Filiais.
+        cnpj_default = str(config('RESP_TEC_CNPJ', default='20702018000142')) or '20702018000142'
+        contato_default = str(config('RESP_TEC_CONTATO', default='DANIEL DIAS DE ALMEIDA')) or 'DANIEL DIAS DE ALMEIDA'
+        email_default = str(config('RESP_TEC_EMAIL', default='spartacus@spartacus.com.br')) or 'spartacus@spartacus.com.br'
+
         return ResponsavelTecnicoDTO(
-            cnpj="20702018000142",
-            contato="DANIEL DIAS DE ALMEIDA",
-            email="spartacus@spartacus.com.br",
+            cnpj=cnpj_default,
+            contato=contato_default,
+            email=email_default,
             fone=fone,
             id_csrt=id_csrt,
             hash_csrt=None, # Será calculado no SefazAdapter se tiver key

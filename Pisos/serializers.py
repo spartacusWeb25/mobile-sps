@@ -198,6 +198,7 @@ class OrcamentopisosSerializer(BancoContextMixin, serializers.ModelSerializer):
 class ItenspedidospisosSerializer(BancoContextMixin, serializers.ModelSerializer):
     produto_nome = serializers.SerializerMethodField()
     item_nume = serializers.IntegerField(read_only=True)
+    item_quan_emit = serializers.DecimalField(max_digits=16, decimal_places=2, read_only=True)
 
     
     class Meta:

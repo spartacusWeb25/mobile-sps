@@ -374,6 +374,17 @@
       "database": "savexml2031",
       "username": "savexml2031",
       "password": "y11111333333"
+    },
+    {
+      "ssh": "Disabled",
+      "previewLimit": 50,
+      "server": "base.rtalmeida.com.br",
+      "port": 5432,
+      "driver": "PostgreSQL",
+      "name": "rtaweb001",
+      "database": "rtaweb0001",
+      "username": "rtaweb0001",
+      "password": "@RtAWeb"
     }
   ],
   "liveServer.settings.port": 5501

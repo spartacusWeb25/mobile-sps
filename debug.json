@@ -1,6 +1,6 @@
 {
-  "debug_id": "0361e27a-9ca7-44d3-ba1c-65e8a35a5640",
-  "timestamp_inicio": "2026-05-22T12:30:12.779504Z",
+  "debug_id": "768450a3-6431-468e-a094-300002681571",
+  "timestamp_inicio": "2026-05-25T20:36:50.815679Z",
   "ambiente": {
     "debug": true,
     "database_alias": "saveweb001"
@@ -9,10 +9,10 @@
     "versao": "Padrão"
   },
   "nota": {
-    "id": 116,
+    "id": 133,
     "modelo": "55",
     "serie": "001",
-    "numero": "11",
+    "numero": "28",
     "empresa": "1",
     "filial": "1",
     "destinatario_id": "5",
@@ -22,18 +22,18 @@
   },
   "itens": [
     {
-      "id": 154,
-      "produto_id": "26",
-      "descricao_produto": "bolo de cenoura",
-      "ncm_produto": "5601****",
+      "id": 189,
+      "produto_id": "27",
+      "descricao_produto": "MANTA ASFÁLTICA",
+      "ncm_produto": "8481****",
       "cfop_inicial": "5102",
-      "quantidade": "1.0000",
-      "unitario": "36.0000",
+      "quantidade": "23.0000",
+      "unitario": "124.6600",
       "desconto": "0.0000",
       "logs": [
         {
-          "id": "69558e3b-1c4c-4fa2-b24e-f18825666bd4",
-          "timestamp": "2026-05-22T12:30:12.870606Z",
+          "id": "af57f1dd-fd6d-4f36-8071-afb99e849afe",
+          "timestamp": "2026-05-25T20:36:50.926259Z",
           "tipo": "antes_calculo_item",
           "mensagem": "Início do cálculo de impostos para o item.",
           "dados": {
@@ -54,9 +54,9 @@
         "exig_ibs": false,
         "gera_st": false
       },
-      "ncm_resolvido": "5601****",
+      "ncm_resolvido": "8481****",
       "bases": {
-        "raiz": "36.00",
+        "raiz": "2867.18",
         "icms": "0.00",
         "st": null
       },
@@ -99,18 +99,18 @@
       }
     },
     {
-      "id": 155,
+      "id": 188,
       "produto_id": "28",
       "descricao_produto": "SOLEO DE PISO",
       "ncm_produto": "6901****",
       "cfop_inicial": "5102",
       "quantidade": "55.3500",
-      "unitario": "169.4700",
+      "unitario": "135.5800",
       "desconto": "0.0000",
       "logs": [
         {
-          "id": "5d858e57-18e7-4f2f-86e2-7c90d2a9017c",
-          "timestamp": "2026-05-22T12:30:13.358222Z",
+          "id": "840df4c2-e9f6-495a-96f3-f29ca5db0d69",
+          "timestamp": "2026-05-25T20:36:51.436785Z",
           "tipo": "antes_calculo_item",
           "mensagem": "Início do cálculo de impostos para o item.",
           "dados": {
@@ -133,7 +133,7 @@
       },
       "ncm_resolvido": "6901****",
       "bases": {
-        "raiz": "9380.16",
+        "raiz": "7504.35",
         "icms": "0.00",
         "st": null
       },
@@ -178,8 +178,8 @@
   ],
   "logs": [
     {
-      "id": "5b37205f-f58d-4dfc-b591-549ea9593e66",
-      "timestamp": "2026-05-22T12:30:12.848226Z",
+      "id": "66a94354-3084-4645-8100-7d0794276741",
+      "timestamp": "2026-05-25T20:36:50.902235Z",
       "tipo": "contexto_nota",
       "mensagem": "Contexto fiscal inicial da nota.",
       "dados": {
@@ -187,5 +187,5 @@
       }
     }
   ],
-  "timestamp_fim": "2026-05-22T12:30:13.806209Z"
+  "timestamp_fim": "2026-05-25T20:36:51.830099Z"
 }

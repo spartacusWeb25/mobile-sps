@@ -211,6 +211,7 @@ class Pedidospisos(models.Model):
     pedi_data_inst_work = models.DateField(blank=True, null=True)
     pedi_data_ence_work = models.DateField(blank=True, null=True)
     pedi_desc_ence_work = models.TextField(blank=True, null=True)
+    pedi_stat_nfe = models.CharField(max_length=1, blank=True, null=True, choices=[('N', 'Não'), ('P', 'Parcial'), ('E', 'Emitido Totalmente')])
     
     class Meta:
         managed = False
@@ -250,6 +251,7 @@ class Itenspedidospisos(models.Model):
     item_prod_nome = models.CharField(max_length=100, blank=True, null=True)
     item_quan_entr = models.DecimalField(max_digits=16, decimal_places=2, blank=True, null=True)
     item_caix_entr = models.DecimalField(max_digits=16, decimal_places=2, blank=True, null=True)
+    item_quan_emit = models.DecimalField(max_digits=16, decimal_places=2, blank=True, null=True)
 
     class Meta:
         managed = False

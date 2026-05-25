@@ -31,6 +31,7 @@ Modelos assumidos
 
 import logging
 from decimal import Decimal
+from datetime import datetime
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -133,20 +134,43 @@ class PedidoEmitirNFeService:
         if not dtos:
             raise ValidationError("Nenhum item com saldo disponível para emissão.")
 
-        nota_data = self._montar_nota_data(dtos)
+        nota_data, itens_payload = self._montar_nota_data(dtos)
 
-        resultado = EmissaoNotaService.emitir_nota(
-            dto_dict=nota_data,
-            empresa=self.empresa,
-            filial=self.filial,
-            database=self.banco,
-        )
+        # 1) criar rascunho da nota usando NotaService
+        from Notas_Fiscais.services.nota_service import NotaService
+        from Notas_Fiscais.aplicacao.emissao_service import EmissaoService
 
-        sefaz = resultado.get("sefaz", {})
-        if str(sefaz.get("status")) in ("100", "204"):
+        nota = None
+        try:
+            nota = NotaService.criar(
+                data=nota_data,
+                itens=itens_payload,
+                impostos_map=None,
+                transporte=None,
+                empresa=self.empresa,
+                filial=self.filial,
+                database=self.banco,
+            )
+        except Exception as e:
+            # Se o erro vier de campos que NotaService espera (ex: destinatario deve ser ID),
+            # adaptar data/itens para o formato que NotaService.criar espera.
+            raise ValidationError(f"Erro ao criar nota rascunho: {e}")
+
+        # 2) emitir usando o EmissaoService (mesmo fluxo da UI)
+        try:
+            emissor = EmissaoService(slug=self.banco, database=self.banco)
+            resposta = emissor.emitir(nota.id)
+        except Exception as e:
+            # Mantemos o rascunho salvo para auditoria e reemissão
+            raise ValidationError(f"Falha ao emitir NF-e: {e}")
+
+        status_sefaz = resposta.get("status")
+        if str(status_sefaz) in ("100", "204"):
+            # Só registra quantidades se autorizado
             self._registrar_emissao(dtos)
 
-        return resultado
+        # Retornar no mesmo formato que a view espera (chave 'sefaz')
+        return {"sefaz": resposta}
 
     def listar_itens_nfe(self) -> dict:
         itens_db = self._carregar_itens()
@@ -193,7 +217,9 @@ class PedidoEmitirNFeService:
         }
 
     # ------------------------------------------------------------------
-    # Carrega itens do pedido
+    # FIX 1: Carrega TODOS os campos dos itens — sem .only() restritivo.
+    # O .only() anterior omitia item_ncm, item_desc, item_cst_icms, etc.,
+    # causando ValidationError("Itens sem NCM...") antes mesmo de chegar na SEFAZ.
     # ------------------------------------------------------------------
 
     def _carregar_itens(self) -> dict[int, Itenspedidospisos]:
@@ -201,7 +227,9 @@ class PedidoEmitirNFeService:
             item_empr=self.empresa,
             item_fili=self.filial,
             item_pedi=self.pedido.pedi_nume,
-        ).only('item_empr','item_fili','item_pedi','item_prod','item_nume','item_nome_ambi','item_quan','item_unit','item_suto','item_caix')
+        )
+        # Não usar .only() aqui: campos fiscais (ncm, cst, aliq, desc, etc.)
+        # precisam estar disponíveis em _montar_nota_data sem queries adicionais.
 
         items = list(qs)
 
@@ -215,8 +243,8 @@ class PedidoEmitirNFeService:
                 produtos_qs = Produtos.objects.using(self.banco).filter(
                     prod_codi__in=list(codigos),
                     prod_empr__in=list(empresas_itens) if empresas_itens else list(empresas_itens),
-                ).only('prod_empr', 'prod_codi', 'prod_nome')
-                produtos_map = { (str(p.prod_empr), str(p.prod_codi)): p for p in produtos_qs }
+                )
+                produtos_map = {(str(p.prod_empr), str(p.prod_codi)): p for p in produtos_qs}
             except Exception:
                 produtos_map = {}
 
@@ -274,12 +302,15 @@ class PedidoEmitirNFeService:
         return dtos
 
     # ------------------------------------------------------------------
-    # Monta o dict que vai para EmissaoNotaService
+    # FIX 2: _montar_nota_data — loop único, sem reprocessamento redundante.
+    # O código original construía `itens` com chave "produto" e depois
+    # reconstruía `itens_payload` com chave "codigo" relendo o banco de novo.
+    # Agora: um único loop já usa o produto pré-carregado em _carregar_itens.
     # ------------------------------------------------------------------
 
-    def _montar_nota_data(self, dtos: list[ItemEmissaoDTO]) -> dict:
+    def _montar_nota_data(self, dtos: list[ItemEmissaoDTO]) -> tuple:  # retorna (nota_data, itens_payload)
         pedido = self.pedido
-        # Resolver cliente pelo campo pedi_clie (legacy) — Pedidospisos não tem relação direta
+
         cliente = None
         try:
             from Entidades.models import Entidades
@@ -303,19 +334,19 @@ class PedidoEmitirNFeService:
         except Exception:
             fiscal_engine = None
 
-        itens = []
+        uf_dest = getattr(cliente, 'enti_esta', None)
+
+        itens_payload = []
+        missing_ncms = []
+
         for dto in dtos:
             item = dto.item_obj
+            # Usa o produto pré-carregado em _carregar_itens — sem nova query ao banco
             prod = item.produto
             if not prod:
                 raise ValidationError(f"Produto do item {item.item_nume} não encontrado.")
 
-            try:
-                prod_id = int(item.item_prod)
-            except (TypeError, ValueError):
-                raise ValidationError(f"Produto inválido no item {item.item_nume}: {item.item_prod}")
-
-            # Tentativa 1: usar tributos armazenados no item (se existirem)
+            # Campos fiscais direto do item (todos disponíveis pois removemos .only())
             cst_icms = getattr(item, 'item_cst_icms', None) or getattr(item, 'item_cst', None)
             aliq_icms = getattr(item, 'item_aliq_icms', None) or getattr(item, 'item_aliq', None)
             cst_pis = getattr(item, 'item_cst_pis', None)
@@ -328,17 +359,16 @@ class PedidoEmitirNFeService:
             aliq_ibs = getattr(item, 'item_aliq_ibs', None)
             cest = getattr(item, 'item_cest', None)
 
-            # Se não existirem tributos no item, tentar resolver via fiscal padrao (produto/ncm/cfop)
-            # Usar NCM do cadastro do produto (prod.prod_ncm) como fonte primária
-            ncm_code = getattr(prod, 'prod_ncm', None) or getattr(item, 'item_ncm', None)
-            uf_dest = getattr(cliente, 'enti_esta', None) if cliente else None
+            # NCM: item primeiro, fallback para cadastro do produto
+            ncm_code = getattr(item, 'item_ncm', None) or getattr(prod, 'prod_ncm', None)
 
+            # Se não tiver tributos no item, resolve via FiscalEngine
             if not any([cst_icms, aliq_icms, cst_pis, cst_cofins, cst_cbs, cst_ibs, cest]) and fiscal_engine:
                 try:
-                    fiscal_padrao, fonte = fiscal_engine.resolver_fiscal_padrao(
+                    fiscal_padrao, _ = fiscal_engine.resolver_fiscal_padrao(
                         prod,
                         ncm_code,
-                        None if not cfop else cfop,
+                        cfop,
                         uf_origem=None,
                         uf_destino=uf_dest,
                         tipo_entidade=None,
@@ -355,57 +385,66 @@ class PedidoEmitirNFeService:
                         aliq_cbs = aliq_cbs or getattr(fiscal_padrao, 'aliq_cbs', None)
                         cst_ibs = cst_ibs or getattr(fiscal_padrao, 'cst_ibs', None)
                         aliq_ibs = aliq_ibs or getattr(fiscal_padrao, 'aliq_ibs', None)
-                        if hasattr(fiscal_padrao, 'cest'):
-                            cest = cest or getattr(fiscal_padrao, 'cest', None)
+                        cest = cest or getattr(fiscal_padrao, 'cest', None)
                 except Exception:
-                    # resolver fiscal falhou — seguir com valores nulos/fallbacks
-                    pass
+                    pass  # Segue com os valores disponíveis
 
-            # Normalização / conversões
-            try:
-                aliq_icms = float(aliq_icms) if aliq_icms is not None else None
-            except Exception:
-                aliq_icms = None
-            try:
-                aliq_pis = float(aliq_pis) if aliq_pis is not None else None
-            except Exception:
-                aliq_pis = None
-            try:
-                aliq_cofins = float(aliq_cofins) if aliq_cofins is not None else None
-            except Exception:
-                aliq_cofins = None
-            try:
-                aliq_cbs = float(aliq_cbs) if aliq_cbs is not None else None
-            except Exception:
-                aliq_cbs = None
-            try:
-                aliq_ibs = float(aliq_ibs) if aliq_ibs is not None else None
-            except Exception:
-                aliq_ibs = None
+            # Normaliza alíquotas para float
+            def _to_float(v):
+                try:
+                    return float(v) if v is not None else None
+                except Exception:
+                    return None
 
-            itens.append({
-                "produto": prod_id,
+            if not ncm_code:
+                missing_ncms.append(prod.prod_codi)
+
+            itens_payload.append({
+                "codigo": str(prod.prod_codi),
+                "descricao": getattr(prod, 'prod_nome', '') or '',
                 "quantidade": float(dto.quantidade),
-                "unitario": float(parse_decimal(item.item_unit or 0)),
+                "valor_unit": float(parse_decimal(item.item_unit or 0)),
                 "desconto": float(parse_decimal(getattr(item, 'item_desc', 0) or 0)),
                 "cfop": cfop,
                 "ncm": ncm_code,
                 "cest": cest,
                 "cst_icms": str(cst_icms) if cst_icms is not None else None,
-                "aliq_icms": aliq_icms,
+                "aliq_icms": _to_float(aliq_icms),
                 "cst_pis": str(cst_pis) if cst_pis is not None else None,
-                "aliq_pis": aliq_pis,
+                "aliq_pis": _to_float(aliq_pis),
                 "cst_cofins": str(cst_cofins) if cst_cofins is not None else None,
-                "aliq_cofins": aliq_cofins,
+                "aliq_cofins": _to_float(aliq_cofins),
                 "cst_cbs": str(cst_cbs) if cst_cbs is not None else None,
-                "aliq_cbs": aliq_cbs,
+                "aliq_cbs": _to_float(aliq_cbs),
                 "cst_ibs": str(cst_ibs) if cst_ibs is not None else None,
-                "aliq_ibs": aliq_ibs,
+                "aliq_ibs": _to_float(aliq_ibs),
             })
 
-        # Montar destinatário mínimo (esperado pelos validadores)
+        if missing_ncms:
+            list_str = ', '.join(str(x) for x in missing_ncms)
+            raise ValidationError(f"Itens sem NCM no pedido: {list_str}. Impossível emitir sem NCM.")
+
+        # Destinatário
+        documento_raw = (
+            getattr(cliente, 'enti_cnpj', None)
+            or getattr(cliente, 'enti_cpf', None)
+            or str(getattr(cliente, 'enti_clie', ''))
+        )
+        from Entidades.services.validacao_documentos import DocumentoFiscalValidacaoServico
+        documento_digits = DocumentoFiscalValidacaoServico.somente_digitos(documento_raw)
+
+        if documento_digits:
+            if len(documento_digits) == 11:
+                if not DocumentoFiscalValidacaoServico.cpf_valido(documento_digits):
+                    raise ValidationError("CPF do destinatário inválido.")
+            elif len(documento_digits) == 14:
+                try:
+                    DocumentoFiscalValidacaoServico.validar_cnpj(documento_digits, campo="documento")
+                except Exception:
+                    raise ValidationError("CNPJ do destinatário inválido.")
+
         destinatario_dict = {
-            "documento": (getattr(cliente, 'enti_cnpj', None) or getattr(cliente, 'enti_cpf', None) or str(getattr(cliente, 'enti_clie', ''))),
+            "documento": documento_digits or documento_raw,
             "uf": getattr(cliente, 'enti_esta', None) or getattr(self.pedido, 'pedi_esta', None) or '',
         }
 
@@ -424,70 +463,27 @@ class PedidoEmitirNFeService:
         except Exception:
             emitente_dict = None
 
-        # Garantir formato dos itens compatível com validadores (codigo, descricao, quantidade, valor_unit)
-        itens_payload = []
-        missing_ncms = []
-        for it in itens:
-            # it currently contains produto (prod_id), quantidade, unitario, desconto, cfop, ncm etc.
-            prod_obj = None
-            try:
-                from Produtos.models import Produtos
-                prod_obj = Produtos.objects.using(self.banco).filter(prod_codi=str(it.get('produto'))).first()
-            except Exception:
-                prod_obj = None
-
-            codigo = prod_obj.prod_codi if prod_obj else str(it.get('produto'))
-            descricao = (getattr(prod_obj, 'prod_nome', None) or '') if prod_obj else ''
-
-            ncm_val = it.get('ncm')
-            if not ncm_val:
-                missing_ncms.append(codigo)
-
-            itens_payload.append({
-                "codigo": codigo,
-                "descricao": descricao or '',
-                "quantidade": it.get('quantidade'),
-                "valor_unit": it.get('unitario'),
-                # repassa os campos fiscais se existirem
-                "cfop": it.get('cfop'),
-                "ncm": ncm_val,
-                "cest": it.get('cest'),
-                "cst_icms": it.get('cst_icms'),
-                "aliq_icms": it.get('aliq_icms'),
-                "cst_pis": it.get('cst_pis'),
-                "aliq_pis": it.get('aliq_pis'),
-                "cst_cofins": it.get('cst_cofins'),
-                "aliq_cofins": it.get('aliq_cofins'),
-                "cst_cbs": it.get('cst_cbs'),
-                "aliq_cbs": it.get('aliq_cbs'),
-                "cst_ibs": it.get('cst_ibs'),
-                "aliq_ibs": it.get('aliq_ibs'),
-            })
-
-        if missing_ncms:
-            # Normalizar erro: lançar ValidationError com mensagem clara sobre quais itens faltam NCM
-            list_str = ', '.join(str(x) for x in missing_ncms)
-            raise ValidationError(f"Itens sem NCM no pedido: {list_str}. Impossível emitir sem NCM.")
-
         payload = {
             "modelo": "55",
             "serie": "1",
             "numero": 0,
-            "data_emissao": str(pedido.pedi_data),
-            "data_saida": None,
+            "data_emissao": datetime.now().strftime('%Y-%m-%d'),
+            "data_saida": datetime.now().strftime('%Y-%m-%d'),
             "tipo_operacao": 1,
             "finalidade": 1,
             "ambiente": 2,
             "emitente": emitente_dict,
-            "destinatario": destinatario_dict,
+            "destinatario": cliente,  # passar a instância/ID do Entidades (NotaService aceita Entidades ou ID)
             "itens": itens_payload,
-            "tpag": tpag,
+            #"tpag": 0,
         }
 
-        return payload
+        return payload, itens_payload
 
     # ------------------------------------------------------------------
-    # Registra o que foi emitido e atualiza status do pedido
+    # FIX 3: _registrar_emissao — atualiza saldos em memória antes de
+    # chamar _atualizar_status_pedido, evitando re-leitura inconsistente
+    # do banco quando item_quan_emit ainda não foi commitado.
     # ------------------------------------------------------------------
 
     def _registrar_emissao(self, dtos: list[ItemEmissaoDTO]) -> None:
@@ -495,12 +491,13 @@ class PedidoEmitirNFeService:
         Incrementa item_quan_emit em cada item emitido e
         recalcula pedi_stat_nfe no pedido.
         """
+        novos_saldos: dict[int, Decimal] = {}
+
         for dto in dtos:
             item = dto.item_obj
             atual = _quantidade_emitida(item)
             nova = atual + dto.quantidade
 
-            # TODO: garantir que item_quan_emit existe no model e migration
             Itenspedidospisos.objects.using(self.banco).filter(
                 item_empr=item.item_empr,
                 item_fili=item.item_fili,
@@ -508,24 +505,34 @@ class PedidoEmitirNFeService:
                 item_nume=item.item_nume,
             ).update(item_quan_emit=nova)
 
-        self._atualizar_status_pedido()
+            # Atualiza o objeto em memória para que _atualizar_status_pedido
+            # não precise re-ler do banco com valores ainda não visíveis
+            item.item_quan_emit = nova
+            total = parse_decimal(item.item_quan or 0)
+            novos_saldos[item.item_nume] = max(total - nova, Decimal("0"))
 
-    def _atualizar_status_pedido(self) -> None:
+        self._atualizar_status_pedido(novos_saldos)
+
+    def _atualizar_status_pedido(self, saldos_em_memoria: dict[int, Decimal] | None = None) -> None:
         """
         Verifica se todos os itens estão totalmente emitidos.
         pedi_stat_nfe: 'N' → 'P' (parcial) ou 'E' (totalmente emitido)
+
+        saldos_em_memoria: dict {item_nume: saldo_restante} calculado em
+        _registrar_emissao para evitar race condition com o .update() anterior.
         """
-        itens = Itenspedidospisos.objects.using(self.banco).filter(
-            item_empr=self.empresa,
-            item_fili=self.filial,
-            item_pedi=self.pedido.pedi_nume,
-        )
+        if saldos_em_memoria is not None:
+            # Usa os valores já calculados em memória — evita re-leitura inconsistente
+            totalmente_emitido = all(s == 0 for s in saldos_em_memoria.values())
+        else:
+            # Fallback: re-lê do banco (útil se chamado isoladamente)
+            itens = Itenspedidospisos.objects.using(self.banco).filter(
+                item_empr=self.empresa,
+                item_fili=self.filial,
+                item_pedi=self.pedido.pedi_nume,
+            )
+            totalmente_emitido = all(_saldo_disponivel(i) == 0 for i in itens)
 
-        totalmente_emitido = all(
-            _saldo_disponivel(i) == 0 for i in itens
-        )
-
-        # TODO: garantir que pedi_stat_nfe existe no model e migration
         novo_status = "E" if totalmente_emitido else "P"
         Pedidospisos.objects.using(self.banco).filter(
             pedi_empr=self.empresa,

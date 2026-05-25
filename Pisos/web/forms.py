@@ -121,6 +121,7 @@ class ItemPedidoPisosForm(forms.Form):
     item_desc = forms.DecimalField(required=False, decimal_places=4, max_digits=15)
     item_queb = forms.DecimalField(required=False, decimal_places=2, max_digits=5)
     item_obse = forms.CharField(required=False, widget=forms.TextInput(attrs={"rows": 1}))
+    item_quan_emit = forms.DecimalField(required=False, decimal_places=4, max_digits=15)
 
 
 ItemPedidoPisosFormSet = formset_factory(ItemPedidoPisosForm, extra=0, can_delete=True)

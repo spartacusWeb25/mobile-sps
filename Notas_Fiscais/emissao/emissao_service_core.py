@@ -1,33 +1,26 @@
-import tempfile
 import os
 import logging
-from base64 import urlsafe_b64decode
 from datetime import datetime
 
 from dotenv import load_dotenv
 from lxml import etree
 
-from .validators import validar_ambiente
 from .assinatura import AssinadorA1Service
 from .sefaz_client import SefazClient
 from .parser import SefazResponseParser
 from .gerador_xml import GeradorXML, NFE_NS
 from .urls_sefaz import URLS_SEFAZ
-from .exceptions import ErroEmissao, AmbienteMismatchError
+from .exceptions import ErroEmissao
 
 logger = logging.getLogger(__name__)
 load_dotenv()
 
 
 def montar_envi_nfe(xml_assinado: str, id_lote: str) -> str:
-    """
-    Garante namespace correto e monta o enviNFe 4.00
-    """
     NFE_NS = "http://www.portalfiscal.inf.br/nfe"
 
     root = etree.fromstring(xml_assinado.encode("utf-8"))
 
-    # se não tem namespace, aplica
     if not root.tag.startswith("{"):
         nfe = etree.Element(f"{{{NFE_NS}}}NFe")
         nfe.append(root)
@@ -67,28 +60,26 @@ class EmissaoServiceCore:
     # FLUXO PRINCIPAL
     # =====================================================================
     def emitir(self):
-
         emit = self.dto["emitente"]
         logger.debug("EmissaoServiceCore.emitir: DTO inicial recebido: %s", self.dto)
 
-        # 1) Garantir cUF SEMPRE
         if "cUF" not in emit or not emit["cUF"]:
             emit["cUF"] = self._uf_to_cuf(emit["uf"])
 
-        # 2) Garantir cNF
         if "cNF" not in self.dto:
             self.dto["cNF"] = self._gerar_cnf()
 
-        # 3) Garantir chave da NF-e
         if "chave" not in self.dto:
             self.dto["chave"] = self._gerar_chave(self.dto)
 
         xml_gerado = GeradorXML().gerar(self.dto)
         logger.debug("EmissaoServiceCore.emitir: XML base gerado: %s", xml_gerado)
 
-        # 5) Assinar
-        pfx_path, pfx_pass = self._load_certificado()
-        assinador = AssinadorA1Service(pfx_path, pfx_pass)
+        # FIX: _load_certificado retorna (pfx_bytes, senha) — bytes puros.
+        # AssinadorA1Service.__init__ valida isinstance(pfx_bytes, (bytes, bytearray))
+        # e opera inteiramente em memória via pkcs12. Nunca passar path aqui.
+        pfx_bytes, pfx_pass = self._load_certificado()
+        assinador = AssinadorA1Service(pfx_bytes, pfx_pass)
         xml_assinado = assinador.assinar_xml(xml_gerado)
 
         xml_enviado = montar_envi_nfe(
@@ -96,22 +87,21 @@ class EmissaoServiceCore:
             id_lote=str(self.dto.get("numero") or 1),
         )
 
-        # 7) URL SEFAZ correta
         url = self._resolve_url()
 
-        # 8) TLS cert/key
-        cert_pem, key_pem = assinador._extract_keys()
+        # FIX: o método correto é _extract_key_and_cert(), não _extract_keys().
+        # Retorna (key_pem, cert_chain_pem) — SefazClient usa cert + key PEM para TLS.
+        key_pem, cert_chain_pem = assinador._extract_key_and_cert()
 
         logger.debug("EmissaoServiceCore.emitir: XML enviNFe montado: %s", xml_enviado)
 
         resposta_xml = SefazClient(
-            cert_pem=cert_pem,
+            cert_pem=cert_chain_pem,
             key_pem=key_pem,
             url=url,
             verify=self._resolve_verify(),
         ).enviar_xml(xml_enviado)
 
-        # 10) Interpretar
         resposta = SefazResponseParser().parse(resposta_xml)
 
         return resposta, xml_assinado, resposta_xml
@@ -128,22 +118,17 @@ class EmissaoServiceCore:
 
     def _gerar_chave(self, dto: dict) -> str:
         emit = dto["emitente"]
-
         cUF = emit["cUF"]
-        
-        # Tenta usar a data de emissão do DTO para evitar rejeição de Ano-Mês
+
         dh_emi_str = dto.get("data_emissao")
         if dh_emi_str:
             try:
-                # Tenta formatos comuns
                 if "T" in dh_emi_str:
                     dt = datetime.fromisoformat(dh_emi_str)
                 else:
-                    # Pode ser apenas data ou data com espaço
                     dt = datetime.strptime(dh_emi_str.split(".")[0], "%Y-%m-%d %H:%M:%S")
                 aamm = dt.strftime("%y%m")
             except Exception:
-                # Fallback para agora
                 aamm = datetime.now().strftime("%y%m")
         else:
             aamm = datetime.now().strftime("%y%m")
@@ -157,7 +142,6 @@ class EmissaoServiceCore:
 
         base = f"{cUF}{aamm}{cnpj}{mod}{serie}{numero}{tpEmis}{cNF}"
         dv = self._calcular_dv(base)
-
         return base + str(dv)
 
     def _calcular_dv(self, base: str):
@@ -171,37 +155,64 @@ class EmissaoServiceCore:
 
     # =====================================================================
     # CERTIFICADO
+    # Retorna (pfx_bytes: bytes, senha: str) — sempre bytes puros.
+    # AssinadorA1Service opera inteiramente em memória, não precisa de arquivo.
     # =====================================================================
-    def _load_certificado(self):
-        """
-        Retorna (pfx_bytes, senha) direto do banco ou fallback para arquivo.
-        """
+    def _load_certificado(self) -> tuple[bytes, str]:
+        import base64
+
         pfx_bytes = None
+
+        # 1) Tenta blob do banco (bytea → memoryview → bytes)
         try:
-            # Tenta ler do banco se a coluna existir
             if hasattr(self.filial, 'empr_cert_digi') and self.filial.empr_cert_digi:
                 pfx_bytes = bytes(self.filial.empr_cert_digi)
         except Exception:
             pass
 
-        # Fallback se não encontrou no banco
+        # 2) Fallback: lê de arquivo em disco
         if not pfx_bytes:
             caminho = getattr(self.filial, 'empr_cert', None)
-            if caminho:
-                import os
-                if os.path.isfile(caminho):
-                    with open(caminho, 'rb') as f:
-                        pfx_bytes = f.read()
+            if caminho and os.path.isfile(caminho):
+                with open(caminho, 'rb') as f:
+                    pfx_bytes = f.read()
+                logger.info(
+                    "Certificado carregado de arquivo: %s empresa=%s filial=%s",
+                    caminho,
+                    getattr(self.filial, 'empr_empr', '?'),
+                    getattr(self.filial, 'empr_codi', '?'),
+                )
 
         if not pfx_bytes:
             raise ErroEmissao("Filial não possui certificado digital (nem banco, nem arquivo).")
 
-        # Senha continua criptografada no banco
+        # 3) Detecta se o blob foi gravado em base64 no banco.
+        # PFX/P12 válido começa sempre com os magic bytes ASN.1: 0x30 0x82.
+        # Se não começar assim, tenta decodificar como base64 e valida novamente.
+        if not pfx_bytes[:2] == b'\x30\x82':
+            try:
+                decoded = base64.b64decode(pfx_bytes)
+                if decoded[:2] == b'\x30\x82':
+                    logger.info(
+                        "Certificado estava em base64 no banco — decodificado: %d → %d bytes",
+                        len(pfx_bytes),
+                        len(decoded),
+                    )
+                    pfx_bytes = decoded
+            except Exception:
+                pass  # Não era base64 — segue com os bytes originais
+
+        logger.info(
+            "Certificado carregado empresa=%s filial=%s tamanho=%d bytes",
+            getattr(self.filial, 'empr_empr', '?'),
+            getattr(self.filial, 'empr_codi', '?'),
+            len(pfx_bytes),
+        )
+
         from Licencas.crypto import decrypt_str
         senha = decrypt_str(self.filial.empr_senh_cert)
 
         return pfx_bytes, senha
-
 
     # =====================================================================
     # URL SEFAZ

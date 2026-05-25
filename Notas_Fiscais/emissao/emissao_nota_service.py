@@ -40,21 +40,20 @@ class EmissaoNotaService:
         if isinstance(dest, dict):
             doc = dest.get("documento")
             if not doc:
-                 raise ValidationError("Documento do destinatário não informado.")
-            
-            # Remove caracteres não numéricos
+                raise ValidationError("Documento do destinatário não informado.")
+
             doc_limpo = "".join(filter(str.isdigit, str(doc)))
-            
+
             try:
                 qs = Entidades.objects.using(database).filter(enti_empr=empresa)
                 if len(doc_limpo) == 14:
                     entidade = qs.get(enti_cnpj=doc_limpo)
                 else:
                     entidade = qs.get(enti_cpf=doc_limpo)
-                
+
                 dto_sanitized["destinatario"] = entidade.enti_clie
             except Entidades.DoesNotExist:
-                 raise ValidationError(f"Destinatário com documento {doc} não encontrado.")
+                raise ValidationError(f"Destinatário com documento {doc} não encontrado.")
 
         nota = NotaService.criar(
             data=dto_sanitized,
@@ -68,12 +67,13 @@ class EmissaoNotaService:
 
         from Licencas.models import Filiais
 
-        # Usa defer para evitar erro se a coluna empr_cert_digi não existir no banco
-        filial_obj = Filiais.objects.using(database).defer('empr_cert_digi').filter(
+        # Busca já com o certificado — sem defer, pois precisamos de empr_cert_digi
+        # para verificar se tem certificado e passar para o EmissaoServiceCore.
+        # O defer anterior impedia o acesso ao blob e causava tem_cert = False sempre.
+        filial_obj = Filiais.objects.using(database).filter(
             empr_empr=empresa, empr_codi=filial
         ).first()
 
-        # Verifica se tem certificado (banco ou arquivo) de forma segura
         tem_cert = False
         if filial_obj:
             try:
@@ -81,23 +81,23 @@ class EmissaoNotaService:
                     tem_cert = True
             except Exception:
                 pass
-            
             if not tem_cert and getattr(filial_obj, 'empr_cert', None):
                 tem_cert = True
 
         if not filial_obj or not tem_cert:
-            alt = Filiais.objects.using(database).defer('empr_cert_digi').filter(
+            # Fallback: tenta com empresa/filial invertidos (legacy de alguns tenants)
+            alt = Filiais.objects.using(database).filter(
                 empr_empr=filial, empr_codi=empresa
             ).first()
             filial_obj = alt or filial_obj
 
-        # 3) aplicar impostos
+        # 3) Aplicar impostos
         CalculoImpostosService(database).aplicar_impostos(nota)
 
-        # 3.1) Validação Fiscal pós-cálculo
+        # 3.1) Validação fiscal pós-cálculo
         validar_dados_calculados(nota)
 
-        # 4) montar DTO a partir da Nota
+        # 4) Montar DTO a partir da Nota
         dto_obj = NotaBuilder(nota, database=database).build()
         dto_payload = dto_obj.dict()
         dto_payload["tpag"] = dto_dict.get("tpag")
@@ -113,11 +113,7 @@ class EmissaoNotaService:
         logger.debug("cStat: %s", cStat)
 
         if str(cStat) in ["100", "204"]:
-            # 100 = Autorizado
-            # 204 = Duplicidade de NF-e (se tiver protocolo, considera autorizado)
             prot = resposta.get("protocolo")
-            
-            # Se for 204, assume autorizado mesmo sem protocolo explícito na resposta síncrona
             msg = "NF-e autorizada pela SEFAZ"
             if str(cStat) == "204":
                 msg = f"NF-e autorizada (Duplicidade na SEFAZ). Protocolo: {prot or 'Não retornado'}"
