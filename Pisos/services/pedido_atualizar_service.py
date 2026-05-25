@@ -16,12 +16,20 @@ class PedidoAtualizarService:
         with transaction.atomic(using=banco):
             parametros = (dados or {}).get("parametros") or {}
             dados_pedido = dict(dados)
+            chave_original_pedido = (
+                pedido.pedi_empr,
+                pedido.pedi_fili,
+                pedido.pedi_nume,
+            )
 
             dados_pedido.pop("itens_input", None)
             dados_pedido.pop("itens", None)
             dados_pedido.pop("parametros", None)
             dados_pedido.pop("usar_credito", None)
             dados_pedido.pop("valor_credito", None)
+            dados_pedido.pop("pedi_empr", None)
+            dados_pedido.pop("pedi_fili", None)
+            dados_pedido.pop("pedi_nume", None)
 
             # Atualiza campos
             # Garantir que temos o estado mais recente (evita sobrescrever status mudado por modal/ajax)
@@ -41,9 +49,9 @@ class PedidoAtualizarService:
 
             # Remove itens antigos
             Itenspedidospisos.objects.using(banco).filter(
-                item_empr=pedido.pedi_empr,
-                item_fili=pedido.pedi_fili,
-                item_pedi=pedido.pedi_nume,
+                item_empr=chave_original_pedido[0],
+                item_fili=chave_original_pedido[1],
+                item_pedi=chave_original_pedido[2],
             ).delete()
 
             # Recria itens (reutiliza lógica do criar)
