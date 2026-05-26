@@ -557,6 +557,7 @@
                 padding: 0.25rem 0.4rem;
                 font-size: 0.86rem;
               }
+
               .itens-table-wrap td input.form-control,
               .itens-table-wrap td select.form-control {
                 max-width: 100%;
@@ -613,8 +614,10 @@
                       {{ f.item_ambi.as_hidden }}
                     </td>
                     <td>
-                      <div class="badge-caix" id="badge-caix-{{ forloop.counter0 }}">
-                        {{ f.item_caix.value|default:"—" }}
+                      <input type="number" step="1" id="caix-{{ forloop.counter0 }}"
+                        class="form-control form-control-sm item-caix" value="{{ f.item_caix.value|default:'' }}"
+                        placeholder="Caixas">
+                      <div class="badge-caix" id="badge-caix-{{ forloop.counter0 }}">{{ f.item_caix.value|default:"—" }}
                       </div>
                       <div class="d-none">{{ f.item_caix }}</div>
                     </td>
@@ -1093,6 +1096,19 @@
     }
 
     var calcTimers = {};
+    
+    function bindCaixasInputs(index) {
+      var el = document.getElementById('caix-' + index);
+      if (!el) return;
+      el.addEventListener('input', function() {
+        var hiddenCaix = document.getElementById('id_itens-' + index + '-item_caix');
+        if (hiddenCaix) hiddenCaix.value = String(parseInt(el.value || 0));
+        var badge = document.getElementById('badge-caix-' + index);
+        if (badge) badge.textContent = el.value ? String(parseInt(el.value)) : '—';
+        clearTimeout(calcTimers['caix-' + index]);
+        calcTimers['caix-' + index] = setTimeout(function() { calcularItem(index); }, 400);
+      });
+    }
 
     function getPrecoCondicao() {
       var sel = document.getElementById('preco-condicao');
@@ -1140,7 +1156,7 @@
         var res = await fetch(URL_CALCULAR, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
-          body: JSON.stringify({ item_prod: prod_id, item_m2: m2, item_unit: unit, item_queb: queb, condicao })
+          body: JSON.stringify({ item_prod: prod_id, item_m2: m2, item_unit: unit, item_queb: queb, condicao, item_caix: parseInt(document.getElementById('caix-' + index)?.value || 0) })
         });
         var data = await res.json();
         if (!res.ok) throw new Error(data.erro || 'Erro HTTP ' + res.status);
@@ -1154,13 +1170,13 @@
         var hiddenQuan = document.getElementById('id_itens-' + index + '-item_quan');
         var hiddenUnit = document.getElementById('id_itens-' + index + '-item_unit');
 
-        if (badgeCaix) badgeCaix.textContent = data.caixas || '—';
+        if (badgeCaix) badgeCaix.textContent = data.caixas || (document.getElementById('caix-' + index)?.value || '—');
         if (kgInput) kgInput.value = data.kg_total || '0.00';
         if (hiddenKg) hiddenKg.value = data.kg_total || '0.00';
         if (quanInput) quanInput.value = data.quantidade || '';
         if (hiddenQuan) hiddenQuan.value = data.quantidade || '';
         if (sutoInput) sutoInput.value = parseFloat(data.total || 0).toFixed(2);
-        if (hiddenCaix) hiddenCaix.value = data.caixas || '';
+        if (hiddenCaix) hiddenCaix.value = data.caixas || (document.getElementById('caix-' + index)?.value || '');
 
         if (precisaPreco && unitInput && data.preco_unitario) {
           unitInput.value = String(data.preco_unitario).replace(',', '.');
@@ -1221,6 +1237,7 @@
     }
 
     function bindCalcInputs(index) {
+      bindCaixasInputs(index);
       ['m2', 'unit', 'queb'].forEach(function (tipo) {
         var el = document.getElementById(tipo + '-' + index);
         if (!el) return;

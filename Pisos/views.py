@@ -166,14 +166,14 @@ class OrcamentopisosViewSet(BaseMultiDBModelViewSet, VendedorEntidadeMixin):
             total_itens = 0
             
             aggregates = {
-                'total_pedidos': total_pedidos,
-                'total_valor': total_valor,
-                'total_itens': total_itens,
+                'totalOrcamentos': total_pedidos,
+                'totalValor': total_valor,
+                'totalItens': total_itens,
                 'sales_by_seller': sales_by_seller
             }
             
         except Exception as e:
-            logger.error(f"Erro ao calcular agregados no PedidospisosViewSet: {e}", exc_info=True)
+            logger.error(f"Erro ao calcular agregados no OrcamentopisosViewSet: {e}", exc_info=True)
             aggregates = {}
 
         page = self.paginate_queryset(queryset)
@@ -865,4 +865,32 @@ class DashPedidosPisosView(ModuloRequeridoMixin, TemplateView):
             context['filiais_list'] = []
         
         logger.info(f"[DashPedidosPisosView] Rendering dashboard. Slug: {context['slug']}, Empresa: {empresa}, Filial: {filial}")
+        return context
+
+
+
+class DashOrcamentosView(ModuloRequeridoMixin, TemplateView):
+    template_name = 'ControleDeVisitas/dash_orcamentos_pisos.html'
+    modulo_requerido = 'controledevisitas'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['slug'] = self.kwargs.get('slug')
+        empresa = self.request.session.get('empresa') or self.request.session.get('empresa_id') or self.request.session.get('empr_codi')
+        filial = self.request.session.get('filial') or self.request.session.get('filial_id') or self.request.session.get('fili_codi')
+        
+        context['empresa'] = empresa
+        context['filial'] = filial
+        
+        try:
+            banco = get_db_from_slug(context['slug'])
+            # Carregar listas de empresas e filiais para os filtros
+            context['empresas_list'] = list(Empresas.objects.using(banco).all().values('empr_codi', 'empr_nome').order_by('empr_nome'))
+            context['filiais_list'] = list(Filiais.objects.using(banco).all().values('empr_empr', 'empr_codi', 'empr_nome').order_by('empr_nome'))
+        except Exception as e:
+            logger.error(f"Erro ao carregar empresas/filiais: {e}")
+            context['empresas_list'] = []
+            context['filiais_list'] = []
+        
+        logger.info(f"[DashOrcamentosView] Rendering dashboard. Slug: {context['slug']}, Empresa: {empresa}, Filial: {filial}")
         return context
