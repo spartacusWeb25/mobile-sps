@@ -7,6 +7,7 @@ from Pisos.models import Pedidospisos, Itenspedidospisos
 from Pisos.services.utils_service import parse_decimal, arredondar
 from Pisos.services.cliente_service import ClienteEnderecoService
 from Pisos.services.credito_troca_service import CreditoTrocaPisosService
+from Produtos.models import Produtos
 from contas_a_receber.models import Titulosreceber
 from contas_a_receber.services import criar_titulo_receber
 
@@ -225,7 +226,7 @@ class PedidoCriarService:
         campos_permitidos = {field.name for field in Itenspedidospisos._meta.fields}
 
         for idx, item in enumerate(itens, start=1):
-            dados_item = self._normalizar_item(item)
+            dados_item = self._normalizar_item(item, banco=banco, empresa=pedido.pedi_empr)
 
             dados_item = {
                 chave: valor
@@ -266,7 +267,7 @@ class PedidoCriarService:
 
         return total
 
-    def _normalizar_item(self, item):
+    def _normalizar_item(self, item, *, banco, empresa):
         dados = dict(item)
 
         mapa = {
@@ -297,6 +298,8 @@ class PedidoCriarService:
                 elif m2_por_caixa > 0:
                     dados["item_quan"] = m2_por_caixa * caixas
 
+        self._completar_medidas_item(dados, banco=banco, empresa=empresa)
+
         dados["item_m2"] = parse_decimal(dados.get("item_m2"))
         dados["item_quan"] = parse_decimal(dados.get("item_quan"))
         dados["item_unit"] = parse_decimal(dados.get("item_unit"))
@@ -304,3 +307,42 @@ class PedidoCriarService:
         dados["item_queb"] = parse_decimal(dados.get("item_queb"))
 
         return dados
+
+    def _completar_medidas_item(self, dados: dict, *, banco, empresa) -> None:
+        """Permite inserção manual por caixas/quantidade quando m² não for informado."""
+        produto_id = (dados.get("item_prod") or "").strip()
+        if not produto_id:
+            return
+
+        quantidade = parse_decimal(dados.get("item_quan"))
+        caixas = parse_decimal(dados.get("item_caix"))
+        metragem = parse_decimal(dados.get("item_m2"))
+
+        if quantidade > 0 and caixas > 0 and metragem > 0:
+            return
+
+        produto = Produtos.objects.using(banco).filter(prod_codi=produto_id, prod_empr=str(empresa)).first()
+        if not produto:
+            return
+
+        m2_por_caixa = parse_decimal(getattr(produto, "prod_cera_m2cx", 0))
+        pc_por_caixa = parse_decimal(getattr(produto, "prod_cera_pccx", 0))
+
+        if caixas <= 0 and quantidade > 0 and pc_por_caixa > 0:
+            caixas = quantidade / pc_por_caixa
+
+        if quantidade <= 0 and caixas > 0:
+            if pc_por_caixa > 0:
+                quantidade = caixas * pc_por_caixa
+            elif m2_por_caixa > 0:
+                quantidade = caixas * m2_por_caixa
+
+        if metragem <= 0:
+            if caixas > 0 and m2_por_caixa > 0:
+                metragem = caixas * m2_por_caixa
+            elif quantidade > 0 and pc_por_caixa > 0 and m2_por_caixa > 0:
+                metragem = (quantidade / pc_por_caixa) * m2_por_caixa
+
+        dados["item_caix"] = caixas
+        dados["item_quan"] = quantidade
+        dados["item_m2"] = metragem
