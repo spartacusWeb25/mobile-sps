@@ -45,8 +45,11 @@
           <div class="row g-3">
             <div class="col-md-4">
               {{ form.prod_unme_autocomplete.label_tag }}
-              <input type="text" class="form-control" id="autocomplete-unidade" placeholder="Buscar unidade de medida"
-                autocomplete="off" value="{{ form.prod_unme_autocomplete.value|default_if_none:'' }}">
+              <input type="text" class="form-control"
+                                id="autocomplete-unidade" 
+                                placeholder="Buscar unidade de medida"
+                                autocomplete="off" 
+                                value="{{ form.prod_unme_autocomplete.value|default_if_none:'' }}">
               <div style="display:none;">
                 {{ form.prod_unme_autocomplete }}
                 {{ form.prod_unme }}
@@ -54,16 +57,23 @@
             </div>
             <div class="col-md-4 position-relative">
               {{ form.prod_codi_serv.label_tag }}
-              <input type="text" class="form-control" id="autocomplete-servico" placeholder="Buscar código de serviço"
-                autocomplete="off">
+              <input type="text" class="form-control"
+                                id="autocomplete-servico" 
+                                placeholder="Buscar código de serviço"
+                                value="{{ form.prod_codi_serv.value|default_if_none:'' }}"
+                                autocomplete="off">
+
               {{ form.prod_codi_serv }}
               <div id="servico-dropdown" class="autocomplete-dropdown list-group position-absolute w-100"
                 style="z-index:1000; top:100%; display:none;"></div>
             </div>
             <div class="col-md-4 position-relative">
               {{ form.prod_cnae.label_tag }}
-              <input type="text" class="form-control" id="autocomplete-cnae" placeholder="Buscar CNAE"
-                autocomplete="off">
+              <input type="text" class="form-control"
+                                 id="autocomplete-cnae" 
+                                 placeholder="Buscar CNAE"
+                                 value="{{ form.prod_cnae.value|default_if_none:'' }}"
+                                 autocomplete="off">
               {{ form.prod_cnae }}
               <div id="cnae-dropdown" class="autocomplete-dropdown list-group position-absolute w-100"
                 style="z-index:1000; top:100%; display:none;"></div>
@@ -169,9 +179,7 @@
       const selectValue = (item) => {
         unidadeInput.value = item.label || item.value || '';
         const hidden = document.getElementById('{{ form.prod_unme_autocomplete.id_for_label }}');
-        const finalField = document.getElementById('{{ form.prod_unme.id_for_label }}');
         if (hidden) hidden.value = item.value || '';
-        if (finalField) finalField.value = item.value || '';
         dropdown.innerHTML = '';
       };
 

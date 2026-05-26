@@ -9,7 +9,7 @@
     <div class="page-header-custom">
         <div class="container align-items-center">
             <h2 class="page-title">
-                <i class="bi bi-briefcase"></i> Serviços
+                <i class="bi bi-list fs-4"></i> Listagem de Serviços
             </h2>
         </div>
         <div class="container d-flex justify-content-end">
@@ -33,29 +33,30 @@
     <div class="card">
         <div class="card-body">
             <form method="get">
-                <div class="row g-3 mb-3">
-                    <div class="col-md-4">
+                <div class="row g-3 mb-3 md-3">
+                    <div class="col-6 col-md-4">
                         <label for="nome" class="form-label">Descrição</label>
-                        <input type="text" id="nome" name="nome" class="form-control" value="{{ nome }}" placeholder="Buscar por descrição...">
+                        <input type="text" id="nome" name="nome" class="form-control" value="{{ nome }}"
+                            placeholder="Buscar por descrição...">
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-6 col-md-3">
                         <label for="codigo" class="form-label">Código</label>
-                        <input type="text" id="codigo" name="codigo" class="form-control" value="{{ codigo }}" placeholder="Buscar por código...">
+                        <input type="text" id="codigo" name="codigo" class="form-control" value="{{ codigo }}"
+                            placeholder="Buscar por código...">
                     </div>
-                    <div class="col-md-3 d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary w-100">
+                    <div class="col-12 col-md-3 d-flex align-items-end">
+                        <button type="submit" class="btn btn-outline-primary w-100">
                             <i class="bi bi-search"></i> Filtrar
                         </button>
                     </div>
                 </div>
             </form>
-
-            {% if page_obj %}
-            <div class="table-responsive">
+            {% if page_obj and page_obj.paginator.count %}
+            <div id="servicos-table-container" class="table-responsive d-none d-md-block">
                 <table class="table table-bordered table-striped align-middle">
                     <thead class="thead-dark">
                         <tr>
-                            <th class="text-end">Ações</th>
+                            <th class="text-center">Ações</th>
                             <th>Código</th>
                             <th>Descrição</th>
                             <th>Unidade</th>
@@ -66,16 +67,23 @@
                     <tbody>
                         {% for servico in page_obj %}
                         <tr>
-                            <td class="text-end">
-                                <a href="{% url 'servicos_edit_web' slug=slug prod_codi=servico.prod_codi %}" class="btn btn-outline-primary btn-sm">
+                            <td class="text-center">
+                                <a href="{% url 'servicos_edit_web' slug=slug prod_codi=servico.prod_codi %}"
+                                    class="btn btn-outline-primary btn-sm" id="editar">
                                     <i class="bi bi-pencil"></i>
                                 </a>
-                                <a href="{% url 'servicos_delete_web' slug=slug prod_codi=servico.prod_codi %}" class="btn btn-outline-danger btn-sm">
+                                <button
+                                    class="btn btn-outline-danger btn-sm d-inline-flex align-items-center justify-content-center servico-delete-btn"
+                                    data-prod-codi="{{ servico.prod_codi }}" data-prod-nome="{{ servico.prod_nome }}" id="excluir">
                                     <i class="bi bi-trash"></i>
-                                </a>
+                                </button>
                             </td>
                             <td>{{ servico.prod_codi }}</td>
-                            <td>{{ servico.prod_desc_serv|default:servico.prod_desc }}</td>
+                            {% if servico.prod_desc_serv %}
+                            <td>{{ servico.prod_desc_serv }}</td>
+                            {% else %}
+                            <td>{{ servico.prod_nome }}</td>
+                            {% endif %}
                             <td>{{ servico.prod_unme }}</td>
                             <td>{{ servico.prod_cnae }}</td>
                             <td>{{ servico.prod_codi_serv }}</td>
@@ -85,9 +93,37 @@
                 </table>
             </div>
             {% else %}
-            <p>Não há serviços cadastrados.</p>
+            <p class="text-center" style="margin-top: 20px;">Não há serviços cadastrados.</p>
             {% endif %}
         </div>
     </div>
 </div>
+<div class="card-list d-md-none">
+    {% for servico in page_obj %}
+    <div class="card mb-2">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="fw-semibold">Serviço #{{ servico.prod_codi }}</div>
+                <div class="text-muted small">{{ servico.prod_desc_serv }}</div>
+            </div>
+            <div class="mt-2 small">
+                <div><strong>Unidade:</strong> {{ servico.prod_unme }}</div>
+                <div><strong>CNAE:</strong> {{ servico.prod_cnae }}</div>
+                <div><strong>Descrição:</strong> {{ servico.prod_desc_serv }}</div>
+            </div>
+            <div class="mt-3 d-flex gap-2">
+                <a class="btn btn-sm btn-outline-primary"
+                    href="{% url 'servicos_edit_web' slug=slug prod_codi=servico.prod_codi %}">Detalhes</a>
+                <a class="btn btn-sm btn-outline-secondary"
+                    href="{% url 'servicos_edit_web' slug=slug prod_codi=servico.prod_codi %}">Editar</a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="alert alert-info">Nenhum serviço encontrado.</div>
+    {% endfor %}
+</div>
+{% include 'Produtos/partials/servico_delete_modal_bs.html' %}
+{% include 'Produtos/partials/servico_delete_script.html' %}
+
 {% endblock %}

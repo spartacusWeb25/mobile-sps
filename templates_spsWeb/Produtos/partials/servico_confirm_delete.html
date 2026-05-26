@@ -1,0 +1,15 @@
+<form hx-post="{% url 'servicos_delete_web' slug=slug prod_codi=object.prod_codi %}" hx-swap="none"
+    hx-on:afterRequest="(function(){try{ const el=document.getElementById('servicoDeleteModal'); if(!el) return; if(window.bootstrap && bootstrap.Modal){ var m=null; if(typeof bootstrap.Modal.getOrCreateInstance==='function'){ m=bootstrap.Modal.getOrCreateInstance(el); } else { m=bootstrap.Modal.getInstance(el) || new bootstrap.Modal(el); } if(m && typeof m.hide==='function'){ m.hide(); } } }catch(e){ console.warn('modal hide failed', e); } finally{ try{ window.location.reload(); }catch(e){} } })()">
+    {% csrf_token %}
+    <div class="modal-header">
+        <h5 class="modal-title">Excluir Serviço</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <div class="modal-body">
+        <p>Tem certeza que deseja excluir o serviço <strong>{{ object.prod_codi }}</strong> - <strong>{{ object.prod_desc_serv }}</strong>?</p>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-danger">Excluir</button>
+    </div>
+</form>

@@ -1,0 +1,28 @@
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // delegação para botoes de deletar
+        document.querySelectorAll('.servico-delete-btn').forEach(btn => {
+            btn.addEventListener('click', function (e) {
+                const codigo = this.dataset.prodCodi || this.getAttribute('data-prod-codi');
+                const nome = this.dataset.prodNome || this.getAttribute('data-prod-nome');
+                const modal = document.getElementById('servicoDeleteModal');
+                const form = modal.querySelector('#servicoDeleteForm');
+                const text = modal.querySelector('#servicoDeleteText');
+                // ajustar texto
+                if (text) text.innerHTML = `Tem certeza que deseja excluir o serviço <strong>${codigo}</strong> - <strong>${nome}</strong>?`;
+                // ajustar action do form
+                if (form) form.action = `{% url 'servicos_delete_web' slug=slug prod_codi='__C__' %}`.replace('__C__', codigo);
+                // show modal
+                if (window.bootstrap && bootstrap.Modal) {
+                    let m = null;
+                    if (typeof bootstrap.Modal.getOrCreateInstance === 'function') {
+                        m = bootstrap.Modal.getOrCreateInstance(modal);
+                    } else {
+                        m = bootstrap.Modal.getInstance(modal) || new bootstrap.Modal(modal);
+                    }
+                    m.show();
+                }
+            });
+        });
+    });
+</script>

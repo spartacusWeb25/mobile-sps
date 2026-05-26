@@ -40,6 +40,7 @@ class ServicosCreateView(DBAndSlugMixin, CreateView):
     template_name = 'Produtos/servicos_form.html'
     form_class = ServicosForm
     
+
     
     def get_success_url(self):
         return reverse_lazy('servicos_web', kwargs={'slug': self.slug})
@@ -59,14 +60,14 @@ class ServicosCreateView(DBAndSlugMixin, CreateView):
         ServicoService.cadastrar_servico_padrao(
             banco=self.db_alias,
             empresa_id=self.empresa_id or 1,
-            prod_desc=form.cleaned_data.get('prod_desc_serv') or '',
-            prod_unme=unidade or '',
-            prod_exig_iss=form.cleaned_data.get('prod_exig_iss') or '',
-            prod_iss=form.cleaned_data.get('prod_iss') or '',
-            prod_codi_serv=form.cleaned_data.get('prod_codi_serv') or '',
-            prod_desc_serv=form.cleaned_data.get('prod_desc_serv') or '',
+            prod_desc=form.cleaned_data.get('prod_desc_serv'),
+            prod_unme=unidade,
+            prod_exig_iss=form.cleaned_data.get('prod_exig_iss'),
+            prod_iss=form.cleaned_data.get('prod_iss'),
+            prod_codi_serv=form.cleaned_data.get('prod_codi_serv'),
+            prod_desc_serv=form.cleaned_data.get('prod_desc_serv'),
             prod_list_tabe_prec=form.cleaned_data.get('prod_list_tabe_prec'),
-            prod_cnae=form.cleaned_data.get('prod_cnae') or '',
+            prod_cnae=form.cleaned_data.get('prod_cnae'),
         )
         messages.success(self.request, 'Serviço cadastrado com sucesso.')
         return redirect(self.get_success_url())
@@ -85,12 +86,23 @@ class ServicosUpdateView(DBAndSlugMixin, UpdateView):
         qs = Produtos.objects.using(self.db_alias).filter(prod_e_serv=True)
         if self.empresa_id:
             qs = qs.filter(prod_empr=str(self.empresa_id))
-        return qs
+        return qs.filter(prod_codi=self.kwargs['prod_codi'])
+
+    def get_object(self, queryset=None):
+        qs = self.get_queryset()
+        # trazer objeto inteiro com relações úteis
+        qs = qs.select_related('prod_unme')
+        return qs.first()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['slug'] = self.slug
         return context
+    
+    def get_form_kwargs(self, **kwargs):
+        kwargs = super().get_form_kwargs(**kwargs)
+        kwargs['database'] = self.db_alias
+        return kwargs
 
     def form_valid(self, form):
         obj = form.save(commit=False)
@@ -116,7 +128,24 @@ class ServicosDeleteView(DBAndSlugMixin, DeleteView):
         qs = Produtos.objects.using(self.db_alias).filter(prod_e_serv=True)
         if self.empresa_id:
             qs = qs.filter(prod_empr=str(self.empresa_id))
-        return qs
+        return qs.filter(prod_codi=self.kwargs['prod_codi'])
+
+    def get_object(self, queryset=None):
+        qs = self.get_queryset()
+        qs = qs.select_related('prod_unme')
+        # trazer objeto inteiro com relações úteis
+
+        return qs.first()
+
+    def get(self, request, *args, **kwargs):
+        # se requisitado como partial via HTMX, retorna o fragmento do modal
+        partial = request.GET.get('partial') or request.headers.get('HX-Request')
+        self.object = self.get_object()
+        if partial:
+            from django.shortcuts import render
+            return render(request, 'Produtos/partials/servico_confirm_delete.html', {'object': self.object, 'slug': self.slug})
+        # fallback: redireciona para lista (evita TemplateDoesNotExist)
+        return redirect(self.get_success_url())
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -124,7 +153,13 @@ class ServicosDeleteView(DBAndSlugMixin, DeleteView):
         return context
 
     def delete(self, request, *args, **kwargs):
+        # suporte a partial via HTMX
+        partial = request.GET.get('partial') or request.headers.get('HX-Request')
         self.object = self.get_object()
         self.object.delete(using=self.db_alias)
         messages.success(self.request, 'Serviço excluído com sucesso.')
+        if partial:
+            # retornar partial para fechar modal / atualizar tabela
+            from django.http import HttpResponse
+            return HttpResponse('OK')
         return redirect(self.get_success_url())

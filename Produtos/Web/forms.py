@@ -157,12 +157,19 @@ class ServicosForm(forms.ModelForm):
             self.fields['prod_list_tabe_prec'].queryset = Produtos.objects.using(self.database).none()
 
     def clean_prod_unme(self):
-        codigo = (self.cleaned_data.get('prod_unme_autocomplete') or self.data.get('prod_unme_autocomplete') or '').strip().upper()
+        codigo = (self.cleaned_data.get('prod_unme_autocomplete') or self.data.get('prod_unme_autocomplete') or '').strip()
         if not codigo:
             raise forms.ValidationError('Informe a unidade de medida.')
+        codigo = codigo.upper()
         unidade = UnidadeMedida.objects.using(self.database).filter(unid_codi=codigo).first()
-        if not unidade:
-            raise forms.ValidationError('Unidade de medida inválida.')
+        if unidade:
+            return unidade
+        from core.utils import get_ncm_master_db
+        master_alias = get_ncm_master_db(self.database)
+        master_unme = UnidadeMedida.objects.using(master_alias).filter(unid_codi=codigo).first()
+        desc = getattr(master_unme, 'unid_desc', codigo) if master_unme else codigo
+        unidade = UnidadeMedida(unid_codi=codigo, unid_desc=desc)
+        unidade.save(using=self.database)
         return unidade
 
     def clean_prod_iss(self):
