@@ -484,9 +484,8 @@
                       {{ f.item_ambi.as_hidden }}
                     </td>
                     <td>
-                      <div class="badge-caix" id="badge-caix-{{ forloop.counter0 }}">
-                        {{ f.item_caix.value|default:"—" }}
-                      </div>
+                      <input type="number" step="0.0001" id="caix-{{ forloop.counter0 }}"
+                        class="form-control form-control-sm item-caix" value="{{ f.item_caix.value|default:'' }}">
                       <div class="d-none">{{ f.item_caix }}</div>
                     </td>
                     <td class="position-relative">
@@ -512,8 +511,7 @@
                     <td>{{ f.item_prod_nome }}</td>
                     <td>
                       <input type="number" step="0.0001" id="quan-{{ forloop.counter0 }}"
-                        class="form-control form-control-sm calc-field" value="{{ f.item_quan.value|default:'' }}"
-                        readonly tabindex="-1">
+                        class="form-control form-control-sm item-quan" value="{{ f.item_quan.value|default:'' }}">
                       <div class="d-none">{{ f.item_quan }}</div>
                     </td>
                     <td>
@@ -905,14 +903,14 @@
       if (!res.ok) throw new Error('Erro HTTP ' + res.status);
       var data = await res.json();
 
-      var badgeCaix  = document.getElementById('badge-caix-' + index);
+      var caixInput  = document.getElementById('caix-' + index);
       var quanInput  = document.getElementById('quan-' + index);
       var hiddenCaix = document.getElementById('id_itens-' + index + '-item_caix');
       var hiddenQuan = document.getElementById('id_itens-' + index + '-item_quan');
       var hiddenKg   = document.getElementById('id_itens-' + index + '-item_kg');
       var hiddenUnit = document.getElementById('id_itens-' + index + '-item_unit');
 
-      if (badgeCaix) badgeCaix.textContent = data.caixas || '—';
+      if (caixInput) caixInput.value = data.caixas || '';
       if (quanInput) quanInput.value        = data.quantidade || '';
       if (kgInput)   kgInput.value          = data.kg_total || data.kg || '';
       if (sutoInput) sutoInput.value        = parseFloat(data.total || 0).toFixed(2);
@@ -978,7 +976,7 @@
   }
 
   function bindCalcInputs(index) {
-    ['m2', 'unit', 'queb'].forEach(function (tipo) {
+    ['m2', 'unit', 'queb', 'caix', 'quan'].forEach(function (tipo) {
       var el = document.getElementById(tipo + '-' + index);
       if (!el) return;
       el.addEventListener('input', function () { debounceCalc(index); });
@@ -986,7 +984,7 @@
         el.addEventListener('input', function () { delete el.dataset.autoPrice; });
       }
       el.addEventListener('change', function () {
-        var hiddenMap = { m2: 'item_m2', unit: 'item_unit', queb: 'item_queb' };
+        var hiddenMap = { m2: 'item_m2', unit: 'item_unit', queb: 'item_queb', caix: 'item_caix', quan: 'item_quan' };
         var hidden = document.getElementById('id_itens-' + index + '-' + hiddenMap[tipo]);
         if (hidden) hidden.value = normalizeNumberBR(el.value);
       });
@@ -1020,8 +1018,7 @@
           '<input type="hidden" name="' + prefix + '-item_ambi" id="id_itens-' + index + '-item_ambi" value="' + (index + 1) + '">' +
         '</td>' +
         '<td>' +
-          '<div class="badge-caix" id="badge-caix-' + index + '">—</div>' +
-          '<input type="hidden" name="' + prefix + '-item_caix" id="id_itens-' + index + '-item_caix" value="">' +
+          '<input type="number" step="0.0001" id="caix-' + index + '" name="' + prefix + '-item_caix" class="form-control form-control-sm item-caix" placeholder="0">' +
         '</td>' +
         '<td class="position-relative">' +
           '<input type="number" step="0.01" id="m2-' + index + '" class="form-control form-control-sm item-m2" data-index="' + index + '" placeholder="0,00">' +
@@ -1040,8 +1037,7 @@
           '<input name="' + prefix + '-item_prod_nome" id="id_itens-' + index + '-item_prod_nome" class="form-control form-control-sm" placeholder="—">' +
         '</td>' +
         '<td>' +
-          '<input type="number" step="0.0001" id="quan-' + index + '" class="form-control form-control-sm calc-field" readonly tabindex="-1">' +
-          '<input type="hidden" name="' + prefix + '-item_quan" id="id_itens-' + index + '-item_quan" value="">' +
+          '<input type="number" step="0.0001" id="quan-' + index + '" name="' + prefix + '-item_quan" class="form-control form-control-sm item-quan">' +
         '</td>' +
         '<td>' +
           '<input type="number" step="0.01" id="unit-' + index + '" class="form-control form-control-sm item-unit" data-index="' + index + '" placeholder="0,00">' +
