@@ -507,7 +507,7 @@
 
             {{ formset.management_form }}
 
-            
+
             <style>
               /* Melhor handling para evitar barra lateral da página e caber a tabela no container */
               .itens-table-wrap {
@@ -550,6 +550,7 @@
                 padding: 0.25rem 0.4rem;
                 font-size: 0.86rem;
               }
+
               .itens-table-wrap td input.form-control,
               .itens-table-wrap td select.form-control {
                 max-width: 100%;
@@ -811,6 +812,34 @@
       return String(parseNumberBR(s));
     }
 
+    var creditoDisponivel = 0;
+
+    async function carregarCreditoCliente() {
+      var clie = (document.getElementById('id_orca_clie')?.value || '').trim();
+      var empresa = (document.getElementById('id_orca_empr')?.value || '').trim();
+      var filial = (document.getElementById('id_orca_fili')?.value || '').trim();
+      if (!clie || !empresa || !filial) {
+        creditoDisponivel = 0;
+        var lbl0 = document.getElementById('credito-disponivel-label');
+        if (lbl0) lbl0.textContent = fmtBRL(0);
+        return;
+      }
+      try {
+        var qs = new URLSearchParams({ cliente: clie, empresa, filial });
+        if (EXCLUIR_ORCAMENTO) qs.set('excluir_orcamento', EXCLUIR_ORCAMENTO);
+        var resp = await fetch(URL_CREDITO + '?' + qs.toString(), { headers: { 'Accept': 'application/json' } });
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        var data = await resp.json();
+        creditoDisponivel = parseNumberBR(data.total_disponivel);
+        var lbl = document.getElementById('credito-disponivel-label');
+        if (lbl) lbl.textContent = fmtBRL(creditoDisponivel);
+      } catch (e) {
+        creditoDisponivel = 0;
+        var lbl = document.getElementById('credito-disponivel-label');
+        if (lbl) lbl.textContent = fmtBRL(0);
+      }
+    }
+
     function showToast(message, type) {
       type = type || 'danger';
       var container = document.querySelector('.toast-container');
@@ -949,53 +978,63 @@
 
     var creditoDisponivel = 0;
 
-  async function calcularItem(index) {
-    var prodInput  = document.getElementById('id_itens-' + index + '-item_prod');
-    var m2Input    = document.getElementById('m2-' + index);
-    var kgInput    = document.getElementById('kg-' + index);
-    var sutoInput  = document.getElementById('suto-' + index);
-    var unitInput  = document.getElementById('unit-' + index);
-    var quebInput  = document.getElementById('queb-' + index);
-    var spinner    = document.getElementById('spin-' + index);
+    async function calcularItem(index) {
+      var prodInput = document.getElementById('id_itens-' + index + '-item_prod');
+      var m2Input = document.getElementById('m2-' + index);
+      var kgInput = document.getElementById('kg-' + index);
+      var sutoInput = document.getElementById('suto-' + index);
+      var unitInput = document.getElementById('unit-' + index);
+      var quebInput = document.getElementById('queb-' + index);
+      var spinner = document.getElementById('spin-' + index);
 
-    var prod_id = String(prodInput?.value || '').trim();
-    var m2      = parseNumberBR(m2Input?.value);
-    var unit    = parseNumberBR(unitInput?.value);
-    var queb    = parseNumberBR(quebInput?.value);
+      var prod_id = String(prodInput?.value || '').trim();
+      var m2 = parseNumberBR(m2Input?.value);
+      var quanInput = document.getElementById('quan-' + index);
+      var quantidade = parseNumberBR(quanInput?.value);
+      var unit = parseNumberBR(unitInput?.value);
+      var queb = parseNumberBR(quebInput?.value);
 
-    if (!prod_id) return;
-    var precisaPreco = unit <= 0;
-    if (m2 <= 0 && !precisaPreco) return;
-    var condicao = getPrecoCondicao();
+      if (!prod_id) return;
+      var precisaPreco = unit <= 0;
+      if (m2 <= 0 && quantidade <= 0 && !precisaPreco) return;
+      var condicao = getPrecoCondicao();
 
-    if (spinner) spinner.style.display = 'block';
-    try {
-      var res = await fetch(URL_CALCULAR, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
-        body: JSON.stringify({ item_prod: prod_id, item_m2: m2, item_unit: unit, item_queb: queb, condicao }),
-      });
-      if (!res.ok) throw new Error('Erro HTTP ' + res.status);
-      var data = await res.json();
+      if (spinner) spinner.style.display = 'block';
+      try {
+        var res = await fetch(URL_CALCULAR, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+          body: JSON.stringify({ item_prod: prod_id, item_m2: m2, item_unit: unit, item_queb: queb, condicao, item_caix: parseInt(document.getElementById('caix-' + index)?.value || 0), item_quan: parseNumberBR(document.getElementById('quan-' + index)?.value) }),
+        });
+        if (!res.ok) throw new Error('Erro HTTP ' + res.status);
+        var data = await res.json();
 
-      var caixInput  = document.getElementById('caix-' + index);
-      var quanInput  = document.getElementById('quan-' + index);
-      var hiddenCaix = document.getElementById('id_itens-' + index + '-item_caix');
-      var hiddenQuan = document.getElementById('id_itens-' + index + '-item_quan');
-      var hiddenKg   = document.getElementById('id_itens-' + index + '-item_kg');
-      var hiddenUnit = document.getElementById('id_itens-' + index + '-item_unit');
+        var caixInput = document.getElementById('caix-' + index);
+        var quanInput = document.getElementById('quan-' + index);
+        var hiddenCaix = document.getElementById('id_itens-' + index + '-item_caix');
+        var hiddenQuan = document.getElementById('id_itens-' + index + '-item_quan');
+        var hiddenKg = document.getElementById('id_itens-' + index + '-item_kg');
+        var hiddenUnit = document.getElementById('id_itens-' + index + '-item_unit');
 
-      if (caixInput) caixInput.value = data.caixas || '';
-      if (quanInput) quanInput.value        = data.quantidade || '';
-      if (kgInput)   kgInput.value          = data.kg_total || data.kg || '';
-      if (sutoInput) sutoInput.value        = parseFloat(data.total || 0).toFixed(2);
-      if (hiddenCaix) hiddenCaix.value      = data.caixas || '';
-      if (hiddenQuan) hiddenQuan.value      = data.quantidade || '';
-      if (hiddenKg)   hiddenKg.value        = data.kg_total || data.kg || '';
-      if (precisaPreco && unitInput && data.preco_unitario) {
-        unitInput.value = String(data.preco_unitario).replace(',', '.');
-        unitInput.dataset.autoPrice = '1';
-        if (hiddenUnit) hiddenUnit.value = normalizeNumberBR(unitInput.value);
+        if (caixInput) caixInput.value = data.caixas || '';
+        if (quanInput) quanInput.value = data.quantidade || '';
+        if (kgInput) kgInput.value = data.kg_total || data.kg || '';
+        if (sutoInput) sutoInput.value = parseFloat(data.total || 0).toFixed(2);
+        if (hiddenCaix) hiddenCaix.value = data.caixas || '';
+        if (hiddenQuan) hiddenQuan.value = data.quantidade || '';
+        if (hiddenKg) hiddenKg.value = data.kg_total || data.kg || '';
+        if (precisaPreco && unitInput && data.preco_unitario) {
+          unitInput.value = String(data.preco_unitario).replace(',', '.');
+          unitInput.dataset.autoPrice = '1';
+          if (hiddenUnit) hiddenUnit.value = normalizeNumberBR(unitInput.value);
+        }
+        atualizarTotais();
+      }
+      catch (e) {
+        console.error('Erro ao calcular item:', e);
+        showToast('Erro ao calcular item ' + index + ': ' + e.message, 'danger');
+      } finally {
+        if (spinner) spinner.style.display = 'none';  // ← sempre esconde o spinner
       }
     }
 
@@ -1020,21 +1059,21 @@
       return sel ? String(sel.value || '0').trim() || '0' : '0';
     }
 
-  function bindCalcInputs(index) {
-    ['m2', 'unit', 'queb', 'caix', 'quan'].forEach(function (tipo) {
-      var el = document.getElementById(tipo + '-' + index);
-      if (!el) return;
-      el.addEventListener('input', function () { debounceCalc(index); });
-      if (tipo === 'unit') {
-        el.addEventListener('input', function () { delete el.dataset.autoPrice; });
-      }
-      el.addEventListener('change', function () {
-        var hiddenMap = { m2: 'item_m2', unit: 'item_unit', queb: 'item_queb', caix: 'item_caix', quan: 'item_quan' };
-        var hidden = document.getElementById('id_itens-' + index + '-' + hiddenMap[tipo]);
-        if (hidden) hidden.value = normalizeNumberBR(el.value);
+    function bindCalcInputs(index) {
+      ['m2', 'unit', 'queb', 'caix', 'quan'].forEach(function (tipo) {
+        var el = document.getElementById(tipo + '-' + index);
+        if (!el) return;
+        el.addEventListener('input', function () { debounceCalc(index); });
+        if (tipo === 'unit') {
+          el.addEventListener('input', function () { delete el.dataset.autoPrice; });
+        }
+        el.addEventListener('change', function () {
+          var hiddenMap = { m2: 'item_m2', unit: 'item_unit', queb: 'item_queb', caix: 'item_caix', quan: 'item_quan' };
+          var hidden = document.getElementById('id_itens-' + index + '-' + hiddenMap[tipo]);
+          if (hidden) hidden.value = normalizeNumberBR(el.value);
+        });
       });
-    });
-  }
+    }
 
     function debounceCalc(index, delay) {
       delay = delay || 600;
@@ -1042,74 +1081,21 @@
       calcTimers[index] = setTimeout(function () { calcularItem(index); }, delay);
     }
 
-  function setupAddItem() {
-    var btn = document.getElementById('btn-add-item');
-    if (!btn) return;
-    btn.addEventListener('click', function () {
-      var totalInput = document.getElementById('id_itens-TOTAL_FORMS');
-      if (!totalInput) return;
-      var index = parseInt(totalInput.value, 10);
-      totalInput.value = index + 1;
-      var tbody  = document.getElementById('itens-tbody');
-      var prefix = 'itens-' + index;
-      var tr = document.createElement('tr');
-      tr.dataset.index = index;
-      tr.innerHTML =
-        '<td>' +
-          '<input name="' + prefix + '-item_nome_ambi" class="form-control form-control-sm" placeholder="Ambiente">' +
-          '<input type="hidden" name="' + prefix + '-item_ambi" id="id_itens-' + index + '-item_ambi" value="' + (index + 1) + '">' +
-        '</td>' +
-        '<td>' +
-          '<input type="number" step="0.0001" id="caix-' + index + '" name="' + prefix + '-item_caix" class="form-control form-control-sm item-caix" placeholder="0">' +
-        '</td>' +
-        '<td class="position-relative">' +
-          '<input type="number" step="0.01" id="m2-' + index + '" class="form-control form-control-sm item-m2" data-index="' + index + '" placeholder="0,00">' +
-          '<input type="hidden" name="' + prefix + '-item_m2" id="id_itens-' + index + '-item_m2" value="">' +
-          '<div class="calc-spinner" id="spin-' + index + '"></div>' +
-        '</td>' +
-        '<td>' +
-          '<input id="kg-' + index + '" class="form-control form-control-sm item-kg calc-field" placeholder="0,00" data-index="' + index + '" readonly tabindex="-1">' +
-          '<input type="hidden" name="' + prefix + '-item_kg" id="id_itens-' + index + '-item_kg" value="">' +
-        '</td>' +
-        '<td class="position-relative">' +
-          '<input id="produto_busca_' + index + '" class="form-control form-control-sm" placeholder="Buscar produto" data-index="' + index + '">' +
-          '<input type="hidden" name="' + prefix + '-item_prod" id="id_itens-' + index + '-item_prod" value="">' +
-        '</td>' +
-        '<td>' +
-          '<input name="' + prefix + '-item_prod_nome" id="id_itens-' + index + '-item_prod_nome" class="form-control form-control-sm" placeholder="—">' +
-        '</td>' +
-        '<td>' +
-          '<input type="number" step="0.0001" id="quan-' + index + '" name="' + prefix + '-item_quan" class="form-control form-control-sm item-quan">' +
-        '</td>' +
-        '<td>' +
-          '<input type="number" step="0.01" id="unit-' + index + '" class="form-control form-control-sm item-unit" data-index="' + index + '" placeholder="0,00">' +
-          '<input type="hidden" name="' + prefix + '-item_unit" id="id_itens-' + index + '-item_unit" value="">' +
-        '</td>' +
-        '<td><input type="number" step="0.01" name="' + prefix + '-item_desc" class="form-control form-control-sm" placeholder="0"></td>' +
-        '<td>' +
-          '<input type="number" step="0.01" id="queb-' + index + '" class="form-control form-control-sm item-queb" data-index="' + index + '" placeholder="0">' +
-          '<input type="hidden" name="' + prefix + '-item_queb" id="id_itens-' + index + '-item_queb" value="">' +
-        '</td>' +
-        '<td><input type="text" id="suto-' + index + '" class="form-control form-control-sm calc-field" readonly tabindex="-1"></td>' +
-        '<td><input name="' + prefix + '-item_obse" class="form-control form-control-sm" placeholder="Obs"></td>' +
-        '<td>' +
-          '<input type="hidden" name="' + prefix + '-DELETE" id="id_itens-' + index + '-DELETE" value="">' +
-          '<button type="button" class="btn btn-sm btn-outline-danger btn-remove-item"><i class="bi bi-trash"></i></button>' +
-        '</td>';
-      tbody.appendChild(tr);
-      bindCalcInputs(index);
-      setupAutocomplete(
-        'produto_busca_' + index,
-        'id_itens-' + index + '-item_prod',
-        "{% url 'PisosWeb:autocomplete_produtos' slug=slug %}",
-        function (selected) {
-          var nomeInput = document.getElementById('id_itens-' + index + '-item_prod_nome');
-          if (nomeInput) nomeInput.value = selected.label || selected.text || '';
-          calcularItem(index);
-        }
-      );
-    });
-  }
+    
+
+    function bindRemoveButtons() {
+      document.addEventListener('click', function (e) {
+        var btn = e.target.closest('.btn-remove-item');
+        if (!btn) return;
+        var tr = btn.closest('tr');
+        if (!tr) return;
+        var index = tr.dataset.index;
+        var delInput = document.getElementById('id_itens-' + index + '-DELETE');
+        if (delInput) { delInput.value = 'on'; tr.style.display = 'none'; }
+        else { tr.remove(); }
+        atualizarTotais();
+      });
+    }
 
     function atualizarTotais() {
       var subtotal = 0;
@@ -1136,21 +1122,7 @@
       if (totalField) totalField.value = total.toFixed(2);
     }
 
-    function bindCalcInputs(index) {
-      ['m2', 'unit', 'queb'].forEach(function (tipo) {
-        var el = document.getElementById(tipo + '-' + index);
-        if (!el) return;
-        el.addEventListener('input', function () { debounceCalc(index); });
-        if (tipo === 'unit') {
-          el.addEventListener('input', function () { delete el.dataset.autoPrice; });
-        }
-        el.addEventListener('change', function () {
-          var hiddenMap = { m2: 'item_m2', unit: 'item_unit', queb: 'item_queb' };
-          var hidden = document.getElementById('id_itens-' + index + '-' + hiddenMap[tipo]);
-          if (hidden) hidden.value = normalizeNumberBR(el.value);
-        });
-      });
-    }
+
 
     function maybeInitialCalc(index) {
       var prod_id = document.getElementById('id_itens-' + index + '-item_prod')?.value;
@@ -1174,55 +1146,55 @@
         var tr = document.createElement('tr');
         tr.dataset.index = index;
         tr.innerHTML =
-      '<td style="min-width:80px;max-width:80px">' +
-        '<input name="' + prefix + '-item_nome_ambi" class="form-control form-control-sm" placeholder="Ambiente" style="width:100%">' +
-        '<input type="hidden" name="' + prefix + '-item_ambi" id="id_itens-' + index + '-item_ambi" value="' + (index + 1) + '">' +
-      '</td>' +
-      '<td style="min-width:45px;max-width:45px">' +
-        '<div class="badge-caix" id="badge-caix-' + index + '">—</div>' +
-        '<input type="hidden" name="' + prefix + '-item_caix" id="id_itens-' + index + '-item_caix" value="">' +
-      '</td>' +
-      '<td class="position-relative" style="min-width:60px;max-width:60px">' +
-        '<input type="number" step="0.01" id="m2-' + index + '" class="form-control form-control-sm item-m2" data-index="' + index + '" placeholder="0,00" style="width:100%">' +
-        '<input type="hidden" name="' + prefix + '-item_m2" id="id_itens-' + index + '-item_m2" value="">' +
-        '<div class="calc-spinner" id="spin-' + index + '"></div>' +
-      '</td>' +
-      '<td style="min-width:60px;max-width:60px">' +
-        '<input type="number" step="0.01" id="kg-' + index + '" class="form-control form-control-sm item-kg calc-field" data-index="' + index + '" placeholder="0,00" readonly tabindex="-1" style="width:100%">' +
-        '<input type="hidden" name="' + prefix + '-item_kg" id="id_itens-' + index + '-item_kg" value="">' +
-      '</td>' +
-      '<td class="position-relative" style="min-width:110px;max-width:110px">' +
-        '<input id="produto_busca_' + index + '" class="form-control form-control-sm" placeholder="Buscar produto" data-index="' + index + '" style="width:100%">' +
-        '<input type="hidden" name="' + prefix + '-item_prod" id="id_itens-' + index + '-item_prod" value="">' +
-      '</td>' +
-      '<td style="min-width:120px;max-width:120px">' +
-        '<input name="' + prefix + '-item_prod_nome" id="id_itens-' + index + '-item_prod_nome" class="form-control form-control-sm" placeholder="—" style="width:100%">' +
-      '</td>' +
-      '<td style="min-width:65px;max-width:65px">' +
-        '<input type="number" step="0.0001" id="quan-' + index + '" class="form-control form-control-sm calc-field" readonly tabindex="-1" style="width:100%">' +
-        '<input type="hidden" name="' + prefix + '-item_quan" id="id_itens-' + index + '-item_quan" value="">' +
-      '</td>' +
-      '<td style="min-width:75px;max-width:75px">' +
-        '<input type="number" step="0.01" id="unit-' + index + '" class="form-control form-control-sm item-unit" data-index="' + index + '" placeholder="0,00" style="width:100%">' +
-        '<input type="hidden" name="' + prefix + '-item_unit" id="id_itens-' + index + '-item_unit" value="">' +
-      '</td>' +
-      '<td style="min-width:60px;max-width:60px">' +
-        '<input type="number" step="0.01" name="' + prefix + '-item_desc" class="form-control form-control-sm" placeholder="0" style="width:100%">' +
-      '</td>' +
-      '<td style="min-width:60px;max-width:60px">' +
-        '<input type="number" step="0.01" id="queb-' + index + '" class="form-control form-control-sm item-queb" data-index="' + index + '" placeholder="0" style="width:100%">' +
-        '<input type="hidden" name="' + prefix + '-item_queb" id="id_itens-' + index + '-item_queb" value="">' +
-      '</td>' +
-      '<td style="min-width:75px;max-width:75px">' +
-        '<input type="text" id="suto-' + index + '" class="form-control form-control-sm calc-field" readonly tabindex="-1" style="width:100%">' +
-      '</td>' +
-      '<td style="min-width:55px;max-width:55px">' +
-        '<input name="' + prefix + '-item_obse" class="form-control form-control-sm" placeholder="Obs" style="width:100%">' +
-      '</td>' +
-      '<td style="min-width:36px;max-width:36px">' +
-        '<input type="hidden" name="' + prefix + '-DELETE" id="id_itens-' + index + '-DELETE" value="">' +
-        '<button type="button" class="btn btn-sm btn-outline-danger btn-remove-item"><i class="bi bi-trash"></i></button>' +
-      '</td>';
+         '<td style="min-width:80px;max-width:80px">' +
+          '<input name="' + prefix + '-item_nome_ambi" class="form-control form-control-sm" placeholder="Ambiente" style="width:100%">' +
+          '<input type="hidden" name="' + prefix + '-item_ambi" id="id_itens-' + index + '-item_ambi" value="' + (index + 1) + '">' +
+          '</td>' +   // ← esse aqui
+          '<td>' +
+          '<input type="number" step="0.0001" id="caix-' + index + '" class="form-control form-control-sm item-caix" placeholder="0">' +
+          '<input type="hidden" name="' + prefix + '-item_caix" id="id_itens-' + index + '-item_caix" value="">' +
+          '</td>' +
+          '<td class="position-relative" style="min-width:60px;max-width:60px">' +
+          '<input type="number" step="0.01" id="m2-' + index + '" class="form-control form-control-sm item-m2" data-index="' + index + '" placeholder="0,00" style="width:100%">' +
+          '<input type="hidden" name="' + prefix + '-item_m2" id="id_itens-' + index + '-item_m2" value="">' +
+          '<div class="calc-spinner" id="spin-' + index + '"></div>' +
+          '</td>' +
+          '<td style="min-width:60px;max-width:60px">' +
+          '<input type="number" step="0.01" id="kg-' + index + '" class="form-control form-control-sm item-kg calc-field" data-index="' + index + '" placeholder="0,00" readonly tabindex="-1" style="width:100%">' +
+          '<input type="hidden" name="' + prefix + '-item_kg" id="id_itens-' + index + '-item_kg" value="">' +
+          '</td>' +
+          '<td class="position-relative" style="min-width:110px;max-width:110px">' +
+          '<input id="produto_busca_' + index + '" class="form-control form-control-sm" placeholder="Buscar produto" data-index="' + index + '" style="width:100%">' +
+          '<input type="hidden" name="' + prefix + '-item_prod" id="id_itens-' + index + '-item_prod" value="">' +
+          '</td>' +
+          '<td style="min-width:120px;max-width:120px">' +
+          '<input name="' + prefix + '-item_prod_nome" id="id_itens-' + index + '-item_prod_nome" class="form-control form-control-sm" placeholder="—" style="width:100%">' +
+          '</td>' +
+          '<td style="min-width:65px;max-width:65px">' +
+          '<input type="number" step="0.0001" id="quan-' + index + '" name="' + prefix + '-item_quan" class="form-control form-control-sm item-quan" placeholder="0">' +
+          '<input type="hidden" name="' + prefix + '-item_quan" id="id_itens-' + index + '-item_quan" value="">' +
+          '</td>' +
+          '<td style="min-width:75px;max-width:75px">' +
+          '<input type="number" step="0.01" id="unit-' + index + '" class="form-control form-control-sm item-unit" data-index="' + index + '" placeholder="0,00" style="width:100%">' +
+          '<input type="hidden" name="' + prefix + '-item_unit" id="id_itens-' + index + '-item_unit" value="">' +
+          '</td>' +
+          '<td style="min-width:60px;max-width:60px">' +
+          '<input type="number" step="0.01" name="' + prefix + '-item_desc" class="form-control form-control-sm" placeholder="0" style="width:100%">' +
+          '</td>' +
+          '<td style="min-width:60px;max-width:60px">' +
+          '<input type="number" step="0.01" id="queb-' + index + '" class="form-control form-control-sm item-queb" data-index="' + index + '" placeholder="0" style="width:100%">' +
+          '<input type="hidden" name="' + prefix + '-item_queb" id="id_itens-' + index + '-item_queb" value="">' +
+          '</td>' +
+          '<td style="min-width:75px;max-width:75px">' +
+          '<input type="text" id="suto-' + index + '" class="form-control form-control-sm calc-field" readonly tabindex="-1" style="width:100%">' +
+          '</td>' +
+          '<td style="min-width:55px;max-width:55px">' +
+          '<input name="' + prefix + '-item_obse" class="form-control form-control-sm" placeholder="Obs" style="width:100%">' +
+          '</td>' +
+          '<td style="min-width:36px;max-width:36px">' +
+          '<input type="hidden" name="' + prefix + '-DELETE" id="id_itens-' + index + '-DELETE" value="">' +
+          '<button type="button" class="btn btn-sm btn-outline-danger btn-remove-item"><i class="bi bi-trash"></i></button>' +
+          '</td>';
         tbody.appendChild(tr);
         bindCalcInputs(index);
         setupAutocomplete(
@@ -1367,4 +1339,4 @@
     });
   </script>
 
-{% endblock %}
+  {% endblock %}

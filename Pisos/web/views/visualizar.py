@@ -47,6 +47,10 @@ def visualizar_pedido_pisos(request, slug, pk):
 
         item.produto_obj = produto
         item.item_prod_ncm = getattr(produto, 'prod_ncm', '')
+        item.item_caix = item.item_caix or 0
+        item.item_quan = item.item_quan or 0
+        item.item_m2 = item.item_m2 or 0
+        item.item_prod_nome = getattr(produto, 'prod_nome', '')
 
     return render(
         request,

@@ -20,6 +20,8 @@ def api_calcular_item(request, slug):
         item_m2 = body.get("item_m2") or 0
         item_queb = body.get("item_queb") or 0
         item_unit = body.get("item_unit") or 0
+        item_quant = body.get("item_quan") or 0
+        
         # aceitar caixas passadas pelo front-end para forçar cálculo
         item_caix_override = int(body.get("item_caix") or 0)
 

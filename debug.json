@@ -1,39 +1,39 @@
 {
-  "debug_id": "93c2250b-dfbf-4f31-9012-0abcf78b07f1",
-  "timestamp_inicio": "2026-05-25T22:34:58.261722Z",
+  "debug_id": "cef8d9e9-f2a1-4e5b-bf57-d3699713ee61",
+  "timestamp_inicio": "2026-05-26T18:08:53.845139Z",
   "ambiente": {
-    "debug": false,
+    "debug": true,
     "database_alias": "saveweb001"
   },
   "tabelas_tributacao": {
     "versao": "Padrão"
   },
   "nota": {
-    "id": 134,
+    "id": 136,
     "modelo": "55",
     "serie": "001",
-    "numero": "29",
+    "numero": "31",
     "empresa": "1",
     "filial": "1",
-    "destinatario_id": "5",
+    "destinatario_id": "30",
     "uf_origem": "PR",
     "uf_destino": "PR",
     "regime": "1"
   },
   "itens": [
     {
-      "id": 190,
-      "produto_id": "28",
-      "descricao_produto": "SOLEO DE PISO",
-      "ncm_produto": "6901****",
+      "id": 192,
+      "produto_id": "ARQLVT1.6",
+      "descricao_produto": "PISO VINILICO MAGNIFIQUE LOUISE 184X1220MM",
+      "ncm_produto": "3918****",
       "cfop_inicial": "5102",
-      "quantidade": "59.0400",
-      "unitario": "135.5800",
+      "quantidade": "100.0600",
+      "unitario": "73.9300",
       "desconto": "0.0000",
       "logs": [
         {
-          "id": "ddd79466-8a40-4ab0-bce1-65487ac94330",
-          "timestamp": "2026-05-25T22:34:58.531694Z",
+          "id": "fbe8039c-97a1-4015-92ff-9c5d2cf27a75",
+          "timestamp": "2026-05-26T18:08:53.934169Z",
           "tipo": "antes_calculo_item",
           "mensagem": "Início do cálculo de impostos para o item.",
           "dados": {
@@ -54,9 +54,9 @@
         "exig_ibs": false,
         "gera_st": false
       },
-      "ncm_resolvido": "6901****",
+      "ncm_resolvido": "3918****",
       "bases": {
-        "raiz": "8004.64",
+        "raiz": "7397.44",
         "icms": "0.00",
         "st": null
       },
@@ -101,8 +101,8 @@
   ],
   "logs": [
     {
-      "id": "cd2c73fa-a51b-4ac0-9d39-2068e94a43c3",
-      "timestamp": "2026-05-25T22:34:58.470018Z",
+      "id": "5fb7cf99-92fd-4c75-b631-4980e686ed71",
+      "timestamp": "2026-05-26T18:08:53.911712Z",
       "tipo": "contexto_nota",
       "mensagem": "Contexto fiscal inicial da nota.",
       "dados": {
@@ -110,5 +110,5 @@
       }
     }
   ],
-  "timestamp_fim": "2026-05-25T22:34:59.943116Z"
+  "timestamp_fim": "2026-05-26T18:08:54.270923Z"
 }

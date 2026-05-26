@@ -31,16 +31,17 @@ def visualizar_orcamento_pisos(request, slug, pk):
     produtos = Produtos.objects.using(banco).filter(
         prod_codi__in=[i.item_prod for i in itens]
     )
-    cliente_nome = get_object_or_404(
-        Entidades.objects.using(banco),
+    cliente_obj = Entidades.objects.using(banco).filter(
         enti_empr=orcamento.orca_empr,
         enti_clie=orcamento.orca_clie,
-    ).enti_nome
-    vendedor_nome = get_object_or_404(
-        Entidades.objects.using(banco),
+    ).first()
+    cliente_nome = cliente_obj.enti_nome if cliente_obj else ''
+
+    vendedor_obj = Entidades.objects.using(banco).filter(
         enti_empr=orcamento.orca_empr,
         enti_vend=orcamento.orca_vend,
-    ).enti_nome
+    ).first()
+    vendedor_nome = vendedor_obj.enti_nome if vendedor_obj else ''
 
     mapa_produtos = {
         p.prod_codi: p
@@ -53,6 +54,7 @@ def visualizar_orcamento_pisos(request, slug, pk):
         item.produto_obj = produto
         item.item_prod_ncm = getattr(produto, 'prod_ncm', '')
         item.item_prod_nome = getattr(produto, 'prod_nome', '')
+        item.item_caix = item.item_caix or 0
 
     return render(
         request,

@@ -5,7 +5,9 @@ import math
 from collections import defaultdict
 
 def calcular_item(item, produto=None):
-    metragem = parse_decimal(item.item_m2 or 0)
+    metragem = parse_decimal(getattr(item, "item_m2", 0) or 0)
+    quantidade = parse_decimal(getattr(item, "item_quant", 0) or 0)
+
     perda = parse_decimal(item.item_queb or 0) / Decimal(100)
     preco_unit = parse_decimal(item.item_unit or 0)
 
@@ -17,24 +19,57 @@ def calcular_item(item, produto=None):
     tem_pc = pc_por_caixa > 0
     tem_kg = kg_por_caixa > 0
 
+    """
+    ==================================================
+    CALCULAR METRAGEM AUTOMÁTICA PELA QUANTIDADE
+    ==================================================
+    """
+
+    caixas_necessarias = None
+
+    if metragem <= 0 and quantidade > 0:
+        # Usuário informou 'quantidade' (interpreted as área total)
+        if tem_caixa and m2_por_caixa > 0:
+            # calcular caixas diretamente a partir da quantidade informada
+            caixas_necessarias = math.ceil(parse_decimal(quantidade) / m2_por_caixa)
+            metragem_real = Decimal(caixas_necessarias) * m2_por_caixa
+            # metragem (base) será a metragem real (sem perda aplicada ainda)
+            metragem = metragem_real
+        elif tem_pc and pc_por_caixa > 0:
+            caixas_necessarias = math.ceil(parse_decimal(quantidade) / pc_por_caixa)
+            metragem_real = Decimal(caixas_necessarias) * pc_por_caixa
+            metragem = metragem_real
+        else:
+            # sem informações de caixa, tratar quantidade como metragem direta
+            metragem = quantidade
+
     metragem_com_perda = metragem * (Decimal(1) + perda)
 
-    if tem_caixa:
-        caixas_necessarias = math.ceil(metragem_com_perda / m2_por_caixa)
-        metragem_real = Decimal(caixas_necessarias) * m2_por_caixa
-    elif tem_pc:
-        caixas_necessarias = math.ceil(metragem_com_perda / pc_por_caixa)
-        metragem_real = Decimal(caixas_necessarias) * pc_por_caixa
-    else:
-        caixas_necessarias = None
-        metragem_real = metragem_com_perda
+    # Se não calculamos caixas a partir da quantidade acima, calcular a partir da metragem_com_perda
+    if caixas_necessarias is None:
+        if tem_caixa and m2_por_caixa > 0:
+            caixas_necessarias = math.ceil(metragem_com_perda / m2_por_caixa)
+            metragem_real = Decimal(caixas_necessarias) * m2_por_caixa
+        elif tem_pc and pc_por_caixa > 0:
+            caixas_necessarias = math.ceil(metragem_com_perda / pc_por_caixa)
+            metragem_real = Decimal(caixas_necessarias) * pc_por_caixa
+        else:
+            caixas_necessarias = None
+            metragem_real = metragem_com_perda
 
     quilos_total = None
+
     if tem_kg:
-        base_kg = Decimal(caixas_necessarias) if caixas_necessarias is not None else metragem_com_perda
+        base_kg = (
+            Decimal(caixas_necessarias)
+            if caixas_necessarias is not None
+            else metragem_com_perda
+        )
+
         quilos_total = base_kg * kg_por_caixa
 
     total = metragem_real * preco_unit
+
     return {
         "metragem_com_perda": arredondar(metragem_com_perda, 2),
         "caixas_necessarias": caixas_necessarias,
@@ -49,7 +84,6 @@ def calcular_item(item, produto=None):
         "tem_caixa": tem_caixa,
         "tem_pc": tem_pc,
         "tem_kg": tem_kg,
-        
     }
     
 
