@@ -986,7 +986,6 @@
       var hiddenUnit = document.getElementById('id_itens-' + index + '-item_unit');
 
       if (caixInput) caixInput.value = data.caixas || '';
-      if (hiddenCaix && !caixInput) hiddenCaix.value = data.caixas || '';
       if (quanInput) quanInput.value        = data.quantidade || '';
       if (kgInput)   kgInput.value          = data.kg_total || data.kg || '';
       if (sutoInput) sutoInput.value        = parseFloat(data.total || 0).toFixed(2);
