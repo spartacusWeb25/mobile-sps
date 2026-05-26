@@ -239,9 +239,15 @@ def editar_pedido_pisos(request, slug, pk):
             )
 
         except Exception as exc:
+            try:
+                from Pisos.services.status_listar import StatusPisosServices as _StatusPisosServices
+                mensagem_erro = _StatusPisosServices.normalizar_erro(exc)
+            except Exception:
+                mensagem_erro = str(exc)
+
             messages.error(
                 request,
-                f"Erro ao atualizar pedido: {PedidoAtualizarService.normalizar_erro(exc)}"
+                f"Erro ao atualizar pedido: {mensagem_erro}"
             )
 
     arquivos = []

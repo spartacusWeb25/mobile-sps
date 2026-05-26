@@ -1,5 +1,11 @@
 from decimal import Decimal
 from django.db import transaction
+from django.core.exceptions import ValidationError as DjangoValidationError
+
+try:
+    from rest_framework.exceptions import ValidationError as DRFValidationError
+except Exception:
+    DRFValidationError = None
 
 from Pisos.models import Pedidospisos, Itenspedidospisos
 from Pisos.services.pedido_criar_service import PedidoCriarService
@@ -94,3 +100,13 @@ class PedidoAtualizarService:
             PedidoCriarService.gerar_titulos_receber(banco=banco, pedido=pedido, parametros=parametros)
 
             return pedido
+
+    @staticmethod
+    def normalizar_erro(exc):
+        if DRFValidationError is not None and isinstance(exc, DRFValidationError):
+            return getattr(exc, "detail", None) or str(exc)
+
+        if isinstance(exc, DjangoValidationError):
+            return getattr(exc, "message_dict", None) or str(exc)
+
+        return str(exc)
