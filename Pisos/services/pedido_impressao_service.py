@@ -111,8 +111,9 @@ class PedidoPisosImpressaoService:
         def _chave_ambiente(item):
             valor = getattr(item, "item_nome_ambi", None) or getattr(item, "item_ambi", "") or ""
             if isinstance(valor, str):
-                return valor.strip()
-            return valor
+                valor = valor.strip()
+
+            return (str(valor), str(getattr(item, "item_nume", "") or ""))
 
         itens_ordenados = sorted(itens, key=_chave_ambiente)
         grupos = []
@@ -121,7 +122,7 @@ class PedidoPisosImpressaoService:
             total = Decimal("0")
             for item in itens_grupo:
                 total += Decimal(str(getattr(item, "item_suto", 0) or 0))
-            grupos.append({"nome": nome_ambiente, "itens": itens_grupo, "total": total})
+            grupos.append({"nome": nome_ambiente[0], "itens": itens_grupo, "total": total})
         return grupos
 
     @staticmethod

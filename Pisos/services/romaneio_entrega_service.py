@@ -34,6 +34,16 @@ class RomaneioEntregaService:
             caix_entr = parse_decimal(getattr(it, "item_caix_entr", None))
             caix_pend = max(caix_total - caix_entr, Decimal("0"))
 
+            # Formata data de entrega e número da nota (se houver)
+            try:
+                data_entr = getattr(it, "item_data_entr", None)
+                item_data_entr = data_entr.isoformat() if data_entr is not None else ""
+            except Exception:
+                item_data_entr = str(getattr(it, "item_data_entr", "") or "")
+
+            item_nfe_entr = getattr(it, "item_nfe_entr", None)
+            item_nfe_entr = int(item_nfe_entr) if item_nfe_entr not in (None, "") else ""
+
             saida.append(
                 {
                     "item_nume": getattr(it, "item_nume", None),
@@ -47,6 +57,8 @@ class RomaneioEntregaService:
                     "item_caix": str(caix_total),
                     "item_caix_entr": str(caix_entr),
                     "item_caix_pend": str(caix_pend),
+                    "item_data_entr": item_data_entr,
+                    "item_nfe_entr": item_nfe_entr,
                 }
             )
 
@@ -177,6 +189,12 @@ class RomaneioEntregaService:
                 item.item_quan_entr = novo_quan_entr
                 item.item_caix_entr = novo_caix_entr
                 item.item_stat_manu_data = hoje
+                # Preencher data de entrega do item
+                try:
+                    item.item_data_entr = hoje
+                except Exception:
+                    pass
+
                 if usuario_id_int is not None:
                     item.item_stat_manu_user = usuario_id_int
 
@@ -184,15 +202,37 @@ class RomaneioEntregaService:
                 completo_caix = caix_total <= 0 or novo_caix_entr >= caix_total
                 item.item_stat_manu = "ENTREGUE" if (completo_quan and completo_caix) else "ENTREGA PARCIAL"
 
+                # Se a entrega informar número da nota, preencher item_nfe_entr
+                nfe_num = None
+                if isinstance(ent, dict):
+                    for key in ("nfe_numero", "nfe", "nota_numero", "numero_nfe", "item_nfe_entr"):
+                        if key in ent and ent.get(key) not in (None, ""):
+                            try:
+                                nfe_num = int(ent.get(key))
+                                break
+                            except Exception:
+                                nfe_num = ent.get(key)
+                                break
+
+                update_fields = [
+                    "item_quan_entr",
+                    "item_caix_entr",
+                    "item_stat_manu_data",
+                    "item_stat_manu_user",
+                    "item_stat_manu",
+                    "item_data_entr",
+                ]
+
+                if nfe_num is not None:
+                    try:
+                        item.item_nfe_entr = nfe_num
+                        update_fields.append("item_nfe_entr")
+                    except Exception:
+                        pass
+
                 item.save(
                     using=banco,
-                    update_fields=[
-                        "item_quan_entr",
-                        "item_caix_entr",
-                        "item_stat_manu_data",
-                        "item_stat_manu_user",
-                        "item_stat_manu",
-                    ],
+                    update_fields=update_fields,
                 )
                 alterados += 1
 

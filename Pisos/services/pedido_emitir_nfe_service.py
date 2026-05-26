@@ -167,7 +167,13 @@ class PedidoEmitirNFeService:
         status_sefaz = resposta.get("status")
         if str(status_sefaz) in ("100", "204"):
             # Só registra quantidades se autorizado
-            self._registrar_emissao(dtos)
+            nota_numero = getattr(nota, "numero", None) if nota is not None else None
+            try:
+                nota_numero = int(nota_numero) if nota_numero not in (None, "") else None
+            except Exception:
+                pass
+
+            self._registrar_emissao(dtos, nota_numero=nota_numero, sefaz_resposta=resposta)
 
         # Retornar no mesmo formato que a view espera (chave 'sefaz')
         return {"sefaz": resposta}
@@ -486,7 +492,7 @@ class PedidoEmitirNFeService:
     # do banco quando item_quan_emit ainda não foi commitado.
     # ------------------------------------------------------------------
 
-    def _registrar_emissao(self, dtos: list[ItemEmissaoDTO]) -> None:
+    def _registrar_emissao(self, dtos: list[ItemEmissaoDTO], nota_numero=None, sefaz_resposta: dict | None = None) -> None:
         """
         Incrementa item_quan_emit em cada item emitido e
         recalcula pedi_stat_nfe no pedido.
@@ -498,6 +504,7 @@ class PedidoEmitirNFeService:
             atual = _quantidade_emitida(item)
             nova = atual + dto.quantidade
 
+            # Atualiza campo de quantidade emitida
             Itenspedidospisos.objects.using(self.banco).filter(
                 item_empr=item.item_empr,
                 item_fili=item.item_fili,
@@ -505,11 +512,40 @@ class PedidoEmitirNFeService:
                 item_nume=item.item_nume,
             ).update(item_quan_emit=nova)
 
+            # Se recebemos número da nota emitida, setar item_nfe_fatu (faturamento)
+            if nota_numero is not None:
+                try:
+                    Itenspedidospisos.objects.using(self.banco).filter(
+                        item_empr=item.item_empr,
+                        item_fili=item.item_fili,
+                        item_pedi=item.item_pedi,
+                        item_nume=item.item_nume,
+                    ).update(item_nfe_fatu=nota_numero)
+                except Exception:
+                    pass
+
             # Atualiza o objeto em memória para que _atualizar_status_pedido
             # não precise re-ler do banco com valores ainda não visíveis
             item.item_quan_emit = nova
             total = parse_decimal(item.item_quan or 0)
             novos_saldos[item.item_nume] = max(total - nova, Decimal("0"))
+
+        # Se quisermos, também podemos guardar outras informações da resposta SEFAZ
+        if sefaz_resposta is not None:
+            try:
+                # Se a resposta traz 'chave' e 'protocolo', armazená-los no pedido
+                chave = sefaz_resposta.get("chave")
+                protocolo = sefaz_resposta.get("protocolo")
+                if chave or protocolo:
+                    Pedidospisos.objects.using(self.banco).filter(
+                        pedi_empr=self.empresa,
+                        pedi_fili=self.filial,
+                        pedi_nume=self.pedido.pedi_nume,
+                    ).update(
+                        **({"pedi_nfev": nota_numero} if nota_numero is not None else {}),
+                    )
+            except Exception:
+                pass
 
         self._atualizar_status_pedido(novos_saldos)
 

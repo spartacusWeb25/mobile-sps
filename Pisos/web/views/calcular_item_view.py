@@ -20,6 +20,8 @@ def api_calcular_item(request, slug):
         item_m2 = body.get("item_m2") or 0
         item_queb = body.get("item_queb") or 0
         item_unit = body.get("item_unit") or 0
+        # aceitar caixas passadas pelo front-end para forçar cálculo
+        item_caix_override = int(body.get("item_caix") or 0)
 
     prod_id = body.get("item_prod")
     condicao = str(body.get("condicao") or "0").strip()
@@ -74,8 +76,11 @@ def api_calcular_item(request, slug):
     if quantidade_kg is None or parse_decimal(quantidade_kg) == 0:
         quantidade_kg = parse_decimal(body.get("item_kg") or 0)
     preco_unit = parse_decimal(body.get("item_unit") or 0)
-    
-    
+    # se o front passou item_caix, considerar como override: recalcular quantidade e total
+    item_caix_override = int(body.get("item_caix") or 0)
+    if item_caix_override > 0:
+        caixas = item_caix_override
+
     if prod_id and preco_unit <= 0:
         try:
             preco_unit = get_preco_produto(banco, prod_id, condicao)
@@ -103,4 +108,3 @@ def api_calcular_item(request, slug):
         "kg_total": str(arredondar(quantidade_kg, 2)),
         "kg_por_caixa": str(arredondar(kg_por_caixa, 2)),
         })
-

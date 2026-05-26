@@ -1,5 +1,5 @@
 from django.urls import path
-from Pisos.views import DashPedidosPisosView
+from Pisos.views import DashPedidosPisosView, DashOrcamentosView
 from .Views.list import ControleVisitaListView, ControleVisitaResumoView, ProximasVisitasDashboardView
 from .Views.registrar import RegistrarItemVisitaView, EditarItemVisitaView, ControleVisitaCreateView, ControleVisitaEditView
 from .Views.etapas import (
@@ -20,6 +20,7 @@ urlpatterns = [
     path('item/<int:item_id>/editar/', EditarItemVisitaView.as_view(), name='visita_item_editar_web'),
     path('dashboard/', ProximasVisitasDashboardView.as_view(), name='visitas_dashboard_web'),
     path('dashboard-pisos/', DashPedidosPisosView.as_view(), name='dashboard_pedidos_pisos_web'),
+    path('dashboard-orcamentos-pisos/', DashOrcamentosView.as_view(), name='dashboard_orcamentos_pisos_web'),
     path('nova/', ControleVisitaCreateView.as_view(), name='visita_criar_web'),
     path('editar/<int:ctrl_id>/', ControleVisitaEditView.as_view(), name='visita_editar_web'),
     # Etapas
