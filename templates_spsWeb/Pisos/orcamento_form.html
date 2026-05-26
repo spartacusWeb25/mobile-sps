@@ -78,7 +78,9 @@
     white-space: nowrap;
   }
 
-  .pedido-body { padding: 16px; }
+  .pedido-body {
+    padding: 16px;
+  }
 
   .section-card {
     background: var(--panel);
@@ -105,7 +107,9 @@
     letter-spacing: .04em;
   }
 
-  input, select, textarea {
+  input,
+  select,
+  textarea {
     background: var(--input-bg) !important;
     border: 1px solid #3b4780 !important;
     color: #eef3ff !important;
@@ -114,12 +118,17 @@
     transition: border-color .15s, box-shadow .15s;
   }
 
-  input:focus, select:focus, textarea:focus {
+  input:focus,
+  select:focus,
+  textarea:focus {
     border-color: var(--accent) !important;
     box-shadow: 0 0 0 0.15rem var(--accent-glow) !important;
   }
 
-  textarea { min-height: 110px; resize: vertical; }
+  textarea {
+    min-height: 110px;
+    resize: vertical;
+  }
 
   .tabs {
     display: flex;
@@ -139,7 +148,10 @@
     user-select: none;
   }
 
-  .tab:hover { color: var(--text); background: var(--bg3); }
+  .tab:hover {
+    color: var(--text);
+    background: var(--bg3);
+  }
 
   .tab.active {
     color: var(--accent);
@@ -147,8 +159,13 @@
     background: var(--bg3);
   }
 
-  .tab-content { display: none; }
-  .tab-content.active { display: block; }
+  .tab-content {
+    display: none;
+  }
+
+  .tab-content.active {
+    display: block;
+  }
 
   .itens-table-wrap {
     border: 1px solid var(--border);
@@ -157,7 +174,9 @@
     overflow: auto;
   }
 
-  .itens-table-wrap table { min-width: 1320px; }
+  .itens-table-wrap table {
+    min-width: 1320px;
+  }
 
   .itens-table-wrap thead th {
     position: sticky;
@@ -178,8 +197,14 @@
     padding: 4px 6px !important;
   }
 
-  .itens-table-wrap td.position-relative { overflow: visible; z-index: 3; }
-  .itens-table-wrap td.position-relative:focus-within { z-index: 1200; }
+  .itens-table-wrap td.position-relative {
+    overflow: visible;
+    z-index: 3;
+  }
+
+  .itens-table-wrap td.position-relative:focus-within {
+    z-index: 1200;
+  }
 
   .calc-field {
     background: #0e1320 !important;
@@ -213,7 +238,10 @@
     left: 0;
   }
 
-  .autocomplete-box.dropup { top: auto; bottom: calc(100% + 2px); }
+  .autocomplete-box.dropup {
+    top: auto;
+    bottom: calc(100% + 2px);
+  }
 
   .autocomplete-box .list-group-item {
     background: transparent;
@@ -223,7 +251,10 @@
     padding: 6px 10px;
   }
 
-  .autocomplete-box .list-group-item:hover { background: var(--bg3); color: var(--accent); }
+  .autocomplete-box .list-group-item:hover {
+    background: var(--bg3);
+    color: var(--accent);
+  }
 
   [data-bs-theme="light"] .calc-field {
     background: #f1f3f5 !important;
@@ -231,7 +262,9 @@
     color: #198754 !important;
   }
 
-  [data-bs-theme="light"] .totais-bar { background: #f8f9fa; }
+  [data-bs-theme="light"] .totais-bar {
+    background: #f8f9fa;
+  }
 
   [data-bs-theme="light"] .badge-caix {
     background: #eef2ff;
@@ -260,9 +293,25 @@
     flex-wrap: wrap;
   }
 
-  .total-item { display: flex; flex-direction: column; gap: 1px; }
-  .total-item span:first-child { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
-  .total-item span:last-child { font-size: 13px; font-weight: 700; color: #6ee7b7; font-variant-numeric: tabular-nums; }
+  .total-item {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .total-item span:first-child {
+    font-size: 9px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+  }
+
+  .total-item span:last-child {
+    font-size: 13px;
+    font-weight: 700;
+    color: #6ee7b7;
+    font-variant-numeric: tabular-nums;
+  }
 
   .actions {
     padding: 12px 16px;
@@ -278,7 +327,9 @@
     box-shadow: 0 0 0 0.1rem rgba(239, 68, 68, .2) !important;
   }
 
-  .toast-container { z-index: 9999; }
+  .toast-container {
+    z-index: 9999;
+  }
 
   .calc-spinner {
     display: none;
@@ -295,7 +346,9 @@
   }
 
   @keyframes spin {
-    to { transform: translateY(-50%) rotate(360deg); }
+    to {
+      transform: translateY(-50%) rotate(360deg);
+    }
   }
 </style>
 
@@ -331,16 +384,13 @@
 
     <div class="pedido-header-right">
       <span class="status-label">Status</span>
-      <span id="statusAtualBadge"
-            class="badge px-3 py-2"
-            style="background-color: {{ status_atual.stat_cor|default:'#6c757d' }};">
+      <span id="statusAtualBadge" class="badge px-3 py-2"
+        style="background-color: {{ status_atual.stat_cor|default:'#6c757d' }};">
         {{ status_atual.stat_desc|default:'Sem status' }}
       </span>
 
       {% if orcamento %}
-      <button type="button"
-              class="btn btn-sm btn-outline-primary"
-              onclick="abrirModalStatus()">
+      <button type="button" class="btn btn-sm btn-outline-primary" onclick="abrirModalStatus()">
         Alterar
       </button>
       {% else %}
@@ -357,7 +407,7 @@
       <div class="row g-3 align-items-start">
 
         <!-- ── Coluna esquerda ── -->
-        <div class="col-12 col-xl-4">
+        <div class="col-12 col-xl-3">
           <div class="section-card mb-3">
             <div class="section-title"><i class="bi bi-file-text me-1"></i>Dados do Orçamento</div>
             <div class="row g-2">
@@ -446,7 +496,7 @@
         </div>
 
         <!-- ── Coluna direita — Itens ── -->
-        <div class="col-12 col-xl-8">
+        <div class="col-12 col-xl-9">
           <div class="section-card h-100 d-flex flex-column" style="padding-bottom:0">
             <div class="d-flex justify-content-between align-items-center mb-2">
               <div class="section-title mb-0"><i class="bi bi-grid-3x3 me-1"></i>Itens do Orçamento</div>
@@ -457,15 +507,87 @@
 
             {{ formset.management_form }}
 
+            
+            <style>
+              /* Melhor handling para evitar barra lateral da página e caber a tabela no container */
+              .itens-table-wrap {
+                overflow-x: auto;
+                overflow-y: auto;
+                max-width: 100%;
+              }
+
+              .itens-table-wrap table {
+                width: max-content;
+                min-width: 100%;
+                table-layout: auto;
+                font-size: 0.82rem;
+                border-collapse: separate;
+              }
+
+              .itens-table-wrap table th,
+              .itens-table-wrap table td {
+                min-width: 0 !important;
+                padding: 0.35rem 0.5rem;
+                vertical-align: middle;
+              }
+
+              /* Permitir quebra para colunas de texto (produto/descrição) e encurtar números */
+              .itens-table-wrap table th,
+              .itens-table-wrap table td {
+                white-space: nowrap;
+              }
+
+              .itens-table-wrap table th:nth-child(5),
+              .itens-table-wrap table td:nth-child(5),
+              .itens-table-wrap table th:nth-child(6),
+              .itens-table-wrap table td:nth-child(6) {
+                white-space: normal;
+                word-break: break-word;
+              }
+
+              /* Tornar inputs e conteúdo adaptáveis */
+              .itens-table-wrap input.form-control {
+                padding: 0.25rem 0.4rem;
+                font-size: 0.86rem;
+              }
+              .itens-table-wrap td input.form-control,
+              .itens-table-wrap td select.form-control {
+                max-width: 100%;
+                min-width: 0;
+                width: 100%;
+                box-sizing: border-box;
+              }
+
+              .itens-table-wrap::-webkit-scrollbar {
+                height: 6px;
+                width: 6px;
+              }
+
+              .itens-table-wrap::-webkit-scrollbar-track {
+                background: var(--bg3);
+                border-radius: 0 0 8px 8px;
+              }
+
+              .itens-table-wrap::-webkit-scrollbar-thumb {
+                border-radius: 4px;
+                background: linear-gradient(90deg, #4f8ef7 0%, #a855f7 50%, #c91f74 100%);
+              }
+
+              .itens-table-wrap::-webkit-scrollbar-thumb:hover {
+                background: linear-gradient(90deg, #6aa3ff 0%, #c084fc 50%, #c91f74 100%);
+              }
+            </style>
+
             <div class="itens-table-wrap flex-grow-1">
               <table class="table table-sm table-dark table-hover align-middle mb-0" id="itens-table">
                 <thead>
                   <tr>
-                    <th style="min-width:100px">Ambiente</th>
-                    <th style="min-width:60px">Caixas</th>
-                    <th style="min-width:80px">M²</th>
-                    <th style="min-width:80px">KG</th>
-                    <th style="min-width:140px"><a href="{% url 'produtos_web' slug=slug %}" title="Ir para a listagem de produtos" class="prod-link">Produto</a></th>
+                    <th style="min-width:80px">Ambiente</th>
+                    <th style="min-width:40px">Caixas</th>
+                    <th style="min-width:30px">M²</th>
+                    <th style="min-width:30px">KG</th>
+                    <th style="min-width:130px"><a href="{% url 'produtos_web' slug=slug %}"
+                        title="Ir para a listagem de produtos" class="prod-link">Produto</a></th>
                     <th style="min-width:160px">Descrição do Item</th>
                     <th style="min-width:90px">Quant.</th>
                     <th style="min-width:90px">Unitário</th>
@@ -586,616 +708,622 @@
 </div>
 
 {# ── Modal fora do <form> ── #}
-{% include 'Pisos/modal_alterar_status.html' %}
+  {% include 'Pisos/modal_alterar_status.html' %}
 
-<script>
-  const SLUG            = "{{ slug }}";
-  const URL_CALCULAR    = "{% url 'PisosWeb:api_calcular_item' slug=slug %}";
-  const CSRF            = "{{ csrf_token }}";
-  const URL_CREDITO     = `/api/${SLUG}/pisos/credito-troca/`;
-  const EXCLUIR_ORCAMENTO = "{% if orcamento %}{{ orcamento.orca_nume }}{% endif %}";
-  const ORCAMENTO_STAT  = "{% if orcamento %}{{ orcamento.orca_stat }}{% endif %}";
-  const URL_ALTERAR_STATUS = "{% if orcamento %}{% url 'PisosWeb:orcamentos_pisos_alterar_status' slug=slug pk=orcamento.orca_nume %}{% endif %}";
-  const STATUS_EMPRESA  = "{{ orcamento.orca_empr|default:'' }}";
-  const STATUS_FILIAL   = "{{ orcamento.orca_fili|default:'' }}";
+  <script>
+    const SLUG = "{{ slug }}";
+    const URL_CALCULAR = "{% url 'PisosWeb:api_calcular_item' slug=slug %}";
+    const CSRF = "{{ csrf_token }}";
+    const URL_CREDITO = `/api/${SLUG}/pisos/credito-troca/`;
+    const EXCLUIR_ORCAMENTO = "{% if orcamento %}{{ orcamento.orca_nume }}{% endif %}";
+    const ORCAMENTO_STAT = "{% if orcamento %}{{ orcamento.orca_stat }}{% endif %}";
+    const URL_ALTERAR_STATUS = "{% if orcamento %}{% url 'PisosWeb:orcamentos_pisos_alterar_status' slug=slug pk=orcamento.orca_nume %}{% endif %}";
+    const STATUS_EMPRESA = "{{ orcamento.orca_empr|default:'' }}";
+    const STATUS_FILIAL = "{{ orcamento.orca_fili|default:'' }}";
 
-  function orcamentoExportado() {
-    return String(ORCAMENTO_STAT || '').trim() === '2';
-  }
+    function orcamentoExportado() {
+      return String(ORCAMENTO_STAT || '').trim() === '2';
+    }
 
-  /* ── Modal Alterar Status ── */
-  function abrirModalStatus() {
-    var modalEl = document.getElementById('modalAlterarStatus');
-    if (!modalEl) { console.error('Modal #modalAlterarStatus não encontrado'); return; }
-    atualizarPreviewStatus();
-    bootstrap.Modal.getOrCreateInstance(modalEl).show();
-  }
+    /* ── Modal Alterar Status ── */
+    function abrirModalStatus() {
+      var modalEl = document.getElementById('modalAlterarStatus');
+      if (!modalEl) { console.error('Modal #modalAlterarStatus não encontrado'); return; }
+      atualizarPreviewStatus();
+      bootstrap.Modal.getOrCreateInstance(modalEl).show();
+    }
 
-  function atualizarPreviewStatus() {
-  var select  = document.getElementById('novoStatusWorkflow');
-  var preview = document.getElementById('previewStatusWorkflow');
+    function atualizarPreviewStatus() {
+      var select = document.getElementById('novoStatusWorkflow');
+      var preview = document.getElementById('previewStatusWorkflow');
 
-  if (!select || !preview) return;
+      if (!select || !preview) return;
 
-  if (!select.options.length || select.selectedIndex < 0) {
-    preview.textContent = 'Nenhum status disponível';
-    preview.style.backgroundColor = '#6c757d';
-    return;
-  }
-
-  var option = select.options[select.selectedIndex];
-
-  preview.textContent = option.textContent.trim();
-  preview.style.backgroundColor = option.dataset.cor || '#6c757d';
-}
-
-  async function salvarStatusWorkflow() {
-    var select = document.getElementById('novoStatusWorkflow');
-    if (!select) return;
-    try {
-      var response = await fetch(URL_ALTERAR_STATUS, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': CSRF,
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify({
-          status:  select.value,
-          empresa: STATUS_EMPRESA,
-          filial:  STATUS_FILIAL,
-        }),
-      });
-      var data = await response.json();
-      if (!response.ok || !data.ok) { showToast(data.erro || 'Erro ao alterar status.', 'danger'); return; }
-      var badge = document.getElementById('statusAtualBadge');
-      if (badge) {
-        badge.textContent           = data.status_desc;
-        badge.style.backgroundColor = data.status_cor || '#6c757d';
+      if (!select.options.length || select.selectedIndex < 0) {
+        preview.textContent = 'Nenhum status disponível';
+        preview.style.backgroundColor = '#6c757d';
+        return;
       }
-      bootstrap.Modal.getInstance(document.getElementById('modalAlterarStatus')).hide();
-      showToast('Status alterado com sucesso.', 'success');
-    } catch (e) {
-      showToast('Erro ao alterar status.', 'danger');
+
+      var option = select.options[select.selectedIndex];
+
+      preview.textContent = option.textContent.trim();
+      preview.style.backgroundColor = option.dataset.cor || '#6c757d';
     }
-  }
 
-  /* ── Utilitários ── */
-  function fmtBRL(v) {
-    var n = parseNumberBR(v);
-    return 'R$ ' + n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  }
-
-  function parseNumberBR(v) {
-    if (v === null || v === undefined) return 0;
-    if (typeof v === 'number') return Number.isFinite(v) ? v : 0;
-    var s = String(v).trim();
-    if (!s) return 0;
-    s = s.replace(/\s/g, '').replace(/^R\$\s?/, '').replace(/[^\d,.\-]/g, '');
-    if (s.includes(',') && s.includes('.')) {
-      s = s.replace(/\./g, '').replace(',', '.');
-    } else if (s.includes(',') && !s.includes('.')) {
-      s = s.replace(',', '.');
+    async function salvarStatusWorkflow() {
+      var select = document.getElementById('novoStatusWorkflow');
+      if (!select) return;
+      try {
+        var response = await fetch(URL_ALTERAR_STATUS, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': CSRF,
+            'Accept': 'application/json',
+          },
+          body: JSON.stringify({
+            status: select.value,
+            empresa: STATUS_EMPRESA,
+            filial: STATUS_FILIAL,
+          }),
+        });
+        var data = await response.json();
+        if (!response.ok || !data.ok) { showToast(data.erro || 'Erro ao alterar status.', 'danger'); return; }
+        var badge = document.getElementById('statusAtualBadge');
+        if (badge) {
+          badge.textContent = data.status_desc;
+          badge.style.backgroundColor = data.status_cor || '#6c757d';
+        }
+        bootstrap.Modal.getInstance(document.getElementById('modalAlterarStatus')).hide();
+        showToast('Status alterado com sucesso.', 'success');
+      } catch (e) {
+        showToast('Erro ao alterar status.', 'danger');
+      }
     }
-    var n = Number(s);
-    return Number.isFinite(n) ? n : 0;
-  }
 
-  function normalizeNumberBR(v) {
-    var s = String(v || '').trim();
-    if (!s) return '';
-    return String(parseNumberBR(s));
-  }
+    /* ── Utilitários ── */
+    function fmtBRL(v) {
+      var n = parseNumberBR(v);
+      return 'R$ ' + n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
 
-  function showToast(message, type) {
-    type = type || 'danger';
-    var container = document.querySelector('.toast-container');
-    var toast = document.createElement('div');
-    toast.className = 'toast text-bg-' + type + ' border-0 show';
-    toast.setAttribute('role', 'alert');
-    toast.innerHTML =
-      '<div class="toast-header text-bg-' + type + ' border-0">' +
+    function parseNumberBR(v) {
+      if (v === null || v === undefined) return 0;
+      if (typeof v === 'number') return Number.isFinite(v) ? v : 0;
+      var s = String(v).trim();
+      if (!s) return 0;
+      s = s.replace(/\s/g, '').replace(/^R\$\s?/, '').replace(/[^\d,.\-]/g, '');
+      if (s.includes(',') && s.includes('.')) {
+        s = s.replace(/\./g, '').replace(',', '.');
+      } else if (s.includes(',') && !s.includes('.')) {
+        s = s.replace(',', '.');
+      }
+      var n = Number(s);
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function normalizeNumberBR(v) {
+      var s = String(v || '').trim();
+      if (!s) return '';
+      return String(parseNumberBR(s));
+    }
+
+    function showToast(message, type) {
+      type = type || 'danger';
+      var container = document.querySelector('.toast-container');
+      var toast = document.createElement('div');
+      toast.className = 'toast text-bg-' + type + ' border-0 show';
+      toast.setAttribute('role', 'alert');
+      toast.innerHTML =
+        '<div class="toast-header text-bg-' + type + ' border-0">' +
         '<strong class="me-auto">Aviso</strong>' +
         '<button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>' +
-      '</div>' +
-      '<div class="toast-body">' + message + '</div>';
-    container.appendChild(toast);
-    setTimeout(function () { toast.remove(); }, 6500);
-  }
-
-  /* ── Tabs ── */
-  function bindTabs() {
-    document.querySelectorAll('.tab').forEach(function (tab) {
-      tab.addEventListener('click', function () {
-        document.querySelectorAll('.tab').forEach(function (t) { t.classList.remove('active'); });
-        document.querySelectorAll('.tab-content').forEach(function (c) { c.classList.remove('active'); });
-        tab.classList.add('active');
-        var target = document.getElementById('tab-' + tab.dataset.tab);
-        if (target) target.classList.add('active');
-      });
-    });
-  }
-
-  /* ── Autocomplete ── */
-  function setupAutocomplete(inputId, hiddenId, url, onSelect) {
-    var input  = document.getElementById(inputId);
-    var hidden = document.getElementById(hiddenId);
-    if (!input || !hidden) return;
-
-    var box = document.createElement('div');
-    box.className = 'list-group position-absolute autocomplete-box d-none';
-    input.parentElement.style.position = 'relative';
-    input.parentElement.appendChild(box);
-
-    var debounceTimer;
-
-    function positionBox() {
-      var inputRect  = input.getBoundingClientRect();
-      var scrollWrap = input.closest('.itens-table-wrap');
-      var spaceAbove = 0, spaceBelow = 0;
-      if (scrollWrap) {
-        var wrapRect = scrollWrap.getBoundingClientRect();
-        spaceAbove = inputRect.top - wrapRect.top;
-        spaceBelow = wrapRect.bottom - inputRect.bottom;
-      } else {
-        spaceAbove = inputRect.top;
-        spaceBelow = window.innerHeight - inputRect.bottom;
-      }
-      var dropup = spaceBelow < 180 && spaceAbove > spaceBelow;
-      box.classList.toggle('dropup', dropup);
-      box.style.left  = input.offsetLeft + 'px';
-      box.style.width = input.offsetWidth + 'px';
-      var maxH = Math.max(120, Math.min(240, (dropup ? spaceAbove : spaceBelow) - 12));
-      box.style.maxHeight = maxH + 'px';
-      var parentH = input.parentElement ? input.parentElement.offsetHeight : 0;
-      if (dropup) {
-        box.style.top    = 'auto';
-        box.style.bottom = (parentH - input.offsetTop + 2) + 'px';
-      } else {
-        box.style.bottom = 'auto';
-        box.style.top    = (input.offsetTop + input.offsetHeight + 2) + 'px';
-      }
+        '</div>' +
+        '<div class="toast-body">' + message + '</div>';
+      container.appendChild(toast);
+      setTimeout(function () { toast.remove(); }, 6500);
     }
 
-    positionBox();
-    input.addEventListener('focus', positionBox);
-    window.addEventListener('resize', positionBox);
+    /* ── Tabs ── */
+    function bindTabs() {
+      document.querySelectorAll('.tab').forEach(function (tab) {
+        tab.addEventListener('click', function () {
+          document.querySelectorAll('.tab').forEach(function (t) { t.classList.remove('active'); });
+          document.querySelectorAll('.tab-content').forEach(function (c) { c.classList.remove('active'); });
+          tab.classList.add('active');
+          var target = document.getElementById('tab-' + tab.dataset.tab);
+          if (target) target.classList.add('active');
+        });
+      });
+    }
 
-    input.addEventListener('input', function () {
-      clearTimeout(debounceTimer);
-      var term = input.value.trim();
-      if (term.length < 2) { box.classList.add('d-none'); return; }
-      debounceTimer = setTimeout(async function () {
-        try {
-          positionBox();
-          var res     = await fetch(url + '?term=' + encodeURIComponent(term));
-          var payload = await res.json();
-          var data    = Array.isArray(payload) ? payload : (payload.results || []);
-          box.innerHTML = '';
-          data.forEach(function (item) {
-            var btn = document.createElement('button');
-            btn.type      = 'button';
-            btn.className = 'list-group-item list-group-item-action';
-            btn.textContent = item.label || item.text || item.value || '';
-            box.appendChild(btn);
-          });
-          positionBox();
-          box.classList.toggle('d-none', data.length === 0);
-          Array.from(box.children).forEach(function (btn, idx) {
-            btn.addEventListener('click', function () {
-              input.value  = data[idx].label || data[idx].text || '';
-              hidden.value = data[idx].id;
-              box.classList.add('d-none');
-              if (onSelect) onSelect(data[idx]);
-            });
-          });
-        } catch (e) {
-          console.error('Autocomplete error:', e);
-          box.classList.add('d-none');
+    /* ── Autocomplete ── */
+    function setupAutocomplete(inputId, hiddenId, url, onSelect) {
+      var input = document.getElementById(inputId);
+      var hidden = document.getElementById(hiddenId);
+      if (!input || !hidden) return;
+
+      var box = document.createElement('div');
+      box.className = 'list-group position-absolute autocomplete-box d-none';
+      input.parentElement.style.position = 'relative';
+      input.parentElement.appendChild(box);
+
+      var debounceTimer;
+
+      function positionBox() {
+        var inputRect = input.getBoundingClientRect();
+        var scrollWrap = input.closest('.itens-table-wrap');
+        var spaceAbove = 0, spaceBelow = 0;
+        if (scrollWrap) {
+          var wrapRect = scrollWrap.getBoundingClientRect();
+          spaceAbove = inputRect.top - wrapRect.top;
+          spaceBelow = wrapRect.bottom - inputRect.bottom;
+        } else {
+          spaceAbove = inputRect.top;
+          spaceBelow = window.innerHeight - inputRect.bottom;
         }
-      }, 250);
-    });
-
-    document.addEventListener('click', function (e) {
-      if (!input.parentElement.contains(e.target)) box.classList.add('d-none');
-    });
-  }
-
-  async function prefillAutocomplete(inputId, hiddenId, url, onSelect) {
-    var input  = document.getElementById(inputId);
-    var hidden = document.getElementById(hiddenId);
-    if (!input || !hidden) return;
-    var currentId = String(hidden.value || '').trim();
-    if (!currentId || String(input.value || '').trim()) return;
-    try {
-      var res     = await fetch(url + '?term=' + encodeURIComponent(currentId));
-      var payload = await res.json();
-      var data    = Array.isArray(payload) ? payload : (payload.results || []);
-      if (Array.isArray(data) && data.length) {
-        var exact    = data.find(function (x) { return String(x?.id ?? '') === currentId || String(x?.value ?? '') === currentId; });
-        var selected = exact || data[0];
-        input.value  = selected.label || selected.text || '';
-        hidden.value = selected.id ?? currentId;
-        if (onSelect) onSelect(selected);
+        var dropup = spaceBelow < 180 && spaceAbove > spaceBelow;
+        box.classList.toggle('dropup', dropup);
+        box.style.left = input.offsetLeft + 'px';
+        box.style.width = input.offsetWidth + 'px';
+        var maxH = Math.max(120, Math.min(240, (dropup ? spaceAbove : spaceBelow) - 12));
+        box.style.maxHeight = maxH + 'px';
+        var parentH = input.parentElement ? input.parentElement.offsetHeight : 0;
+        if (dropup) {
+          box.style.top = 'auto';
+          box.style.bottom = (parentH - input.offsetTop + 2) + 'px';
+        } else {
+          box.style.bottom = 'auto';
+          box.style.top = (input.offsetTop + input.offsetHeight + 2) + 'px';
+        }
       }
-    } catch (e) {
-      console.error('Autocomplete prefill error:', e);
-    }
-  }
 
-  var creditoDisponivel = 0;
+      positionBox();
+      input.addEventListener('focus', positionBox);
+      window.addEventListener('resize', positionBox);
 
-  async function carregarCreditoCliente() {
-    var clie    = (document.getElementById('id_orca_clie')?.value  || '').trim();
-    var empresa = (document.getElementById('id_orca_empr')?.value  || '').trim();
-    var filial  = (document.getElementById('id_orca_fili')?.value  || '').trim();
-    if (!clie || !empresa || !filial) {
-      creditoDisponivel = 0;
-      var lbl0 = document.getElementById('credito-disponivel-label');
-      if (lbl0) lbl0.textContent = fmtBRL(0);
-      return;
-    }
-    try {
-      var qs = new URLSearchParams({ cliente: clie, empresa, filial });
-      if (EXCLUIR_ORCAMENTO) qs.set('excluir_orcamento', EXCLUIR_ORCAMENTO);
-      var resp = await fetch(URL_CREDITO + '?' + qs.toString(), { headers: { 'Accept': 'application/json' } });
-      if (!resp.ok) throw new Error('HTTP ' + resp.status);
-      var data = await resp.json();
-      creditoDisponivel = parseNumberBR(data.total_disponivel);
-      var lbl = document.getElementById('credito-disponivel-label');
-      if (lbl) lbl.textContent = fmtBRL(creditoDisponivel);
-    } catch (e) {
-      creditoDisponivel = 0;
-      var lbl = document.getElementById('credito-disponivel-label');
-      if (lbl) lbl.textContent = fmtBRL(0);
-    }
-  }
-
-  function aplicarCreditoAuto() {
-    var credEl = document.getElementById('id_orca_cred');
-    var chk    = document.getElementById('usar-credito');
-    if (!credEl || !chk) return;
-    if (!chk.checked) { credEl.value = '0'; atualizarTotais(); return; }
-    var subtotal     = parseNumberBR(document.getElementById('total-itens')?.textContent);
-    var desc         = parseNumberBR(document.getElementById('id_orca_desc')?.value);
-    var fret         = parseNumberBR(document.getElementById('id_orca_fret')?.value);
-    var totalSemCred = Math.max(subtotal - desc + fret, 0);
-    var aplicar      = Math.min(creditoDisponivel || 0, totalSemCred);
-    credEl.value = aplicar.toFixed(2);
-    atualizarTotais();
-  }
-
-  var calcTimers = {};
-
-  function getPrecoCondicao() {
-    var sel = document.getElementById('preco-condicao');
-    return sel ? String(sel.value || '0').trim() || '0' : '0';
-  }
-
-  async function calcularItem(index) {
-    var prodInput  = document.getElementById('id_itens-' + index + '-item_prod');
-    var m2Input    = document.getElementById('m2-' + index);
-    var kgInput    = document.getElementById('kg-' + index);
-    var sutoInput  = document.getElementById('suto-' + index);
-    var unitInput  = document.getElementById('unit-' + index);
-    var quebInput  = document.getElementById('queb-' + index);
-    var spinner    = document.getElementById('spin-' + index);
-
-    var prod_id = String(prodInput?.value || '').trim();
-    var m2      = parseNumberBR(m2Input?.value);
-    var unit    = parseNumberBR(unitInput?.value);
-    var queb    = parseNumberBR(quebInput?.value);
-
-    if (!prod_id) return;
-    var precisaPreco = unit <= 0;
-    if (m2 <= 0 && !precisaPreco) return;
-    var condicao = getPrecoCondicao();
-
-    if (spinner) spinner.style.display = 'block';
-    try {
-      var res = await fetch(URL_CALCULAR, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
-        body: JSON.stringify({ item_prod: prod_id, item_m2: m2, item_unit: unit, item_queb: queb, condicao }),
+      input.addEventListener('input', function () {
+        clearTimeout(debounceTimer);
+        var term = input.value.trim();
+        if (term.length < 2) { box.classList.add('d-none'); return; }
+        debounceTimer = setTimeout(async function () {
+          try {
+            positionBox();
+            var res = await fetch(url + '?term=' + encodeURIComponent(term));
+            var payload = await res.json();
+            var data = Array.isArray(payload) ? payload : (payload.results || []);
+            box.innerHTML = '';
+            data.forEach(function (item) {
+              var btn = document.createElement('button');
+              btn.type = 'button';
+              btn.className = 'list-group-item list-group-item-action';
+              btn.textContent = item.label || item.text || item.value || '';
+              box.appendChild(btn);
+            });
+            positionBox();
+            box.classList.toggle('d-none', data.length === 0);
+            Array.from(box.children).forEach(function (btn, idx) {
+              btn.addEventListener('click', function () {
+                input.value = data[idx].label || data[idx].text || '';
+                hidden.value = data[idx].id;
+                box.classList.add('d-none');
+                if (onSelect) onSelect(data[idx]);
+              });
+            });
+          } catch (e) {
+            console.error('Autocomplete error:', e);
+            box.classList.add('d-none');
+          }
+        }, 250);
       });
-      if (!res.ok) throw new Error('Erro HTTP ' + res.status);
-      var data = await res.json();
 
-      var badgeCaix  = document.getElementById('badge-caix-' + index);
-      var quanInput  = document.getElementById('quan-' + index);
-      var hiddenCaix = document.getElementById('id_itens-' + index + '-item_caix');
-      var hiddenQuan = document.getElementById('id_itens-' + index + '-item_quan');
-      var hiddenKg   = document.getElementById('id_itens-' + index + '-item_kg');
-      var hiddenUnit = document.getElementById('id_itens-' + index + '-item_unit');
-
-      if (badgeCaix) badgeCaix.textContent = data.caixas || '—';
-      if (quanInput) quanInput.value        = data.quantidade || '';
-      if (kgInput)   kgInput.value          = data.kg_total || data.kg || '';
-      if (sutoInput) sutoInput.value        = parseFloat(data.total || 0).toFixed(2);
-      if (hiddenCaix) hiddenCaix.value      = data.caixas || '';
-      if (hiddenQuan) hiddenQuan.value      = data.quantidade || '';
-      if (hiddenKg)   hiddenKg.value        = data.kg_total || data.kg || '';
-      if (precisaPreco && unitInput && data.preco_unitario) {
-        unitInput.value = String(data.preco_unitario).replace(',', '.');
-        unitInput.dataset.autoPrice = '1';
-        if (hiddenUnit) hiddenUnit.value = normalizeNumberBR(unitInput.value);
-      }
-      atualizarTotais();
-    } catch (e) {
-      console.error('Erro ao calcular item:', e);
-    } finally {
-      if (spinner) spinner.style.display = 'none';
+      document.addEventListener('click', function (e) {
+        if (!input.parentElement.contains(e.target)) box.classList.add('d-none');
+      });
     }
-  }
 
-  function debounceCalc(index, delay) {
-    delay = delay || 600;
-    clearTimeout(calcTimers[index]);
-    calcTimers[index] = setTimeout(function () { calcularItem(index); }, delay);
-  }
+    async function prefillAutocomplete(inputId, hiddenId, url, onSelect) {
+      var input = document.getElementById(inputId);
+      var hidden = document.getElementById(hiddenId);
+      if (!input || !hidden) return;
+      var currentId = String(hidden.value || '').trim();
+      if (!currentId || String(input.value || '').trim()) return;
+      try {
+        var res = await fetch(url + '?term=' + encodeURIComponent(currentId));
+        var payload = await res.json();
+        var data = Array.isArray(payload) ? payload : (payload.results || []);
+        if (Array.isArray(data) && data.length) {
+          var exact = data.find(function (x) { return String(x?.id ?? '') === currentId || String(x?.value ?? '') === currentId; });
+          var selected = exact || data[0];
+          input.value = selected.label || selected.text || '';
+          hidden.value = selected.id ?? currentId;
+          if (onSelect) onSelect(selected);
+        }
+      } catch (e) {
+        console.error('Autocomplete prefill error:', e);
+      }
+    }
 
-  function bindRemoveButtons() {
-    document.addEventListener('click', function (e) {
-      var btn = e.target.closest('.btn-remove-item');
+    var creditoDisponivel = 0;
+
+    async function carregarCreditoCliente() {
+      var clie = (document.getElementById('id_orca_clie')?.value || '').trim();
+      var empresa = (document.getElementById('id_orca_empr')?.value || '').trim();
+      var filial = (document.getElementById('id_orca_fili')?.value || '').trim();
+      if (!clie || !empresa || !filial) {
+        creditoDisponivel = 0;
+        var lbl0 = document.getElementById('credito-disponivel-label');
+        if (lbl0) lbl0.textContent = fmtBRL(0);
+        return;
+      }
+      try {
+        var qs = new URLSearchParams({ cliente: clie, empresa, filial });
+        if (EXCLUIR_ORCAMENTO) qs.set('excluir_orcamento', EXCLUIR_ORCAMENTO);
+        var resp = await fetch(URL_CREDITO + '?' + qs.toString(), { headers: { 'Accept': 'application/json' } });
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        var data = await resp.json();
+        creditoDisponivel = parseNumberBR(data.total_disponivel);
+        var lbl = document.getElementById('credito-disponivel-label');
+        if (lbl) lbl.textContent = fmtBRL(creditoDisponivel);
+      } catch (e) {
+        creditoDisponivel = 0;
+        var lbl = document.getElementById('credito-disponivel-label');
+        if (lbl) lbl.textContent = fmtBRL(0);
+      }
+    }
+
+    function aplicarCreditoAuto() {
+      var credEl = document.getElementById('id_orca_cred');
+      var chk = document.getElementById('usar-credito');
+      if (!credEl || !chk) return;
+      if (!chk.checked) { credEl.value = '0'; atualizarTotais(); return; }
+      var subtotal = parseNumberBR(document.getElementById('total-itens')?.textContent);
+      var desc = parseNumberBR(document.getElementById('id_orca_desc')?.value);
+      var fret = parseNumberBR(document.getElementById('id_orca_fret')?.value);
+      var totalSemCred = Math.max(subtotal - desc + fret, 0);
+      var aplicar = Math.min(creditoDisponivel || 0, totalSemCred);
+      credEl.value = aplicar.toFixed(2);
+      atualizarTotais();
+    }
+
+    var calcTimers = {};
+
+    function getPrecoCondicao() {
+      var sel = document.getElementById('preco-condicao');
+      return sel ? String(sel.value || '0').trim() || '0' : '0';
+    }
+
+    async function calcularItem(index) {
+      var prodInput = document.getElementById('id_itens-' + index + '-item_prod');
+      var m2Input = document.getElementById('m2-' + index);
+      var kgInput = document.getElementById('kg-' + index);
+      var sutoInput = document.getElementById('suto-' + index);
+      var unitInput = document.getElementById('unit-' + index);
+      var quebInput = document.getElementById('queb-' + index);
+      var spinner = document.getElementById('spin-' + index);
+
+      var prod_id = String(prodInput?.value || '').trim();
+      var m2 = parseNumberBR(m2Input?.value);
+      var unit = parseNumberBR(unitInput?.value);
+      var queb = parseNumberBR(quebInput?.value);
+
+      if (!prod_id) return;
+      var precisaPreco = unit <= 0;
+      if (m2 <= 0 && !precisaPreco) return;
+      var condicao = getPrecoCondicao();
+
+      if (spinner) spinner.style.display = 'block';
+      try {
+        var res = await fetch(URL_CALCULAR, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+          body: JSON.stringify({ item_prod: prod_id, item_m2: m2, item_unit: unit, item_queb: queb, condicao, item_caix: parseInt(document.getElementById('caix-' + index)?.value || 0) }),
+        });
+        if (!res.ok) throw new Error('Erro HTTP ' + res.status);
+        var data = await res.json();
+
+        var badgeCaix = document.getElementById('badge-caix-' + index);
+        var quanInput = document.getElementById('quan-' + index);
+        var hiddenCaix = document.getElementById('id_itens-' + index + '-item_caix');
+        var hiddenQuan = document.getElementById('id_itens-' + index + '-item_quan');
+        var hiddenKg = document.getElementById('id_itens-' + index + '-item_kg');
+        var hiddenUnit = document.getElementById('id_itens-' + index + '-item_unit');
+
+        if (badgeCaix) badgeCaix.textContent = data.caixas || '—';
+        if (quanInput) quanInput.value = data.quantidade || '';
+        if (kgInput) kgInput.value = data.kg_total || data.kg || '';
+        if (sutoInput) sutoInput.value = parseFloat(data.total || 0).toFixed(2);
+        if (hiddenCaix) hiddenCaix.value = data.caixas || '';
+        if (hiddenQuan) hiddenQuan.value = data.quantidade || '';
+        if (hiddenKg) hiddenKg.value = data.kg_total || data.kg || '';
+        if (precisaPreco && unitInput && data.preco_unitario) {
+          unitInput.value = String(data.preco_unitario).replace(',', '.');
+          unitInput.dataset.autoPrice = '1';
+          if (hiddenUnit) hiddenUnit.value = normalizeNumberBR(unitInput.value);
+        }
+        atualizarTotais();
+      } catch (e) {
+        console.error('Erro ao calcular item:', e);
+      } finally {
+        if (spinner) spinner.style.display = 'none';
+      }
+    }
+
+    function debounceCalc(index, delay) {
+      delay = delay || 600;
+      clearTimeout(calcTimers[index]);
+      calcTimers[index] = setTimeout(function () { calcularItem(index); }, delay);
+    }
+
+    function bindRemoveButtons() {
+      document.addEventListener('click', function (e) {
+        var btn = e.target.closest('.btn-remove-item');
+        if (!btn) return;
+        var tr = btn.closest('tr');
+        if (!tr) return;
+        var index = tr.dataset.index;
+        var delInput = document.getElementById('id_itens-' + index + '-DELETE');
+        if (delInput) { delInput.value = 'on'; tr.style.display = 'none'; }
+        else { tr.remove(); }
+        atualizarTotais();
+      });
+    }
+
+    function atualizarTotais() {
+      var subtotal = 0;
+      document.querySelectorAll('#itens-tbody tr').forEach(function (tr) {
+        if (tr.style.display === 'none') return;
+        var index = tr.dataset.index;
+        var del = document.getElementById('id_itens-' + index + '-DELETE');
+        if (del && del.value === 'on') return;
+        var suto = document.getElementById('suto-' + index);
+        subtotal += parseNumberBR(suto?.value);
+      });
+      var desc = parseNumberBR(document.getElementById('id_orca_desc')?.value);
+      var fret = parseNumberBR(document.getElementById('id_orca_fret')?.value);
+      var credito = parseNumberBR(document.getElementById('id_orca_cred')?.value);
+      var total = Math.max(subtotal - desc - credito + fret, 0);
+
+      document.getElementById('total-itens').textContent = fmtBRL(subtotal);
+      document.getElementById('total-desc').textContent = fmtBRL(desc);
+      document.getElementById('total-fret').textContent = fmtBRL(fret);
+      document.getElementById('total-cred').textContent = fmtBRL(credito);
+      document.getElementById('total-geral').textContent = fmtBRL(total);
+
+      var totalField = document.getElementById('id_orca_tota');
+      if (totalField) totalField.value = total.toFixed(2);
+    }
+
+    function bindCalcInputs(index) {
+      ['m2', 'unit', 'queb'].forEach(function (tipo) {
+        var el = document.getElementById(tipo + '-' + index);
+        if (!el) return;
+        el.addEventListener('input', function () { debounceCalc(index); });
+        if (tipo === 'unit') {
+          el.addEventListener('input', function () { delete el.dataset.autoPrice; });
+        }
+        el.addEventListener('change', function () {
+          var hiddenMap = { m2: 'item_m2', unit: 'item_unit', queb: 'item_queb' };
+          var hidden = document.getElementById('id_itens-' + index + '-' + hiddenMap[tipo]);
+          if (hidden) hidden.value = normalizeNumberBR(el.value);
+        });
+      });
+    }
+
+    function maybeInitialCalc(index) {
+      var prod_id = document.getElementById('id_itens-' + index + '-item_prod')?.value;
+      var m2 = parseNumberBR(document.getElementById('m2-' + index)?.value);
+      if (!prod_id || m2 <= 0) return;
+      var subtotalAtual = parseNumberBR(document.getElementById('suto-' + index)?.value);
+      if (subtotalAtual > 0) return;
+      calcularItem(index);
+    }
+
+    function setupAddItem() {
+      var btn = document.getElementById('btn-add-item');
       if (!btn) return;
-      var tr = btn.closest('tr');
-      if (!tr) return;
-      var index    = tr.dataset.index;
-      var delInput = document.getElementById('id_itens-' + index + '-DELETE');
-      if (delInput) { delInput.value = 'on'; tr.style.display = 'none'; }
-      else { tr.remove(); }
-      atualizarTotais();
-    });
-  }
-
-  function atualizarTotais() {
-    var subtotal = 0;
-    document.querySelectorAll('#itens-tbody tr').forEach(function (tr) {
-      if (tr.style.display === 'none') return;
-      var index = tr.dataset.index;
-      var del   = document.getElementById('id_itens-' + index + '-DELETE');
-      if (del && del.value === 'on') return;
-      var suto = document.getElementById('suto-' + index);
-      subtotal += parseNumberBR(suto?.value);
-    });
-    var desc    = parseNumberBR(document.getElementById('id_orca_desc')?.value);
-    var fret    = parseNumberBR(document.getElementById('id_orca_fret')?.value);
-    var credito = parseNumberBR(document.getElementById('id_orca_cred')?.value);
-    var total   = Math.max(subtotal - desc - credito + fret, 0);
-
-    document.getElementById('total-itens').textContent = fmtBRL(subtotal);
-    document.getElementById('total-desc').textContent  = fmtBRL(desc);
-    document.getElementById('total-fret').textContent  = fmtBRL(fret);
-    document.getElementById('total-cred').textContent  = fmtBRL(credito);
-    document.getElementById('total-geral').textContent = fmtBRL(total);
-
-    var totalField = document.getElementById('id_orca_tota');
-    if (totalField) totalField.value = total.toFixed(2);
-  }
-
-  function bindCalcInputs(index) {
-    ['m2', 'unit', 'queb'].forEach(function (tipo) {
-      var el = document.getElementById(tipo + '-' + index);
-      if (!el) return;
-      el.addEventListener('input', function () { debounceCalc(index); });
-      if (tipo === 'unit') {
-        el.addEventListener('input', function () { delete el.dataset.autoPrice; });
-      }
-      el.addEventListener('change', function () {
-        var hiddenMap = { m2: 'item_m2', unit: 'item_unit', queb: 'item_queb' };
-        var hidden = document.getElementById('id_itens-' + index + '-' + hiddenMap[tipo]);
-        if (hidden) hidden.value = normalizeNumberBR(el.value);
+      btn.addEventListener('click', function () {
+        var totalInput = document.getElementById('id_itens-TOTAL_FORMS');
+        if (!totalInput) return;
+        var index = parseInt(totalInput.value, 10);
+        totalInput.value = index + 1;
+        var tbody = document.getElementById('itens-tbody');
+        var prefix = 'itens-' + index;
+        var tr = document.createElement('tr');
+        tr.dataset.index = index;
+        tr.innerHTML =
+      '<td style="min-width:80px;max-width:80px">' +
+        '<input name="' + prefix + '-item_nome_ambi" class="form-control form-control-sm" placeholder="Ambiente" style="width:100%">' +
+        '<input type="hidden" name="' + prefix + '-item_ambi" id="id_itens-' + index + '-item_ambi" value="' + (index + 1) + '">' +
+      '</td>' +
+      '<td style="min-width:45px;max-width:45px">' +
+        '<div class="badge-caix" id="badge-caix-' + index + '">—</div>' +
+        '<input type="hidden" name="' + prefix + '-item_caix" id="id_itens-' + index + '-item_caix" value="">' +
+      '</td>' +
+      '<td class="position-relative" style="min-width:60px;max-width:60px">' +
+        '<input type="number" step="0.01" id="m2-' + index + '" class="form-control form-control-sm item-m2" data-index="' + index + '" placeholder="0,00" style="width:100%">' +
+        '<input type="hidden" name="' + prefix + '-item_m2" id="id_itens-' + index + '-item_m2" value="">' +
+        '<div class="calc-spinner" id="spin-' + index + '"></div>' +
+      '</td>' +
+      '<td style="min-width:60px;max-width:60px">' +
+        '<input type="number" step="0.01" id="kg-' + index + '" class="form-control form-control-sm item-kg calc-field" data-index="' + index + '" placeholder="0,00" readonly tabindex="-1" style="width:100%">' +
+        '<input type="hidden" name="' + prefix + '-item_kg" id="id_itens-' + index + '-item_kg" value="">' +
+      '</td>' +
+      '<td class="position-relative" style="min-width:110px;max-width:110px">' +
+        '<input id="produto_busca_' + index + '" class="form-control form-control-sm" placeholder="Buscar produto" data-index="' + index + '" style="width:100%">' +
+        '<input type="hidden" name="' + prefix + '-item_prod" id="id_itens-' + index + '-item_prod" value="">' +
+      '</td>' +
+      '<td style="min-width:120px;max-width:120px">' +
+        '<input name="' + prefix + '-item_prod_nome" id="id_itens-' + index + '-item_prod_nome" class="form-control form-control-sm" placeholder="—" style="width:100%">' +
+      '</td>' +
+      '<td style="min-width:65px;max-width:65px">' +
+        '<input type="number" step="0.0001" id="quan-' + index + '" class="form-control form-control-sm calc-field" readonly tabindex="-1" style="width:100%">' +
+        '<input type="hidden" name="' + prefix + '-item_quan" id="id_itens-' + index + '-item_quan" value="">' +
+      '</td>' +
+      '<td style="min-width:75px;max-width:75px">' +
+        '<input type="number" step="0.01" id="unit-' + index + '" class="form-control form-control-sm item-unit" data-index="' + index + '" placeholder="0,00" style="width:100%">' +
+        '<input type="hidden" name="' + prefix + '-item_unit" id="id_itens-' + index + '-item_unit" value="">' +
+      '</td>' +
+      '<td style="min-width:60px;max-width:60px">' +
+        '<input type="number" step="0.01" name="' + prefix + '-item_desc" class="form-control form-control-sm" placeholder="0" style="width:100%">' +
+      '</td>' +
+      '<td style="min-width:60px;max-width:60px">' +
+        '<input type="number" step="0.01" id="queb-' + index + '" class="form-control form-control-sm item-queb" data-index="' + index + '" placeholder="0" style="width:100%">' +
+        '<input type="hidden" name="' + prefix + '-item_queb" id="id_itens-' + index + '-item_queb" value="">' +
+      '</td>' +
+      '<td style="min-width:75px;max-width:75px">' +
+        '<input type="text" id="suto-' + index + '" class="form-control form-control-sm calc-field" readonly tabindex="-1" style="width:100%">' +
+      '</td>' +
+      '<td style="min-width:55px;max-width:55px">' +
+        '<input name="' + prefix + '-item_obse" class="form-control form-control-sm" placeholder="Obs" style="width:100%">' +
+      '</td>' +
+      '<td style="min-width:36px;max-width:36px">' +
+        '<input type="hidden" name="' + prefix + '-DELETE" id="id_itens-' + index + '-DELETE" value="">' +
+        '<button type="button" class="btn btn-sm btn-outline-danger btn-remove-item"><i class="bi bi-trash"></i></button>' +
+      '</td>';
+        tbody.appendChild(tr);
+        bindCalcInputs(index);
+        setupAutocomplete(
+          'produto_busca_' + index,
+          'id_itens-' + index + '-item_prod',
+          "{% url 'PisosWeb:autocomplete_produtos' slug=slug %}",
+          function (selected) {
+            var nomeInput = document.getElementById('id_itens-' + index + '-item_prod_nome');
+            if (nomeInput) nomeInput.value = selected.label || selected.text || '';
+            calcularItem(index);
+          }
+        );
       });
-    });
-  }
+    }
 
-  function maybeInitialCalc(index) {
-    var prod_id = document.getElementById('id_itens-' + index + '-item_prod')?.value;
-    var m2      = parseNumberBR(document.getElementById('m2-' + index)?.value);
-    if (!prod_id || m2 <= 0) return;
-    var subtotalAtual = parseNumberBR(document.getElementById('suto-' + index)?.value);
-    if (subtotalAtual > 0) return;
-    calcularItem(index);
-  }
+    function bindPrecoCondicao() {
+      var sel = document.getElementById('preco-condicao');
+      if (!sel) return;
+      sel.addEventListener('change', function () {
+        document.querySelectorAll('#itens-tbody tr').forEach(function (tr) {
+          var index = tr.dataset.index;
+          var del = document.getElementById('id_itens-' + index + '-DELETE');
+          if (del && del.value === 'on') return;
+          var prod_id = document.getElementById('id_itens-' + index + '-item_prod')?.value;
+          var m2 = parseNumberBR(document.getElementById('m2-' + index)?.value);
+          if (!prod_id || m2 <= 0) return;
+          var unitEl = document.getElementById('unit-' + index);
+          if (unitEl && unitEl.dataset.autoPrice === '1') {
+            unitEl.value = '';
+            var hiddenUnit = document.getElementById('id_itens-' + index + '-item_unit');
+            if (hiddenUnit) hiddenUnit.value = '';
+            calcularItem(index);
+          }
+        });
+      });
+    }
 
-  function setupAddItem() {
-    var btn = document.getElementById('btn-add-item');
-    if (!btn) return;
-    btn.addEventListener('click', function () {
-      var totalInput = document.getElementById('id_itens-TOTAL_FORMS');
-      if (!totalInput) return;
-      var index = parseInt(totalInput.value, 10);
-      totalInput.value = index + 1;
-      var tbody  = document.getElementById('itens-tbody');
-      var prefix = 'itens-' + index;
-      var tr = document.createElement('tr');
-      tr.dataset.index = index;
-      tr.innerHTML =
-        '<td>' +
-          '<input name="' + prefix + '-item_nome_ambi" class="form-control form-control-sm" placeholder="Ambiente">' +
-          '<input type="hidden" name="' + prefix + '-item_ambi" id="id_itens-' + index + '-item_ambi" value="' + (index + 1) + '">' +
-        '</td>' +
-        '<td>' +
-          '<div class="badge-caix" id="badge-caix-' + index + '">—</div>' +
-          '<input type="hidden" name="' + prefix + '-item_caix" id="id_itens-' + index + '-item_caix" value="">' +
-        '</td>' +
-        '<td class="position-relative">' +
-          '<input type="number" step="0.01" id="m2-' + index + '" class="form-control form-control-sm item-m2" data-index="' + index + '" placeholder="0,00">' +
-          '<input type="hidden" name="' + prefix + '-item_m2" id="id_itens-' + index + '-item_m2" value="">' +
-          '<div class="calc-spinner" id="spin-' + index + '"></div>' +
-        '</td>' +
-        '<td>' +
-          '<input id="kg-' + index + '" class="form-control form-control-sm item-kg calc-field" placeholder="0,00" data-index="' + index + '" readonly tabindex="-1">' +
-          '<input type="hidden" name="' + prefix + '-item_kg" id="id_itens-' + index + '-item_kg" value="">' +
-        '</td>' +
-        '<td class="position-relative">' +
-          '<input id="produto_busca_' + index + '" class="form-control form-control-sm" placeholder="Buscar produto" data-index="' + index + '">' +
-          '<input type="hidden" name="' + prefix + '-item_prod" id="id_itens-' + index + '-item_prod" value="">' +
-        '</td>' +
-        '<td>' +
-          '<input name="' + prefix + '-item_prod_nome" id="id_itens-' + index + '-item_prod_nome" class="form-control form-control-sm" placeholder="—">' +
-        '</td>' +
-        '<td>' +
-          '<input type="number" step="0.0001" id="quan-' + index + '" class="form-control form-control-sm calc-field" readonly tabindex="-1">' +
-          '<input type="hidden" name="' + prefix + '-item_quan" id="id_itens-' + index + '-item_quan" value="">' +
-        '</td>' +
-        '<td>' +
-          '<input type="number" step="0.01" id="unit-' + index + '" class="form-control form-control-sm item-unit" data-index="' + index + '" placeholder="0,00">' +
-          '<input type="hidden" name="' + prefix + '-item_unit" id="id_itens-' + index + '-item_unit" value="">' +
-        '</td>' +
-        '<td><input type="number" step="0.01" name="' + prefix + '-item_desc" class="form-control form-control-sm" placeholder="0"></td>' +
-        '<td>' +
-          '<input type="number" step="0.01" id="queb-' + index + '" class="form-control form-control-sm item-queb" data-index="' + index + '" placeholder="0">' +
-          '<input type="hidden" name="' + prefix + '-item_queb" id="id_itens-' + index + '-item_queb" value="">' +
-        '</td>' +
-        '<td><input type="text" id="suto-' + index + '" class="form-control form-control-sm calc-field" readonly tabindex="-1"></td>' +
-        '<td><input name="' + prefix + '-item_obse" class="form-control form-control-sm" placeholder="Obs"></td>' +
-        '<td>' +
-          '<input type="hidden" name="' + prefix + '-DELETE" id="id_itens-' + index + '-DELETE" value="">' +
-          '<button type="button" class="btn btn-sm btn-outline-danger btn-remove-item"><i class="bi bi-trash"></i></button>' +
-        '</td>';
-      tbody.appendChild(tr);
-      bindCalcInputs(index);
-      setupAutocomplete(
-        'produto_busca_' + index,
-        'id_itens-' + index + '-item_prod',
-        "{% url 'PisosWeb:autocomplete_produtos' slug=slug %}",
-        function (selected) {
+    function validateBeforeSubmit() {
+      var form = document.querySelector('form');
+      form.addEventListener('submit', function (event) {
+        var required = [
+          { id: 'id_orca_fili', label: 'Loja' },
+          { id: 'id_orca_clie', label: 'Cliente' },
+          { id: 'id_orca_vend', label: 'Vendedor' },
+          { id: 'id_orca_data', label: 'Data do orçamento' },
+        ];
+        var hasError = false, msgs = [];
+        required.forEach(function (f) {
+          var el = document.getElementById(f.id);
+          if (el && !String(el.value || '').trim()) {
+            hasError = true; msgs.push(f.label); el.classList.add('field-error');
+          } else if (el) { el.classList.remove('field-error'); }
+        });
+        var totalForms = document.getElementById('id_itens-TOTAL_FORMS');
+        var hasValidItem = false;
+        if (totalForms) {
+          var total = parseInt(totalForms.value || '0', 10);
+          for (var i = 0; i < total; i++) {
+            var prod = document.getElementById('id_itens-' + i + '-item_prod');
+            var del = document.querySelector('input[name="itens-' + i + '-DELETE"]');
+            if (del?.value !== 'on' && prod?.value) hasValidItem = true;
+          }
+        }
+        if (!hasValidItem) { hasError = true; msgs.push('Pelo menos 1 item'); }
+        if (hasError) { event.preventDefault(); showToast('Preencha: ' + [...new Set(msgs)].join(', '), 'danger'); }
+      });
+    }
+
+    /* ── Init ── */
+    document.addEventListener('DOMContentLoaded', function () {
+      const URL_AUTO_CLIENTES = "{% url 'PisosWeb:autocomplete_clientes' slug=slug %}";
+      const URL_AUTO_VENDEDORES = "{% url 'PisosWeb:autocomplete_vendedores' slug=slug %}";
+      const URL_AUTO_PRODUTOS = "{% url 'PisosWeb:autocomplete_produtos' slug=slug %}";
+
+      bindTabs();
+      validateBeforeSubmit();
+      bindPrecoCondicao();
+
+      /* Inicializar preview do status no select do modal */
+      var selectStatus = document.getElementById('novoStatusWorkflow');
+      if (selectStatus) {
+        selectStatus.addEventListener('change', atualizarPreviewStatus);
+        atualizarPreviewStatus();
+      }
+
+      setupAutocomplete('cliente_nome', 'id_orca_clie', URL_AUTO_CLIENTES, async function () {
+        await carregarCreditoCliente();
+        if (!orcamentoExportado()) aplicarCreditoAuto();
+      });
+      prefillAutocomplete('cliente_nome', 'id_orca_clie', URL_AUTO_CLIENTES, async function () {
+        await carregarCreditoCliente();
+        var credAtual = parseNumberBR(document.getElementById('id_orca_cred')?.value);
+        var chk = document.getElementById('usar-credito');
+        if (chk) chk.checked = credAtual > 0;
+        if (!orcamentoExportado()) aplicarCreditoAuto();
+      });
+
+      setupAutocomplete('vendedor_nome', 'id_orca_vend', URL_AUTO_VENDEDORES);
+      prefillAutocomplete('vendedor_nome', 'id_orca_vend', URL_AUTO_VENDEDORES);
+
+      document.querySelectorAll('[id^="produto_busca_"]').forEach(function (input) {
+        var index = parseInt(input.dataset.index, 10);
+        bindCalcInputs(index);
+        var onSelectProduto = function (selected) {
           var nomeInput = document.getElementById('id_itens-' + index + '-item_prod_nome');
           if (nomeInput) nomeInput.value = selected.label || selected.text || '';
           calcularItem(index);
-        }
-      );
-    });
-  }
-
-  function bindPrecoCondicao() {
-    var sel = document.getElementById('preco-condicao');
-    if (!sel) return;
-    sel.addEventListener('change', function () {
-      document.querySelectorAll('#itens-tbody tr').forEach(function (tr) {
-        var index = tr.dataset.index;
-        var del   = document.getElementById('id_itens-' + index + '-DELETE');
-        if (del && del.value === 'on') return;
-        var prod_id = document.getElementById('id_itens-' + index + '-item_prod')?.value;
-        var m2      = parseNumberBR(document.getElementById('m2-' + index)?.value);
-        if (!prod_id || m2 <= 0) return;
-        var unitEl = document.getElementById('unit-' + index);
-        if (unitEl && unitEl.dataset.autoPrice === '1') {
-          unitEl.value = '';
-          var hiddenUnit = document.getElementById('id_itens-' + index + '-item_unit');
-          if (hiddenUnit) hiddenUnit.value = '';
-          calcularItem(index);
-        }
+        };
+        setupAutocomplete(input.id, 'id_itens-' + index + '-item_prod', URL_AUTO_PRODUTOS, onSelectProduto);
+        prefillAutocomplete(input.id, 'id_itens-' + index + '-item_prod', URL_AUTO_PRODUTOS, onSelectProduto);
+        maybeInitialCalc(index);
       });
-    });
-  }
 
-  function validateBeforeSubmit() {
-    var form = document.querySelector('form');
-    form.addEventListener('submit', function (event) {
-      var required = [
-        { id: 'id_orca_fili', label: 'Loja' },
-        { id: 'id_orca_clie', label: 'Cliente' },
-        { id: 'id_orca_vend', label: 'Vendedor' },
-        { id: 'id_orca_data', label: 'Data do orçamento' },
-      ];
-      var hasError = false, msgs = [];
-      required.forEach(function (f) {
-        var el = document.getElementById(f.id);
-        if (el && !String(el.value || '').trim()) {
-          hasError = true; msgs.push(f.label); el.classList.add('field-error');
-        } else if (el) { el.classList.remove('field-error'); }
+      ['id_orca_desc', 'id_orca_fret'].forEach(function (id) {
+        document.getElementById(id)?.addEventListener('input', function () {
+          if (orcamentoExportado()) { atualizarTotais(); return; }
+          if (document.getElementById('usar-credito')?.checked) aplicarCreditoAuto();
+          else atualizarTotais();
+        });
       });
-      var totalForms = document.getElementById('id_itens-TOTAL_FORMS');
-      var hasValidItem = false;
-      if (totalForms) {
-        var total = parseInt(totalForms.value || '0', 10);
-        for (var i = 0; i < total; i++) {
-          var prod = document.getElementById('id_itens-' + i + '-item_prod');
-          var del  = document.querySelector('input[name="itens-' + i + '-DELETE"]');
-          if (del?.value !== 'on' && prod?.value) hasValidItem = true;
-        }
-      }
-      if (!hasValidItem) { hasError = true; msgs.push('Pelo menos 1 item'); }
-      if (hasError) { event.preventDefault(); showToast('Preencha: ' + [...new Set(msgs)].join(', '), 'danger'); }
-    });
-  }
 
-  /* ── Init ── */
-  document.addEventListener('DOMContentLoaded', function () {
-    const URL_AUTO_CLIENTES   = "{% url 'PisosWeb:autocomplete_clientes' slug=slug %}";
-    const URL_AUTO_VENDEDORES = "{% url 'PisosWeb:autocomplete_vendedores' slug=slug %}";
-    const URL_AUTO_PRODUTOS   = "{% url 'PisosWeb:autocomplete_produtos' slug=slug %}";
-
-    bindTabs();
-    validateBeforeSubmit();
-    bindPrecoCondicao();
-
-    /* Inicializar preview do status no select do modal */
-    var selectStatus = document.getElementById('novoStatusWorkflow');
-    if (selectStatus) {
-      selectStatus.addEventListener('change', atualizarPreviewStatus);
-      atualizarPreviewStatus();
-    }
-
-    setupAutocomplete('cliente_nome', 'id_orca_clie', URL_AUTO_CLIENTES, async function () {
-      await carregarCreditoCliente();
-      if (!orcamentoExportado()) aplicarCreditoAuto();
-    });
-    prefillAutocomplete('cliente_nome', 'id_orca_clie', URL_AUTO_CLIENTES, async function () {
-      await carregarCreditoCliente();
-      var credAtual = parseNumberBR(document.getElementById('id_orca_cred')?.value);
-      var chk = document.getElementById('usar-credito');
-      if (chk) chk.checked = credAtual > 0;
-      if (!orcamentoExportado()) aplicarCreditoAuto();
-    });
-
-    setupAutocomplete('vendedor_nome', 'id_orca_vend', URL_AUTO_VENDEDORES);
-    prefillAutocomplete('vendedor_nome', 'id_orca_vend', URL_AUTO_VENDEDORES);
-
-    document.querySelectorAll('[id^="produto_busca_"]').forEach(function (input) {
-      var index = parseInt(input.dataset.index, 10);
-      bindCalcInputs(index);
-      var onSelectProduto = function (selected) {
-        var nomeInput = document.getElementById('id_itens-' + index + '-item_prod_nome');
-        if (nomeInput) nomeInput.value = selected.label || selected.text || '';
-        calcularItem(index);
-      };
-      setupAutocomplete(input.id, 'id_itens-' + index + '-item_prod', URL_AUTO_PRODUTOS, onSelectProduto);
-      prefillAutocomplete(input.id, 'id_itens-' + index + '-item_prod', URL_AUTO_PRODUTOS, onSelectProduto);
-      maybeInitialCalc(index);
-    });
-
-    ['id_orca_desc', 'id_orca_fret'].forEach(function (id) {
-      document.getElementById(id)?.addEventListener('input', function () {
-        if (orcamentoExportado()) { atualizarTotais(); return; }
-        if (document.getElementById('usar-credito')?.checked) aplicarCreditoAuto();
-        else atualizarTotais();
+      document.getElementById('usar-credito')?.addEventListener('change', function () {
+        if (orcamentoExportado()) return;
+        aplicarCreditoAuto();
       });
-    });
 
-    document.getElementById('usar-credito')?.addEventListener('change', function () {
-      if (orcamentoExportado()) return;
-      aplicarCreditoAuto();
-    });
-
-    setupAddItem();
-    bindRemoveButtons();
-    atualizarTotais();
-    carregarCreditoCliente().then(function () {
-      var credAtual = parseNumberBR(document.getElementById('id_orca_cred')?.value);
-      var chk = document.getElementById('usar-credito');
-      if (chk) chk.checked = credAtual > 0;
-      if (orcamentoExportado()) {
-        if (chk) chk.disabled = true;
-        atualizarTotais();
-        return;
-      }
-      if (chk && chk.checked) aplicarCreditoAuto();
+      setupAddItem();
+      bindRemoveButtons();
       atualizarTotais();
+      carregarCreditoCliente().then(function () {
+        var credAtual = parseNumberBR(document.getElementById('id_orca_cred')?.value);
+        var chk = document.getElementById('usar-credito');
+        if (chk) chk.checked = credAtual > 0;
+        if (orcamentoExportado()) {
+          if (chk) chk.disabled = true;
+          atualizarTotais();
+          return;
+        }
+        if (chk && chk.checked) aplicarCreditoAuto();
+        atualizarTotais();
+      });
     });
-  });
-</script>
+  </script>
 
-{% endblock %}
+  {% endblock %}

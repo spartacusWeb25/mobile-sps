@@ -1,18 +1,18 @@
 {
-  "debug_id": "768450a3-6431-468e-a094-300002681571",
-  "timestamp_inicio": "2026-05-25T20:36:50.815679Z",
+  "debug_id": "93c2250b-dfbf-4f31-9012-0abcf78b07f1",
+  "timestamp_inicio": "2026-05-25T22:34:58.261722Z",
   "ambiente": {
-    "debug": true,
+    "debug": false,
     "database_alias": "saveweb001"
   },
   "tabelas_tributacao": {
     "versao": "Padrão"
   },
   "nota": {
-    "id": 133,
+    "id": 134,
     "modelo": "55",
     "serie": "001",
-    "numero": "28",
+    "numero": "29",
     "empresa": "1",
     "filial": "1",
     "destinatario_id": "5",
@@ -22,95 +22,18 @@
   },
   "itens": [
     {
-      "id": 189,
-      "produto_id": "27",
-      "descricao_produto": "MANTA ASFÁLTICA",
-      "ncm_produto": "8481****",
-      "cfop_inicial": "5102",
-      "quantidade": "23.0000",
-      "unitario": "124.6600",
-      "desconto": "0.0000",
-      "logs": [
-        {
-          "id": "af57f1dd-fd6d-4f36-8071-afb99e849afe",
-          "timestamp": "2026-05-25T20:36:50.926259Z",
-          "tipo": "antes_calculo_item",
-          "mensagem": "Início do cálculo de impostos para o item.",
-          "dados": {
-            "uf_origem": "PR",
-            "uf_destino": "PR",
-            "regime": "1",
-            "tipo_operacao": "VENDA"
-          }
-        }
-      ],
-      "fonte_tributacao": "SPARTACUS",
-      "cfop_resolvido": "5102",
-      "cfop_flags": {
-        "exig_icms": false,
-        "exig_ipi": false,
-        "exig_pis_cofins": false,
-        "exig_cbs": false,
-        "exig_ibs": false,
-        "gera_st": false
-      },
-      "ncm_resolvido": "8481****",
-      "bases": {
-        "raiz": "2867.18",
-        "icms": "0.00",
-        "st": null
-      },
-      "aliquotas": {
-        "ipi": null,
-        "icms": "0.00",
-        "st": null,
-        "pis": "0.00",
-        "cofins": "0.00",
-        "cbs": null,
-        "ibs": null
-      },
-      "valores_calculados": {
-        "ipi": null,
-        "icms": "0.00",
-        "st": null,
-        "pis": "0",
-        "cofins": "0",
-        "cbs": null,
-        "ibs": null
-      },
-      "extras": {
-        "mva_st": null
-      },
-      "csts": {
-        "ipi": null,
-        "icms": "102",
-        "st": null,
-        "pis": "49",
-        "cofins": "49",
-        "cbs": null,
-        "ibs": null
-      },
-      "condicionais_aplicadas": {
-        "icms_habilitado_cfop": false,
-        "ipi_habilitado_cfop": false,
-        "pis_cofins_habilitado_cfop": false,
-        "cbs_habilitado_cfop": false,
-        "ibs_habilitado_cfop": false
-      }
-    },
-    {
-      "id": 188,
+      "id": 190,
       "produto_id": "28",
       "descricao_produto": "SOLEO DE PISO",
       "ncm_produto": "6901****",
       "cfop_inicial": "5102",
-      "quantidade": "55.3500",
+      "quantidade": "59.0400",
       "unitario": "135.5800",
       "desconto": "0.0000",
       "logs": [
         {
-          "id": "840df4c2-e9f6-495a-96f3-f29ca5db0d69",
-          "timestamp": "2026-05-25T20:36:51.436785Z",
+          "id": "ddd79466-8a40-4ab0-bce1-65487ac94330",
+          "timestamp": "2026-05-25T22:34:58.531694Z",
           "tipo": "antes_calculo_item",
           "mensagem": "Início do cálculo de impostos para o item.",
           "dados": {
@@ -133,7 +56,7 @@
       },
       "ncm_resolvido": "6901****",
       "bases": {
-        "raiz": "7504.35",
+        "raiz": "8004.64",
         "icms": "0.00",
         "st": null
       },
@@ -178,8 +101,8 @@
   ],
   "logs": [
     {
-      "id": "66a94354-3084-4645-8100-7d0794276741",
-      "timestamp": "2026-05-25T20:36:50.902235Z",
+      "id": "cd2c73fa-a51b-4ac0-9d39-2068e94a43c3",
+      "timestamp": "2026-05-25T22:34:58.470018Z",
       "tipo": "contexto_nota",
       "mensagem": "Contexto fiscal inicial da nota.",
       "dados": {
@@ -187,5 +110,5 @@
       }
     }
   ],
-  "timestamp_fim": "2026-05-25T20:36:51.830099Z"
+  "timestamp_fim": "2026-05-25T22:34:59.943116Z"
 }
