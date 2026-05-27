@@ -10,6 +10,10 @@ class Etapavisita(models.Model):
     etap_descricao = models.CharField(max_length=50, blank=True, null=True)
     etap_empr = models.ForeignKey(Empresas, models.DO_NOTHING, db_column='etap_empr')
     etap_obse = models.CharField(max_length=200, blank=True, null=True)
+    etap_cor = models.CharField(
+        max_length=20,
+        default="#6c757d"
+    )
 
 
     class Meta:

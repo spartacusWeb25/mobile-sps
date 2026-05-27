@@ -6,6 +6,7 @@ from django.shortcuts import redirect
 from core.utils import get_licenca_db_config
 from django.db.models import Max
 from controledevisitas.models import Etapavisita
+from controledevisitas.service.etapas_iniciais import EtapavisitasIniciais
 
 
 class EtapaVisitaListView(ListView):
@@ -77,6 +78,7 @@ class EtapaVisitaCreateView(FormView):
                 etap_descricao=cd.get('etap_descricao') or None,
                 etap_empr=empresa,
                 etap_obse=cd.get('etap_obse') or None,
+                etap_cor=cd.get('etap_cor') or None,
             )
             messages.success(self.request, 'Etapa criada com sucesso.')
             return redirect(self.get_success_url())
@@ -112,6 +114,7 @@ class EtapaVisitaUpdateView(FormView):
             'etap_nume': getattr(o, 'etap_nume', None),
             'etap_descricao': getattr(o, 'etap_descricao', None),
             'etap_obse': getattr(o, 'etap_obse', None),
+            'etap_cor': getattr(o, 'etap_cor', None),
         }
 
     def get_context_data(self, **kwargs):
@@ -127,6 +130,7 @@ class EtapaVisitaUpdateView(FormView):
             # Número da etapa é imutável para manter sequência; não atualizamos o campo
             o.etap_descricao = cd.get('etap_descricao') or None
             o.etap_obse = cd.get('etap_obse') or None
+            o.etap_cor = cd.get('etap_cor') or None
             o.save(using=self.db_alias)
             messages.success(self.request, 'Etapa atualizada com sucesso.')
             return redirect(self.get_success_url())
@@ -153,8 +157,30 @@ class EtapaVisitaDeleteView(View):
         try:
             obj = Etapavisita.objects.using(self.db_alias).get(etap_id=self.etap_id, etap_empr__empr_codi=self.empresa_id)
             obj.delete(using=self.db_alias)
-            messages.success(request, 'Etapa excluída com sucesso.')
+            messages.success(self.request, 'Etapa excluída com sucesso.')
         except Exception as e:
-            messages.error(request, f'Falha ao excluir etapa: {e}')
+            messages.error(self.request, f'Falha ao excluir etapa: {e}')    
         return redirect(f"/web/{self.slug}/controle-de-visitas/etapas/")
 
+
+def criar_etapas_padrao_view(request, slug):
+    from Licencas.models import Empresas
+    db_alias = get_licenca_db_config(request)
+    try:
+        empresa_id = int(request.session.get('empresa_id') or request.headers.get('X-Empresa') or 1)
+    except Exception:
+        empresa_id = 1
+
+    try:
+        empresa = Empresas.objects.using(db_alias).get(empr_codi=empresa_id)
+    except Exception:
+        messages.error(request, 'Empresa inválida')
+        return redirect(f"/web/{slug}/controle-de-visitas/etapas/")
+
+    try:
+        EtapavisitasIniciais.criar_padrao(db_alias, empresa)
+        messages.success(request, "Etapas padrão criadas.")
+    except Exception as e:
+        messages.error(request, f"Falha ao criar etapas padrão: {e}")
+
+    return redirect(f"/web/{slug}/controle-de-visitas/etapas/")

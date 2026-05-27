@@ -51,6 +51,11 @@ class EtapaVisitaForm(forms.Form):
     etap_nume = forms.IntegerField(label='Número da Etapa', required=False)
     etap_descricao = forms.CharField(label='Descrição', max_length=50)
     etap_obse = forms.CharField(label='Observações', max_length=200, required=False, widget=forms.Textarea)
+    etap_cor = forms.CharField(
+        label='Cor',
+        max_length=20,
+    )
+
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

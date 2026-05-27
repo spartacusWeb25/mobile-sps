@@ -7,6 +7,7 @@ from .Views.etapas import (
     EtapaVisitaCreateView,
     EtapaVisitaUpdateView,
     EtapaVisitaDeleteView,
+    criar_etapas_padrao_view,
 )
 from .Views.cliente_sem_movimento import ClientesSemMovimentoListView
 from .Views.views_orcamento import GerarOrcamentoPisosDaVisitaView
@@ -28,6 +29,7 @@ urlpatterns = [
     path('etapas/nova/', EtapaVisitaCreateView.as_view(), name='etapa_criar_web'),
     path('etapas/editar/<int:etap_id>/', EtapaVisitaUpdateView.as_view(), name='etapa_editar_web'),
     path('etapas/excluir/<int:etap_id>/', EtapaVisitaDeleteView.as_view(), name='etapa_excluir_web'),
+    path('etapas/criar-padrao/', criar_etapas_padrao_view, name='etapas_padrao_web'),
     # Clientes sem movimento
     path('clientes-sem-movimento/', ClientesSemMovimentoListView.as_view(), name='clientes_sem_movimento_list'),
     path(

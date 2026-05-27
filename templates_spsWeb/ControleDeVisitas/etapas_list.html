@@ -84,10 +84,14 @@
         Organize o funil comercial do controle de visitas.
       </p>
     </div>
-
-    <a href="/web/{{ slug }}/controle-de-visitas/" class="btn btn-outline-secondary">
-      <i class="bi bi-arrow-left"></i> Voltar
-    </a>
+    <div class="d-flex gap-2">
+      <a href="/web/{{ slug }}/controle-de-visitas/" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Voltar
+      </a>
+      <a href="{% url 'etapas_padrao_web' slug %}" class="btn btn-outline-success">
+        <i class="bi bi-plus"></i> Criar padrão
+      </a>
+    </div>
   </div>
 
   <div class="card etapas-filter-card mb-3">

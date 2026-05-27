@@ -20,6 +20,17 @@
       <div class="col-md-5">{{ form.etap_descricao.label_tag }}{{ form.etap_descricao }}</div>
       <div class="col-md-12">{{ form.etap_obse.label_tag }}{{ form.etap_obse }}</div>
     </div>
+     <div class="mb-3">
+          <label class="form-label">Cor do Etapa</label>
+          <div class="d-flex align-items-center gap-3">
+            {{ form.etap_cor }}
+
+            <span id="preview-status" class="badge px-3 py-2"
+              style="background-color: {{ form.etap_cor.value|default:'#6c757d' }};">
+              Prévia do Status
+            </span>
+          </div>
+        </div>
     <div class="mt-3 d-flex gap-2">
       <button class="btn btn-primary">Salvar</button>
       <a href="/web/{{ slug }}/controle-de-visitas/etapas/" class="btn btn-outline-secondary">Cancelar</a>
