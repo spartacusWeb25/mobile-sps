@@ -8,6 +8,7 @@ from django.conf import settings
 from django.utils import timezone
 
 
+
 class ClientesSemMovimentoListView(VendedorResponsavelEntidadeMixin, ListView):
     model = Entidades
     template_name = "ControleDeVisitas/clientes_sem_movimento.html"

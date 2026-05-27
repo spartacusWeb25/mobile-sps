@@ -254,18 +254,42 @@
 
                     <div class="mt-2 small text-muted">
                         Último pedido:
-                        {% if cliente.ultimo_pedido %}
-                        {{ cliente.ultimo_pedido|date:"d/m/Y" }}
+                        {% if data_inicial_obj %}
+                            {% if cliente.ultimo_pedido_antes_vend %}
+                                {{ cliente.ultimo_pedido_antes_vend|date:"d/m/Y" }}
+                            {% elif cliente.ultimo_pedido_antes %}
+                                {{ cliente.ultimo_pedido_antes|date:"d/m/Y" }}
+                            {% elif cliente.ultimo_pedido %}
+                                {{ cliente.ultimo_pedido|date:"d/m/Y" }}
+                            {% else %}
+                                -
+                            {% endif %}
                         {% else %}
-                        -
+                            {% if cliente.ultimo_pedido %}
+                                {{ cliente.ultimo_pedido|date:"d/m/Y" }}
+                            {% else %}
+                                -
+                            {% endif %}
                         {% endif %}
                     </div>
                     <div class="mt-1 small text-muted">
                         Último orçamento:
-                        {% if cliente.ultimo_orcamento %}
-                        {{ cliente.ultimo_orcamento|date:"d/m/Y" }}
+                        {% if data_inicial_obj %}
+                            {% if cliente.ultimo_orcamento_antes_vend %}
+                                {{ cliente.ultimo_orcamento_antes_vend|date:"d/m/Y" }}
+                            {% elif cliente.ultimo_orcamento_antes %}
+                                {{ cliente.ultimo_orcamento_antes|date:"d/m/Y" }}
+                            {% elif cliente.ultimo_orcamento %}
+                                {{ cliente.ultimo_orcamento|date:"d/m/Y" }}
+                            {% else %}
+                                -
+                            {% endif %}
                         {% else %}
-                        -
+                            {% if cliente.ultimo_orcamento %}
+                                {{ cliente.ultimo_orcamento|date:"d/m/Y" }}
+                            {% else %}
+                                -
+                            {% endif %}
                         {% endif %}
                     </div>
                     <div class="card-botoes">
