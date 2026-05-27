@@ -174,6 +174,11 @@ class ClienteSemMovimentoService:
         ped_where_parts = ["1=1"]
         orc_where_parts = ["1=1"]
 
+        # sanitize: only consider pedidos/orçamentos from 2011-01-01 em diante
+        params["min_year"] = date(2011, 1, 1)
+        ped_where_parts.append("COALESCE(p.pedi_data, p._log_data) >= %(min_year)s")
+        orc_where_parts.append("COALESCE(o.orca_data, o._log_data) >= %(min_year)s")
+
         if empresa:
             params["ped_empr"] = empresa
             params["orc_empr"] = empresa
