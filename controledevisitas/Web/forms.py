@@ -54,6 +54,8 @@ class EtapaVisitaForm(forms.Form):
     etap_cor = forms.CharField(
         label='Cor',
         max_length=20,
+        initial='#6c757d',
+        widget=forms.TextInput(attrs={'type': 'color'})
     )
 
 
