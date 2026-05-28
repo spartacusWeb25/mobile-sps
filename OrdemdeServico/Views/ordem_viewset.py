@@ -34,7 +34,6 @@ class OrdemViewSet(BaseMultiDBModelViewSet):
     queryset = Ordemservico.objects.none() 
     modulo_necessario = 'OrdemdeServico'
     serializer_class = OrdemServicoSerializer
-    # queryset removed here as it is overridden by get_queryset
     filter_backends = [DjangoFilterBackend, SafeOrderingFilter, filters.SearchFilter]
     filterset_class = OrdemServicoFilter
     ordering_fields = ['orde_data_aber', 'safe_data_aber', 'orde_data_fech', 'orde_prio']
