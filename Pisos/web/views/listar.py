@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 
 from django.db.models import Sum
 from django.views.generic import ListView
@@ -44,12 +44,28 @@ class PedidopisosListView(VendedorEntidadeMixin, ListView):
         cliente_nome = self.request.GET.get("cliente_nome")
         vendedor_nome = self.request.GET.get("vendedor_nome")
         status = self.request.GET.get("pedi_stat")
+        data_inicio = self.request.GET.get("data_inicio")
+        data_fim = self.request.GET.get("data_fim")
 
         if numero:
             qs = qs.filter(pedi_nume=numero)
 
         if status not in (None, ""):
             qs = qs.filter(pedi_stat=status)
+
+        if data_inicio:
+            try:
+                di = datetime.strptime(data_inicio, '%Y-%m-%d').date()
+                qs = qs.filter(pedi_data__gte=di)
+            except ValueError:
+                pass
+
+        if data_fim:
+            try:
+                df = datetime.strptime(data_fim, '%Y-%m-%d').date()
+                qs = qs.filter(pedi_data__lte=df)
+            except ValueError:
+                pass
 
         if cliente_nome:
             clientes_ids = Entidades.objects.using(self.banco).filter(
@@ -124,11 +140,17 @@ class PedidopisosListView(VendedorEntidadeMixin, ListView):
             "total_abertos": base_qs.filter(pedi_stat=0).count(),
         }
 
+        # Set default dates to current month if not provided
+        today = date.today()
+        first_day_of_month = date(today.year, today.month, 1)
+
         context["filtros"] = {
             "pedi_nume": self.request.GET.get("pedi_nume", ""),
             "cliente_nome": self.request.GET.get("cliente_nome", ""),
             "vendedor_nome": self.request.GET.get("vendedor_nome", ""),
             "pedi_stat": self.request.GET.get("pedi_stat", ""),
+            "data_inicio": self.request.GET.get("data_inicio", first_day_of_month.strftime('%Y-%m-%d')),
+            "data_fim": self.request.GET.get("data_fim", today.strftime('%Y-%m-%d')),
         }
 
         return context

@@ -13,7 +13,9 @@ def autocomplete_entidades(request, slug, tipo="clientes"):
         else:
             qs = qs.filter(enti_nome__icontains=q)
     if tipo == "vendedores":
-        qs = qs.filter(enti_tipo__in=["V", "A", "C"]) if hasattr(Entidades, 'enti_tipo') else qs
+        qs = qs.filter(enti_tipo_enti__in=["VE", "FU", "AM"])
+    elif tipo == "clientes":
+        qs = qs.filter(enti_tipo_enti__in=["CL", "AM"])
     data = [{"id": e.enti_clie, "label": f"{e.enti_clie} - {e.enti_nome}", "value": e.enti_clie} for e in qs[:20]]
     return JsonResponse(data, safe=False)
 

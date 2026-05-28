@@ -174,6 +174,35 @@
       border-color: #0d7d8b;
     }
   }
+
+  .autocomplete-box {
+    z-index: 1000;
+    width: 100%;
+    max-height: 200px;
+    overflow-y: auto;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 0 0 8px 8px;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  }
+
+  .autocomplete-box .list-group-item {
+    cursor: pointer;
+    padding: 8px 12px;
+    border: none;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .autocomplete-box .list-group-item:hover {
+    background-color: #f8f9fa;
+  }
+
+  .autocomplete-box .list-group-item:last-child {
+    border-bottom: none;
+  }
 </style>
 
 <div class="container py-4">
@@ -246,11 +275,25 @@
           </div>
           <div class="col-3 col-md-3">
             <label class="form-label">Cliente</label>
-            <input type="text" name="cliente_nome" class="form-control" value="{{ filtros.cliente_nome }}">
+            <div style="position: relative;">
+              <input type="text" id="cliente_nome" name="cliente_nome" class="form-control" value="{{ filtros.cliente_nome }}" autocomplete="off">
+              <div id="cliente_autocomplete" class="list-group autocomplete-box d-none"></div>
+            </div>
           </div>
           <div class="col-3 col-md-3">
             <label class="form-label">Vendedor</label>
-            <input type="text" name="vendedor_nome" class="form-control" value="{{ filtros.vendedor_nome }}">
+            <div style="position: relative;">
+              <input type="text" id="vendedor_nome" name="vendedor_nome" class="form-control" value="{{ filtros.vendedor_nome }}" autocomplete="off">
+              <div id="vendedor_autocomplete" class="list-group autocomplete-box d-none"></div>
+            </div>
+          </div>
+          <div class="col-3 col-md-2">
+            <label class="form-label">Data Início</label>
+            <input type="date" name="data_inicio" class="form-control" value="{{ filtros.data_inicio }}">
+          </div>
+          <div class="col-3 col-md-2">
+            <label class="form-label">Data Fim</label>
+            <input type="date" name="data_fim" class="form-control" value="{{ filtros.data_fim }}">
           </div>
           <div class="col-3 col-md-2">
             <label class="form-label">Status</label>
@@ -394,4 +437,105 @@
   {% endif %}
 
 </div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Set default dates if fields are empty
+    const dataInicio = document.querySelector('input[name="data_inicio"]');
+    const dataFim = document.querySelector('input[name="data_fim"]');
+
+    if (dataInicio && !dataInicio.value) {
+      const today = new Date();
+      const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+      dataInicio.valueAsDate = firstDay;
+    }
+
+    if (dataFim && !dataFim.value) {
+      const today = new Date();
+      dataFim.valueAsDate = today;
+    }
+
+    // Autocomplete functionality
+    const clienteUrl = "{% url 'PisosWeb:autocomplete_clientes' slug=slug %}";
+    const vendedorUrl = "{% url 'PisosWeb:autocomplete_vendedores' slug=slug %}";
+
+    function setupAutocomplete(inputId, boxId, url) {
+      const input = document.getElementById(inputId);
+      const box = document.getElementById(boxId);
+      if (!input || !box) return;
+
+      let debounceTimer;
+
+      input.addEventListener('input', function() {
+        const query = this.value.trim();
+        clearTimeout(debounceTimer);
+
+        if (query.length < 2) {
+          box.classList.add('d-none');
+          return;
+        }
+
+        debounceTimer = setTimeout(async () => {
+          try {
+            const response = await fetch(`${url}?term=${encodeURIComponent(query)}`, {
+              credentials: 'include',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+              }
+            });
+            const data = await response.json();
+
+            box.innerHTML = '';
+            if (data.length > 0) {
+              data.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'list-group-item';
+                div.textContent = item.label;
+                div.addEventListener('click', () => {
+                  // Extract just the name part (after " - ")
+                  const namePart = item.label.split(' - ').slice(1).join(' - ');
+                  input.value = namePart || item.label;
+                  box.classList.add('d-none');
+                });
+                box.appendChild(div);
+              });
+              box.classList.remove('d-none');
+            } else {
+              box.classList.add('d-none');
+            }
+          } catch (error) {
+            console.error('Autocomplete error:', error);
+            box.classList.add('d-none');
+          }
+        }, 300);
+      });
+
+      // Hide autocomplete when clicking outside
+      document.addEventListener('click', function(e) {
+        if (!input.contains(e.target) && !box.contains(e.target)) {
+          box.classList.add('d-none');
+        }
+      });
+    }
+
+    setupAutocomplete('cliente_nome', 'cliente_autocomplete', clienteUrl);
+    setupAutocomplete('vendedor_nome', 'vendedor_autocomplete', vendedorUrl);
+  });
+
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+</script>
 {% endblock %}

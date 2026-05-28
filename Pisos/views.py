@@ -854,6 +854,10 @@ class DashPedidosPisosView(ModuloRequeridoMixin, TemplateView):
         context['empresa'] = empresa
         context['filial'] = filial
         
+        # Date filters for pedi_data
+        context['data_inicio'] = self.request.GET.get('data_inicio')
+        context['data_fim'] = self.request.GET.get('data_fim')
+        
         try:
             banco = get_db_from_slug(context['slug'])
             # Carregar listas de empresas e filiais para os filtros
@@ -864,7 +868,7 @@ class DashPedidosPisosView(ModuloRequeridoMixin, TemplateView):
             context['empresas_list'] = []
             context['filiais_list'] = []
         
-        logger.info(f"[DashPedidosPisosView] Rendering dashboard. Slug: {context['slug']}, Empresa: {empresa}, Filial: {filial}")
+        logger.info(f"[DashPedidosPisosView] Rendering dashboard. Slug: {context['slug']}, Empresa: {empresa}, Filial: {filial}, Data Início: {context['data_inicio']}, Data Fim: {context['data_fim']}")
         return context
 
 
@@ -882,6 +886,10 @@ class DashOrcamentosView(ModuloRequeridoMixin, TemplateView):
         context['empresa'] = empresa
         context['filial'] = filial
         
+        # Date filters for orca_data
+        context['data_inicio'] = self.request.GET.get('data_inicio')
+        context['data_fim'] = self.request.GET.get('data_fim')
+        
         try:
             banco = get_db_from_slug(context['slug'])
             # Carregar listas de empresas e filiais para os filtros
@@ -892,5 +900,5 @@ class DashOrcamentosView(ModuloRequeridoMixin, TemplateView):
             context['empresas_list'] = []
             context['filiais_list'] = []
         
-        logger.info(f"[DashOrcamentosView] Rendering dashboard. Slug: {context['slug']}, Empresa: {empresa}, Filial: {filial}")
+        logger.info(f"[DashOrcamentosView] Rendering dashboard. Slug: {context['slug']}, Empresa: {empresa}, Filial: {filial}, Data Início: {context['data_inicio']}, Data Fim: {context['data_fim']}")
         return context

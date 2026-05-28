@@ -599,7 +599,16 @@
 
         // Adicionar filtros do formulário
         for (const [key, value] of formData.entries()) {
-            if (value && key !== 'item_nome') params.append(key, value);
+            if (value && key !== 'item_nome') {
+                // Map data_inicial/data_final to data_inicio/data_fim for API
+                if (key === 'data_inicial') {
+                    params.append('data_inicio', value);
+                } else if (key === 'data_final') {
+                    params.append('data_fim', value);
+                } else {
+                    params.append(key, value);
+                }
+            }
         }
 
         // Filtros de empresa/filial já estão no formData se preenchidos
