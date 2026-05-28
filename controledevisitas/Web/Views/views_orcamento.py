@@ -16,8 +16,8 @@ class GerarOrcamentoPisosDaVisitaView(View):
         ctrl_id = kwargs.get("ctrl_id")
 
         banco = get_licenca_db_config(request)
-        empresa_id = request.session.get("empresa_id") or request.headers.get("X-Empresa") or 1
-        filial_id = request.session.get("filial_id") or request.headers.get("X-Filial") or 1
+        empresa_id = int(request.session.get("empresa_id") or request.headers.get("X-Empresa") or 1)
+        filial_id = int(request.session.get("filial_id") or request.headers.get("X-Filial") or 1)
 
         try:
             # Verify that the service is being used correctly and that all required parameters are passed

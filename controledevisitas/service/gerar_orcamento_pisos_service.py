@@ -69,16 +69,22 @@ class GerarOrcamentoPisosDaVisitaService:
         return orcamento
 
     def buscar_visita(self, ctrl_id: int):
-        return (
+        visita = (
             Controlevisita.objects
             .using(self.banco)
             .select_related("ctrl_empresa", "ctrl_cliente", "ctrl_vendedor")
-            .get(
-                ctrl_id=ctrl_id,
-                ctrl_empresa_id=self.empresa_id,
-                ctrl_filial=self.filial_id,
-            )
+            .get(ctrl_id=ctrl_id)
         )
+        
+        # Validate that the visita belongs to the correct empresa/filial
+        if visita.ctrl_empresa_id != self.empresa_id or visita.ctrl_filial != self.filial_id:
+            raise ValueError(
+                f"A visita #{ctrl_id} pertence à empresa {visita.ctrl_empresa_id} "
+                f"e filial {visita.ctrl_filial}, mas você está tentando acessar "
+                f"com empresa {self.empresa_id} e filial {self.filial_id}."
+            )
+        
+        return visita
 
     def buscar_itens_visita(self, visita):
         return list(
@@ -262,6 +268,20 @@ class GerarOrcamentoPisosDaVisitaService:
 
         if getattr(visita, "ctrl_fone", None):
             partes.append(f"Telefone: {visita.ctrl_fone}")
+
+        # KM information
+        km_inicial = getattr(visita, "ctrl_km_inic", None)
+        km_final = getattr(visita, "ctrl_km_fina", None)
+        
+        if km_inicial is not None:
+            partes.append(f"KM Inicial: {km_inicial}")
+        
+        if km_final is not None:
+            partes.append(f"KM Final: {km_final}")
+        
+        if km_inicial is not None and km_final is not None:
+            km_total = km_final - km_inicial
+            partes.append(f"KM Percorrido: {km_total}")
 
         if getattr(visita, "ctrl_obse", None):
             partes.append(f"Observação da visita: {visita.ctrl_obse}")
