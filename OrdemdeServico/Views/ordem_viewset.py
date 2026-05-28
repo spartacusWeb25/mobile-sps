@@ -66,14 +66,6 @@ class OrdemViewSet(BaseMultiDBModelViewSet):
             orde_stat_orde__in=[0, 1, 2, 3, 5, 21, 22]
         ).exclude(orde_seto=0)
 
-        # Usa only() para carregar apenas campos não-date
-        # Isso evita que psycopg2 tente deserializar datas inválidas
-        qs = qs.only(
-            'orde_nume', 'orde_empr', 'orde_fili', 'orde_enti', 'orde_seto',
-            'orde_stat_orde', 'orde_prio', 'orde_tipo', 'orde_prob', 'orde_defe_desc',
-            'orde_obse', 'orde_plac', 'orde_tota', 'orde_gara', 'orde_sem_cons', 'orde_volt'
-        )
-
         if user_setor and getattr(user_setor, "osfs_codi", None):
             qs = qs.filter(orde_seto=user_setor.osfs_codi)
 
@@ -92,29 +84,18 @@ class OrdemViewSet(BaseMultiDBModelViewSet):
         return qs.order_by('-orde_nume')
 
     def list(self, request, *args, **kwargs):
-        try:
-            queryset = self.filter_queryset(self.get_queryset())
+        queryset = self.filter_queryset(self.get_queryset())
 
-            page = self.paginate_queryset(queryset)
-            if page is not None:
-                # Na lista, não carrega peças/serviços completos, apenas contagens
-                self._prefetch_counts(page)
-                serializer = self.get_serializer(page, many=True)
-                return self.get_paginated_response(serializer.data)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            # Na lista, não carrega peças/serviços completos, apenas contagens
+            self._prefetch_counts(page)
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
 
-            self._prefetch_counts(queryset)
-            serializer = self.get_serializer(queryset, many=True)
-            return Response(serializer.data)
-        except ValueError as e:
-            # Captura erro de data inválida e tenta filtrar o registro problemático
-            if "year" in str(e).lower() and "out of range" in str(e).lower():
-                logger.error(f"Erro de data inválida detectado: {e}")
-                # Tenta buscar IDs válidos excluindo o registro problemático
-                return self._list_with_error_handling(request)
-            raise
-        except Exception as e:
-            logger.error(f"Erro ao listar ordens: {e}", exc_info=True)
-            return tratar_erro(e)
+        self._prefetch_counts(queryset)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
     def retrieve(self, request, *args, **kwargs):
         """No detalhe, carrega todas as peças e serviços completos"""
