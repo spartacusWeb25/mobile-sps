@@ -127,6 +127,43 @@ class OrdemViewSet(BaseMultiDBModelViewSet):
         except Exception as e:
             return tratar_erro(e)
 
+    @action(detail=False, methods=['get'], url_path='contadores')
+    def contadores(self, request):
+        """Retorna contadores totais por status de todas as ordens"""
+        try:
+            banco = self.get_banco()
+            
+            # Contagem por status usando agregação do Django
+            from django.db.models import Count
+            
+            contadores = Ordemservico.objects.using(banco).filter(
+                orde_seto__isnull=False,
+                orde_stat_orde__in=[0, 1, 2, 3, 5, 21, 22]
+            ).exclude(orde_seto=0).values('orde_stat_orde').annotate(
+                count=Count('orde_nume')
+            )
+            
+            # Converte para dicionário
+            contadores_dict = {item['orde_stat_orde']: item['count'] for item in contadores}
+            
+            # Calcula totais
+            total = sum(contadores_dict.values())
+            
+            return Response({
+                'abertas': contadores_dict.get(0, 0),
+                'orcamento_gerado': contadores_dict.get(1, 0),
+                'aguardando_liberacao': contadores_dict.get(2, 0),
+                'liberadas': contadores_dict.get(3, 0),
+                'reprovadas': contadores_dict.get(5, 0),
+                'faturada_parcial': contadores_dict.get(20, 0),
+                'atrasadas': contadores_dict.get(21, 0),
+                'em_estoque': contadores_dict.get(22, 0),
+                'total': total,
+            })
+        except Exception as e:
+            logger.error(f"Erro ao buscar contadores: {e}", exc_info=True)
+            return tratar_erro(e)
+
     def _list_with_error_handling(self, request):
         """Tenta listar ordens pulando registros com datas inválidas"""
         banco = self.get_banco()
