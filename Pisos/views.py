@@ -863,10 +863,13 @@ class DashPedidosPisosView(ModuloRequeridoMixin, TemplateView):
             # Carregar listas de empresas e filiais para os filtros
             context['empresas_list'] = list(Empresas.objects.using(banco).all().values('empr_codi', 'empr_nome').order_by('empr_nome'))
             context['filiais_list'] = list(Filiais.objects.using(banco).all().values('empr_empr', 'empr_codi', 'empr_nome').order_by('empr_nome'))
+            # Carregar lista de vendedores para o filtro múltiplo
+            context['vendedores_list'] = list(Entidades.objects.using(banco).filter(enti_tipo_enti='VE').values('enti_clie', 'enti_nome').order_by('enti_nome'))
         except Exception as e:
-            logger.error(f"Erro ao carregar empresas/filiais: {e}")
+            logger.error(f"Erro ao carregar empresas/filiais/vendedores: {e}")
             context['empresas_list'] = []
             context['filiais_list'] = []
+            context['vendedores_list'] = []
         
         logger.info(f"[DashPedidosPisosView] Rendering dashboard. Slug: {context['slug']}, Empresa: {empresa}, Filial: {filial}, Data Início: {context['data_inicio']}, Data Fim: {context['data_fim']}")
         return context
@@ -895,10 +898,13 @@ class DashOrcamentosView(ModuloRequeridoMixin, TemplateView):
             # Carregar listas de empresas e filiais para os filtros
             context['empresas_list'] = list(Empresas.objects.using(banco).all().values('empr_codi', 'empr_nome').order_by('empr_nome'))
             context['filiais_list'] = list(Filiais.objects.using(banco).all().values('empr_empr', 'empr_codi', 'empr_nome').order_by('empr_nome'))
+            # Carregar lista de vendedores para o filtro múltiplo
+            context['vendedores_list'] = list(Entidades.objects.using(banco).filter(enti_tipo_enti='VE').values('enti_clie', 'enti_nome').order_by('enti_nome'))
         except Exception as e:
-            logger.error(f"Erro ao carregar empresas/filiais: {e}")
+            logger.error(f"Erro ao carregar empresas/filiais/vendedores: {e}")
             context['empresas_list'] = []
             context['filiais_list'] = []
+            context['vendedores_list'] = []
         
         logger.info(f"[DashOrcamentosView] Rendering dashboard. Slug: {context['slug']}, Empresa: {empresa}, Filial: {filial}, Data Início: {context['data_inicio']}, Data Fim: {context['data_fim']}")
         return context

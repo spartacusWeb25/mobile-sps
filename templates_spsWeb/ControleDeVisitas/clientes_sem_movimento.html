@@ -3,32 +3,209 @@
 
 {% block crm_content %}
 <style>
+    /* Cards de resumo - estilo impactante */
     #total,
-#periodo {
-  border-radius: 20px;
-  font-weight: bold;
-  transition: all 0.25s ease;
-}
+    #periodo {
+        border-radius: 12px;
+        font-weight: 700;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+        min-height: 120px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
 
-#total {
-  background: linear-gradient(90deg, #577392, #a9bccf);
-  border-left: 4px solid #007bff;
-  border-right: 4px solid #7a95b1;
-}
+    #total {
+        background: linear-gradient(135deg, #1a252f 0%, #2c3e50 50%, #34495e 100%);
+        color: white;
+        box-shadow: 0 8px 24px rgba(44, 62, 80, 0.4);
+    }
 
-#periodo {
-  background: linear-gradient(90deg, #e0c25e, #d8c996);
-  border-left: 4px solid #ffc400;
-  border-right: 4px solid #ebe299;
-}
+    #total::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        animation: pulse 4s ease-in-out infinite;
+    }
 
-#total:hover,
-#periodo:hover {
-  transform: translateY(-6px) scale(1.02);
-  cursor: pointer;
-  color: #000000;
-  box-shadow: 0 14px 28px rgba(0, 0, 0, .22);
-}
+    #periodo {
+        background: linear-gradient(135deg, #d5dbdb 0%, #ecf0f1 50%, #bdc3c7 100%);
+        color: #1a252f;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    }
+
+    #periodo .text-muted {
+        color: #1a252f !important;
+        opacity: 0.7;
+    }
+
+    [data-bs-theme="dark"] #periodo {
+        background: linear-gradient(135deg, #2c3e50 0%, #34495e 50%, #1a252f 100%);
+        color: white;
+    }
+
+    [data-bs-theme="dark"] #periodo .text-muted {
+        color: rgba(255, 255, 255, 0.7) !important;
+    }
+
+    #total:hover,
+    #periodo:hover {
+        transform: translateY(-4px) scale(1.02);
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+    }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 0.3; transform: scale(1); }
+        50% { opacity: 0.5; transform: scale(1.1); }
+    }
+
+    /* Cards de clientes - estilo impactante */
+    .cliente-card {
+        border-radius: 12px;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        background: var(--bs-card-bg);
+        position: relative;
+    }
+
+    .cliente-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #1a252f, #2c3e50, #34495e);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .cliente-card .card-body {
+        padding: 1.5rem;
+        background: linear-gradient(180deg, var(--bs-card-bg) 0%, rgba(0,0,0,0.03) 100%);
+    }
+
+    .cliente-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.15);
+        border-color: rgba(44, 62, 80, 0.3);
+    }
+
+    .cliente-card:hover::before {
+        opacity: 1;
+    }
+
+    /* Badges - estilo impactante */
+    .badge-pedido {
+        background: linear-gradient(135deg, #1a252f 0%, #2c3e50 100%);
+        color: white !important;
+        font-weight: 700;
+        padding: 0.35rem 0.75rem;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.75px;
+        box-shadow: 0 2px 8px rgba(44, 62, 80, 0.3);
+    }
+
+    .badge-orcamento {
+        background: linear-gradient(135deg, #636e72 0%, #7f8c8d 100%);
+        color: white !important;
+        font-weight: 700;
+        padding: 0.35rem 0.75rem;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.75px;
+        box-shadow: 0 2px 8px rgba(127, 140, 141, 0.3);
+    }
+
+    .badge-valor-pedido {
+        background: linear-gradient(135deg, #1e8449 0%, #27ae60 100%);
+        color: white !important;
+        font-weight: 800;
+        padding: 0.3rem 0.6rem;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        box-shadow: 0 2px 8px rgba(39, 174, 96, 0.4);
+    }
+
+    .badge-valor-orcamento {
+        background: linear-gradient(135deg, #2980b9 0%, #3498db 100%);
+        color: white !important;
+        font-weight: 800;
+        padding: 0.3rem 0.6rem;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        box-shadow: 0 2px 8px rgba(52, 152, 219, 0.4);
+    }
+
+    .badge-id {
+        background: linear-gradient(135deg, #7f8c8d 0%, #95a5a6 100%);
+        color: white !important;
+        font-weight: 700;
+        padding: 0.25rem 0.6rem;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        box-shadow: 0 2px 6px rgba(149, 165, 166, 0.3);
+    }
+
+    /* Botão de visita - estilo impactante */
+    .btn-visita {
+        background: linear-gradient(135deg, #1a252f 0%, #2c3e50 100%);
+        border: none;
+        color: white;
+        font-weight: 700;
+        padding: 0.6rem 1.25rem;
+        border-radius: 8px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 4px 12px rgba(44, 62, 80, 0.3);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-size: 0.85rem;
+    }
+
+    .btn-visita:hover {
+        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(44, 62, 80, 0.5);
+    }
+
+    .btn-visita:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 8px rgba(44, 62, 80, 0.4);
+    }
+
+    /* Melhorias de espaçamento */
+    .info-row {
+        padding: 0.6rem 0;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    .info-row:last-child {
+        border-bottom: none;
+    }
+
+    /* Texto */
+    .cliente-nome {
+        font-weight: 700;
+        color: var(--bs-body-color);
+        font-size: 1rem;
+        letter-spacing: 0.25px;
+    }
+
+    .info-text {
+        color: var(--bs-body-color);
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
 </style>
 
 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
@@ -87,6 +264,14 @@
                     <label class="form-label">Cliente</label>
                     <input class="form-control" type="text" name="cliente"
                         value="{{ filtros.cliente|default_if_none:'' }}" placeholder="Nome do cliente">
+                </div>
+                <div class="col-3 col-md-2">
+                    <label class="form-label">Tipo</label>
+                    <select class="form-select" name="tipo_filtro">
+                        <option value="">Todos</option>
+                        <option value="ambos" {% if filtros.tipo_filtro == 'ambos' %}selected{% endif %}>Ambos</option>
+                        <option value="orcamentos" {% if filtros.tipo_filtro == 'orcamentos' %}selected{% endif %}>Somente Orçamentos</option>
+                    </select>
                 </div>
                 <div class="col-3 col-md-3">
                     <button class="btn btn-outline-primary w-100" type="submit"><i class="bi bi-filter"></i>
@@ -221,17 +406,17 @@
         })();
     </script>
 
-    <div class="row g-2 mb-3">
-        <div class="col-12 col-md-4">
-            <div class="card">
+    <div class="d-flex gap-3 mb-3 align-items-stretch">
+        <div class="flex-fill" style="flex: 0 0 auto; width: 300px;">
+            <div class="card h-100">
                 <div class="card-body" id="total">
                     <div class="text-muted small"><i class="bi bi-wrench-adjustable-circle-fill"></i> Total clientes na lista</div>
                     <div class="h4 mb-0">{{ page_obj.paginator.count|default:0 }}</div>
                 </div>
             </div>
         </div>
-        <div class="col-12 col-md-8">
-            <div class="card">
+        <div class="flex-fill">
+            <div class="card h-100">
                 <div class="card-body" id="periodo">
                     <div class="text-muted small"><i class="bi bi-calendar3-fill"></i> Período</div>
                     <div class="h5 mb-0">
@@ -251,59 +436,75 @@
     </div>
 
     {% if clientes %}
-    <div id="clientes-grid" class="row g-2">
+    <div id="clientes-grid" class="row g-3">
         {% for cliente in clientes %}
         <div class="col-12 col-md-6 col-xl-4">
-            <div class="card h-100">
+            <div class="card cliente-card h-100">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start gap-2">
-                        <div class="fw-semibold">{{ cliente.enti_nome }}</div>
-                        <span class="badge text-bg-secondary">#{{ cliente.enti_clie }}</span>
+                    <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
+                        <div class="cliente-nome flex-grow-1">{{ cliente.enti_nome }}</div>
+                        <span class="badge badge-id">#{{ cliente.enti_clie }}</span>
                     </div>
 
-                    <div class="mt-2 small text-muted">
-                        Último pedido:
-                        {% if data_inicial_obj %}
-                            {% if cliente.ultimo_pedido_antes_vend %}
-                                {{ cliente.ultimo_pedido_antes_vend|date:"d/m/Y" }}
-                            {% elif cliente.ultimo_pedido_antes %}
-                                {{ cliente.ultimo_pedido_antes|date:"d/m/Y" }}
-                            {% elif cliente.ultimo_pedido %}
-                                {{ cliente.ultimo_pedido|date:"d/m/Y" }}
+                    <div class="info-row">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <span class="badge badge-pedido">Último pedido</span>
+                        </div>
+                        <div class="info-text ms-1">
+                            {% if data_inicial_obj %}
+                                {% if cliente.ultimo_pedido_antes_vend %}
+                                    {{ cliente.ultimo_pedido_antes_vend|date:"d/m/Y" }}
+                                {% elif cliente.ultimo_pedido_antes %}
+                                    {{ cliente.ultimo_pedido_antes|date:"d/m/Y" }}
+                                {% elif cliente.ultimo_pedido %}
+                                    {{ cliente.ultimo_pedido|date:"d/m/Y" }}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
                             {% else %}
-                                -
+                                {% if cliente.ultimo_pedido %}
+                                    {{ cliente.ultimo_pedido|date:"d/m/Y" }}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
                             {% endif %}
-                        {% else %}
-                            {% if cliente.ultimo_pedido %}
-                                {{ cliente.ultimo_pedido|date:"d/m/Y" }}
-                            {% else %}
-                                -
+                            {% if cliente.valor_ultimo_pedido %}
+                            <span class="badge badge-valor-pedido ms-2">R$ {{ cliente.valor_ultimo_pedido|floatformat:2 }}</span>
                             {% endif %}
-                        {% endif %}
+                        </div>
                     </div>
-                    <div class="mt-1 small text-muted">
-                        Último orçamento:
-                        {% if data_inicial_obj %}
-                            {% if cliente.ultimo_orcamento_antes_vend %}
-                                {{ cliente.ultimo_orcamento_antes_vend|date:"d/m/Y" }}
-                            {% elif cliente.ultimo_orcamento_antes %}
-                                {{ cliente.ultimo_orcamento_antes|date:"d/m/Y" }}
-                            {% elif cliente.ultimo_orcamento %}
-                                {{ cliente.ultimo_orcamento|date:"d/m/Y" }}
+
+                    <div class="info-row">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <span class="badge badge-orcamento">Último orçamento</span>
+                        </div>
+                        <div class="info-text ms-1">
+                            {% if data_inicial_obj %}
+                                {% if cliente.ultimo_orcamento_antes_vend %}
+                                    {{ cliente.ultimo_orcamento_antes_vend|date:"d/m/Y" }}
+                                {% elif cliente.ultimo_orcamento_antes %}
+                                    {{ cliente.ultimo_orcamento_antes|date:"d/m/Y" }}
+                                {% elif cliente.ultimo_orcamento %}
+                                    {{ cliente.ultimo_orcamento|date:"d/m/Y" }}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
                             {% else %}
-                                -
+                                {% if cliente.ultimo_orcamento %}
+                                    {{ cliente.ultimo_orcamento|date:"d/m/Y" }}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
                             {% endif %}
-                        {% else %}
-                            {% if cliente.ultimo_orcamento %}
-                                {{ cliente.ultimo_orcamento|date:"d/m/Y" }}
-                            {% else %}
-                                -
+                            {% if cliente.valor_ultimo_orcamento %}
+                            <span class="badge badge-valor-orcamento ms-2">R$ {{ cliente.valor_ultimo_orcamento|floatformat:2 }}</span>
                             {% endif %}
-                        {% endif %}
+                        </div>
                     </div>
-                    <div class="card-botoes">
+
+                    <div class="mt-4 pt-3 border-top">
                         <a href="{% url 'visita_criar_web' slug=slug %}?cliente={{ cliente.enti_clie }}{% if filtros.vendedor %}&vendedor={{ filtros.vendedor }}{% endif %}&origem=sem_movimento"
-                            class="btn btn-sm btn-outline-success">
+                            class="btn btn-visita w-100">
                             Abrir visita
                         </a>
                     </div>

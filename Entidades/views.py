@@ -19,6 +19,7 @@ from django.db.models import Q
 from django.core.cache import cache
 from .services.entidades_tipooutros import EntidadeServico
 from .services.cadastro_rapido import EntidadeCadastroRapido
+from .services.cadastro_rapido_simplificado import EntidadeCadastroRapidoSimplificado
 
 
 BANCOS_CEP_FIXO = {"savexml896", "pg pisos", 'demonstracao'}
@@ -238,14 +239,24 @@ class EntidadesViewSet(ModuloRequeridoMixin,viewsets.ModelViewSet):
         print(f"empresa_id: {empresa_id}, filial_id: {filial_id}, banco: {banco}, cep_fallback: {cep_fallback}")
 
         try:
-            entidade = EntidadeCadastroRapido.cadastrar_rapido(
-                data=serializer.validated_data,
-                empresa_id=empresa_id,
-                filial_id=filial_id,
-                banco=banco,
-                cep_fallback=cep_fallback if not serializer.validated_data.get("enti_cep") else None,
-                cpf=serializer.validated_data.get("enti_cpf") or None,
-            )
+            # Usar service simplificado se CPF não for fornecido
+            cpf = serializer.validated_data.get("enti_cpf") or None
+            if not cpf:
+                entidade = EntidadeCadastroRapidoSimplificado.cadastrar_rapido_simplificado(
+                    data=serializer.validated_data,
+                    empresa_id=empresa_id,
+                    filial_id=filial_id,
+                    banco=banco,
+                )
+            else:
+                entidade = EntidadeCadastroRapido.cadastrar_rapido(
+                    data=serializer.validated_data,
+                    empresa_id=empresa_id,
+                    filial_id=filial_id,
+                    banco=banco,
+                    cep_fallback=cep_fallback if not serializer.validated_data.get("enti_cep") else None,
+                    cpf=cpf,
+                )
             print(f"Entidade criada com sucesso: {entidade}")
             print(f"DEBUG enti_clie: {getattr(entidade, 'enti_clie', 'NÃO ENCONTRADO')}")
         except ValidationError as e:

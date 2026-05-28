@@ -269,9 +269,11 @@
                 <input type="text" class="form-control" id="cliente" name="cliente_nome" placeholder="Nome do cliente">
             </div>
             <div class="col-md-3">
-                <label for="vendedor" class="form-label">Vendedor</label>
-                <input type="text" class="form-control" id="vendedor" name="vendedor_nome"
-                    placeholder="Nome do vendedor">
+                <label for="vendedor" class="form-label">Vendedor(es)</label>
+                <select class="form-select" id="vendedor" name="vendedor_nome" multiple>
+                    <option value="">Todos</option>
+                </select>
+                <small class="text-muted">Segure Ctrl para selecionar múltiplos</small>
             </div>
             <div class="col-md-3">
                 <label for="item" class="form-label">Item</label>
@@ -446,6 +448,7 @@
 
 {{ empresas_list|json_script:"empresas-data" }}
 {{ filiais_list|json_script:"filiais-data" }}
+{{ vendedores_list|json_script:"vendedores-data" }}
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
@@ -529,9 +532,11 @@
         // Carregar dados de Empresas e Filiais
         const empresasData = JSON.parse(document.getElementById('empresas-data').textContent || '[]');
         const filiaisData = JSON.parse(document.getElementById('filiais-data').textContent || '[]');
+        const vendedoresData = JSON.parse(document.getElementById('vendedores-data').textContent || '[]');
 
         const empresaSelect = document.getElementById('empresa');
         const filialSelect = document.getElementById('filial');
+        const vendedorSelect = document.getElementById('vendedor');
 
         // Popular Empresas
         empresasData.forEach(emp => {
@@ -558,6 +563,14 @@
         // Listener para mudança de empresa
         empresaSelect.addEventListener('change', function () {
             updateFiliais(this.value);
+        });
+
+        // Popular Vendedores
+        vendedoresData.forEach(vend => {
+            const option = document.createElement('option');
+            option.value = vend.enti_clie;
+            option.textContent = vend.enti_nome;
+            vendedorSelect.appendChild(option);
         });
 
         // Dados de contexto do Django (Sessão)

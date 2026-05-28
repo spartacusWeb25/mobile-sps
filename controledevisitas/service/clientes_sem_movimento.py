@@ -45,6 +45,7 @@ class ClienteSemMovimentoRow:
         "ultimo_pedido_antes", "ultimo_orcamento_antes",
         "ultimo_pedido_antes_vend", "ultimo_orcamento_antes_vend",
         "tem_pedido_periodo", "tem_orcamento_periodo",
+        "valor_ultimo_pedido", "valor_ultimo_orcamento",
     )
 
     def __init__(self, **kwargs):
@@ -95,6 +96,7 @@ class ClienteSemMovimentoService:
         vendedor_nome: str | None = None,
         vendedores_ids: list | None = None,
         somente_carteira: bool = False,
+        tipo_filtro: str | None = None,
     ) -> list[ClienteSemMovimentoRow]:
         empresa = self._clean_int(empresa)
         filial = self._clean_int(filial)
@@ -123,6 +125,7 @@ class ClienteSemMovimentoService:
             vend_str=vend_str,
             has_vendedor=has_vendedor,
             somente_carteira=somente_carteira,
+            tipo_filtro=tipo_filtro,
         )
 
     # ------------------------------------------------------------------
@@ -160,6 +163,7 @@ class ClienteSemMovimentoService:
         vend_str: list[str],
         has_vendedor: bool,
         somente_carteira: bool,
+        tipo_filtro: str | None,
     ) -> list[ClienteSemMovimentoRow]:
 
         PED_DATA = "COALESCE(p.pedi_data, p._log_data)"
@@ -267,6 +271,12 @@ class ClienteSemMovimentoService:
 
         # ---------- SQL ------------------------------------------------------
 
+        # ---------- filtro de tipo ---------------------------------------------
+        
+        tipo_where = ""
+        if tipo_filtro == "orcamentos":
+            tipo_where = "AND oa.clie IS NOT NULL AND pa.clie IS NULL"
+        
         sql = f"""
         WITH pedidos_agg AS (
             SELECT
@@ -279,7 +289,10 @@ class ClienteSemMovimentoService:
                 BOOL_OR(
                     {PED_DATA} >= %(data_inicial)s
                     AND {PED_DATA} <= %(data_final)s
-                )                                                           AS tem_pedido_periodo
+                )                                                           AS tem_pedido_periodo,
+                MAX(p.pedi_tota) FILTER (
+                    WHERE {PED_DATA} < %(data_inicial)s
+                )                                                           AS valor_ultimo_pedido
             FROM pedidospisos p
             WHERE {ped_where}
             AND p.pedi_clie IS NOT NULL
@@ -296,7 +309,10 @@ class ClienteSemMovimentoService:
                 BOOL_OR(
                     {ORC_DATA} >= %(data_inicial)s
                     AND {ORC_DATA} <= %(data_final)s
-                )                                                           AS tem_orcamento_periodo
+                )                                                           AS tem_orcamento_periodo,
+                MAX(o.orca_tota) FILTER (
+                    WHERE {ORC_DATA} < %(data_inicial)s
+                )                                                           AS valor_ultimo_orcamento
             
             FROM orcamentopisos o
             WHERE {orc_where}
@@ -317,7 +333,9 @@ class ClienteSemMovimentoService:
             pa.ultimo_pedido_antes_vend,
             oa.ultimo_orcamento_antes_vend,
             COALESCE(pa.tem_pedido_periodo,    FALSE) AS tem_pedido_periodo,
-            COALESCE(oa.tem_orcamento_periodo, FALSE) AS tem_orcamento_periodo
+            COALESCE(oa.tem_orcamento_periodo, FALSE) AS tem_orcamento_periodo,
+            COALESCE(pa.valor_ultimo_pedido, 0) AS valor_ultimo_pedido,
+            COALESCE(oa.valor_ultimo_orcamento, 0) AS valor_ultimo_orcamento
         FROM entidades e
         LEFT JOIN pedidos_agg   pa ON pa.clie = e.enti_clie::text
         LEFT JOIN orcamentos_agg oa ON oa.clie = e.enti_clie::text
@@ -326,6 +344,7 @@ class ClienteSemMovimentoService:
             AND (pa.clie IS NOT NULL OR oa.clie IS NOT NULL)
             AND COALESCE(pa.tem_pedido_periodo,    FALSE) = FALSE
             AND COALESCE(oa.tem_orcamento_periodo, FALSE) = FALSE
+            {tipo_where}
             {ent_vend_filter}
         ORDER BY
             GREATEST(pa.ultimo_pedido_antes, oa.ultimo_orcamento_antes) DESC NULLS LAST

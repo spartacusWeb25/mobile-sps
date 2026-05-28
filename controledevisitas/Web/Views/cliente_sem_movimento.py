@@ -105,6 +105,7 @@ class ClientesSemMovimentoListView(VendedorResponsavelEntidadeMixin, TemplateVie
             cliente_nome=request.GET.get("cliente"),
             vendedores_ids=vendedor_ids or None,
             somente_carteira=somente_carteira,
+            tipo_filtro=request.GET.get("tipo_filtro"),
         )
 
         # --- paginação manual (lista, não QuerySet) ----------------------

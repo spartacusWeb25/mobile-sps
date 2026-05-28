@@ -80,16 +80,16 @@ class PedidoPisosImpressaoService:
         Ajuste o model/filtro conforme seu schema real.
         """
         try:
-            from Financeiro.models import Titulos  # ajuste o import real
+            from contas_a_receber.models import Titulosreceber
  
             return list(
-                Titulos.objects.using(banco)
+                Titulosreceber.objects.using(banco)
                 .filter(
-                    fina_empr=pedido.pedi_empr,
-                    fina_fili=pedido.pedi_fili,
-                    fina_pedi=pedido.pedi_nume,
+                    titr_empr=pedido.pedi_empr,
+                    titr_fili=pedido.pedi_fili,
+                    titr_pedi=pedido.pedi_nume,
                 )
-                .order_by("fina_venc")
+                .order_by("titr_venc")
             )
         except Exception:
             return []
