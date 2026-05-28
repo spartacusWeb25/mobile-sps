@@ -72,10 +72,6 @@ const PainelAcompanhamento = ({ navigation }) => {
     liberadas: 0,
     total: 0,
   })
-  const [statusPorSetor, setStatusPorSetor] = useState([])
-  const [loadingStatus, setLoadingStatus] = useState(false)
-  const [hasMoreStatus, setHasMoreStatus] = useState(true)
-  const [offsetStatus, setOffsetStatus] = useState(0)
 
   const detectarModoExibicao = () => {
     const { width, height } = Dimensions.get('window')
@@ -109,13 +105,6 @@ const PainelAcompanhamento = ({ navigation }) => {
   const getStatusText = (status) => {
     const option = STATUS_OPTIONS.find((opt) => opt.value === status)
     return option ? option.label : '-'
-  }
-
-  const calcularContadores = (ordensData) => {
-    const abertas = ordensData.filter((o) => o.orde_stat_orde === 0).length
-    const liberadas = ordensData.filter((o) => o.orde_stat_orde === 3).length
-    const atrasadas = ordensData.filter((o) => o.orde_stat_orde === 21).length
-    return { abertas, atrasadas, liberadas, total: ordensData.length }
   }
 
   const fetchOrdens = async (filtros = {}, isLoadMore = false) => {
@@ -173,7 +162,6 @@ const PainelAcompanhamento = ({ navigation }) => {
 
       // Verifica se há mais dados
       setHasMore(ordensData.length === 50)
-      setContadores(calcularContadores(isLoadMore ? [...ordens, ...ordensData] : ordensData))
     } catch (error) {
       console.error('❌ FRONTEND - Erro ao buscar ordens:', error)
       if (!isLoadMore) {
@@ -185,55 +173,23 @@ const PainelAcompanhamento = ({ navigation }) => {
     }
   }
 
-  const fetchStatusPorSetor = async (isLoadMore = false) => {
-    if (isLoadMore) {
-      setLoadingStatus(true)
-    } else {
-      setLoadingStatus(true)
-      setOffsetStatus(0)
-      setHasMoreStatus(true)
-    }
-
+  const fetchContadores = async () => {
     try {
-      const params = new URLSearchParams()
-      const currentOffset = isLoadMore ? offsetStatus : 0
-      params.append('limit', '50')
-      params.append('offset', currentOffset.toString())
-
-      const queryString = params.toString()
-      const url = `ordemdeservico/ordens/status-por-setor/${
-        queryString ? `?${queryString}` : ''
-      }`
-
-      console.log('🔍 FRONTEND - URL status por setor:', url)
+      const url = 'ordemdeservico/ordens/contadores/'
+      console.log('🔍 FRONTEND - URL contadores:', url)
 
       const response = await apiGetComContextoos(url)
-      let statusData = []
-
-      if (Array.isArray(response)) statusData = response
-      else if (response?.data && Array.isArray(response.data))
-        statusData = response.data
-      else if (response?.results && Array.isArray(response.results))
-        statusData = response.results
-
-      console.log('📊 FRONTEND - Total de status por setor:', statusData.length)
-
-      if (isLoadMore) {
-        setStatusPorSetor(prev => [...prev, ...statusData])
-        setOffsetStatus(prev => prev + 50)
-      } else {
-        setStatusPorSetor(statusData)
-        setOffsetStatus(50)
+      
+      if (response && typeof response === 'object') {
+        setContadores({
+          abertas: response.abertas || 0,
+          atrasadas: response.atrasadas || 0,
+          liberadas: response.liberadas || 0,
+          total: response.total || 0,
+        })
       }
-
-      setHasMoreStatus(statusData.length === 50)
     } catch (error) {
-      console.error('❌ FRONTEND - Erro ao buscar status por setor:', error)
-      if (!isLoadMore) {
-        setStatusPorSetor([])
-      }
-    } finally {
-      setLoadingStatus(false)
+      console.error('❌ FRONTEND - Erro ao buscar contadores:', error)
     }
   }
 
@@ -260,12 +216,6 @@ const PainelAcompanhamento = ({ navigation }) => {
     }
   }
 
-  const handleLoadMoreStatus = () => {
-    if (!loadingStatus && hasMoreStatus) {
-      fetchStatusPorSetor(true)
-    }
-  }
-
   const debouncedFetch = useCallback(
     debounce((term) => {
       executarBusca(term)
@@ -282,11 +232,11 @@ const PainelAcompanhamento = ({ navigation }) => {
   useFocusEffect(
     useCallback(() => {
       fetchOrdens()
-      fetchStatusPorSetor()
+      fetchContadores()
       const intervalo = setInterval(() => {
         console.log('⏰ Atualizando ordens automaticamente...')
         fetchOrdens()
-        fetchStatusPorSetor()
+        fetchContadores()
       }, 5400000) // 1h30
       return () => clearInterval(intervalo)
     }, [])
@@ -695,66 +645,6 @@ const PainelAcompanhamento = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
-      {/* Status por Setor */}
-      <View style={filtrosStyle}>
-        <Text
-          style={
-            modoAtual === 'tv' ? styles.filtroLabelTV : styles.filtroLabel
-          }>
-          Status por Setor
-        </Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.filtroScroll}
-          onScroll={({ nativeEvent }) => {
-            const { layoutMeasurement, contentOffset, contentSize } = nativeEvent
-            if (layoutMeasurement.width + contentOffset.x >= contentSize.width - 50) {
-              handleLoadMoreStatus()
-            }
-          }}
-          scrollEventThrottle={400}>
-          {statusPorSetor.map((item, index) => (
-            <View
-              key={`${item.setor_codigo}-${item.status_codigo}-${index}`}
-              style={[
-                modoAtual === 'tv'
-                  ? styles.statusPorSetorItemTV
-                  : modoAtual === 'mobile'
-                  ? styles.statusPorSetorItemMobile
-                  : styles.statusPorSetorItem,
-                { backgroundColor: statusColors[item.status_codigo] || '#f0f0f0' },
-              ]}>
-              <Text
-                style={
-                  modoAtual === 'tv'
-                    ? styles.statusPorSetorTextTV
-                    : modoAtual === 'mobile'
-                    ? styles.statusPorSetorTextMobile
-                    : styles.statusPorSetorText
-                }>
-                {item.setor_nome}
-              </Text>
-              <Text
-                style={[
-                  modoAtual === 'tv'
-                    ? styles.statusPorSetorCountTV
-                    : modoAtual === 'mobile'
-                    ? styles.statusPorSetorCountMobile
-                    : styles.statusPorSetorCount,
-                ]}>
-                {item.status_descricao}: {item.total}
-              </Text>
-            </View>
-          ))}
-          {loadingStatus && (
-            <View style={styles.loadingMoreContainer}>
-              <ActivityIndicator size="small" color="#284665" />
-            </View>
-          )}
-        </ScrollView>
-      </View>
-
       {/* Filtros */}
       <View style={filtrosStyle}>
         <View style={styles.filtroSection}>
@@ -954,9 +844,9 @@ const PainelAcompanhamento = ({ navigation }) => {
                   </View>
                 ))}
                 {loadingMore && (
-                  <View style={styles.loadingMoreContainer}>
+                  <View style={extraStyles.loadingMoreContainer}>
                     <ActivityIndicator size="small" color="#284665" />
-                    <Text style={styles.loadingMoreText}>Carregando mais...</Text>
+                    <Text style={extraStyles.loadingMoreText}>Carregando mais...</Text>
                   </View>
                 )}
               </>
@@ -966,6 +856,21 @@ const PainelAcompanhamento = ({ navigation }) => {
       )}
     </View>
   )
+}
+
+// Estilos extras para os novos componentes
+const extraStyles = {
+  loadingMoreContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  loadingMoreText: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: '#333',
+  },
 }
 
 export default PainelAcompanhamento
