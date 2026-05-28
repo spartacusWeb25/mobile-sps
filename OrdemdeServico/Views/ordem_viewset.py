@@ -6,7 +6,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.db import transaction
 from django.db.models.expressions import RawSQL
 from .base import BaseMultiDBModelViewSet
-from ..models import Ordemservico, Ordemservicopecas, Ordemservicoservicos, OrdemServicoFaseSetor, Osarquivos
+from ..models import Ordemservico, Ordemservicopecas, Ordemservicoservicos, OrdemServicoFaseSetor, OrdemServicoVoltagem, Osarquivos
 from ..serializers import OrdemServicoSerializer, OsArquSerializer
 from ..filters.os import OrdemServicoFilter
 from ..pagination import OrdemServicoPagination
@@ -65,27 +65,13 @@ class OrdemViewSet(BaseMultiDBModelViewSet):
             orde_seto__isnull=False,
             orde_stat_orde__in=[0, 1, 2, 3, 5, 21, 22]
         ).exclude(orde_seto=0)
-        
-        # Deferir todos os campos de data e hora propensos a erro para impedir leitura direta
-        qs = qs.defer(
-            'orde_data_aber', 'orde_hora_aber', 
-            'orde_data_fech', 'orde_hora_fech',
-            'orde_nf_data', 'orde_ulti_alte', 'orde_data_repr'
-        )
 
-        # Blindagem total via SQL puro — sem Case/When que avalia campos inválidos
-        qs = qs.extra(
-            select={
-                # CAST para TEXT impede psycopg2 de converter datas inválidas
-                'orde_data_aber': "CASE WHEN EXTRACT(YEAR FROM orde_data_aber) BETWEEN 2020 AND 2100 THEN orde_data_aber::text ELSE NULL END",
-                'orde_hora_aber': "orde_hora_aber::text",
-                'orde_data_fech': "CASE WHEN orde_data_fech IS NULL OR EXTRACT(YEAR FROM orde_data_fech) BETWEEN 2020 AND 2100 THEN orde_data_fech::text ELSE NULL END",
-                'orde_hora_fech': "orde_hora_fech::text",
-                'orde_nf_data':   "CASE WHEN orde_nf_data IS NULL OR EXTRACT(YEAR FROM orde_nf_data) BETWEEN 2020 AND 2100 THEN orde_nf_data::text ELSE NULL END",
-                'orde_ulti_alte': "CASE WHEN orde_ulti_alte IS NULL OR EXTRACT(YEAR FROM orde_ulti_alte) BETWEEN 2020 AND 2100 THEN orde_ulti_alte::text ELSE NULL END",
-                'orde_data_repr': "CASE WHEN orde_data_repr IS NULL OR EXTRACT(YEAR FROM orde_data_repr) BETWEEN 2020 AND 2100 THEN orde_data_repr::text ELSE NULL END",
-                'safe_data_aber': "CASE WHEN EXTRACT(YEAR FROM orde_data_aber) BETWEEN 2020 AND 2100 THEN orde_data_aber::text ELSE NULL END",
-            }
+        # Usa only() para carregar apenas campos não-date
+        # Isso evita que psycopg2 tente deserializar datas inválidas
+        qs = qs.only(
+            'orde_nume', 'orde_empr', 'orde_fili', 'orde_enti', 'orde_seto',
+            'orde_stat_orde', 'orde_prio', 'orde_tipo', 'orde_prob', 'orde_defe_desc',
+            'orde_obse', 'orde_plac', 'orde_tota', 'orde_gara', 'orde_sem_cons', 'orde_volt'
         )
 
         if user_setor and getattr(user_setor, "osfs_codi", None):
@@ -97,68 +83,134 @@ class OrdemViewSet(BaseMultiDBModelViewSet):
 
         cliente_nome = self.request.query_params.get('cliente_nome')
         if cliente_nome:
-            entidades_ids = list(
-                Entidades.objects.using(banco)
+            qs = qs.filter(
+                orde_enti__in=Entidades.objects.using(banco)
                 .filter(enti_nome__icontains=cliente_nome)
-                .values_list('enti_clie', flat=True)
+                .values_list('enti_clie', flat=True)[:500]
             )
-            if entidades_ids:
-                qs = qs.filter(orde_enti__in=entidades_ids)
 
-        logger.warning(f"[DEBUG COUNT] {qs.count()} registros")
-        
-
-        return qs.order_by('-safe_data_aber', '-orde_nume')
+        return qs.order_by('-orde_nume')
 
     def list(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset())
+        try:
+            queryset = self.filter_queryset(self.get_queryset())
 
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            self._prefetch_related_objects(page)
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
+            page = self.paginate_queryset(queryset)
+            if page is not None:
+                self._prefetch_related_objects(page)
+                serializer = self.get_serializer(page, many=True)
+                return self.get_paginated_response(serializer.data)
 
-        self._prefetch_related_objects(queryset)
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+            self._prefetch_related_objects(queryset)
+            serializer = self.get_serializer(queryset, many=True)
+            return Response(serializer.data)
+        except ValueError as e:
+            # Captura erro de data inválida e tenta filtrar o registro problemático
+            if "year" in str(e).lower() and "out of range" in str(e).lower():
+                logger.error(f"Erro de data inválida detectado: {e}")
+                # Tenta buscar IDs válidos excluindo o registro problemático
+                return self._list_with_error_handling(request)
+            raise
+        except Exception as e:
+            logger.error(f"Erro ao listar ordens: {e}", exc_info=True)
+            return tratar_erro(e)
+
+    def _list_with_error_handling(self, request):
+        """Tenta listar ordens pulando registros com datas inválidas"""
+        banco = self.get_banco()
+        try:
+            # Busca todos os IDs primeiro
+            all_ids = list(Ordemservico.objects.using(banco)
+                .filter(
+                    orde_seto__isnull=False,
+                    orde_stat_orde__in=[0, 1, 2, 3, 5, 21, 22]
+                )
+                .exclude(orde_seto=0)
+                .values_list('orde_nume', flat=True)
+            )
+            
+            # Tenta carregar em lotes, pulando registros com erro
+            valid_objects = []
+            batch_size = 100
+            for i in range(0, len(all_ids), batch_size):
+                batch_ids = all_ids[i:i + batch_size]
+                try:
+                    batch = list(Ordemservico.objects.using(banco)
+                        .filter(orde_nume__in=batch_ids)
+                        .only(
+                            'orde_nume', 'orde_empr', 'orde_fili', 'orde_enti', 'orde_seto',
+                            'orde_stat_orde', 'orde_prio', 'orde_tipo', 'orde_prob', 'orde_defe_desc',
+                            'orde_obse', 'orde_plac', 'orde_tota', 'orde_gara', 'orde_sem_cons', 'orde_volt'
+                        )
+                    )
+                    valid_objects.extend(batch)
+                except ValueError as e:
+                    logger.warning(f"Pulando lote com erro de data: {e}")
+                    continue
+            
+            page = self.paginate_queryset(valid_objects)
+            if page is not None:
+                self._prefetch_related_objects(page)
+                serializer = self.get_serializer(page, many=True)
+                return self.get_paginated_response(serializer.data)
+
+            self._prefetch_related_objects(valid_objects)
+            serializer = self.get_serializer(valid_objects, many=True)
+            return Response(serializer.data)
+        except Exception as e:
+            logger.error(f"Erro no fallback de listagem: {e}", exc_info=True)
+            return tratar_erro(e)
 
     def _prefetch_related_objects(self, objects):
         if not objects:
             return
-            
+
         banco = self.get_banco()
-        # Collect IDs
         orde_ids = [obj.orde_nume for obj in objects]
-        
-        # Prefetch Pecas
-        pecas = Ordemservicopecas.objects.using(banco).filter(peca_orde__in=orde_ids)
+
+        # Prefetch Pecas - usando only() para carregar apenas campos necessários
+        pecas = list(Ordemservicopecas.objects.using(banco)
+            .filter(peca_orde__in=orde_ids)
+            .only('peca_orde', 'peca_id', 'peca_codi', 'peca_comp', 'peca_quan', 'peca_unit', 'peca_tota', 'peca_tecn', 'peca_sem_esto'))
         pecas_map = {}
         for peca in pecas:
-            if peca.peca_orde not in pecas_map:
-                pecas_map[peca.peca_orde] = []
-            pecas_map[peca.peca_orde].append(peca)
-            
-        # Prefetch Servicos
-        servicos = Ordemservicoservicos.objects.using(banco).filter(serv_orde__in=orde_ids)
+            pecas_map.setdefault(peca.peca_orde, []).append(peca)
+
+        # Prefetch Servicos - usando only() para carregar apenas campos necessários
+        servicos = list(Ordemservicoservicos.objects.using(banco)
+            .filter(serv_orde__in=orde_ids)
+            .only('serv_orde', 'serv_id', 'serv_sequ', 'serv_codi', 'serv_comp', 'serv_quan', 'serv_unit', 'serv_tota'))
         servicos_map = {}
         for serv in servicos:
-            if serv.serv_orde not in servicos_map:
-                servicos_map[serv.serv_orde] = []
-            servicos_map[serv.serv_orde].append(serv)
+            servicos_map.setdefault(serv.serv_orde, []).append(serv)
 
         # Prefetch Setores
-        setor_ids = set(obj.orde_seto for obj in objects if obj.orde_seto)
-        setores = OrdemServicoFaseSetor.objects.using(banco).filter(osfs_codi__in=setor_ids)
-        setores_map = {s.osfs_codi: s.osfs_nome for s in setores}
+        setor_ids = {obj.orde_seto for obj in objects if obj.orde_seto}
+        if setor_ids:
+            setores = OrdemServicoFaseSetor.objects.using(banco).filter(osfs_codi__in=setor_ids).only('osfs_codi', 'osfs_nome')
+            setores_map = {s.osfs_codi: s.osfs_nome for s in setores}
+        else:
+            setores_map = {}
 
-        # Prefetch Clientes
-        clie_ids = set(obj.orde_enti for obj in objects if obj.orde_enti)
-        # Assuming Entidades is accessible via orde_enti/enti_clie + orde_empr/enti_empr
-        clientes = Entidades.objects.using(banco).filter(enti_clie__in=clie_ids)
-        clientes_map = {}
-        for c in clientes:
-            clientes_map[(c.enti_empr, c.enti_clie)] = c.enti_nome
+        # Prefetch Clientes - otimizado com only() e filter por empresa também
+        clie_ids = {obj.orde_enti for obj in objects if obj.orde_enti}
+        empr_ids = {obj.orde_empr for obj in objects if obj.orde_empr}
+        if clie_ids and empr_ids:
+            clientes = Entidades.objects.using(banco).filter(
+                enti_clie__in=clie_ids,
+                enti_empr__in=empr_ids
+            ).only('enti_empr', 'enti_clie', 'enti_nome')
+            clientes_map = {(c.enti_empr, c.enti_clie): c.enti_nome for c in clientes}
+        else:
+            clientes_map = {}
+
+        # Prefetch Voltagens
+        volt_ids = {obj.orde_volt for obj in objects if obj.orde_volt}
+        if volt_ids:
+            voltagens = OrdemServicoVoltagem.objects.using(banco).filter(osvo_codi__in=volt_ids).only('osvo_codi', 'osvo_nome')
+            voltagens_map = {v.osvo_codi: v.osvo_nome for v in voltagens}
+        else:
+            voltagens_map = {}
 
         # Assign to objects
         for obj in objects:
@@ -166,6 +218,7 @@ class OrdemViewSet(BaseMultiDBModelViewSet):
             obj._prefetched_servicos = servicos_map.get(obj.orde_nume, [])
             obj._prefetched_setor_nome = setores_map.get(obj.orde_seto)
             obj._prefetched_cliente_nome = clientes_map.get((obj.orde_empr, obj.orde_enti))
+            obj._prefetched_voltagem_nome = voltagens_map.get(obj.orde_volt)
 
     def get_next_ordem_numero(self, empre, fili, data):
         """

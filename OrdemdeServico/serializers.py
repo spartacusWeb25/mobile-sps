@@ -665,29 +665,37 @@ class OrdemServicoSerializer(BancoModelSerializer):
             return []
     
     def get_cliente_nome(self, obj):
+        # Usa dados prefetchados se disponíveis
+        if hasattr(obj, '_prefetched_cliente_nome'):
+            return obj._prefetched_cliente_nome
+
         banco = self.context.get('banco')
         if not banco:
             return None
-        
+
         try:
             entidade = Entidades.objects.using(banco).filter(
                 enti_empr=obj.orde_empr,
                 enti_clie=obj.orde_enti
-            ).first()
+            ).only('enti_nome').first()
             return entidade.enti_nome if entidade else None
         except Exception as e:
             logger.error(f"Erro ao buscar cliente da ordem {obj.orde_nume}: {str(e)}")
             return None
     
     def get_setor_nome(self, obj):
+        # Usa dados prefetchados se disponíveis
+        if hasattr(obj, '_prefetched_setor_nome'):
+            return obj._prefetched_setor_nome
+
         banco = self.context.get('banco')
         if not banco:
             return None
-        
+
         try:
             setor = OrdemServicoFaseSetor.objects.using(banco).filter(
                 osfs_codi=obj.orde_seto
-             ).first()
+            ).only('osfs_nome').first()
             return setor.osfs_nome if setor else None
         except Exception as e:
             logger.error(f"Erro ao buscar setor da ordem {obj.orde_nume}: {str(e)}")
