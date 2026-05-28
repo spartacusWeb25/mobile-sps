@@ -479,8 +479,6 @@ class OrdensEletroSerializer(serializers.ModelSerializer):
 class OrdemServicoSerializer(BancoModelSerializer):
     pecas = OrdemServicoPecasSerializer(source='itens_lista', many=True, required=False)
     servicos = OrdemServicoServicosSerializer(source='servicos_lista', many=True, required=False)
-    pecas_count = serializers.SerializerMethodField(read_only=True)
-    servicos_count = serializers.SerializerMethodField(read_only=True)
     setor_nome = serializers.SerializerMethodField(read_only=True)
     cliente_nome = serializers.SerializerMethodField(read_only=True)
     voltagem_nome = serializers.SerializerMethodField(read_only=True)
@@ -667,71 +665,33 @@ class OrdemServicoSerializer(BancoModelSerializer):
             return []
     
     def get_cliente_nome(self, obj):
-        # Usa dados prefetchados se disponíveis
-        if hasattr(obj, '_prefetched_cliente_nome'):
-            return obj._prefetched_cliente_nome
-
         banco = self.context.get('banco')
         if not banco:
             return None
-
+        
         try:
             entidade = Entidades.objects.using(banco).filter(
                 enti_empr=obj.orde_empr,
                 enti_clie=obj.orde_enti
-            ).only('enti_nome').first()
+            ).first()
             return entidade.enti_nome if entidade else None
         except Exception as e:
             logger.error(f"Erro ao buscar cliente da ordem {obj.orde_nume}: {str(e)}")
             return None
     
     def get_setor_nome(self, obj):
-        # Usa dados prefetchados se disponíveis
-        if hasattr(obj, '_prefetched_setor_nome'):
-            return obj._prefetched_setor_nome
-
         banco = self.context.get('banco')
         if not banco:
             return None
-
+        
         try:
             setor = OrdemServicoFaseSetor.objects.using(banco).filter(
                 osfs_codi=obj.orde_seto
-            ).only('osfs_nome').first()
+             ).first()
             return setor.osfs_nome if setor else None
         except Exception as e:
             logger.error(f"Erro ao buscar setor da ordem {obj.orde_nume}: {str(e)}")
             return None
-
-    def get_pecas_count(self, obj):
-        """Retorna contagem de peças (usado na lista para não carregar objetos completos)"""
-        if hasattr(obj, '_pecas_count'):
-            return obj._pecas_count
-        # Fallback: conta do banco se não foi prefetchado
-        try:
-            banco = self.context.get('banco')
-            if banco:
-                return Ordemservicopecas.objects.using(banco).filter(
-                    peca_orde=obj.orde_nume
-                ).count()
-        except Exception:
-            pass
-        return 0
-
-    def get_servicos_count(self, obj):
-        """Retorna contagem de serviços (usado na lista para não carregar objetos completos)"""
-        if hasattr(obj, '_servicos_count'):
-            return obj._servicos_count
-        # Fallback: conta do banco se não foi prefetchado
-        try:
-            banco = self.context.get('banco')
-            if banco:
-                return Ordemservicoservicos.objects.using(banco).filter(
-                    serv_orde=obj.orde_nume
-                ).count()
-        except Exception:
-            pass
-        return 0
 
     def get_voltagem_nome(self, obj):
         val = getattr(obj, "_prefetched_voltagem_nome", None)
