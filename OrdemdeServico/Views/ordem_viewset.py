@@ -88,12 +88,12 @@ class OrdemViewSet(BaseMultiDBModelViewSet):
 
         page = self.paginate_queryset(queryset)
         if page is not None:
-            # Na lista, não carrega peças/serviços completos, apenas contagens
-            self._prefetch_counts(page)
+            # Temporariamente desativado para diagnosticar erro
+            # self._prefetch_counts(page)
             serializer = self.get_serializer(page, many=True)
             return self.get_paginated_response(serializer.data)
 
-        self._prefetch_counts(queryset)
+        # self._prefetch_counts(queryset)
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
