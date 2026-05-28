@@ -1,5 +1,6 @@
 import json
 from decimal import Decimal
+from datetime import datetime
 
 from django.views.generic import TemplateView
 from core.utils import get_db_from_slug
@@ -50,6 +51,11 @@ class ComissaoVendedorView(TemplateView):
         agrupar_por = self.request.GET.get("agrupar_por") or "vendedor"
         status = self.request.GET.get("status")
 
+        # Set default data_inicial to first day of current month if not provided
+        if not data_inicial:
+            hoje = datetime.now()
+            data_inicial = hoje.replace(day=1).strftime("%Y-%m-%d")
+
         context["slug"] = slug
 
         vendedores = list(
@@ -79,7 +85,7 @@ class ComissaoVendedorView(TemplateView):
             context["empresas_list"] = []
             context["filiais_list"] = []
 
-        comissoes = ComissaoService.calcular_comissoes(
+        resultado = ComissaoService.calcular_comissoes(
             db_alias=db_alias,
             empresa_id=empresa_id,
             filial_id=filial_id,
@@ -91,6 +97,8 @@ class ComissaoVendedorView(TemplateView):
             status=status,
             vendedores=vendedores,
         )
+        comissoes = resultado.get("dados", [])
+        total_pedidos_periodo = resultado.get("total_pedidos_periodo", 0)
         context["comissoes"] = comissoes
 
         context["filtros"] = {
@@ -105,12 +113,14 @@ class ComissaoVendedorView(TemplateView):
         }
 
         total_vendido = sum((c.get("total_vendido") or 0) for c in comissoes) if comissoes else Decimal("0.00")
+        total_comissionado = sum((c.get("total_comissionado") or 0) for c in comissoes) if comissoes else Decimal("0.00")
         total_comissao = sum((c.get("valor_comissao") or 0) for c in comissoes) if comissoes else Decimal("0.00")
-        quantidade_pedidos = sum((c.get("quantidade_pedidos") or 0) for c in comissoes)
+        quantidade_pedidos = total_pedidos_periodo
         quantidade_itens = sum((c.get("quantidade_itens") or 0) for c in comissoes)
 
         context["metricas"] = {
             "total_vendido": total_vendido,
+            "total_comissionado": total_comissionado,
             "total_comissao": total_comissao,
             "quantidade_pedidos": quantidade_pedidos,
             "quantidade_itens": quantidade_itens,

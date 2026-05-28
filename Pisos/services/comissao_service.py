@@ -58,6 +58,9 @@ class ComissaoService:
         if not data_inicial or str(data_inicial) < data_minima:
             data_inicial = data_minima
 
+        # Track distinct orders in period
+        total_pedidos_periodo = 0
+
         vendedores_lista = list(vendedores) if vendedores is not None else None
         vendedor_codigos = None
         if vendedor_codigo not in [None, ""] and vendedores_lista is not None:
@@ -92,6 +95,7 @@ class ComissaoService:
                 "pedi_vend",
                 "pedi_stat",
                 "pedi_tota",
+                "pedi_desc",
             )
         )
 
@@ -122,8 +126,11 @@ class ComissaoService:
             for pedido in pedidos_list
         }
 
+        # Count distinct orders in period
+        total_pedidos_periodo = len(pedidos_map)
+
         if not pedidos_map:
-            return []
+            return {"dados": [], "total_pedidos_periodo": total_pedidos_periodo}
 
         pedidos_emprs = {p.pedi_empr for p in pedidos_list}
         pedidos_filis = {p.pedi_fili for p in pedidos_list}
@@ -134,6 +141,7 @@ class ComissaoService:
             .using(db_alias)
             .filter(item_pedi__in=list(pedidos_numes))
             .only("item_empr", "item_fili", "item_pedi", "item_prod", "item_prod_nome", "item_quan", "item_unit", "item_suto")
+            .distinct()
         )
 
         if empresa_id not in [None, ""]:
@@ -148,12 +156,15 @@ class ComissaoService:
 
         codigos_produtos = {str(i.item_prod) for i in itens if getattr(i, "item_prod", None) is not None}
         empresas_itens = {str(i.item_empr) for i in itens if getattr(i, "item_empr", None) is not None}
+        
+        produtos_query = Produtos.objects.using(db_alias).filter(prod_codi__in=list(codigos_produtos))
+        if empresas_itens:
+            produtos_query = produtos_query.filter(prod_empr__in=list(empresas_itens))
+        
         produtos_map = {
             (str(getattr(prod, "prod_empr", "")), str(prod.prod_codi)): prod
             for prod in (
-                Produtos.objects.using(db_alias)
-                .filter(prod_codi__in=list(codigos_produtos))
-                .filter(prod_empr__in=list(empresas_itens) if empresas_itens else [])
+                produtos_query
                 .select_related("prod_grup", "prod_marc")
                 .only(
                     "prod_empr",
@@ -194,7 +205,7 @@ class ComissaoService:
                 continue
 
             produto = produtos_map.get((str(item.item_empr), str(item.item_prod)))
-            produto_nome = getattr(produto, "prod_nome", None) or getattr(item, "item_prod_nome", None) or str(getattr(item, "item_prod", "") or "")
+            produto_nome = getattr(item, "item_prod_nome", None) or getattr(produto, "prod_nome", None) or str(getattr(item, "item_prod", "") or "")
             grupo = getattr(produto, "prod_grup", None) if produto is not None else None
             marca = getattr(produto, "prod_marc", None) if produto is not None else None
 
@@ -222,8 +233,22 @@ class ComissaoService:
                 valor_unitario = cls.decimal(item.item_unit)
                 total_item = quantidade * valor_unitario
 
+            # Calculate pro-rata discount distribution
+            total_pedido = cls.decimal(pedido.pedi_tota)
+            total_desconto = cls.decimal(pedido.pedi_desc)
+
+            if total_pedido > 0 and total_desconto > 0:
+                # Calculate item's percentage of total order
+                percentual_item = (total_item / total_pedido) * Decimal("100")
+                # Calculate item's share of total discount
+                desconto_rateio = (total_desconto * percentual_item) / Decimal("100")
+                # Calculate commissionable total (item total - pro-rata discount)
+                total_comissionado = total_item - desconto_rateio
+            else:
+                total_comissionado = total_item
+
             valor_comissao = (
-                total_item * percentual / Decimal("100")
+                total_comissionado * percentual / Decimal("100")
             ).quantize(
                 Decimal("0.01"),
                 rounding=ROUND_HALF_UP
@@ -256,6 +281,7 @@ class ComissaoService:
                     "comissao_origem_codigo": comissao_origem_codigo,
                     "comissao_origem_nome": comissao_origem_nome,
                     "total_vendido": Decimal("0.00"),
+                    "total_comissionado": Decimal("0.00"),
                     "valor_comissao": Decimal("0.00"),
                     "quantidade_itens": 0,
                     "pedidos": set(),
@@ -267,6 +293,7 @@ class ComissaoService:
                 }
 
             resultado[chave]["total_vendido"] += total_item
+            resultado[chave]["total_comissionado"] += total_comissionado
             resultado[chave]["valor_comissao"] += valor_comissao
             resultado[chave]["quantidade_itens"] += 1
             resultado[chave]["pedidos"].add(pedido.pedi_nume)
@@ -312,7 +339,14 @@ class ComissaoService:
                 item["produto_nome"] = p_nome
             else:
                 item["produto_codigo"] = None
-                item["produto_nome"] = None
+                # Join all product names when multiple products exist
+                produto_nomes = [p_nome for p_cod, p_nome in item["produtos"] if p_nome]
+                if produto_nomes:
+                    item["produto_nome"] = ", ".join(produto_nomes[:5])  # Show up to 5 products
+                    if len(produto_nomes) > 5:
+                        item["produto_nome"] += f" (+{len(produto_nomes) - 5})"
+                else:
+                    item["produto_nome"] = "Múltiplos produtos"
 
             if len(item["pedidos"]) == 1:
                 item["pedido_numero"] = next(iter(item["pedidos"]))
@@ -332,7 +366,10 @@ class ComissaoService:
             del item["datas"]
             dados.append(item)
 
-        return sorted(
-            dados,
-            key=lambda x: (str(x.get("agrupamento") or ""), str(x.get("vendedor_nome") or ""), str(x.get("grupo_descricao") or ""))
-        )
+        return {
+            "dados": sorted(
+                dados,
+                key=lambda x: (str(x.get("agrupamento") or ""), str(x.get("vendedor_nome") or ""), str(x.get("grupo_descricao") or ""))
+            ),
+            "total_pedidos_periodo": total_pedidos_periodo
+        }

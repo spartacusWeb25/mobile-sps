@@ -22,7 +22,7 @@
   #totalVendido {
     border-left: 1px solid #298f26;
     border-right: 1px solid #083307;
-  } 
+  }
 
   #totalVendido:hover {
     border-left: #298f26;
@@ -55,6 +55,25 @@
     border-right: 1px solid #5e0101;
   }
 
+  /* Custom scrollbar styling */
+  .table-responsive::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .table-responsive::-webkit-scrollbar-track {
+    background: #1a1a2e;
+    border-radius: 3px;
+  }
+
+  .table-responsive::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #4c1d95 0%, #be185d 100%);
+    border-radius: 3px;
+  }
+
+  .table-responsive::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #5b21b6 0%, #9d174d 100%);
+  }
 
   @media (max-width: 768px) {
     .chart-bar,
@@ -191,40 +210,40 @@
   </div>
 
   <!-- MÉTRICAS -->
-  <div class="row g-3 mb-4">
+  <div class="row g-1 mb-3">
 
     <div class="col-md-3">
       <div class="card border-0 shadow-sm h-100" >
-        <div class="card-body" id="totalVendido">
-          <small class="text-muted"><i class="bi bi-coin"></i> Total vendido</small>
-          <h4 class="mb-0" style="font-size: 24px; font-weight: bold; color: #5bac54;">{{ metricas.total_vendido|brl }}</h4>
+        <div class="card-body py-1 px-2" id="totalVendido">
+          <small class="text-muted mb-0" style="font-size: 11px;"><i class="bi bi-coin"></i> Total vendido</small>
+          <h6 class="mb-0" style="font-size: 14px; font-weight: bold; color: #5bac54;">{{ metricas.total_vendido|brl }}</h6>
         </div>
       </div>
     </div>
 
     <div class="col-md-3">
-      <div class="card border-0 shadow-sm h-100" ">
-        <div class="card-body" id="totalComissao">
-          <small class="text-muted"><i class="bi bi-coin"></i> Total comissão</small>
-          <h4 class="mb-0" style="font-size: 24px; font-weight: bold; color: #54aca5;">{{ metricas.total_comissao|brl }}</h4>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-md-3">
-      <div class="card border-0 shadow-sm h-100" >
-        <div class="card-body" id="pedidos">
-          <small class="text-muted"><i class="bi bi-people-fill"></i> Pedidos</small>
-          <h4 class="mb-0" style="font-size: 24px; font-weight: bold; color: #aa832e;">{{ metricas.quantidade_pedidos }}</h4>
+      <div class="card border-0 shadow-sm h-100" "">
+        <div class="card-body py-1 px-2" id="totalComissao">
+          <small class="text-muted mb-0" style="font-size: 11px;"><i class="bi bi-coin"></i> Total comissão</small>
+          <h6 class="mb-0" style="font-size: 14px; font-weight: bold; color: #54aca5;">{{ metricas.total_comissao|brl }}</h6>
         </div>
       </div>
     </div>
 
     <div class="col-md-3">
       <div class="card border-0 shadow-sm h-100" >
-        <div class="card-body" id="itens">
-          <small class="text-muted"><i class="bi bi-people-fill"></i> Itens vendidos</small>
-          <h4 class="mb-0" style="font-size: 24px; font-weight: bold; color: #d84747;">{{ metricas.quantidade_itens }}</h4>
+        <div class="card-body py-2" id="pedidos">
+          <small class="text-muted mb-1"><i class="bi bi-people-fill"></i> Pedidos</small>
+          <h5 class="mb-0" style="font-size: 18px; font-weight: bold; color: #aa832e;">{{ metricas.quantidade_pedidos }}</h5>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm h-100" >
+        <div class="card-body py-2" id="itens">
+          <small class="text-muted mb-1"><i class="bi bi-people-fill"></i> Itens vendidos</small>
+          <h5 class="mb-0" style="font-size: 18px; font-weight: bold; color: #d84747;">{{ metricas.quantidade_itens }}</h5>
         </div>
       </div>
     </div>
@@ -276,16 +295,17 @@
       <table class="table table-hover align-middle mb-0">
         <thead class="table-responsive" style="position: sticky; top: 0; z-index: 1;">
           <tr>
-            <th>Agrupamento</th>
-            <th>Vendedor</th>
-            <th>Grupo</th>
-            <th>Produto</th>
-            <th>Pedido</th>
-            <th>Data</th>
-            <th class="text-end">Itens</th>
-            <th class="text-end">Total vendido</th>
-            <th class="text-end">% Comissão</th>
-            <th class="text-end">Comissão</th>
+            <th><i class="bi bi-layers"></i> Agrupamento</th>
+            <th><i class="bi bi-person"></i> Vendedor</th>
+            <th><i class="bi bi-collection"></i> Grupo</th>
+            <th><i class="bi bi-box"></i> Produto</th>
+            <th><i class="bi bi-receipt"></i> Pedido</th>
+            <th><i class="bi bi-calendar"></i> Data</th>
+            <th class="text-end"><i class="bi bi-list-check"></i> Itens</th>
+            <th class="text-end"><i class="bi bi-currency-dollar"></i> Total vendido</th>
+            <th class="text-end"><i class="bi bi-cash-coin"></i> Total comissionado</th>
+            <th class="text-end"><i class="bi bi-percent"></i> % Comissão</th>
+            <th class="text-end"><i class="bi bi-wallet2"></i> Comissão</th>
           </tr>
         </thead>
 
@@ -345,16 +365,20 @@
               </td>
 
               <td class="text-end">
+                {{ item.total_comissionado|brl }}
+              </td>
+
+              <td class="text-end">
                 {{ item.percentual|floatformat:2 }}%
               </td>
 
-              <td class="text-end fw-semibold text-success">
+              <td style="text-align: start; font-size: 14px;" class="fw-semibold text-success">
                 {{ item.valor_comissao|brl }}
               </td>
             </tr>
           {% empty %}
             <tr>
-              <td colspan="10" class="text-center py-5 text-muted">
+              <td colspan="11" class="text-center py-5 text-muted">
                 Nenhuma comissão encontrada para os filtros selecionados.
               </td>
             </tr>
@@ -362,11 +386,12 @@
         </tbody>
 
         <tfoot class="table-responsive">
-          <tr>
-            <th colspan="7" class="text-end">Totais</th>
+          <tr style="font-size: 12px;">
+            <th colspan="8" class="text-end">Totais</th>
             <th class="text-end">{{ metricas.total_vendido|brl }}</th>
+            <th class="text-end">{{ metricas.total_comissionado|brl }}</th>
             <th></th>
-            <th class="text-end text-success">{{ metricas.total_comissao|brl }}</th>
+            <th class="text-success" style="font-size: 12px; text-align: start;">{{ metricas.total_comissao|brl }}</th>
           </tr>
         </tfoot>
       </table>
