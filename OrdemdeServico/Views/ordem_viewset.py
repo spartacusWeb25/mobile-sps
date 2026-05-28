@@ -601,3 +601,84 @@ class OrdemViewSet(BaseMultiDBModelViewSet):
             return Response({"erro": "formato inválido"}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return tratar_erro(e)
+
+    @action(detail=False, methods=["get"], url_path="status-por-setor", permission_classes=[IsAuthenticated, PodeVerOrdemDoSetor])
+    def status_por_setor(self, request, *args, **kwargs):
+        """
+        Retorna o status das ordens agrupadas por setor com paginação.
+        """
+        try:
+            banco = self.get_banco()
+            queryset = self.get_queryset()
+
+            # Agrupar por setor e status
+            from django.db.models import Count
+            queryset = queryset.values('orde_seto', 'orde_stat_orde').annotate(
+                total=Count('orde_nume')
+            ).order_by('orde_seto', 'orde_stat_orde')
+
+            # Paginação
+            page = self.paginate_queryset(queryset)
+            if page is not None:
+                # Buscar nomes dos setores
+                setor_ids = set(item['orde_seto'] for item in page if item['orde_seto'])
+                setores = OrdemServicoFaseSetor.objects.using(banco).filter(
+                    osfs_codi__in=setor_ids
+                )
+                setores_map = {s.osfs_codi: s.osfs_nome for s in setores}
+
+                # Adicionar nome do setor e descrição do status
+                status_desc = {
+                    0: 'Aberta',
+                    1: 'Orçamento gerado',
+                    2: 'Aguardando Liberação',
+                    3: 'Liberada',
+                    5: 'Reprovada',
+                    20: 'Faturada parcial',
+                    21: 'Em atraso',
+                    22: 'Em Estoque',
+                }
+
+                data = []
+                for item in page:
+                    data.append({
+                        'setor_codigo': item['orde_seto'],
+                        'setor_nome': setores_map.get(item['orde_seto'], f"Setor {item['orde_seto']}"),
+                        'status_codigo': item['orde_stat_orde'],
+                        'status_descricao': status_desc.get(item['orde_stat_orde'], 'Desconhecido'),
+                        'total': item['total'],
+                    })
+
+                return self.get_paginated_response(data)
+
+            # Se não tiver paginação, retorna tudo (não recomendado para grandes volumes)
+            setor_ids = set(item['orde_seto'] for item in queryset if item['orde_seto'])
+            setores = OrdemServicoFaseSetor.objects.using(banco).filter(
+                osfs_codi__in=setor_ids
+            )
+            setores_map = {s.osfs_codi: s.osfs_nome for s in setores}
+
+            status_desc = {
+                0: 'Aberta',
+                1: 'Orçamento gerado',
+                2: 'Aguardando Liberação',
+                3: 'Liberada',
+                5: 'Reprovada',
+                20: 'Faturada parcial',
+                21: 'Em atraso',
+                22: 'Em Estoque',
+            }
+
+            data = []
+            for item in queryset:
+                data.append({
+                    'setor_codigo': item['orde_seto'],
+                    'setor_nome': setores_map.get(item['orde_seto'], f"Setor {item['orde_seto']}"),
+                    'status_codigo': item['orde_stat_orde'],
+                    'status_descricao': status_desc.get(item['orde_stat_orde'], 'Desconhecido'),
+                    'total': item['total'],
+                })
+
+            return Response(data)
+        except Exception as e:
+            return tratar_erro(e)
