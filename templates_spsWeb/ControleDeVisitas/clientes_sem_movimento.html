@@ -60,12 +60,21 @@
                 </div>
                 <div class="col-3 col-md-2">
                     <label class="form-label">Empresa</label>
-                    <input class="form-control" type="text" name="empresa"
-                        value="{{ filtros.empresa|default:empresa }}">
+                    <select class="form-select" name="empresa">
+                        <option value="">Todas</option>
+                        {% for emp in empresas_list %}
+                        <option value="{{ emp.empr_codi }}" {% if filtros.empresa == emp.empr_codi|stringformat:"s" %}selected{% endif %}>{{ emp.empr_nome }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
                 <div class="col-3 col-md-2">
                     <label class="form-label">Filial</label>
-                    <input class="form-control" type="text" name="filial" value="{{ filtros.filial|default:filial }}">
+                    <select class="form-select" name="filial">
+                        <option value="">Todas</option>
+                        {% for fil in filiais_list %}
+                        <option value="{{ fil.empr_codi }}" {% if filtros.filial == fil.empr_codi|stringformat:"s" %}selected{% endif %}>{{ fil.empr_nome }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
                 <div class="col-12 col-md-2">
                     <label class="form-label">Vendedor</label>

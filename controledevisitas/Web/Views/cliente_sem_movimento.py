@@ -12,6 +12,7 @@ from django.views.generic import TemplateView
 from core.mixins.vendedor_responsavel_entidade_mixin import VendedorResponsavelEntidadeMixin
 from core.utils import get_db_from_slug
 from Entidades.models import Entidades
+from Licencas.models import Empresas, Filiais
 from ...service.clientes_sem_movimento import ClienteSemMovimentoService
 
 
@@ -66,6 +67,20 @@ class ClientesSemMovimentoListView(VendedorResponsavelEntidadeMixin, TemplateVie
         # --- empresa/filial ----------------------------------------------
         empresa = (request.GET.get("empresa") or "").strip() or request.session.get("empresa_id")
         filial  = (request.GET.get("filial")  or "").strip() or request.session.get("filial_id")
+
+        # --- fetch empresas and filiais lists --------------------------------
+        empresas_list = []
+        filiais_list = []
+
+        try:
+            empresas_list = list(Empresas.objects.using(banco).all().order_by('empr_nome'))
+        except Exception:
+            pass
+
+        try:
+            filiais_list = list(Filiais.objects.using(banco).all().order_by('empr_nome'))
+        except Exception:
+            pass
 
         # --- vendedor ----------------------------------------------------
         vendedor_ids          = self.get_vendedor_responsavel_ids(banco=banco, param_name="vendedor")
@@ -126,6 +141,8 @@ class ClientesSemMovimentoListView(VendedorResponsavelEntidadeMixin, TemplateVie
             filtros=request.GET,
             empresa=request.session.get("empresa_id"),
             filial=request.session.get("filial_id"),
+            empresas_list=empresas_list,
+            filiais_list=filiais_list,
             data_inicial=self._to_input_date(data_inicial),
             data_final=self._to_input_date(data_final),
             data_inicial_obj=data_inicial,
