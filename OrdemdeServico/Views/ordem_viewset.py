@@ -97,11 +97,12 @@ class OrdemViewSet(BaseMultiDBModelViewSet):
 
             page = self.paginate_queryset(queryset)
             if page is not None:
-                self._prefetch_related_objects(page)
+                # Na lista, não carrega peças/serviços completos, apenas contagens
+                self._prefetch_counts(page)
                 serializer = self.get_serializer(page, many=True)
                 return self.get_paginated_response(serializer.data)
 
-            self._prefetch_related_objects(queryset)
+            self._prefetch_counts(queryset)
             serializer = self.get_serializer(queryset, many=True)
             return Response(serializer.data)
         except ValueError as e:
@@ -113,6 +114,17 @@ class OrdemViewSet(BaseMultiDBModelViewSet):
             raise
         except Exception as e:
             logger.error(f"Erro ao listar ordens: {e}", exc_info=True)
+            return tratar_erro(e)
+
+    def retrieve(self, request, *args, **kwargs):
+        """No detalhe, carrega todas as peças e serviços completos"""
+        try:
+            instance = self.get_object()
+            # No detalhe, carrega peças e serviços completos
+            self._prefetch_related_objects([instance])
+            serializer = self.get_serializer(instance)
+            return Response(serializer.data)
+        except Exception as e:
             return tratar_erro(e)
 
     def _list_with_error_handling(self, request):
@@ -150,16 +162,75 @@ class OrdemViewSet(BaseMultiDBModelViewSet):
             
             page = self.paginate_queryset(valid_objects)
             if page is not None:
-                self._prefetch_related_objects(page)
+                self._prefetch_counts(page)
                 serializer = self.get_serializer(page, many=True)
                 return self.get_paginated_response(serializer.data)
 
-            self._prefetch_related_objects(valid_objects)
+            self._prefetch_counts(valid_objects)
             serializer = self.get_serializer(valid_objects, many=True)
             return Response(serializer.data)
         except Exception as e:
             logger.error(f"Erro no fallback de listagem: {e}", exc_info=True)
             return tratar_erro(e)
+
+    def _prefetch_counts(self, objects):
+        """Na lista, carrega apenas contagens de peças e serviços, não os objetos completos"""
+        if not objects:
+            return
+
+        banco = self.get_banco()
+        orde_ids = [obj.orde_nume for obj in objects]
+
+        # Contagem de peças por ordem
+        from django.db.models import Count
+        pecas_counts = dict(Ordemservicopecas.objects.using(banco)
+            .filter(peca_orde__in=orde_ids)
+            .values('peca_orde')
+            .annotate(count=Count('peca_id'))
+            .values_list('peca_orde', 'count')
+        )
+
+        # Contagem de serviços por ordem
+        servicos_counts = dict(Ordemservicoservicos.objects.using(banco)
+            .filter(serv_orde__in=orde_ids)
+            .values('serv_orde')
+            .annotate(count=Count('serv_id'))
+            .values_list('serv_orde', 'count')
+        )
+
+        # Prefetch Setores, Clientes e Voltagens (necessários para a lista)
+        setor_ids = {obj.orde_seto for obj in objects if obj.orde_seto}
+        if setor_ids:
+            setores = OrdemServicoFaseSetor.objects.using(banco).filter(osfs_codi__in=setor_ids).only('osfs_codi', 'osfs_nome')
+            setores_map = {s.osfs_codi: s.osfs_nome for s in setores}
+        else:
+            setores_map = {}
+
+        clie_ids = {obj.orde_enti for obj in objects if obj.orde_enti}
+        empr_ids = {obj.orde_empr for obj in objects if obj.orde_empr}
+        if clie_ids and empr_ids:
+            clientes = Entidades.objects.using(banco).filter(
+                enti_clie__in=clie_ids,
+                enti_empr__in=empr_ids
+            ).only('enti_empr', 'enti_clie', 'enti_nome')
+            clientes_map = {(c.enti_empr, c.enti_clie): c.enti_nome for c in clientes}
+        else:
+            clientes_map = {}
+
+        volt_ids = {obj.orde_volt for obj in objects if obj.orde_volt}
+        if volt_ids:
+            voltagens = OrdemServicoVoltagem.objects.using(banco).filter(osvo_codi__in=volt_ids).only('osvo_codi', 'osvo_nome')
+            voltagens_map = {v.osvo_codi: v.osvo_nome for v in voltagens}
+        else:
+            voltagens_map = {}
+
+        # Assign to objects
+        for obj in objects:
+            obj._pecas_count = pecas_counts.get(obj.orde_nume, 0)
+            obj._servicos_count = servicos_counts.get(obj.orde_nume, 0)
+            obj._prefetched_setor_nome = setores_map.get(obj.orde_seto)
+            obj._prefetched_cliente_nome = clientes_map.get((obj.orde_empr, obj.orde_enti))
+            obj._prefetched_voltagem_nome = voltagens_map.get(obj.orde_volt)
 
     def _prefetch_related_objects(self, objects):
         if not objects:
