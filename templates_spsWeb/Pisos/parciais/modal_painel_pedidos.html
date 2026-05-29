@@ -1,0 +1,119 @@
+<div class="modal fade" id="modalPainelPedidos" tabindex="-1">
+
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    Painel de Pedidos Pisos
+                </h5>
+
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+
+                <div class="mb-5">
+
+                    <h5 class="fw-bold text-warning">
+                        Pedidos pendentes de compra
+                    </h5>
+
+                    <div class="table-responsive">
+                        <table class="table table-sm table-striped align-middle">
+
+                            <thead>
+                                <tr>
+                                    <th>Pedido</th>
+                                    <th>Cliente</th>
+                                    <th>Vendedor</th>
+                                    <th>Fechamento</th>
+                                    <th>Prev. Entrega</th>
+                                    <th>Obs</th>
+                                    <th>Empresa</th>
+                                    <th>Filial</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+
+                                {% for item in pedidos_pendentes %}
+                                <tr>
+                                    <td>{{ item.pedi_nume }}</td>
+                                    <td>{{ item.pedi_clie }}</td>
+                                    <td>{{ item.pedi_vend }}</td>
+                                    <td>{{ item.pedi_fech|date:"d/m/Y" }}</td>
+                                    <td>{{ item.pedi_data_prev_entr|date:"d/m/Y" }}</td>
+                                    <td>{{ item.pedi_desc_comp_work }}</td>
+                                    <td>{{ item.pedi_empr }}</td>
+                                    <td>{{ item.pedi_fili }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="8" class="text-center">
+                                        Nenhum pedido pendente
+                                    </td>
+                                </tr>
+                                {% endfor %}
+
+                            </tbody>
+
+                        </table>
+                    </div>
+                </div>
+
+                <div>
+
+                    <h5 class="fw-bold text-danger">
+                        Pedidos com prazo expirado
+                    </h5>
+
+                    <div class="table-responsive">
+                        <table class="table table-sm table-striped align-middle">
+
+                            <thead>
+                                <tr>
+                                    <th>Pedido</th>
+                                    <th>Cliente</th>
+                                    <th>Vendedor</th>
+                                    <th>Prev. Entrega</th>
+                                    <th>Observações</th>
+                                    <th>Empresa</th>
+                                    <th>Filial</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+
+                                {% for item in pedidos_atrasados %}
+                                <tr class="table-danger">
+                                    <td>{{ item.pedi_nume }}</td>
+                                    <td>{{ item.pedi_clie }}</td>
+                                    <td>{{ item.pedi_vend }}</td>
+                                    <td>{{ item.pedi_data_prev_entr|date:"d/m/Y" }}</td>
+                                    <td>{{ item.pedi_obse|default_if_none:"- Sem observações" }}</td>
+                                    <td>{{ item.pedi_empr }}</td>
+                                    <td>{{ item.pedi_fili }}</td>
+                                    <td>{{ item.pedi_stat }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="8" class="text-center">
+                                        Nenhum pedido atrasado
+                                    </td>
+                                </tr>
+                                {% endfor %}
+
+                            </tbody>
+
+                        </table>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</div>

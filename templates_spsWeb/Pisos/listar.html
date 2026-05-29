@@ -147,6 +147,11 @@
       href="{% url 'PisosWeb:pedidos_pisos_criar' slug=slug %}">
       <i class="bi bi-plus-lg"></i> Novo
     </a>
+    <button class="btn btn-warning"
+            data-bs-toggle="modal"
+            data-bs-target="#modalPainelPedidos">
+        Painel Pedidos
+    </button>
   </div>
 
   <!-- Filtros -->
@@ -336,19 +341,25 @@
     {% endfor %}
   </div>
 
-  {% if is_paginated %}
-  <nav class="mt-3">
-    <ul class="pagination justify-content-center d-none">
-      {% if page_obj.has_next %}
-      <li class="page-item">
-        <a class="page-link"
-          href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value|urlencode }}{% endif %}{% endfor %}">Próxima</a>
-      </li>
-      {% endif %}
-    </ul>
-  </nav>
-  {% include "components/infinite_scroll.html" with infinite_append_selector="#pedidos-lista" %}
-  {% endif %}
+{% if is_paginated %}
+<nav class="mt-3">
+  <ul class="pagination justify-content-center d-none">
+    {% if page_obj.has_next %}
+    <li class="page-item">
+      <a class="page-link"
+        href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value|urlencode }}{% endif %}{% endfor %}">
+        Próxima
+      </a>
+    </li>
+    {% endif %}
+  </ul>
+</nav>
+
+{% include "components/infinite_scroll.html" with infinite_append_selector="#pedidos-lista" %}
+
+{% endif %}
+
+{% include 'Pisos/parciais/modal_painel_pedidos.html' %}
 
 </div>
 
@@ -509,6 +520,41 @@
 
     document.addEventListener('click', (e)=>{ if(!document.getElementById('autoVendedorContainer').contains(e.target)) vendedoresSugestoes.innerHTML=''; });
   });
+
+  // Carrega conteúdo do painel via endpoint ao abrir o modal
+  (function(){
+    const painelUrl = "{% url 'PisosWeb:modal_painel_pedidos' slug=slug %}";
+    const modalEl = document.getElementById('modalPainelPedidos');
+    if(modalEl){
+      modalEl.addEventListener('show.bs.modal', async function(){
+        try{
+          console.log('[PainelPedidos] fetch ->', painelUrl);
+          // Anexa empresa/filial da página atual como fallback via GET
+          const empresaVal = document.getElementById('empresa_id') ? document.getElementById('empresa_id').value : (window.SLUG ? null : null);
+          const filialVal = document.getElementById('filial_id') ? document.getElementById('filial_id').value : null;
+          const urlObj = new URL(painelUrl, window.location.origin);
+          if(empresaVal) urlObj.searchParams.set('empresa', empresaVal);
+          if(filialVal) urlObj.searchParams.set('filial', filialVal);
+          console.log('[PainelPedidos] fetch url ->', urlObj.toString());
+          const res = await fetch(urlObj.toString(), { credentials: 'include', headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+          console.log('[PainelPedidos] status', res.status);
+          const html = await res.text();
+          console.log('[PainelPedidos] html length', html.length);
+          const tmp = document.createElement('div');
+          tmp.innerHTML = html;
+          const fetchedContent = tmp.querySelector('.modal-content');
+          if(fetchedContent){
+            const target = modalEl.querySelector('.modal-content');
+            if(target) target.innerHTML = fetchedContent.innerHTML;
+          } else {
+            console.warn('[PainelPedidos] fetchedContent not found, inserting raw html into modal body');
+            const body = modalEl.querySelector('.modal-body');
+            if(body) body.innerHTML = html;
+          }
+        }catch(e){ console.error('[PainelPedidos] fetch error', e); }
+      });
+    }
+  })();
 
   function getCookie(name) {
     let cookieValue = null;

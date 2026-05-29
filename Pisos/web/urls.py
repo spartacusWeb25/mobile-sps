@@ -11,7 +11,7 @@ from Pisos.web.views.orcamentos_visualizar import visualizar_orcamento_pisos
 from Pisos.web.views.calcular_item_view import api_calcular_item
 from Pisos.web.views.impressao import imprimir_pedido_pisos, imprimir_orcamento_pisos
 from Pisos.web.views.arquivos import download_pedido_pisos_arquivo, excluir_pedido_pisos_arquivo, upload_pedido_pisos_arquivo
-
+from Pisos.web.views.painel_pedidos_view import modal_painel_pedidos
 from Pisos.web.views.utils import autocomplete_clientes, autocomplete_vendedores, autocomplete_produtos
 from Pisos.web.views.comissao_view import ComissaoVendedorView, ExportarComissoesView
 from Pisos.web.views.workflow_pedido import PedidoWorkflowAjaxView
@@ -107,5 +107,10 @@ urlpatterns = [
         "orcamentos-pisos/<int:pk>/alterar-status/",
         alterar_status_orcamento_pisos,
         name="orcamentos_pisos_alterar_status",
+    ),
+    path(
+        'painel-pedidos/',
+        modal_painel_pedidos,
+        name='modal_painel_pedidos'
     ),
 ]
