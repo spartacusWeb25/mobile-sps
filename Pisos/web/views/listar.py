@@ -75,13 +75,22 @@ class PedidopisosListView(VendedorEntidadeMixin, ListView):
             qs = qs.filter(pedi_clie__in=list(clientes_ids))
 
         if vendedor_nome:
-            vendedores_ids = Entidades.objects.using(self.banco).filter(
-                enti_nome__icontains=vendedor_nome
-            ).values_list("enti_clie", flat=True)
+            # Handle multiple seller names (always use getlist to get all selected values)
+            vendedor_nomes = self.request.GET.getlist("vendedor_nome")
+            
+            # Build Q objects for each seller name with icontains
+            from django.db.models import Q
+            q_objects = Q()
+            for nome in vendedor_nomes:
+                if nome:
+                    q_objects |= Q(enti_nome__icontains=nome)
+            
+            vendedores_ids = Entidades.objects.using(self.banco).filter(q_objects).values_list("enti_clie", flat=True)
 
             qs = qs.filter(pedi_vend__in=list(vendedores_ids))
 
         rows = list(qs)
+        print("VEND IDS:", [p.pedi_vend for p in rows[:5]])
 
         entidades_ids = set()
         for p in rows:
@@ -93,11 +102,13 @@ class PedidopisosListView(VendedorEntidadeMixin, ListView):
         entidades = Entidades.objects.using(self.banco).filter(
             enti_clie__in=entidades_ids
         )
+        print("ENTIDADES:", [(e.enti_clie, e.enti_nome) for e in entidades[:5]])
 
         nomes = {
             e.enti_clie: e.enti_nome
             for e in entidades
         }
+        print("NOMES DICT:", nomes)
 
         if rows:
             empresa = rows[0].pedi_empr
@@ -133,6 +144,13 @@ class PedidopisosListView(VendedorEntidadeMixin, ListView):
 
         context["slug"] = self.kwargs["slug"]
 
+        # Get list of vendedores for the dropdown
+        from Entidades.models import Entidades
+        vendedores = Entidades.objects.using(self.banco).filter(
+            enti_tipo_enti='VE'
+        ).values('enti_clie', 'enti_nome').order_by('enti_nome')
+        context["vendedores_list"] = list(vendedores)
+
         context["metricas"] = {
             "total_pedidos": base_qs.count(),
             "total_valor": base_qs.aggregate(total=Sum("pedi_tota")).get("total") or 0,
@@ -144,10 +162,13 @@ class PedidopisosListView(VendedorEntidadeMixin, ListView):
         today = date.today()
         first_day_of_month = date(today.year, today.month, 1)
 
+        # Handle multiple vendedor_nome values (always return a list)
+        vendedor_nome_filter = self.request.GET.getlist("vendedor_nome")
+
         context["filtros"] = {
             "pedi_nume": self.request.GET.get("pedi_nume", ""),
             "cliente_nome": self.request.GET.get("cliente_nome", ""),
-            "vendedor_nome": self.request.GET.get("vendedor_nome", ""),
+            "vendedor_nome": vendedor_nome_filter,
             "pedi_stat": self.request.GET.get("pedi_stat", ""),
             "data_inicio": self.request.GET.get("data_inicio", first_day_of_month.strftime('%Y-%m-%d')),
             "data_fim": self.request.GET.get("data_fim", today.strftime('%Y-%m-%d')),

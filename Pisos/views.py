@@ -129,6 +129,57 @@ class OrcamentopisosViewSet(BaseMultiDBModelViewSet, VendedorEntidadeMixin):
             queryset = queryset.filter(orca_fili=filial_id)
         if cliente_id:
             queryset = queryset.filter(orca_clie=cliente_id)
+        
+        # Filtro por nome de cliente (suporta múltiplos)
+        nome_cliente = self.request.query_params.get('cliente_nome')
+        if nome_cliente:
+            clientes_ids = Entidades.objects.using(banco).filter(
+                enti_nome__icontains=nome_cliente
+            )
+            if empresa_id:
+                clientes_ids = clientes_ids.filter(enti_empr=empresa_id)
+            
+            clientes_list = list(clientes_ids.values_list('enti_clie', flat=True))
+            if clientes_list:
+                queryset = queryset.filter(orca_clie__in=clientes_list)
+            else:
+                queryset = queryset.none()
+        
+        # Filtro por nome de vendedor (suporta múltiplos)
+        nomes_vendedor = self.request.query_params.getlist('vendedor_nome')
+        if nomes_vendedor:
+            # Build Q objects for each seller name with icontains
+            from django.db.models import Q
+            q_objects = Q()
+            for nome in nomes_vendedor:
+                if nome:
+                    q_objects |= Q(enti_nome__icontains=nome)
+            
+            vendedores_ids = Entidades.objects.using(banco).filter(q_objects)
+            if empresa_id:
+                vendedores_ids = vendedores_ids.filter(enti_empr=empresa_id)
+            
+            vendedores_list = list(vendedores_ids.values_list('enti_clie', flat=True))
+            if vendedores_list:
+                queryset = queryset.filter(orca_vend__in=vendedores_list)
+            else:
+                queryset = queryset.none()
+        
+        # Filtro por data
+        from datetime import datetime
+        data_ini = self.request.query_params.get('data_inicial') or self.request.query_params.get('data_inicio')
+        data_fim = self.request.query_params.get('data_final') or self.request.query_params.get('data_fim')
+        
+        if data_ini and data_fim:
+            di = datetime.strptime(data_ini, '%Y-%m-%d').date()
+            df = datetime.strptime(data_fim, '%Y-%m-%d').date()
+            queryset = queryset.filter(orca_data__range=(di, df))
+        elif data_ini:
+            di = datetime.strptime(data_ini, '%Y-%m-%d').date()
+            queryset = queryset.filter(orca_data__gte=di)
+        elif data_fim:
+            df = datetime.strptime(data_fim, '%Y-%m-%d').date()
+            queryset = queryset.filter(orca_data__lte=df)
             
         return queryset.order_by('-orca_data', '-orca_nume')
     
@@ -395,14 +446,19 @@ class PedidospisosViewSet(BaseMultiDBModelViewSet, VendedorEntidadeMixin):
             except Exception as e:
                 logger.error(f"[PedidospisosViewSet] Erro ao filtrar por nome de cliente: {e}", exc_info=True)
             
-            # 6. Filtro por nome de vendedor
+            # 6. Filtro por nome de vendedor (suporta múltiplos)
             try:
-                nome_vendedor = self.request.query_params.get('vendedor_nome')
-                if nome_vendedor:
-                    logger.info(f"Filtrando por nome de vendedor: {nome_vendedor}")
-                    vendedores_ids = Entidades.objects.using(banco).filter(
-                        enti_nome__icontains=nome_vendedor
-                    )
+                nomes_vendedor = self.request.query_params.getlist('vendedor_nome')
+                if nomes_vendedor:
+                    logger.info(f"Filtrando por nomes de vendedor: {nomes_vendedor}")
+                    # Build Q objects for each seller name with icontains
+                    from django.db.models import Q
+                    q_objects = Q()
+                    for nome in nomes_vendedor:
+                        if nome:
+                            q_objects |= Q(enti_nome__icontains=nome)
+                    
+                    vendedores_ids = Entidades.objects.using(banco).filter(q_objects)
                     if empresa_id:
                         vendedores_ids = vendedores_ids.filter(enti_empr=empresa_id)
                     
@@ -412,7 +468,7 @@ class PedidospisosViewSet(BaseMultiDBModelViewSet, VendedorEntidadeMixin):
                     if vendedores_list:
                         queryset = queryset.filter(pedi_vend__in=vendedores_list)
                     else:
-                        logger.warning(f"Nenhum vendedor encontrado com nome: {nome_vendedor}")
+                        logger.warning(f"Nenhum vendedor encontrado com nomes: {nomes_vendedor}")
                         queryset = queryset.none()
                         
             except Exception as e:

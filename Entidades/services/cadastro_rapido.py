@@ -8,7 +8,7 @@ from .validacao_documentos import DocumentoFiscalValidacaoServico
 class EntidadeCadastroRapido:
 
     @staticmethod
-    def cadastrar_rapido(*, data, empresa_id, filial_id, banco, cep_fallback=None, cpf=None):
+    def cadastrar_rapido(*, data, empresa_id, banco, cep_fallback=None, cpf=None, email=None):
         cep = data.get("enti_cep", "").replace("-", "").strip()
         cpf = data.get("enti_cpf", "").strip()
 
@@ -44,7 +44,7 @@ class EntidadeCadastroRapido:
             bair = endereco.get("bairro", "")
             ibge = endereco.get("ibge", "")
 
-        proximo_clie = proxima_entidade(empresa_id, filial_id, banco)
+        proximo_clie = proxima_entidade(empresa_id, banco)
 
         return Entidades.objects.using(banco).create(
             enti_nome=data["enti_nome"],

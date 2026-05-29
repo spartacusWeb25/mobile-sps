@@ -614,7 +614,8 @@
 
         // Adicionar filtros do formulário
         for (const [key, value] of formData.entries()) {
-            if (value && key !== 'item_nome') {
+            // Skip empty values and item_nome
+            if (value && value !== "" && key !== 'item_nome') {
                 // Map data_inicial/data_final to data_inicio/data_fim for API
                 if (key === 'data_inicial') {
                     params.append('data_inicio', value);

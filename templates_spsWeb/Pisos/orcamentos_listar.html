@@ -9,205 +9,67 @@
 
 <style>
   .metric-card {
-    border: none;
-    border-radius: 12px;
+    border: none; border-radius: 12px;
     padding: 1.1rem 1.3rem;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    box-shadow: 0 2px 8px rgba(187, 185, 185, 0.377);
+    display: flex; align-items: center; gap: 1rem;
+    box-shadow: 0 2px 8px rgba(187,185,185,0.377);
     transition: transform .15s, box-shadow .15s;
   }
-
-  .metric-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 18px rgba(0, 0, 0, .11);
-  }
-
+  .metric-card:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,.11); }
   .metric-icon {
-    width: 46px;
-    height: 46px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.35rem;
-    flex-shrink: 0;
+    width: 46px; height: 46px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.35rem; flex-shrink: 0;
   }
-
-  .metric-label {
-    font-size: .72rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: .06em;
-    margin-bottom: 2px;
-  }
-
-  .metric-value {
-    font-size: 1.35rem;
-    font-weight: 700;
-    line-height: 1;
-  }
-
-  .badge-status {
-    font-size: .7rem;
-    padding: .35em .65em;
-    border-radius: 20px;
-    font-weight: 600;
-    letter-spacing: .03em;
-  }
-
-
-  #total-pedidos {
-    border-left: 3px solid #7c3aed;
-    border-radius: 12px 0 0 12px;
-    border-right: 2px solid #8d69ca;
-  }
-
-  #total-valor {
-    border-left: 3px solid #10b981;
-    border-radius: 0 12px 12px 0;
-    border-right: 2px solid #b0dda6;
-  }
-
-  #total-concluidos {
-    border-left: 3px solid #e11d1d;
-    border-radius: 0 0 12px 0;
-    border-right: 2px solid #e29492;
-  }
+  .metric-label { font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 2px; }
+  .metric-value { font-size: 1.35rem; font-weight: 700; line-height: 1; }
+  #total-pedidos   { border-left: 3px solid #7c3aed; border-radius: 12px 0 0 12px; border-right: 2px solid #8d69ca; }
+  #total-valor     { border-left: 3px solid #10b981; border-radius: 0 12px 12px 0;  border-right: 2px solid #b0dda6; }
+  #total-concluidos{ border-left: 3px solid #e11d1d; border-radius: 0 0 12px 0;    border-right: 2px solid #e29492; }
 
   .table thead th {
-    font-size: .72rem;
-    text-transform: uppercase;
-    letter-spacing: .07em;
-    color: #7a8099;
-    border-bottom-width: 2px;
-    padding-top: .9rem;
-    padding-bottom: .9rem;
+    font-size: .72rem; text-transform: uppercase; letter-spacing: .07em;
+    color: #7a8099; border-bottom-width: 2px;
+    padding-top: .9rem; padding-bottom: .9rem;
   }
-
-  .table tbody tr {
-    vertical-align: middle;
-  }
-
-  .table tbody tr:hover {
-    background-color: #f8f9ff;
-  }
-
-  .table td {
-    font-size: .9rem;
-  }
+  .table tbody tr { vertical-align: middle; }
+  .table tbody tr:hover { background-color: #f8f9ff; }
+  .table td { font-size: .9rem; }
 
   .page-title {
-    font-size: 1.8rem;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: .5rem;
-    color: #636161;
+    font-size: 1.8rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; gap: .5rem; color: #636161;
   }
+  .page-title i { color: #eeb243; font-size: 1.2rem; }
 
-  .page-title i {
-    color: #eeb243;
-    font-size: 1.2rem;
-  }
+  .btn-outline-primary { color: #0d7d8b; border-color: #1b565e; border-width: 2px; border-radius: 8px; }
+  .btn-outline-primary:hover { background-color: #48547a; color: #000; border-color: #48547a; }
+  .btn-outline-warning { color: #c4a775; border-color: #f59e0b; border-width: 2px; border-radius: 8px; }
+  .btn-outline-warning:hover { background-color: #f8dc9e; color: #000; border-color: #fff7e6; }
 
-  .btn-outline-primary {
-    color: #0d7d8b;
-    border-color: #1b565e;
-    border-width: 2px;
-    border-radius: 8px;
-  }
-
-  .btn-outline-primary:hover {
-    background-color: #48547a;
-    color: #000;
-    border-color: #48547a;
-  }
-
-  .btn-outline-warning {
-    color: #c4a775;
-    border-color: #f59e0b;
-    border-width: 2px;
-    border-radius: 8px;
-  }
-
-  .btn-outline-warning:hover {
-    background-color: #f8dc9e;
-    color: #000;
-    border-color: #fff7e6;
-  }
+  /* Vendedor select altura fixa para não desalinhar */
+  #vendedor_nome { height: 70px; overflow-y: auto; }
 
   @media screen and (max-width: 768px) {
-    .metric-label {
-      font-size: .45rem;
-    }
-
-    .metric-value {
-      font-size: .5rem;
-    }
-
-    #pedido-card {
-      border: 2px solid #121c33;
-      margin-bottom: 1rem;
-    }
-
-    #btn-imprimir {
-      margin-top: 1rem;
-      margin-bottom: 1rem;
-      border-radius: 8px;
-      border-color: #0d7d8b;
-    }
-
-    #btn-exportar {
-      margin-top: 1rem;
-      margin-bottom: 1rem;
-      border-radius: 8px;
-      border-color: #c4a775;
-    }
-
-    #btn-abrir {
-      margin-top: 1rem;
-      margin-bottom: 1rem;
-      border-radius: 8px;
-      border-color: #0d7d8b;
-    }
+    .metric-label { font-size: .45rem; }
+    .metric-value { font-size: .5rem; }
+    #pedido-card { border: 2px solid #121c33; margin-bottom: 1rem; }
+    #vendedor_nome { height: auto; }
   }
 
   .autocomplete-box {
-    z-index: 1000;
-    width: 100%;
-    max-height: 200px;
-    overflow-y: auto;
-    background: white;
-    border: 1px solid #dee2e6;
-    border-radius: 0 0 8px 8px;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    z-index: 1000; width: 100%; max-height: 200px; overflow-y: auto;
+    background: white; border: 1px solid #dee2e6;
+    border-radius: 0 0 8px 8px; position: absolute;
+    top: 100%; left: 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
   }
-
-  .autocomplete-box .list-group-item {
-    cursor: pointer;
-    padding: 8px 12px;
-    border: none;
-    border-bottom: 1px solid #f0f0f0;
-  }
-
-  .autocomplete-box .list-group-item:hover {
-    background-color: #f8f9fa;
-  }
-
-  .autocomplete-box .list-group-item:last-child {
-    border-bottom: none;
-  }
+  .autocomplete-box .list-group-item { cursor: pointer; padding: 8px 12px; border: none; border-bottom: 1px solid #f0f0f0; }
+  .autocomplete-box .list-group-item:hover { background-color: #f8f9fa; }
+  .autocomplete-box .list-group-item:last-child { border-bottom: none; }
 </style>
 
 <div class="container py-4">
 
-  <!-- Header centralizado — sem botão aqui -->
   <div class="d-flex justify-content-center mb-4">
     <span class="page-title">
       <i class="bi bi-grid fs-4 me-2" style="color: #f3cd52;"></i> Orçamentos Pisos
@@ -216,33 +78,27 @@
 
   <!-- Metric Cards -->
   <div class="row g-3 mb-3">
-    <div class="col-4 col-sm-4">
+    <div class="col-4">
       <div class="metric-card js-card-filter" id="total-pedidos" data-filter-unset="orca_stat">
-        <div class="metric-icon" style="background:#eef2ff; color:#4361ee;">
-          <i class="bi bi-file-earmark-text"></i>
-        </div>
+        <div class="metric-icon" style="background:#eef2ff; color:#4361ee;"><i class="bi bi-file-earmark-text"></i></div>
         <div>
           <div class="metric-label">Total orçamentos</div>
           <div class="metric-value">{{ metricas.total_orcamentos }}</div>
         </div>
       </div>
     </div>
-    <div class="col-4 col-sm-4">
+    <div class="col-4">
       <div class="metric-card" id="total-valor">
-        <div class="metric-icon" style="background:#e6fbf5; color:#10b981;">
-          <i class="bi bi-currency-dollar"></i>
-        </div>
+        <div class="metric-icon" style="background:#e6fbf5; color:#10b981;"><i class="bi bi-currency-dollar"></i></div>
         <div>
           <div class="metric-label">Total valor</div>
           <div class="metric-value" style="color:#10b981;">{{ metricas.total_valor|brl }}</div>
         </div>
       </div>
     </div>
-    <div class="col-4 col-sm-4">
+    <div class="col-4">
       <div class="metric-card js-card-filter" id="total-concluidos" data-filter-set="orca_stat=2">
-        <div class="metric-icon" style="background:#fff7e6; color:#f59e0b;">
-          <i class="bi bi-box-arrow-up-right"></i>
-        </div>
+        <div class="metric-icon" style="background:#fff7e6; color:#f59e0b;"><i class="bi bi-box-arrow-up-right"></i></div>
         <div>
           <div class="metric-label">Exportados</div>
           <div class="metric-value" style="color:#f59e0b;">{{ metricas.total_exportados }}</div>
@@ -251,7 +107,6 @@
     </div>
   </div>
 
-  <!-- Botão Novo abaixo dos cards -->
   <div class="d-flex justify-content-end mb-3">
     <a class="btn btn-outline-primary d-flex align-items-center gap-2"
       href="{% url 'PisosWeb:orcamentos_pisos_criar' slug=slug %}">
@@ -260,59 +115,75 @@
   </div>
 
   <div class="mb-2">
-    <button class="btn btn-outline-primary w-full" data-bs-toggle="collapse" data-bs-target="#filtrosCollapse">
+    <button class="btn btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#filtrosCollapse">
       <i class="bi bi-funnel"></i> Filtros
     </button>
   </div>
+
   <div class="collapse show" id="filtrosCollapse">
-    <!-- Filtros -->
     <form method="get" class="card border-0 shadow-sm rounded-3 mb-3">
       <div class="card-body">
+        <!-- Linha única de filtros alinhados pela base -->
         <div class="row g-2 align-items-end">
-          <div class="col-3 col-md-2">
-            <label class="form-label">Nº Orçamento</label>
-            <input type="number" name="orca_nume" class="form-control" value="{{ filtros.orca_nume }}">
+
+          <div class="col-6 col-md-1">
+            <label class="form-label mb-1">Nº Orçamento</label>
+            <input type="number" name="orca_nume" class="form-control form-control-sm" value="{{ filtros.orca_nume }}">
           </div>
-          <div class="col-3 col-md-3">
-            <label class="form-label">Cliente</label>
+
+          <div class="col-6 col-md-3">
+            <label class="form-label mb-1">Cliente</label>
             <div style="position: relative;">
-              <input type="text" id="cliente_nome" name="cliente_nome" class="form-control" value="{{ filtros.cliente_nome }}" autocomplete="off">
+              <input type="text" id="cliente_nome" name="cliente_nome" class="form-control form-control-sm"
+                value="{{ filtros.cliente_nome }}" autocomplete="off">
               <div id="cliente_autocomplete" class="list-group autocomplete-box d-none"></div>
             </div>
           </div>
-          <div class="col-3 col-md-3">
-            <label class="form-label">Vendedor</label>
-            <div style="position: relative;">
-              <input type="text" id="vendedor_nome" name="vendedor_nome" class="form-control" value="{{ filtros.vendedor_nome }}" autocomplete="off">
-              <div id="vendedor_autocomplete" class="list-group autocomplete-box d-none"></div>
-            </div>
+
+          <div class="col-6 col-md-2">
+            <label class="form-label mb-1">Vendedor(es)</label>
+            <select class="form-select form-select-sm" id="vendedor_nome" name="vendedor_nome" multiple
+              title="Segure Ctrl para múltiplos">
+              <option value="">Todos</option>
+              {% for v in vendedores_list %}
+              <option value="{{ v.enti_nome }}" {% if v.enti_nome in filtros.vendedor_nome %}selected{% endif %}>{{ v.enti_nome }}</option>
+              {% endfor %}
+            </select>
           </div>
-          <div class="col-3 col-md-2">
-            <label class="form-label">Data Início</label>
-            <input type="date" name="data_inicio" class="form-control" value="{{ filtros.data_inicio }}">
+
+          <div class="col-6 col-md-2">
+            <label class="form-label mb-1">Data Início</label>
+            <input type="date" name="data_inicio" class="form-control form-control-sm" value="{{ filtros.data_inicio }}">
           </div>
-          <div class="col-3 col-md-2">
-            <label class="form-label">Data Fim</label>
-            <input type="date" name="data_fim" class="form-control" value="{{ filtros.data_fim }}">
+
+          <div class="col-6 col-md-2">
+            <label class="form-label mb-1">Data Fim</label>
+            <input type="date" name="data_fim" class="form-control form-control-sm" value="{{ filtros.data_fim }}">
           </div>
-          <div class="col-3 col-md-2">
-            <label class="form-label">Status</label>
-            <select name="orca_stat" class="form-select">
+
+          <div class="col-6 col-md-1">
+            <label class="form-label mb-1">Status</label>
+            <select name="orca_stat" class="form-select form-select-sm">
               <option value="">Todos</option>
               <option value="1" {% if filtros.orca_stat == "1" %}selected{% endif %}>Pendente</option>
               <option value="2" {% if filtros.orca_stat == "2" %}selected{% endif %}>Exportado</option>
               <option value="3" {% if filtros.orca_stat == "3" %}selected{% endif %}>Cancelado</option>
             </select>
           </div>
-          <div class="col-12 col-md-2 d-flex gap-2">
+
+          <div class="col-12 col-md-2 d-flex gap-1">
             <button class="btn btn-outline-primary flex-fill" type="submit">
               <i class="bi bi-filter"></i> Filtrar
             </button>
             <a class="btn btn-outline-secondary flex-fill"
               href="{% url 'PisosWeb:orcamentos_pisos_listar' slug=slug %}">
-              <i class="bi bi-eraser"></i> Limpar
+              <i class="bi bi-eraser"></i>
             </a>
           </div>
+
+        </div>
+        <div class="mt-1">
+          <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Segure Ctrl no campo Vendedor para selecionar múltiplos</small>
         </div>
       </div>
     </form>
@@ -357,7 +228,7 @@
                   <i class="bi bi-eye"></i> Abrir
                 </a>
                 <a class="btn btn-sm btn-outline-info d-inline-flex align-items-center gap-1" target="_blank"
-                  id="btn-imprimir" href="{% url 'PisosWeb:orcamentos_pisos_imprimir' slug=slug pk=o.orca_nume %}">
+                  href="{% url 'PisosWeb:orcamentos_pisos_imprimir' slug=slug pk=o.orca_nume %}">
                   <i class="bi bi-printer"></i> Imprimir
                 </a>
                 {% if o.orca_stat != 2 %}
@@ -382,8 +253,6 @@
     </div>
   </div>
 
-
-
   <!-- Mobile Cards -->
   <div class="d-md-none">
     {% for o in orcamentos %}
@@ -397,19 +266,23 @@
           <div><strong>Cliente:</strong> {{ o.orca_clie }} - {{ o.cliente_nome }}</div>
           <div><strong>Vendedor:</strong> {{ o.orca_vend }} - {{ o.vendedor_nome }}</div>
           <div><strong>Total:</strong> {{ o.orca_tota|brl }}</div>
-          <div><strong>Status:</strong> {{ o.get_orca_stat_display|default:o.orca_stat }}</div>
+          <div><strong>Status:</strong>
+            <span class="badge px-2 py-1" style="background-color: {{ o.status_cor|default:'#6c757d' }};">
+              {{ o.status_desc|default:'Sem status' }}
+            </span>
+          </div>
         </div>
         <div class="mt-3 d-flex gap-2 justify-content-end">
-          <a class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1" id="btn-abrir"
+          <a class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1"
             href="{% url 'PisosWeb:orcamentos_pisos_visualizar' slug=slug pk=o.orca_nume %}">
             <i class="bi bi-eye"></i> Abrir
           </a>
           <a class="btn btn-sm btn-outline-info d-inline-flex align-items-center gap-1" target="_blank"
-            id="btn-imprimir" href="{% url 'PisosWeb:orcamentos_pisos_imprimir' slug=slug pk=o.orca_nume %}">
+            href="{% url 'PisosWeb:orcamentos_pisos_imprimir' slug=slug pk=o.orca_nume %}">
             <i class="bi bi-printer"></i> Imprimir
           </a>
           {% if o.orca_stat != 2 %}
-          <a class="btn btn-sm btn-outline-warning" id="btn-exportar"
+          <a class="btn btn-sm btn-outline-warning"
             href="{% url 'PisosWeb:orcamentos_pisos_exportar' slug=slug numero=o.orca_nume %}">
             <i class="bi bi-file-earmark-arrow-down"></i> Exportar
           </a>
@@ -439,53 +312,32 @@
 </div>
 
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    // Set default dates if fields are empty
+  document.addEventListener('DOMContentLoaded', function () {
     const dataInicio = document.querySelector('input[name="data_inicio"]');
     const dataFim = document.querySelector('input[name="data_fim"]');
-
     if (dataInicio && !dataInicio.value) {
       const today = new Date();
-      const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-      dataInicio.valueAsDate = firstDay;
+      dataInicio.valueAsDate = new Date(today.getFullYear(), today.getMonth(), 1);
     }
+    if (dataFim && !dataFim.value) { dataFim.valueAsDate = new Date(); }
 
-    if (dataFim && !dataFim.value) {
-      const today = new Date();
-      dataFim.valueAsDate = today;
-    }
-
-    // Autocomplete functionality
     const clienteUrl = "{% url 'PisosWeb:autocomplete_clientes' slug=slug %}";
-    const vendedorUrl = "{% url 'PisosWeb:autocomplete_vendedores' slug=slug %}";
-
     function setupAutocomplete(inputId, boxId, url) {
       const input = document.getElementById(inputId);
       const box = document.getElementById(boxId);
       if (!input || !box) return;
-
       let debounceTimer;
-
-      input.addEventListener('input', function() {
+      input.addEventListener('input', function () {
         const query = this.value.trim();
         clearTimeout(debounceTimer);
-
-        if (query.length < 2) {
-          box.classList.add('d-none');
-          return;
-        }
-
+        if (query.length < 2) { box.classList.add('d-none'); return; }
         debounceTimer = setTimeout(async () => {
           try {
             const response = await fetch(`${url}?term=${encodeURIComponent(query)}`, {
               credentials: 'include',
-              headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-              }
+              headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') }
             });
             const data = await response.json();
-
             box.innerHTML = '';
             if (data.length > 0) {
               data.forEach(item => {
@@ -493,7 +345,6 @@
                 div.className = 'list-group-item';
                 div.textContent = item.label;
                 div.addEventListener('click', () => {
-                  // Extract just the name part (after " - ")
                   const namePart = item.label.split(' - ').slice(1).join(' - ');
                   input.value = namePart || item.label;
                   box.classList.add('d-none');
@@ -501,26 +352,15 @@
                 box.appendChild(div);
               });
               box.classList.remove('d-none');
-            } else {
-              box.classList.add('d-none');
-            }
-          } catch (error) {
-            console.error('Autocomplete error:', error);
-            box.classList.add('d-none');
-          }
+            } else { box.classList.add('d-none'); }
+          } catch (e) { box.classList.add('d-none'); }
         }, 300);
       });
-
-      // Hide autocomplete when clicking outside
-      document.addEventListener('click', function(e) {
-        if (!input.contains(e.target) && !box.contains(e.target)) {
-          box.classList.add('d-none');
-        }
+      document.addEventListener('click', function (e) {
+        if (!input.contains(e.target) && !box.contains(e.target)) box.classList.add('d-none');
       });
     }
-
     setupAutocomplete('cliente_nome', 'cliente_autocomplete', clienteUrl);
-    setupAutocomplete('vendedor_nome', 'vendedor_autocomplete', vendedorUrl);
   });
 
   function getCookie(name) {

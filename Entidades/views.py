@@ -236,7 +236,7 @@ class EntidadesViewSet(ModuloRequeridoMixin,viewsets.ModelViewSet):
             cep_fallback = CEP_FALLBACK_PG_PISOS
         else:
             cep_fallback = None
-        print(f"empresa_id: {empresa_id}, filial_id: {filial_id}, banco: {banco}, cep_fallback: {cep_fallback}")
+        print(f"empresa_id: {empresa_id}, banco: {banco}, cep_fallback: {cep_fallback}")
 
         try:
             # Usar service simplificado se CPF não for fornecido
@@ -245,17 +245,16 @@ class EntidadesViewSet(ModuloRequeridoMixin,viewsets.ModelViewSet):
                 entidade = EntidadeCadastroRapidoSimplificado.cadastrar_rapido_simplificado(
                     data=serializer.validated_data,
                     empresa_id=empresa_id,
-                    filial_id=filial_id,
                     banco=banco,
                 )
             else:
                 entidade = EntidadeCadastroRapido.cadastrar_rapido(
                     data=serializer.validated_data,
                     empresa_id=empresa_id,
-                    filial_id=filial_id,
                     banco=banco,
                     cep_fallback=cep_fallback if not serializer.validated_data.get("enti_cep") else None,
                     cpf=cpf,
+                    email=serializer.validated_data.get("enti_emai"),
                 )
             print(f"Entidade criada com sucesso: {entidade}")
             print(f"DEBUG enti_clie: {getattr(entidade, 'enti_clie', 'NÃO ENCONTRADO')}")

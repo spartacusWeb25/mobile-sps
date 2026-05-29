@@ -280,10 +280,12 @@
                 <input type="text" class="form-control" id="item" name="item_nome" placeholder="Nome do produto">
             </div>
             <div class="col-12 text-end mt-4">
-                <button type="button" class="btn btn-outline-primary me-2 text-secondary border" onclick="limparFiltros()">
+                <button type="button" class="btn btn-outline-primary me-2 text-secondary border"
+                    onclick="limparFiltros()">
                     <i class="bi bi-x-circle me-1"></i> Limpar
                 </button>
-                <button type="submit" class="btn btn-outline-primary text-primary px-4"><i class="bi bi-search me-1"></i>
+                <button type="submit" class="btn btn-outline-primary text-primary px-4"><i
+                        class="bi bi-search me-1"></i>
                     Filtrar</button>
             </div>
         </form>
@@ -612,7 +614,8 @@
 
         // Adicionar filtros do formulário
         for (const [key, value] of formData.entries()) {
-            if (value && key !== 'item_nome') {
+            // Skip empty values and item_nome
+            if (value && value !== "" && key !== 'item_nome') {
                 // Map data_inicial/data_final to data_inicio/data_fim for API
                 if (key === 'data_inicial') {
                     params.append('data_inicio', value);

@@ -25,7 +25,7 @@ def buscar_endereco_por_cep(cep):
 
     return None
 
-def proxima_entidade(empresa_id, filial_id, banco):
+def proxima_entidade(empresa_id, banco):
     try:
         ultima_entidade = Entidades.objects.using(banco).filter(
             enti_empr=empresa_id,

@@ -76,9 +76,17 @@ class OrcamentoPisosListView(VendedorEntidadeMixin, ListView):
             qs = qs.filter(orca_clie__in=list(clientes_ids))
 
         if vendedor_nome:
-            vendedores_ids = Entidades.objects.using(self.banco).filter(
-                enti_nome__icontains=vendedor_nome
-            ).values_list("enti_clie", flat=True)
+            # Handle multiple seller names (always use getlist to get all selected values)
+            vendedor_nomes = self.request.GET.getlist("vendedor_nome")
+            
+            # Build Q objects for each seller name with icontains
+            from django.db.models import Q
+            q_objects = Q()
+            for nome in vendedor_nomes:
+                if nome:
+                    q_objects |= Q(enti_nome__icontains=nome)
+            
+            vendedores_ids = Entidades.objects.using(self.banco).filter(q_objects).values_list("enti_clie", flat=True)
 
             qs = qs.filter(orca_vend__in=list(vendedores_ids))
 
@@ -134,6 +142,13 @@ class OrcamentoPisosListView(VendedorEntidadeMixin, ListView):
 
         context["slug"] = self.kwargs["slug"]
 
+        # Get list of vendedores for the dropdown
+        from Entidades.models import Entidades
+        vendedores = Entidades.objects.using(self.banco).filter(
+            enti_tipo_enti='VE'
+        ).values('enti_clie', 'enti_nome').order_by('enti_nome')
+        context["vendedores_list"] = list(vendedores)
+
         context["metricas"] = {
             "total_orcamentos": base_qs.count(),
             "total_valor": base_qs.aggregate(total=Sum("orca_tota")).get("total") or 0,
@@ -145,10 +160,13 @@ class OrcamentoPisosListView(VendedorEntidadeMixin, ListView):
         today = date.today()
         first_day_of_month = date(today.year, today.month, 1)
 
+        # Handle multiple vendedor_nome values (always return a list)
+        vendedor_nome_filter = self.request.GET.getlist("vendedor_nome")
+
         context["filtros"] = {
             "orca_nume": self.request.GET.get("orca_nume", ""),
             "cliente_nome": self.request.GET.get("cliente_nome", ""),
-            "vendedor_nome": self.request.GET.get("vendedor_nome", ""),
+            "vendedor_nome": vendedor_nome_filter,
             "orca_stat": self.request.GET.get("orca_stat", ""),
             "data_inicio": self.request.GET.get("data_inicio", first_day_of_month.strftime('%Y-%m-%d')),
             "data_fim": self.request.GET.get("data_fim", today.strftime('%Y-%m-%d')),
