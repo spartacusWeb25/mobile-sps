@@ -5,6 +5,11 @@
 <link rel="stylesheet" href="{% static 'css/list.css' %}">
 <div class="container py-3">
   <h3 class="page-title">Pedidos Criados Hoje</h3>
+  <div class="d-flex justify-content-end mb-3">
+    <a class="btn btn-sm btn-outline-success" href="{% url 'notificacoes_web:exportar_pedidos_hoje' slug=slug %}">
+      <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+    </a>
+  </div>
   <div class="table-responsive">
     <table class="table table-sm align-middle">
       <thead>

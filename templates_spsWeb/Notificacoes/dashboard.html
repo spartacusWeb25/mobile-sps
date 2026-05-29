@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+﻿{% extends 'base.html' %}
 {% load static %}
 {% block content %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
@@ -225,9 +225,7 @@
   </h3>
   <p class="text-muted text-center mb-4" style="font-size: 0.9rem;">
     Acompanhe suas contas, títulos e movimentações em tempo real
-  </p>
-
-  <!-- Cards de Estatísticas -->
+  </p>`r`n`r`n  <div class="alert alert-info d-flex justify-content-between align-items-center mb-4">`r`n    <div>`r`n      <strong>Empresa:</strong> {{ empresa_nome }} (ID: {{ empresa_id }})`r`n      <span class="mx-3">|</span>`r`n      <strong>Filial:</strong> {{ filial_nome }} (ID: {{ filial_id }})`r`n    </div>`r`n  </div>`r`n`r`n  <!-- Cards de Estatísticas -->
   <div class="mb-4 stats-row">
     <div>
       <a class="stat-card stat-card-danger" href="/web/{{ slug }}/notificacoes/pagar/?period=hoje">
@@ -456,3 +454,4 @@
 </div>
 
 {% endblock %}
+

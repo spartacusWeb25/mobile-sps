@@ -20,6 +20,11 @@
       </select>
     </div>
     <div class="col-auto"><button class="btn btn-sm btn-outline-primary" type="submit"><i class="bi bi-filter"></i> Fililtrar</button></div>
+    <div class="col-auto ms-auto">
+      <a class="btn btn-sm btn-outline-success" href="{% url 'notificacoes_web:exportar_pagar' slug=slug %}?{% if period %}period={{ period }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">
+        <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+      </a>
+    </div>
   </form>
   <div class="table-responsive">
     <table class="table table-sm align-middle">
