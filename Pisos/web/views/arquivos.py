@@ -53,7 +53,16 @@ def upload_pedido_pisos_arquivo(request, slug, pk):
 
 def download_pedido_pisos_arquivo(request, slug, pk, codigo):
     banco = get_db_from_slug(slug)
-    empresa_id = request.session.get("empresa_id")
+    empresa_id = (
+        request.session.get('empresa_id')
+        or request.session.get('empresa')
+        or request.session.get('empr_codi')
+    )
+    filial_id = (
+        request.session.get('filial_id')
+        or request.session.get('filial')
+        or request.session.get('fili_codi')
+    )
     if not empresa_id:
         raise Http404()
 
@@ -91,7 +100,16 @@ def excluir_pedido_pisos_arquivo(request, slug, pk, codigo):
         raise Http404()
 
     banco = get_db_from_slug(slug)
-    empresa_id = request.session.get("empresa_id")
+    empresa_id = (
+        request.session.get('empresa_id')
+        or request.session.get('empresa')
+        or request.session.get('empr_codi')
+    )
+    filial_id = (
+        request.session.get('filial_id')
+        or request.session.get('filial')
+        or request.session.get('fili_codi')
+    )
     if not empresa_id:
         messages.error(request, "Sessão inválida: empresa não informada.")
         return redirect("PisosWeb:pedidos_pisos_editar", slug=slug, pk=pk)

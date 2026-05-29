@@ -14,7 +14,73 @@ def listar_orcamentos_pisos(request, slug):
 
 def exportar_orcamento_pedido(request, slug, numero):
     banco = get_db_from_slug(slug)
-    orc = get_object_or_404(Orcamentopisos.objects.using(banco), orca_nume=numero)
+
+    # Sanitize numero - ensure it's a valid integer
+    try:
+        numero = int(numero)
+    except (ValueError, TypeError):
+        from django.http import Http404
+        raise Http404("Orçamento inválido")
+
+    # First try without empresa/filial filters
+    try:
+        orc = get_object_or_404(Orcamentopisos.objects.using(banco), orca_nume=numero)
+    except ValueError as e:
+        # Handle database data corruption (invalid dates)
+        if "year" in str(e).lower() or "out of range" in str(e).lower():
+            # Fix corrupted dates in database
+            from datetime import date
+            from django.db import connections
+            current_date = date.today()
+
+            with connections[banco].cursor() as cursor:
+                cursor.execute(
+                    "UPDATE Orcamentopisos SET orca_data = %s, orca_data_prev_entr = %s WHERE orca_nume = %s",
+                    [current_date, current_date, numero]
+                )
+
+            # Retry the query after fixing
+            orc = get_object_or_404(Orcamentopisos.objects.using(banco), orca_nume=numero)
+        raise
+    except Exception:
+        # If multiple results, try with empresa/filial filters from session
+        empresa_id = (
+            request.session.get('empresa_id')
+            or request.session.get('empresa')
+            or request.session.get('empr_codi')
+        )
+        filial_id = (
+            request.session.get('filial_id')
+            or request.session.get('filial')
+            or request.session.get('fili_codi')
+        )
+
+        # Build query with empresa and filial filters to ensure unique result
+        qs = Orcamentopisos.objects.using(banco)
+        if empresa_id:
+            qs = qs.filter(orca_empr=empresa_id)
+        if filial_id:
+            qs = qs.filter(orca_fili=filial_id)
+
+        try:
+            orc = get_object_or_404(qs, orca_nume=numero)
+        except ValueError as e:
+            # Handle database data corruption (invalid dates)
+            if "year" in str(e).lower() or "out of range" in str(e).lower():
+                # Fix corrupted dates in database
+                from datetime import date
+                from django.db import connections
+                current_date = date.today()
+
+                with connections[banco].cursor() as cursor:
+                    cursor.execute(
+                        "UPDATE Orcamentopisos SET orca_data = %s, orca_data_prev_entr = %s WHERE orca_nume = %s",
+                        [current_date, current_date, numero]
+                    )
+
+                # Retry the query after fixing
+                orc = get_object_or_404(qs, orca_nume=numero)
+            raise
     try:
         pedido_numero = exportar_orcamento_para_pedido(banco, orc.orca_empr, orc.orca_fili, orc.orca_nume)
         messages.success(request, f'Orçamento {numero} exportado para pedido {pedido_numero}.')

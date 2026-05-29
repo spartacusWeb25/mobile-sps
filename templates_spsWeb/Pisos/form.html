@@ -590,51 +590,51 @@
               <table class="table table-sm table-dark table-hover align-middle mb-0" id="itens-table">
                 <thead>
                   <tr>
-                    <th style="min-width:80px">Ambiente</th>
-                    <th style="min-width:40px">Caixas</th>
-                    <th style="min-width:30px">M²</th>
-                    <th style="min-width:30px">KG</th>
-                    <th style="min-width:130px"><a href="{% url 'produtos_web' slug=slug %}"
+                    <th style="min-width:55px;max-width:55px">Ambiente</th>
+                    <th style="min-width:60px;max-width:60px">Caixas</th>
+                    <th style="min-width:65px;max-width:65px">M²</th>
+                    <th style="min-width:65px;max-width:65px">KG</th>
+                    <th style="min-width:80px;max-width:80px"><a href="{% url 'produtos_web' slug=slug %}"
                         title="Ir para a listagem de produtos" class="prod-link">Produto</a></th>
-                    <th style="min-width:160px">Nome Produto</th>
-                    <th style="min-width:90px">Quant.</th>
-                    <th style="min-width:90px">Unitário</th>
-                    <th style="min-width:80px">Desc %</th>
-                    <th style="min-width:80px">Quebra %</th>
-                    <th style="min-width:90px">Subtotal</th>
-                    <th style="min-width:80px">Obs</th>
-                    <th style="min-width:36px">Del</th>
+                    <th>Nome Produto</th>
+                    <th>Quant.</th>
+                    <th style="min-width:45px;max-width:45px">Unitário</th>
+                    <th style="min-width:45px;max-width:45px">Desc %</th>
+                    <th style="min-width:45px;max-width:45px">Quebra %</th>
+                    <th style="min-width:75px;max-width:75px">Subtotal</th>
+                    <th style="min-width:55px;max-width:55px">Obs</th>
+                    <th style="min-width:36px;max-width:36px">Del</th>
                   </tr>
                 </thead>
                 <tbody id="itens-tbody">
                   {% for f in formset %}
                   <tr data-index="{{ forloop.counter0 }}">
-                    <td>
+                    <td style="min-width:55px;max-width:55px">
                       {{ f.item_nome_ambi }}
                       {{ f.item_ambi.as_hidden }}
                     </td>
-                    <td>
+                    <td style="min-width:60px;max-width:60px">
                       <input type="number" step="0.0001" id="caix-{{ forloop.counter0 }}"
                         class="form-control form-control-sm item-caix" value="{{ f.item_caix.value|default:'' }}">
                       <div class="d-none">{{ f.item_caix }}</div>
                     </td>
-                    <td class="position-relative">
+                    <td class="position-relative" style="min-width:65px;max-width:65px">
                       <input type="number" step="0.01" id="m2-{{ forloop.counter0 }}"
                         class="form-control form-control-sm item-m2" value="{{ f.item_m2.value|default:'' }}"
                         data-index="{{ forloop.counter0 }}" placeholder="0,00">
                       <div class="d-none">{{ f.item_m2 }}</div>
                       <div class="calc-spinner" id="spin-{{ forloop.counter0 }}"></div>
                     </td>
-                    <td>
+                    <td style="min-width:65px;max-width:65px">
                       <input id="kg-{{ forloop.counter0 }}" class="form-control form-control-sm item-kg calc-field"
                         placeholder="0,00" data-index="{{ forloop.counter0 }}" value="{{ f.item_kg.value|default:'' }}"
-                        readonly tabindex="-1">
+                        readonly tabindex="-1" style="width:100%">
                       <div class="d-none">{{ f.item_kg }}</div>
                     </td>
-                    <td class="position-relative">
+                    <td class="position-relative" style="min-width:80px;max-width:80px">
                       <input id="produto_busca_{{ forloop.counter0 }}" class="form-control form-control-sm"
                         placeholder="Buscar produto" data-index="{{ forloop.counter0 }}"
-                        value="{{ f.item_prod_nome.value|default:'' }}">
+                        value="{{ f.item_prod_nome.value|default:'' }}" style="width:100%">
                       <div class="d-none">{{ f.item_prod }}</div>
                     </td>
                     <td>{{ f.item_prod_nome }}</td>
@@ -643,26 +643,26 @@
                         class="form-control form-control-sm item-quan" value="{{ f.item_quan.value|default:'' }}">
                       <div class="d-none">{{ f.item_quan }}</div>
                     </td>
-                    <td>
+                    <td style="min-width:45px;max-width:45px">
                       <input type="number" step="0.01" id="unit-{{ forloop.counter0 }}"
                         class="form-control form-control-sm item-unit" value="{{ f.item_unit.value|default:'' }}"
                         data-index="{{ forloop.counter0 }}" placeholder="0,00">
                       <div class="d-none">{{ f.item_unit }}</div>
                     </td>
-                    <td>{{ f.item_desc }}</td>
-                    <td>
+                    <td style="min-width:45px;max-width:45px">{{ f.item_desc }}</td>
+                    <td style="min-width:45px;max-width:45px">
                       <input type="number" step="0.01" min="0" max="100" id="queb-{{ forloop.counter0 }}"
                         class="form-control form-control-sm item-queb" value="{{ f.item_queb.value|default:'' }}"
-                        data-index="{{ forloop.counter0 }}" placeholder="0">
+                        data-index="{{ forloop.counter0 }}" placeholder="0" style="width:100%">
                       <div class="d-none">{{ f.item_queb }}</div>
                     </td>
-                    <td>
+                    <td style="min-width:75px;max-width:75px">
                       <input type="text" id="suto-{{ forloop.counter0 }}"
                         class="form-control form-control-sm calc-field" value="{{ f.item_suto.value|default:'' }}"
-                        readonly tabindex="-1">
+                        readonly tabindex="-1" style="width:100%">
                     </td>
-                    <td>{{ f.item_obse }}</td>
-                    <td>
+                    <td style="min-width:55px;max-width:55px">{{ f.item_obse }}</td>
+                    <td style="min-width:36px;max-width:36px">
                       {{ f.DELETE.as_hidden }}
                       <button type="button" class="btn btn-sm btn-outline-danger btn-remove-item">
                         <i class="bi bi-trash"></i>
