@@ -18,6 +18,24 @@ def visualizar_orcamento_pisos(request, slug, pk):
         'orca_vend'
     )
 
+    # Get empresa and filial from session to uniquely identify the orcamento
+    empresa_id = (
+        request.session.get('empresa_id')
+        or request.session.get('empresa')
+        or request.session.get('empr_codi')
+    )
+    filial_id = (
+        request.session.get('filial_id')
+        or request.session.get('filial')
+        or request.session.get('fili_codi')
+    )
+
+    # Add empresa and filial filters to ensure unique result
+    if empresa_id:
+        qs = qs.filter(orca_empr=empresa_id)
+    if filial_id:
+        qs = qs.filter(orca_fili=filial_id)
+
     orcamento = get_object_or_404(qs, orca_nume=pk)
 
     itens = list(

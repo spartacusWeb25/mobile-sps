@@ -1,4 +1,8 @@
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
+from django.db import connections
+from django.db.utils import OperationalError
+
+from core.licencas_loader import carregar_licencas_dict
 from openpyxl import load_workbook
 from openpyxl.drawing.spreadsheet_drawing import OneCellAnchor, TwoCellAnchor
 import pandas as pd
@@ -23,6 +27,19 @@ UPSCALE_FACTOR  = 2
 # =================================
 
 
+def montar_db_config(lic):
+    config = {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": lic["db_name"],
+        "USER": lic["db_user"],
+        "PASSWORD": lic["db_password"],
+        "HOST": lic["db_host"],
+        "PORT": lic["db_port"],
+        "CONN_MAX_AGE": 60,
+    }
+    return config
+
+
 def get_prefix(codigo: str) -> str:
     parts = codigo.strip().split('-')
     if len(parts) > 1 and parts[-1].upper() in SUFIXOS_COR:
@@ -38,6 +55,16 @@ class Command(BaseCommand):
                             help="Mostra o que será feito sem enviar nada ao bucket")
         parser.add_argument("--retry", type=int, default=3,
                             help="Número de tentativas no upload (default: 3)")
+        parser.add_argument(
+            "--slug",
+            type=str,
+            help="Slug do tenant específico. Se omitido, roda em todos os tenants.",
+        )
+        parser.add_argument(
+            "--tenant",
+            type=str,
+            help="Alias de --slug (compatibilidade).",
+        )
 
     def process_image(self, raw_bytes: bytes) -> bytes | None:
         try:
@@ -73,19 +100,18 @@ class Command(BaseCommand):
                     time.sleep(2 ** attempt)
         return False
 
-    def handle(self, *args, **options):
-        PREVIEW   = options["preview"]
-        MAX_RETRY = options["retry"]
-
+    def importar_produtos(self, slug: str, preview: bool, max_retry: int):
+        """Executa a importação de produtos para um tenant específico."""
         self.stdout.write(self.style.WARNING("═" * 65))
+        self.stdout.write(self.style.WARNING(f"  Tenant: {slug}"))
         self.stdout.write(self.style.WARNING(
-            "  PREVIEW — nenhum upload será feito" if PREVIEW
+            "  PREVIEW — nenhum upload será feito" if preview
             else "  EXECUÇÃO REAL — imagens serão enviadas ao OCI"
         ))
         self.stdout.write(self.style.WARNING("═" * 65))
 
         object_storage = None
-        if not PREVIEW:
+        if not preview:
             import oci
             config = oci.config.from_file()
             object_storage = oci.object_storage.ObjectStorageClient(config)
@@ -201,7 +227,7 @@ class Command(BaseCommand):
             )
 
             if not ja_enviado:
-                if not PREVIEW:
+                if not preview:
                     if raw is None:
                         self.stdout.write(self.style.ERROR("      sem imagem disponível"))
                         produtos_csv.append({"codigo": codigo, "descricao": descricao, "prod_url": ""})
@@ -210,7 +236,7 @@ class Command(BaseCommand):
                     if not processed:
                         produtos_csv.append({"codigo": codigo, "descricao": descricao, "prod_url": ""})
                         continue
-                    ok = self.upload(object_storage, obj_path, processed, MAX_RETRY)
+                    ok = self.upload(object_storage, obj_path, processed, max_retry)
                     if ok:
                         self.stdout.write(self.style.SUCCESS(f"      ✔ upload ok → {nome_arq}"))
                         prefixos_enviados[prefixo] = url
@@ -252,9 +278,47 @@ class Command(BaseCommand):
                 f"  Falhas ({len(uploads_falhos)}): {', '.join(uploads_falhos)}"
             ))
 
+        output_csv = f"produtos_com_url_{slug}.csv"
         df = pd.DataFrame(produtos_csv)
-        df.to_csv(OUTPUT_CSV, index=False, encoding="utf-8-sig")
-        self.stdout.write(self.style.SUCCESS(f"\n  CSV gerado: {OUTPUT_CSV}"))
+        df.to_csv(output_csv, index=False, encoding="utf-8-sig")
+        self.stdout.write(self.style.SUCCESS(f"\n  CSV gerado: {output_csv}"))
 
-        if PREVIEW:
+        if preview:
             self.stdout.write(self.style.WARNING("\n  Nenhum arquivo foi enviado (modo preview)."))
+
+    def handle(self, *args, **options):
+        slug = options.get("slug")
+        tenant = options.get("tenant")
+        if slug and tenant and slug != tenant:
+            raise CommandError("Use apenas um entre --slug e --tenant (ou informe o mesmo valor em ambos).")
+
+        slug_alvo = slug or tenant
+        preview = options["preview"]
+        max_retry = options["retry"]
+
+        licencas = carregar_licencas_dict()
+        if not licencas:
+            raise CommandError("Nenhuma licença encontrada")
+
+        if slug_alvo:
+            licencas = [l for l in licencas if l.get("slug") == slug_alvo]
+            if not licencas:
+                raise CommandError(f"Nenhuma licença encontrada para slug={slug_alvo}")
+
+        for lic in licencas:
+            alias = f"tenant_{lic['slug']}"
+            connections.databases[alias] = montar_db_config(lic)
+
+            try:
+                with connections[alias].cursor() as cursor:
+                    cursor.execute("SELECT 1")
+            except OperationalError:
+                self.stdout.write(self.style.ERROR(f"[{alias}] Banco de dados não encontrado ou inacessível. Pulando..."))
+                continue
+
+            self.stdout.write(self.style.WARNING(f"[{alias}] Iniciando importação de produtos..."))
+            try:
+                self.importar_produtos(lic['slug'], preview, max_retry)
+                self.stdout.write(self.style.SUCCESS(f"[{alias}] Importação concluída com sucesso!"))
+            except Exception as e:
+                self.stdout.write(self.style.ERROR(f"[{alias}] Erro ao importar produtos: {e}"))

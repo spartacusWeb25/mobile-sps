@@ -34,6 +34,24 @@ def editar_pedido_pisos(request, slug, pk):
         "pedi_vend"
     )
 
+    # Get empresa and filial from session to uniquely identify the pedido
+    empresa_id = (
+        request.session.get('empresa_id')
+        or request.session.get('empresa')
+        or request.session.get('empr_codi')
+    )
+    filial_id = (
+        request.session.get('filial_id')
+        or request.session.get('filial')
+        or request.session.get('fili_codi')
+    )
+
+    # Add empresa and filial filters to ensure unique result
+    if empresa_id:
+        qs = qs.filter(pedi_empr=empresa_id)
+    if filial_id:
+        qs = qs.filter(pedi_fili=filial_id)
+
     pedido = get_object_or_404(qs, pedi_nume=pk)
 
     status_opcoes = StatusPisosServices.listar_status(

@@ -22,16 +22,6 @@
     },
     {
       "previewLimit": 50,
-      "server": "base.rtalmeida.com.br",
-      "port": 5432,
-      "askForPassword": true,
-      "driver": "PostgreSQL",
-      "name": "savexml1014",
-      "database": "savexml1014",
-      "username": "savexml1014"
-    },
-    {
-      "previewLimit": 50,
       "server": "localhost",
       "port": 5432,
       "askForPassword": true,
@@ -385,6 +375,17 @@
       "database": "rtaweb0001",
       "username": "rtaweb0001",
       "password": "@RtAWeb"
+    },
+    {
+      "ssh": "Disabled",
+      "previewLimit": 50,
+      "server": "base.rtalmeida.com.br",
+      "port": 5432,
+      "driver": "PostgreSQL",
+      "name": "savexml1014",
+      "database": "savexml1014",
+      "username": "savexml1014",
+      "password": "llnnnnnnpppp"
     }
   ],
   "liveServer.settings.port": 5501

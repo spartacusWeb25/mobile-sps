@@ -92,7 +92,7 @@
       <small class="text-muted">Análise por pedidos, grupos, produtos, datas e vendedores</small>
     </div>
     <div class="ms-3">
-      <a href="?export=xlsx" class="btn btn-outline-success btn-sm">
+      <a href="{% url 'PisosWeb:comissoes_vendedores_exportar' slug=slug %}?empresa={{ filtros.empresa }}&filial={{ filtros.filial }}&data_inicial={{ filtros.data_inicial }}&data_final={{ filtros.data_final }}&vendedor={{ filtros.vendedor }}&grupo={{ filtros.grupo }}&agrupar_por={{ filtros.agrupar_por }}&status={{ filtros.status }}" class="btn btn-outline-success btn-sm">
         <i class="bi bi-file-earmark-excel"></i> Exportar Excel
       </a>
     </div>

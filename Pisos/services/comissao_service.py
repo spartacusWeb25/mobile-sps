@@ -353,8 +353,8 @@ class ComissaoService:
             else:
                 item["pedido_numero"] = None
 
-            if len(item["datas"]) == 1:
-                item["data"] = next(iter(item["datas"]))
+            if len(item["datas"]) >= 1:
+                item["data"] = max(item["datas"])
             else:
                 item["data"] = None
 
