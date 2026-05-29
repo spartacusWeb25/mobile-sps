@@ -124,7 +124,10 @@
     </div>
   </div>
 
-  <div class="d-flex justify-content-end mb-3">
+  <div class="d-flex justify-content-end mb-3 gap-2">
+    <a class="btn btn-outline-success d-flex align-items-center gap-2" id="btn-exportar-excel">
+      <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+    </a>
     <a class="btn btn-outline-primary d-flex align-items-center gap-2"
       href="{% url 'PisosWeb:orcamentos_pisos_criar' slug=slug %}">
       <i class="bi bi-plus-lg"></i> Novo
@@ -146,6 +149,26 @@
           <div class="col-6 col-md-1">
             <label class="form-label mb-1">Nº Orçamento</label>
             <input type="number" name="orca_nume" class="form-control form-control-sm" value="{{ filtros.orca_nume }}">
+          </div>
+
+          <div class="col-6 col-md-2">
+            <label class="form-label mb-1">Empresa</label>
+            <select name="empresa_id" id="empresa_id" class="form-select form-select-sm">
+              <option value="">Todas</option>
+              {% for emp in empresas_list %}
+              <option value="{{ emp.empr_codi }}" {% if filtros.empresa_id == emp.empr_codi %}selected{% endif %}>{{ emp.empr_nome }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-6 col-md-2">
+            <label class="form-label mb-1">Filial</label>
+            <select name="filial_id" id="filial_id" class="form-select form-select-sm">
+              <option value="">Todas</option>
+              {% for fil in filiais_list %}
+              <option value="{{ fil.empr_codi }}" {% if filtros.filial_id == fil.empr_codi %}selected{% endif %}>{{ fil.empr_nome }}</option>
+              {% endfor %}
+            </select>
           </div>
 
           <div class="col-6 col-md-3">
@@ -337,6 +360,32 @@
       dataInicio.valueAsDate = new Date(today.getFullYear(), today.getMonth(), 1);
     }
     if (dataFim && !dataFim.value) { dataFim.valueAsDate = new Date(); }
+
+    // Setup export button with dynamic URL
+    const btnExportar = document.getElementById('btn-exportar-excel');
+    if (btnExportar) {
+      btnExportar.href = "{% url 'PisosWeb:orcamentos_pisos_listar_exportar' slug=slug %}";
+      const params = new URLSearchParams(window.location.search);
+      params.delete('page');
+      const queryString = params.toString();
+      if (queryString) {
+        btnExportar.href += '?' + queryString;
+      }
+    }
+
+    // Setup empresa/filial filter relationship
+    const empresaSelect = document.getElementById('empresa_id');
+    const filialSelect = document.getElementById('filial_id');
+    if (empresaSelect && filialSelect) {
+      empresaSelect.addEventListener('change', function() {
+        filialSelect.value = '';
+        // Reload page with new empresa filter to get updated filiais
+        const form = empresaSelect.closest('form');
+        if (form) {
+          form.submit();
+        }
+      });
+    }
 
     const clienteUrl = "{% url 'PisosWeb:autocomplete_clientes' slug=slug %}";
     function setupAutocomplete(inputId, boxId, url) {

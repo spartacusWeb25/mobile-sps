@@ -1,12 +1,12 @@
 from django.urls import path
-from Pisos.web.views.listar import PedidopisosListView
+from Pisos.web.views.listar import PedidopisosListView, ExportarPedidosView
 from Pisos.web.views.criar import criar_pedido_pisos
 from Pisos.web.views.editar import editar_pedido_pisos
 from Pisos.web.views.visualizar import visualizar_pedido_pisos
 from Pisos.web.views.orcamentos_criar import criar_orcamento_pisos
 from Pisos.web.views.orcamentos_editar import editar_orcamento_pisos
 from Pisos.web.views.orcamentos_exportar import exportar_orcamento_pedido
-from Pisos.web.views.orcamentos_listar import OrcamentoPisosListView
+from Pisos.web.views.orcamentos_listar import OrcamentoPisosListView, ExportarOrcamentosView
 from Pisos.web.views.orcamentos_visualizar import visualizar_orcamento_pisos
 from Pisos.web.views.calcular_item_view import api_calcular_item
 from Pisos.web.views.impressao import imprimir_pedido_pisos, imprimir_orcamento_pisos
@@ -37,6 +37,7 @@ urlpatterns = [
     path("pedidos-pisos/<int:pk>/", visualizar_pedido_pisos, name="pedidos_pisos_visualizar"),
     path("pedidos-pisos/<int:pk>/editar/", editar_pedido_pisos, name="pedidos_pisos_editar"),
     path("pedidos-pisos/<int:pk>/imprimir/", imprimir_pedido_pisos, name="pedidos_pisos_imprimir"),
+    path("pedidos-pisos/exportar/", ExportarPedidosView.as_view(), name="pedidos_pisos_exportar"),
     path("pedidos-pisos/<int:pk>/arquivos/upload/", upload_pedido_pisos_arquivo, name="pedidos_pisos_arquivos_upload"),
     path("pedidos-pisos/<int:pk>/arquivos/<int:codigo>/", download_pedido_pisos_arquivo, name="pedidos_pisos_arquivos_download"),
     path(
@@ -53,6 +54,7 @@ urlpatterns = [
     path("orcamentos-pisos/<int:pk>/editar/", editar_orcamento_pisos, name="orcamentos_pisos_editar"),
     path("orcamentos-pisos/<int:pk>/imprimir/", imprimir_orcamento_pisos, name="orcamentos_pisos_imprimir"),
     path("orcamentos-pisos/<int:numero>/exportar/", exportar_orcamento_pedido, name="orcamentos_pisos_exportar"),
+    path("orcamentos-pisos/exportar/", ExportarOrcamentosView.as_view(), name="orcamentos_pisos_listar_exportar"),
     path("calcular-item/", api_calcular_item, name="api_calcular_item"),
     path("comissoes-vendedores/", ComissaoVendedorView.as_view(), name="comissoes_vendedores"),
     path("comissoes-vendedores/exportar/", ExportarComissoesView.as_view(), name="comissoes_vendedores_exportar"),
@@ -67,7 +69,7 @@ urlpatterns = [
         PedidoPisosEmitirNFeView.as_view(),
         name="pedidos_pisos_emitir_nfe",
     ),
-    
+
      path(
         "status-pisos/",
         StatusPisosListView.as_view(),
