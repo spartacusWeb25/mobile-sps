@@ -3,6 +3,22 @@
 
 {% block crm_content %}
 <style>
+  .filters .form-control,
+  .filters .form-select {
+    border-radius: 12px;
+    padding: 0.6rem 0.75rem;
+    font-size: 0.9rem;
+  }
+  .filters .badge {
+    border-radius: 8px;
+    padding: 0.4rem 0.7rem;
+    font-size: 0.85rem;
+  }
+  #autocomplete-vendedor {
+    height: 38px;
+  }
+</style>
+<style>
     /* Cards de resumo - estilo impactante */
     #total,
     #periodo {
@@ -255,10 +271,13 @@
                 </div>
                 <div class="col-12 col-md-2">
                     <label class="form-label">Vendedor</label>
-                    <input type="hidden" id="id_vendedor" name="vendedor"
-                        value="{{ filtros.vendedor|default:vendedor_forcado }}">
-                    <input class="form-control" type="text" id="autocomplete-vendedor"
-                        placeholder="Buscar vendedor por nome ou código" value="{{ vendedor_nome_input|default_if_none:'' }}" {% if vendedor_forcado %}readonly{% endif %}>
+                    <div id="vendedoresSelecionados" class="d-flex flex-wrap gap-2 mb-2"></div>
+                    <div id="hiddenVendedoresContainer"></div>
+                    <div id="autoVendedorContainer" class="position-relative">
+                        <input type="text" id="autocomplete-vendedor" class="form-control"
+                            placeholder="Buscar vendedor por nome ou código" value="" autocomplete="off" {% if vendedor_forcado %}readonly{% endif %}>
+                        <div id="vendedorSugestoes" class="list-group position-absolute w-100" style="z-index:10; max-height:280px; overflow:auto;"></div>
+                    </div>
                 </div>
                 <div class="col-12 col-md-6">
                     <label class="form-label">Cliente</label>
@@ -288,121 +307,88 @@
 
     <script>
         (function () {
-            function createDropdown(inputEl) {
-                let dd = inputEl._autocompleteDropdown;
-                if (!dd) {
-                    dd = document.createElement('div');
-                    dd.className = 'autocomplete-dropdown list-group';
-                    dd.style.position = 'fixed';
-                    dd.style.zIndex = '2000';
-                    dd.style.maxHeight = '280px';
-                    dd.style.overflowY = 'auto';
-                    dd.style.display = 'none';
-                    document.body.appendChild(dd);
-                    inputEl._autocompleteDropdown = dd;
-                }
-                return dd;
-            }
-
-            function positionDropdown(inputEl, dropdown) {
-                const rect = inputEl.getBoundingClientRect();
-                dropdown.style.left = `${rect.left}px`;
-                dropdown.style.top = `${rect.bottom}px`;
-                dropdown.style.width = `${rect.width}px`;
-            }
-
-            function hideDropdown(dropdown) {
-                dropdown.innerHTML = '';
-                dropdown.style.display = 'none';
-            }
-
-            function setupInputAutocomplete({ inputEl, hiddenEl, url }) {
-                if (!inputEl || !hiddenEl) return;
-                const dropdown = createDropdown(inputEl);
-                let controller = null;
-                let debounce = null;
-
-                async function fetchResults(term) {
-                    try {
-                        if (controller) controller.abort();
-                        controller = new AbortController();
-                        const resp = await fetch(`${url}?q=${encodeURIComponent(term)}`, { signal: controller.signal });
-                        const json = await resp.json();
-                        const rawResults = Array.isArray(json) ? json : (json.results || []);
-                        const results = (rawResults || []).map((raw) => ({
-                            id: (typeof raw.id !== 'undefined' && raw.id !== null) ? raw.id : raw.value,
-                            text: (typeof raw.text !== 'undefined' && raw.text !== null) ? raw.text : raw.label,
-                        })).filter((r) => typeof r.id !== 'undefined' && r.id !== null && r.text);
-
-                        dropdown.innerHTML = '';
-                        positionDropdown(inputEl, dropdown);
-                        dropdown.style.display = 'block';
-
-                        results.forEach(item => {
-                            const a = document.createElement('a');
-                            a.href = '#';
-                            a.className = 'list-group-item list-group-item-action';
-                            a.textContent = item.text;
-                            a.dataset.id = item.id;
-                            a.addEventListener('click', (ev) => {
-                                ev.preventDefault();
-                                hiddenEl.value = item.id;
-                                inputEl.value = item.text;
-                                hideDropdown(dropdown);
-                            });
-                            dropdown.appendChild(a);
-                        });
-                        if (results.length === 0) hideDropdown(dropdown);
-                    } catch (e) {
-                        console.error('Erro no autocomplete:', e);
-                    }
-                }
-
-                inputEl.addEventListener('input', (e) => {
-                    const term = e.target.value.trim();
-                    clearTimeout(debounce);
-                    hideDropdown(dropdown);
-                    if (term.length < 2) return;
-                    positionDropdown(inputEl, dropdown);
-                    debounce = setTimeout(() => fetchResults(term), 250);
-                });
-
-                inputEl.addEventListener('blur', () => {
-                    setTimeout(() => { hideDropdown(dropdown); }, 150);
-                });
-
-                window.addEventListener('scroll', () => {
-                    if (dropdown.style.display !== 'none') positionDropdown(inputEl, dropdown);
-                }, true);
-                window.addEventListener('resize', () => {
-                    if (dropdown.style.display !== 'none') positionDropdown(inputEl, dropdown);
-                });
-            }
-
-            async function prefillVendedor() {
-                const hiddenEl = document.getElementById('id_vendedor');
-                const inputEl = document.getElementById('autocomplete-vendedor');
-                if (!hiddenEl || !inputEl) return;
-                const val = (hiddenEl.value || '').trim();
-                if (!val) return;
-                const url = "{% url 'cv-vendedores-autocomplete' slug=slug %}";
-                try {
-                    const resp = await fetch(`${url}?q=${encodeURIComponent(val)}`);
-                    const json = await resp.json();
-                    const results = Array.isArray(json) ? json : (json.results || []);
-                    const match = (results || []).find(r => String(r.id ?? r.value) === String(val));
-                    const text = match ? (match.text ?? match.label) : '';
-                    if (text) inputEl.value = text;
-                } catch (e) {
-                    console.error('Erro ao prefill vendedor:', e);
-                }
-            }
-
-            const inputEl = document.getElementById('autocomplete-vendedor');
-            const hiddenEl = document.getElementById('id_vendedor');
+            const input = document.getElementById('autocomplete-vendedor');
+            const hiddenContainer = document.getElementById('hiddenVendedoresContainer');
+            const chips = document.getElementById('vendedoresSelecionados');
+            const list = document.getElementById('vendedorSugestoes');
             const url = "{% url 'cv-vendedores-autocomplete' slug=slug %}";
-            setupInputAutocomplete({ inputEl, hiddenEl, url });
-            prefillVendedor();
+            let debounce;
+            const selecionados = new Map();
+
+            function addHidden(name, value){
+                const h = document.createElement('input');
+                h.type = 'hidden';
+                h.name = name;
+                h.value = value;
+                hiddenContainer.appendChild(h);
+                return h;
+            }
+
+            function addChip(id, text){
+                if (selecionados.has(id)) return;
+                const h = addHidden('vendedor', id);
+                const span = document.createElement('span');
+                span.className = 'badge bg-primary d-inline-flex align-items-center gap-2';
+                span.textContent = text;
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'btn btn-sm btn-light';
+                btn.textContent = 'x';
+                btn.addEventListener('click', ()=>{ span.remove(); h.remove(); selecionados.delete(id); });
+                span.appendChild(btn);
+                chips.appendChild(span);
+                selecionados.set(id, { h, span });
+            }
+
+            (function preload(){
+                {% for vid in filtros.vendedor|default:vendedor_forcado %}
+                    {% if vid %}
+                        addChip('{{ vid }}', '{{ vendedor_nome_input|default:vid }}');
+                    {% endif %}
+                {% endfor %}
+            })();
+
+            async function fetchResults(term){
+                try{
+                    const r = await fetch(url + `?q=${encodeURIComponent(term)}`, { credentials:'same-origin' });
+                    const j = await r.json();
+                    const results = Array.isArray(j) ? j : (j.results || []);
+                    list.innerHTML = '';
+                    results.forEach(item=>{
+                        const a = document.createElement('a');
+                        a.href = '#';
+                        a.className = 'list-group-item list-group-item-action';
+                        a.textContent = item.text || item.label;
+                        a.dataset.id = item.id || item.value;
+                        a.addEventListener('click', (ev)=>{
+                            ev.preventDefault();
+                            addChip(a.dataset.id, a.textContent);
+                            input.value = '';
+                            list.innerHTML = '';
+                        });
+                        list.appendChild(a);
+                    });
+                }catch(e){ list.innerHTML=''; }
+            }
+
+            input.addEventListener('input', (e)=>{
+                const term = e.target.value.trim();
+                clearTimeout(debounce);
+                list.innerHTML='';
+                if(term.length < 2) return;
+                debounce = setTimeout(()=> fetchResults(term), 250);
+            });
+
+            document.addEventListener('click', (e)=>{ if(!document.getElementById('autoVendedorContainer').contains(e.target)) list.innerHTML=''; });
+
+            // Handle limpar button
+            document.querySelector('a[href*="clientes_sem_movimento_list"]').addEventListener('click', function(){
+                list.innerHTML='';
+                input.value='';
+                hiddenContainer.innerHTML='';
+                chips.innerHTML='';
+                selecionados.clear();
+            });
         })();
     </script>
 

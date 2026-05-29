@@ -27,6 +27,26 @@
         background-color: transparent;
         border-bottom: 1px solid var(--bs-border-color);
         padding: 1.25rem 1.5rem;
+    }
+
+    #filterForm .form-control,
+    #filterForm .form-select {
+        border-radius: 12px;
+        padding: 0.6rem 0.75rem;
+        font-size: 0.9rem;
+    }
+
+    #filterForm .badge {
+        border-radius: 8px;
+        padding: 0.4rem 0.7rem;
+        font-size: 0.85rem;
+    }
+
+    #vendedor {
+        height: 38px;
+    }
+
+    .card-header h5 {
         font-weight: 600;
         color: var(--bs-heading-color, var(--bs-body-color));
         font-size: 1.1rem;
@@ -270,10 +290,13 @@
             </div>
             <div class="col-md-3">
                 <label for="vendedor" class="form-label">Vendedor(es)</label>
-                <select class="form-select" id="vendedor" name="vendedor_nome" multiple>
-                    <option value="">Todos</option>
-                </select>
-                <small class="text-muted">Segure Ctrl para selecionar múltiplos</small>
+                <div id="vendedoresSelecionados" class="d-flex flex-wrap gap-2 mb-2"></div>
+                <div id="hiddenVendedoresContainer"></div>
+                <div id="autoVendedorContainer" class="position-relative">
+                    <input type="text" id="vendedor" class="form-control"
+                        placeholder="Buscar vendedor por nome ou código" value="" autocomplete="off" />
+                    <div id="vendedorSugestoes" class="list-group position-absolute w-100" style="z-index:10; max-height:280px; overflow:auto;"></div>
+                </div>
             </div>
             <div class="col-md-3">
                 <label for="item" class="form-label">Item</label>
@@ -497,6 +520,14 @@
     function limparFiltros() {
         document.getElementById('filterForm').reset();
 
+        // Clear vendor chips
+        const vendedoresChips = document.getElementById('vendedoresSelecionados');
+        const vendedoresHiddenContainer = document.getElementById('hiddenVendedoresContainer');
+        const vendedoresInput = document.getElementById('vendedor');
+        if (vendedoresChips) vendedoresChips.innerHTML = '';
+        if (vendedoresHiddenContainer) vendedoresHiddenContainer.innerHTML = '';
+        if (vendedoresInput) vendedoresInput.value = '';
+
         // Restore context defaults
         const contextEmpresa = "{{ empresa|default:'' }}";
         const contextFilial = "{{ filial|default:'' }}";
@@ -565,13 +596,72 @@
             updateFiliais(this.value);
         });
 
-        // Popular Vendedores
-        vendedoresData.forEach(vend => {
-            const option = document.createElement('option');
-            option.value = vend.enti_clie;
-            option.textContent = vend.enti_nome;
-            vendedorSelect.appendChild(option);
+        // Setup autocomplete for vendedores with chips pattern
+        const vendedoresInput = document.getElementById('vendedor');
+        const vendedoresChips = document.getElementById('vendedoresSelecionados');
+        const vendedoresHiddenContainer = document.getElementById('hiddenVendedoresContainer');
+        const vendedoresSugestoes = document.getElementById('vendedorSugestoes');
+        const vendedoresSelecionados = new Map();
+        let vendedorDebounce;
+
+        function addVendedorHidden(name, value){
+            const h = document.createElement('input');
+            h.type = 'hidden';
+            h.name = name;
+            h.value = value;
+            vendedoresHiddenContainer.appendChild(h);
+            return h;
+        }
+
+        function addVendedorChip(id, text){
+            if (vendedoresSelecionados.has(id)) return;
+            const h = addVendedorHidden('vendedor_nome', text);
+            const span = document.createElement('span');
+            span.className = 'badge bg-primary d-inline-flex align-items-center gap-2';
+            span.textContent = text;
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'btn btn-sm btn-light';
+            btn.textContent = 'x';
+            btn.addEventListener('click', ()=>{ span.remove(); h.remove(); vendedoresSelecionados.delete(id); });
+            span.appendChild(btn);
+            vendedoresChips.appendChild(span);
+            vendedoresSelecionados.set(id, { h, span });
+        }
+
+        async function fetchVendedoresResults(term){
+            try{
+                const results = vendedoresData.filter(vend =>
+                    vend.enti_nome.toLowerCase().includes(term.toLowerCase()) ||
+                    String(vend.enti_clie).includes(term)
+                );
+                vendedoresSugestoes.innerHTML = '';
+                results.forEach(item=>{
+                    const a = document.createElement('a');
+                    a.href = '#';
+                    a.className = 'list-group-item list-group-item-action';
+                    a.textContent = item.enti_nome;
+                    a.dataset.id = item.enti_clie;
+                    a.addEventListener('click', (ev)=>{
+                        ev.preventDefault();
+                        addVendedorChip(item.enti_clie, item.enti_nome);
+                        vendedoresInput.value = '';
+                        vendedoresSugestoes.innerHTML = '';
+                    });
+                    vendedoresSugestoes.appendChild(a);
+                });
+            }catch(e){ vendedoresSugestoes.innerHTML=''; }
+        }
+
+        vendedoresInput.addEventListener('input', (e)=>{
+            const term = e.target.value.trim();
+            clearTimeout(vendedorDebounce);
+            vendedoresSugestoes.innerHTML='';
+            if(term.length < 2) return;
+            vendedorDebounce = setTimeout(()=> fetchVendedoresResults(term), 250);
         });
+
+        document.addEventListener('click', (e)=>{ if(!document.getElementById('autoVendedorContainer').contains(e.target)) vendedoresSugestoes.innerHTML=''; });
 
         // Dados de contexto do Django (Sessão)
         const contextEmpresa = "{{ empresa|default:'' }}";

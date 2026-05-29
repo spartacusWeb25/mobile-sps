@@ -66,6 +66,23 @@
   .autocomplete-box .list-group-item { cursor: pointer; padding: 8px 12px; border: none; border-bottom: 1px solid #f0f0f0; }
   .autocomplete-box .list-group-item:hover { background-color: #f8f9fa; }
   .autocomplete-box .list-group-item:last-child { border-bottom: none; }
+
+  #filterForm .form-control,
+  #filterForm .form-select {
+    border-radius: 12px;
+    padding: 0.6rem 0.75rem;
+    font-size: 0.9rem;
+  }
+
+  #filterForm .badge {
+    border-radius: 8px;
+    padding: 0.4rem 0.7rem;
+    font-size: 0.85rem;
+  }
+
+  #vendedor_nome {
+    height: 38px;
+  }
 </style>
 
 <div class="container py-4">
@@ -142,13 +159,13 @@
 
           <div class="col-6 col-md-2">
             <label class="form-label mb-1">Vendedor(es)</label>
-            <select class="form-select form-select-sm" id="vendedor_nome" name="vendedor_nome" multiple
-              title="Segure Ctrl para múltiplos">
-              <option value="">Todos</option>
-              {% for v in vendedores_list %}
-              <option value="{{ v.enti_nome }}" {% if v.enti_nome in filtros.vendedor_nome %}selected{% endif %}>{{ v.enti_nome }}</option>
-              {% endfor %}
-            </select>
+            <div id="vendedoresSelecionados" class="d-flex flex-wrap gap-2 mb-2"></div>
+            <div id="hiddenVendedoresContainer"></div>
+            <div id="autoVendedorContainer" class="position-relative">
+              <input type="text" id="vendedor_nome" class="form-control form-control-sm"
+                placeholder="Buscar vendedor por nome ou código" value="" autocomplete="off" />
+              <div id="vendedorSugestoes" class="list-group position-absolute w-100" style="z-index:10; max-height:280px; overflow:auto;"></div>
+            </div>
           </div>
 
           <div class="col-6 col-md-2">
@@ -361,6 +378,84 @@
       });
     }
     setupAutocomplete('cliente_nome', 'cliente_autocomplete', clienteUrl);
+
+    // Setup vendor autocomplete with chips pattern
+    const vendedoresInput = document.getElementById('vendedor_nome');
+    const vendedoresChips = document.getElementById('vendedoresSelecionados');
+    const vendedoresHiddenContainer = document.getElementById('hiddenVendedoresContainer');
+    const vendedoresSugestoes = document.getElementById('vendedorSugestoes');
+    const vendedoresSelecionados = new Map();
+    let vendedorDebounce;
+
+    function addVendedorHidden(name, value){
+      const h = document.createElement('input');
+      h.type = 'hidden';
+      h.name = name;
+      h.value = value;
+      vendedoresHiddenContainer.appendChild(h);
+      return h;
+    }
+
+    function addVendedorChip(id, text){
+      if (vendedoresSelecionados.has(id)) return;
+      const h = addVendedorHidden('vendedor_nome', text);
+      const span = document.createElement('span');
+      span.className = 'badge bg-primary d-inline-flex align-items-center gap-2';
+      span.textContent = text;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn btn-sm btn-light';
+      btn.textContent = 'x';
+      btn.addEventListener('click', ()=>{ span.remove(); h.remove(); vendedoresSelecionados.delete(id); });
+      span.appendChild(btn);
+      vendedoresChips.appendChild(span);
+      vendedoresSelecionados.set(id, { h, span });
+    }
+
+    (function preloadVendedores(){
+      {% for v in filtros.vendedor_nome|default_if_none:'' %}
+        addVendedorChip('{{ v }}', '{{ v }}');
+      {% endfor %}
+    })();
+
+    async function fetchVendedoresResults(term){
+      try{
+        const vendedoresData = [
+          {% for v in vendedores_list %}
+            { enti_clie: '{{ v.enti_clie }}', enti_nome: '{{ v.enti_nome }}' },
+          {% endfor %}
+        ];
+        const results = vendedoresData.filter(vend =>
+          vend.enti_nome.toLowerCase().includes(term.toLowerCase()) ||
+          String(vend.enti_clie).includes(term)
+        );
+        vendedoresSugestoes.innerHTML = '';
+        results.forEach(item=>{
+          const a = document.createElement('a');
+          a.href = '#';
+          a.className = 'list-group-item list-group-item-action';
+          a.textContent = item.enti_nome;
+          a.dataset.id = item.enti_clie;
+          a.addEventListener('click', (ev)=>{
+            ev.preventDefault();
+            addVendedorChip(item.enti_clie, item.enti_nome);
+            vendedoresInput.value = '';
+            vendedoresSugestoes.innerHTML = '';
+          });
+          vendedoresSugestoes.appendChild(a);
+        });
+      }catch(e){ vendedoresSugestoes.innerHTML=''; }
+    }
+
+    vendedoresInput.addEventListener('input', (e)=>{
+      const term = e.target.value.trim();
+      clearTimeout(vendedorDebounce);
+      vendedoresSugestoes.innerHTML='';
+      if(term.length < 2) return;
+      vendedorDebounce = setTimeout(()=> fetchVendedoresResults(term), 250);
+    });
+
+    document.addEventListener('click', (e)=>{ if(!document.getElementById('autoVendedorContainer').contains(e.target)) vendedoresSugestoes.innerHTML=''; });
   });
 
   function getCookie(name) {
