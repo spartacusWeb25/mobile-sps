@@ -176,7 +176,9 @@ class EntidadesForm(forms.ModelForm):
         empresa_val = empresa_header or empresa_sess
         filial_val = filial_header or filial_sess  # reservado para futuros usos
 
-        if instance.enti_empr is None:
+        # Só define enti_empr na criação (quando enti_clie é None)
+        # Na edição, mantém o valor existente para não violar a PK composta
+        if instance.enti_empr is None and not instance.enti_clie:
             if empresa_val is None:
                 raise ValueError("A empresa (`enti_empr`) deve ser informada via cabeçalho X-Empresa ou sessão antes de salvar.")
             try:
@@ -210,7 +212,14 @@ class EntidadesForm(forms.ModelForm):
                 logger.debug(f"Editando registro existente. enti_clie mantido: {instance.enti_clie}")
 
             if commit:
-                instance.save(using=db_alias)
+                # Na edição, usa update_fields para não tentar alterar a PK composta
+                if instance.enti_clie:
+                    # Edição: atualiza apenas campos editáveis, excluindo PKs
+                    update_fields = [f.name for f in instance._meta.fields if f.name not in ('enti_empr', 'enti_clie')]
+                    instance.save(using=db_alias, update_fields=update_fields)
+                else:
+                    # Criação: salva normalmente
+                    instance.save(using=db_alias)
                 logger.debug(f"Registro salvo com sucesso: {instance.enti_clie}")
 
         return instance 
