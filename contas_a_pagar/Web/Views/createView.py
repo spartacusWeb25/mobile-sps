@@ -35,6 +35,25 @@ class TitulosPagarCreateView(DBAndSlugMixin, CreateView):
                 dados['titu_fili'] = int(filial)
             except Exception:
                 dados['titu_fili'] = filial 
+        
+        # Verificar se já existe título com as mesmas condições
+        queryset = Titulospagar.objects.using(banco).filter(
+            titu_empr=dados['titu_empr'],
+            titu_fili=dados['titu_fili'],
+            titu_forn=dados['titu_forn'],
+            titu_titu=dados['titu_titu'],
+            titu_seri=dados['titu_seri'],
+            titu_parc=dados['titu_parc']
+        )
+        if dados.get('titu_emis'):
+            queryset = queryset.filter(titu_emis=dados['titu_emis'])
+        if dados.get('titu_venc'):
+            queryset = queryset.filter(titu_venc=dados['titu_venc'])
+        
+        if queryset.exists():
+            messages.error(self.request, 'Já existe um título com as mesmas condições lançado no sistema.')
+            return self.form_invalid(form)
+        
         avisos = validar_datas_titulo(
             titu_emis=dados.get('titu_emis'),
             titu_venc=dados.get('titu_venc'),
@@ -56,8 +75,10 @@ class TitulosPagarParcelasCreateView(DBAndSlugMixin, CreateView):
     template_name = 'ContasAPagar/parcelas_a_pagar.html'
     
     def form_valid(self, form):
+        print(f"[DEBUG PARCELAS] ===== form_valid INICIADO =====")
         banco = get_licenca_db_config(self.request) or 'default'
         dados = form.cleaned_data
+        print(f"[DEBUG PARCELAS] dados: {dados}")
         empresa = (self.request.session.get('empresa_id')
                or self.request.headers.get('X-Empresa')
                or self.request.GET.get('titu_empr')
@@ -76,6 +97,31 @@ class TitulosPagarParcelasCreateView(DBAndSlugMixin, CreateView):
                 dados['titu_fili'] = int(filial)
             except Exception:
                 dados['titu_fili'] = filial 
+        
+        # Verificar se já existe título com as mesmas condições
+        queryset = Titulospagar.objects.using(banco).filter(
+            titu_empr=dados['titu_empr'],
+            titu_fili=dados['titu_fili'],
+            titu_forn=dados['titu_forn'],
+            titu_titu=dados['titu_titu'],
+            titu_seri=dados['titu_seri'],
+            titu_parc=dados['titu_parc']
+        )
+        if dados.get('titu_emis'):
+            queryset = queryset.filter(titu_emis=dados['titu_emis'])
+        if dados.get('titu_venc'):
+            queryset = queryset.filter(titu_venc=dados['titu_venc'])
+        
+        print(f"[DEBUG PARCELAS] Verificando duplicata: empresa={dados.get('titu_empr')}, filial={dados.get('itu_fili')}, fornecedor={dados.get('titu_forn')}, titulo={dados.get('titu_titu')}, serie={dados.get('titu_seri')}, parcela={dados.get('titu_parc')}")
+        print(f"[DEBUG PARCELAS] Queryset count: {queryset.count()}")
+        
+        if queryset.exists():
+            print(f"[DEBUG PARCELAS] Duplicata encontrada! Adicionando mensagem de erro.")
+            messages.error(self.request, 'Já existe um título com as mesmas condições lançado no sistema.')
+            return self.form_invalid(form)
+        else:
+            print(f"[DEBUG PARCELAS] Nenhuma duplicata encontrada. Continuando com criação.")
+        
         avisos = validar_datas_titulo(
             titu_emis=dados.get('titu_emis'),
             titu_venc=dados.get('titu_venc'),
@@ -89,5 +135,4 @@ class TitulosPagarParcelasCreateView(DBAndSlugMixin, CreateView):
             titulo=self.object,
             banco=banco,
         )
-        _gerar_lancamento(self.object, banco=banco)
         return redirect('contas_a_pagar_web:parcelas_a_pagar_list', slug=self.slug)

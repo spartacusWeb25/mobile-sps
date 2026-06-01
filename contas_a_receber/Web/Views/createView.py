@@ -13,6 +13,15 @@ class TitulosReceberCreateView(DBAndSlugMixin, CreateView):
     form_class = TitulosReceberForm
     template_name = 'ContasAReceber/titulo_receber_criar.html'
     
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        form = context.get('form')
+        cliente_id = None
+        if form:
+            cliente_id = (form.data.get('titu_clie') or form.initial.get('titu_clie'))
+        context['cliente_nome'] = (self.cliente_nome(cliente_id) if cliente_id else '')
+        return context
+    
     def cliente_nome(self, cliente_id):
         banco = get_licenca_db_config(self.request) or 'default'
         from Entidades.models import Entidades
@@ -61,6 +70,21 @@ class TitulosReceberCreateView(DBAndSlugMixin, CreateView):
                 dados['titu_fili'] = int(filial)
             except Exception:
                 dados['titu_fili'] = filial
+        
+        # Verificar se já existe título com as mesmas condições
+        queryset = Titulosreceber.objects.using(banco).filter(
+            titu_empr=dados['titu_empr'],
+            titu_fili=dados['titu_fili'],
+            titu_clie=dados['titu_clie'],
+            titu_titu=dados['titu_titu'],
+            titu_seri=dados['titu_seri'],
+            titu_parc=dados['titu_parc']
+        )
+        
+        if queryset.exists():
+            messages.error(self.request, 'Já existe um título com as mesmas condições lançado no sistema.')
+            return self.form_invalid(form)
+        
         avisos = validar_datas_titulo(
             titu_emis=dados.get('titu_emis'),
             titu_venc=dados.get('titu_venc'),
@@ -113,6 +137,21 @@ class TitulosReceberParcelasCreateView(DBAndSlugMixin, CreateView):
                 dados['titu_fili'] = int(filial)
             except Exception:
                 dados['titu_fili'] = filial
+        
+        # Verificar se já existe título com as mesmas condições
+        queryset = Titulosreceber.objects.using(banco).filter(
+            titu_empr=dados['titu_empr'],
+            titu_fili=dados['titu_fili'],
+            titu_clie=dados['titu_clie'],
+            titu_titu=dados['titu_titu'],
+            titu_seri=dados['titu_seri'],
+            titu_parc=dados['titu_parc']
+        )
+        
+        if queryset.exists():
+            messages.error(self.request, 'Já existe um título com as mesmas condições lançado no sistema.')
+            return self.form_invalid(form)
+        
         avisos = validar_datas_titulo(
             titu_emis=dados.get('titu_emis'),
             titu_venc=dados.get('titu_venc'),
@@ -131,5 +170,4 @@ class TitulosReceberParcelasCreateView(DBAndSlugMixin, CreateView):
             titulo=self.object,
             banco=banco,
         )
-        print("criação de parcelas a recebert:", self.object)
         return redirect('contas_a_receber_web:parcelas_a_receber_list', slug=self.slug)
