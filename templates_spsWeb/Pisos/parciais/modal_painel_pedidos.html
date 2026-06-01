@@ -38,7 +38,8 @@
                             <tbody>
 
                                 {% for item in pedidos_pendentes %}
-                                <tr>
+                                <tr style="cursor:pointer"
+                                    onclick="window.location.href='{% url 'PisosWeb:pedidos_pisos_visualizar' slug=slug pk=item.pedi_nume %}'">
                                     <td>{{ item.pedi_nume }}</td>
                                     <td>{{ item.pedi_clie }}</td>
                                     <td>{{ item.pedi_vend }}</td>
@@ -87,7 +88,8 @@
                             <tbody>
 
                                 {% for item in pedidos_atrasados %}
-                                <tr class="table-danger">
+                                <tr class="table-danger" style="cursor:pointer"
+                                    onclick="window.location.href='{% url 'PisosWeb:pedidos_pisos_visualizar' slug=slug pk=item.pedi_nume %}'">
                                     <td>{{ item.pedi_nume }}</td>
                                     <td>{{ item.pedi_clie }}</td>
                                     <td>{{ item.pedi_vend }}</td>

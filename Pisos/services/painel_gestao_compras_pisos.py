@@ -19,7 +19,7 @@ class PainelPedidosService:
         filtros = Q()
         if empr:
             filtros &= Q(pedi_empr=empr)
-        filtros &= ~Q(pedi_stat=1)
+        filtros &= Q(pedi_stat=1)
 
         if fili:
             filtros &= Q(pedi_fili=fili)
@@ -52,8 +52,8 @@ class PainelPedidosService:
         filtros = Q()
         if empr:
             filtros &= Q(pedi_empr=empr)
-        filtros &= Q(pedi_data_prev_entr__lt=hoje)
-        filtros &= ~Q(pedi_stat=1)
+        filtros &= Q(pedi_data_prev_entr__gt=hoje)
+        filtros &= Q(pedi_stat__gte=2)
 
         if fili:
             filtros &= Q(pedi_fili=fili)
