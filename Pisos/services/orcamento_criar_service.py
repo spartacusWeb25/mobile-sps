@@ -9,9 +9,35 @@ from Produtos.models import Produtos
 
 
 class OrcamentoCriarService:
+    @staticmethod
+    def normalizar_erro(exc):
+        """Normaliza exceções para mensagens amigáveis ao usuário."""
+        if isinstance(exc, ValueError):
+            return str(exc)
+        if "duplicate key" in str(exc).lower():
+            return "Já existe um orçamento com este número para esta empresa/filial."
+        if "unique constraint" in str(exc).lower():
+            return "Violação de restrição única: registro já existe."
+        return str(exc)
+    
+    def _validar_campos_obrigatorios(self, dados):
+        """Valida campos obrigatórios e retorna lista de campos faltantes."""
+        campos_faltantes = []
+        
+        if not dados.get("orca_empr"):
+            campos_faltantes.append("Empresa")
+        if not dados.get("orca_fili"):
+            campos_faltantes.append("Filial")
+        
+        return campos_faltantes
+    
     def executar(self, *, banco, dados, itens):
         if not itens:
             raise ValueError("Itens do orçamento são obrigatórios.")
+        
+        campos_faltantes = self._validar_campos_obrigatorios(dados)
+        if campos_faltantes:
+            raise ValueError(f"Campos obrigatórios faltando: {', '.join(campos_faltantes)}")
 
         with transaction.atomic(using=banco):
             parametros = (dados or {}).get("parametros") or {}
@@ -76,17 +102,55 @@ class OrcamentoCriarService:
         dados_orcamento.pop("usar_credito", None)
         dados_orcamento.pop("valor_credito", None)
 
-        dados_orcamento["orca_nume"] = proximo_numero
         dados_orcamento["orca_tota"] = Decimal("0.00")
         
-        orcamento = Orcamentopisos.objects.using(banco).create(**dados_orcamento)
+        # Encontrar próximo número livre (pular números já existentes)
+        max_tentativas = 100
+        tentativa = 0
+        while tentativa < max_tentativas:
+            tentativa += 1
+            dados_orcamento["orca_nume"] = proximo_numero
+            
+            # Verificar se já existe
+            existe = Orcamentopisos.objects.using(banco).filter(
+                orca_empr=dados["orca_empr"],
+                orca_fili=dados["orca_fili"],
+                orca_nume=proximo_numero
+            ).exists()
+            
+            if not existe:
+                break
+            
+            proximo_numero += 1
+        
+        if tentativa >= max_tentativas:
+            raise ValueError("Não foi possível encontrar um número disponível para o orçamento após 100 tentativas.")
+        
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"Criando orçamento com número {proximo_numero} para empresa {dados['orca_empr']}, filial {dados['orca_fili']}")
+        
+        orcamento = Orcamentopisos(**dados_orcamento)
+        orcamento.save(using=banco, force_insert=True)
+        print(
+                Orcamentopisos.objects.using(banco)
+                .filter(
+                    orca_empr=orcamento.orca_empr,
+                    orca_fili=orcamento.orca_fili,
+                    orca_nume=orcamento.orca_nume
+                )
+                .exists()
+            )
+
+        print("PASSO 1")
 
         ClienteEnderecoService.preencher_orcamento(
             banco=banco,
             orcamento=orcamento,
         )
 
-        orcamento.save(using=banco)
+        print("PASSO 2")
+        print("PASSO 3")
 
         return orcamento
 
