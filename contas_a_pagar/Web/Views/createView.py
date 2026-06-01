@@ -6,6 +6,7 @@ from ..mixin import DBAndSlugMixin
 from ..forms import TitulosPagarForm
 from ...models import Titulospagar
 from ...validators import validar_datas_titulo
+from django.db import IntegrityError
 
 
 class TitulosPagarCreateView(DBAndSlugMixin, CreateView):
@@ -126,7 +127,14 @@ class TitulosPagarParcelasCreateView(DBAndSlugMixin, CreateView):
             return self.form_invalid(form)
 
         from ...services import criar_titulo_pagar, gera_parcelas_a_pagar
-        self.object = criar_titulo_pagar(banco=banco, dados=dados)
+        
+
+        try:
+            self.object = criar_titulo_pagar(banco=banco, dados=dados)
+        except IntegrityError:
+            form.add_error(None, '❌ Já existe um título com essas condições (mesma empresa, filial, fornecedor, número, série e parcela).')
+            return self.form_invalid(form)
+        
         gera_parcelas_a_pagar(
             titulo=self.object,
             banco=banco,

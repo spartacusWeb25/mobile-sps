@@ -1,4 +1,5 @@
 from django import forms
+from django.core.exceptions import ValidationError
 from ..models import Titulospagar
 
 
@@ -20,6 +21,7 @@ class TitulosPagarForm(forms.ModelForm):
             'titu_valo': forms.NumberInput(attrs={'type': 'number', 'step': '0.01', 'class': 'form-control'}),
             'titu_cecu': forms.HiddenInput(),
         }
+        unique_together = ()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -30,3 +32,7 @@ class TitulosPagarForm(forms.ModelForm):
                     self.fields[f].disabled = True
                     attrs = self.fields[f].widget.attrs
                     attrs['readonly'] = 'readonly'
+
+    def clean(self):
+        return self.cleaned_data
+

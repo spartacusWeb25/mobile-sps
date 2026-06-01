@@ -6,6 +6,7 @@ from ..mixin import DBAndSlugMixin
 from ..forms import TitulosReceberForm
 from ...models import Titulosreceber
 from ...validators import validar_datas_titulo
+from django.db import IntegrityError
 
 
 class TitulosReceberCreateView(DBAndSlugMixin, CreateView):
@@ -155,12 +156,18 @@ class TitulosReceberParcelasCreateView(DBAndSlugMixin, CreateView):
             return self.form_invalid(form)
 
         from ...services import criar_titulo_receber, gera_parcelas_a_receber
-        self.object = criar_titulo_receber(
-            banco=banco,
-            dados=dados,
-            empresa_id=(dados.get('titu_empr') or empresa),
-            filial_id=(dados.get('titu_fili') or filial)
-        )
+        
+        try:
+            self.object = criar_titulo_receber(
+                banco=banco,
+                dados=dados,
+                empresa_id=(dados.get('titu_empr') or empresa),
+                filial_id=(dados.get('titu_fili') or filial)
+            )
+        except IntegrityError:
+            form.add_error(None, '❌ Já existe um título com essas condições (mesma empresa, filial, cliente, número, série e parcela).')
+            return self.form_invalid(form)
+        
         gera_parcelas_a_receber(
             titulo=self.object,
             banco=banco,

@@ -17,3 +17,6 @@ class TitulosReceberForm(forms.ModelForm):
             'titu_titu': forms.TextInput(attrs={'class': 'form-control', 'maxlength': 13}),
             'titu_cecu': forms.HiddenInput(),
         }
+
+    def clean(self):
+        return self.cleaned_data
