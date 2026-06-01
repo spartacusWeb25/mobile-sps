@@ -192,7 +192,6 @@
     overflow: auto;
   }
 
-
   .itens-table-wrap thead th {
     position: sticky;
     top: 0;
@@ -381,6 +380,40 @@
     }
   }
 
+  /* ── KOHLER MODE STYLES ── */
+  .kohler-mode #itens-table th:nth-child(2),
+  .kohler-mode #itens-table th:nth-child(3),
+  .kohler-mode #itens-table th:nth-child(4),
+  .kohler-mode #itens-table td:nth-child(2),
+  .kohler-mode #itens-table td:nth-child(3),
+  .kohler-mode #itens-table td:nth-child(4) {
+    display: none !important;
+  }
+
+  .kohler-mode #itens-table th:nth-child(9),
+  .kohler-mode #itens-table th:nth-child(10),
+  .kohler-mode #itens-table td:nth-child(9),
+  .kohler-mode #itens-table td:nth-child(10) {
+    display: none !important;
+  }
+
+  .kohler-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    margin-left: 8px;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+
   @media (min-width: 1200px) {
     .pedido-body {
       min-height: 580px;
@@ -478,6 +511,18 @@
                   value="{{ vendedor_label|default:'' }}">
                 <div class="d-none">{{ form.pedi_vend }}</div>
               </div>
+
+              <!-- ── KOHLER SWITCH ── -->
+              <div class="col-12">
+                <div class="form-check form-switch" style="padding-top:8px">
+                  <input class="form-check-input" type="checkbox" id="kohler-mode" 
+                    style="width:2.5rem;height:1.5rem;cursor:pointer">
+                  <label class="form-check-label" for="kohler-mode" style="font-size:12px;color:var(--muted);margin-top:2px">
+                    <strong style="color:var(--warning)">Kohler</strong> <span style="font-size:10px">(Marca 98)</span>
+                  </label>
+                </div>
+              </div>
+
               <div class="col-12">
                 <label>Observações</label>
                 {{ form.pedi_obse }}
@@ -507,7 +552,10 @@
         <div class="col-12 col-xl-9">
           <div class="section-card h-100 d-flex flex-column" style="padding-bottom:0">
             <div class="d-flex justify-content-between align-items-center mb-2">
-              <div class="section-title mb-0"><i class="bi bi-grid-3x3 me-1"></i>Itens do Pedido</div>
+              <div class="section-title mb-0">
+                <i class="bi bi-grid-3x3 me-1"></i>Itens do Pedido
+                <span id="kohler-badge" class="kohler-badge d-none">Kohler</span>
+              </div>
               <button type="button" id="btn-add-item" class="btn btn-sm btn-outline-primary">
                 <i class="bi bi-plus-lg"></i> Adicionar Item
               </button>
@@ -516,7 +564,6 @@
             {{ formset.management_form }}
 
             <style>
-              /* Melhor handling para evitar barra lateral da página e caber a tabela no container */
               .itens-table-wrap {
                 overflow-x: auto;
                 overflow-y: auto;
@@ -538,7 +585,6 @@
                 vertical-align: middle;
               }
 
-              /* Permitir quebra para colunas de texto (produto/descrição) e encurtar números */
               .itens-table-wrap table th,
               .itens-table-wrap table td {
                 white-space: nowrap;
@@ -552,7 +598,6 @@
                 word-break: break-word;
               }
 
-              /* Tornar inputs e conteúdo adaptáveis */
               .itens-table-wrap input.form-control {
                 padding: 0.25rem 0.4rem;
                 font-size: 0.86rem;
@@ -744,6 +789,69 @@
     const URL_ALTERAR_STATUS = "{% if pedido %}{% url 'PisosWeb:pedidos_pisos_alterar_status' slug=slug pk=pedido.pedi_nume %}{% endif %}";
     const STATUS_EMPRESA = "{{ pedido.pedi_empr|default:'' }}";
     const STATUS_FILIAL = "{{ pedido.pedi_fili|default:'' }}";
+
+    /* ── KOHLER MODE ── */
+    const KOHLER_MARCA = '98';
+    let kohlerModeActive = false;
+
+    function toggleKohlerMode() {
+      const kohlerSwitch = document.getElementById('kohler-mode');
+      const kohlerbadge = document.getElementById('kohler-badge');
+      if (!kohlerSwitch) return;
+      
+      kohlerModeActive = kohlerSwitch.checked;
+      const wrapper = document.querySelector('.pedido-wrapper');
+      
+      if (kohlerModeActive) {
+        wrapper?.classList.add('kohler-mode');
+        kohlerbadge?.classList.remove('d-none');
+        console.log('✅ Modo Kohler ATIVADO');
+      } else {
+        wrapper?.classList.remove('kohler-mode');
+        kohlerbadge?.classList.add('d-none');
+        console.log('❌ Modo Kohler DESATIVADO');
+      }
+      
+      atualizarTotais();
+    }
+
+    function getAutoCompleteUrlWithMarca(baseUrl, applyMarca) {
+      applyMarca = applyMarca !== undefined ? applyMarca : true;
+      if (!applyMarca || !kohlerModeActive) return baseUrl;
+      var separator = baseUrl.includes('?') ? '&' : '?';
+      return baseUrl + separator + 'marca=' + KOHLER_MARCA;
+    }
+
+    function calcularItemKohler(index) {
+      const quanInput = document.getElementById('quan-' + index);
+      const unitInput = document.getElementById('unit-' + index);
+      const sutoInput = document.getElementById('suto-' + index);
+      
+      const quant = parseNumberBR(quanInput?.value || 0);
+      const unit = parseNumberBR(unitInput?.value || 0);
+      
+      const subtotal = quant * unit;
+      
+      if (sutoInput) {
+        sutoInput.value = subtotal.toFixed(2);
+      }
+      
+      const hiddenQuan = document.getElementById('id_itens-' + index + '-item_quan');
+      const hiddenUnit = document.getElementById('id_itens-' + index + '-item_unit');
+      
+      if (hiddenQuan) hiddenQuan.value = String(quant);
+      if (hiddenUnit) hiddenUnit.value = String(unit);
+      
+      atualizarTotais();
+    }
+
+    function debounceCalcKohler(index, delay) {
+      delay = delay || 300;
+      clearTimeout(calcTimers[index]);
+      calcTimers[index] = setTimeout(function () { 
+        calcularItemKohler(index);
+      }, delay);
+    }
 
     /* ── Modal NF-e ── */
     function showEmitirNFeModal() {
@@ -943,7 +1051,7 @@
     }
 
     /* ── Autocomplete ── */
-    function setupAutocomplete(inputId, hiddenId, url, onSelect) {
+    function setupAutocomplete(inputId, hiddenId, url, onSelect, applyMarca) {
       var input = document.getElementById(inputId);
       var hidden = document.getElementById(hiddenId);
       if (!input || !hidden) return;
@@ -994,7 +1102,9 @@
         debounceTimer = setTimeout(async function () {
           try {
             positionBox();
-            var res = await fetch(url + '?term=' + encodeURIComponent(term));
+            var urlComMarca = getAutoCompleteUrlWithMarca(url, applyMarca);
+            var separator = urlComMarca.includes('?') ? '&' : '?';
+            var res = await fetch(urlComMarca + separator + 'term=' + encodeURIComponent(term));
             var payload = await res.json();
             var data = Array.isArray(payload) ? payload : (payload.results || []);
             box.innerHTML = '';
@@ -1027,14 +1137,16 @@
       });
     }
 
-    async function prefillAutocomplete(inputId, hiddenId, url, onSelect) {
+    async function prefillAutocomplete(inputId, hiddenId, url, onSelect, applyMarca) {
       var input = document.getElementById(inputId);
       var hidden = document.getElementById(hiddenId);
       if (!input || !hidden) return;
       var currentId = String(hidden.value || '').trim();
       if (!currentId || String(input.value || '').trim()) return;
       try {
-        var res = await fetch(url + '?term=' + encodeURIComponent(currentId));
+        var urlComMarca = getAutoCompleteUrlWithMarca(url, applyMarca);
+        var separator = urlComMarca.includes('?') ? '&' : '?';
+        var res = await fetch(urlComMarca + separator + 'term=' + encodeURIComponent(currentId));
         var payload = await res.json();
         var data = Array.isArray(payload) ? payload : (payload.results || []);
         if (Array.isArray(data) && data.length) {
@@ -1174,13 +1286,11 @@
         if (hiddenCaix && !caixInput) hiddenCaix.value = data.caixas || '';
         if (kgInput) kgInput.value = data.kg_total || '0.00';
         if (hiddenKg) hiddenKg.value = data.kg_total || '0.00';
-        // Atualiza metragem (m2) com o valor real calculado e também a quantidade
         var m2Input = document.getElementById('m2-' + index);
         var hiddenM2 = document.getElementById('id_itens-' + index + '-item_m2');
         if (m2Input) m2Input.value = data.quantidade || '';
         if (hiddenM2) hiddenM2.value = normalizeNumberBR(data.quantidade || '');
         if (quanInput) {
-          // Atualiza a quantidade com o valor real calculado (metragem real baseada em caixas)
           quanInput.value = data.quantidade || '';
         }
         if (hiddenQuan) hiddenQuan.value = data.quantidade || '';
@@ -1200,8 +1310,6 @@
         if (spinner) spinner.style.display = 'none';
       }
     }
-
-
 
     function debounceCalc(index, delay) {
       delay = delay || 600;
@@ -1252,7 +1360,13 @@
       ['m2', 'unit', 'queb', 'caix', 'quan'].forEach(function (tipo) {
         var el = document.getElementById(tipo + '-' + index);
         if (!el) return;
-        el.addEventListener('input', function () { debounceCalc(index); });
+        el.addEventListener('input', function () { 
+          if (kohlerModeActive) {
+            debounceCalcKohler(index);
+          } else {
+            debounceCalc(index);
+          }
+        });
         if (tipo === 'unit') {
           el.addEventListener('input', function () { delete el.dataset.autoPrice; });
         }
@@ -1338,8 +1452,12 @@
         setupAutocomplete('produto_busca_' + index, 'id_itens-' + index + '-item_prod', URL_AUTO_PRODUTOS, function (selected) {
           var nomeInput = document.getElementById('id_itens-' + index + '-item_prod_nome');
           if (nomeInput) nomeInput.value = selected.label || selected.text || '';
-          calcularItem(index);
-        });
+          if (kohlerModeActive) {
+            calcularItemKohler(index);
+          } else {
+            calcularItem(index);
+          }
+        }, true);
       });
     }
 
@@ -1436,7 +1554,7 @@
       var info = document.getElementById('romaneio-entrega-info');
       if (!body) return;
       var lista = Array.isArray(itens) ? itens : [];
-      var pendentes = lista; // mostrar todos os itens (inclui entregues e pendentes)
+      var pendentes = lista;
       body.innerHTML = '';
       if (pendentes.length === 0) {
         body.innerHTML = '<tr><td colspan="13" class="text-center" style="color:var(--muted);">Nenhum item no pedido.</td></tr>';
@@ -1451,7 +1569,6 @@
         var tr = document.createElement('tr');
         tr.dataset.itemNume = String(it.item_nume || '');
 
-        // Mostrar também data de entrega e número da nota, quando houver
         var dataEntr = it.item_data_entr || '';
         var nfeEntr = it.item_nfe_entr || '';
 
@@ -1547,6 +1664,12 @@
       markServerErrors();
       bindPrecoCondicao();
 
+      /* Kohler Switch */
+      const kohlerSwitch = document.getElementById('kohler-mode');
+      if (kohlerSwitch) {
+        kohlerSwitch.addEventListener('change', toggleKohlerMode);
+      }
+
       /* Inicializar preview do status no select do modal */
       var selectStatus = document.getElementById('novoStatusWorkflow');
       if (selectStatus) {
@@ -1562,17 +1685,17 @@
 
       setupAutocomplete('cliente_nome', 'id_pedi_clie', URL_AUTO_CLIENTES, async function () {
         await carregarCreditoCliente(); aplicarCreditoAuto();
-      });
+      }, false);
       prefillAutocomplete('cliente_nome', 'id_pedi_clie', URL_AUTO_CLIENTES, async function () {
         await carregarCreditoCliente();
         var credAtual = parseNumberBR(document.getElementById('id_pedi_cred')?.value);
         var chk = document.getElementById('usar-credito');
         if (chk) chk.checked = credAtual > 0;
         aplicarCreditoAuto();
-      });
+      }, false);
 
-      setupAutocomplete('vendedor_nome', 'id_pedi_vend', URL_AUTO_VENDEDORES);
-      prefillAutocomplete('vendedor_nome', 'id_pedi_vend', URL_AUTO_VENDEDORES);
+      setupAutocomplete('vendedor_nome', 'id_pedi_vend', URL_AUTO_VENDEDORES, null, false);
+      prefillAutocomplete('vendedor_nome', 'id_pedi_vend', URL_AUTO_VENDEDORES, null, false);
 
       document.querySelectorAll('[id^="produto_busca_"]').forEach(function (input) {
         var index = parseInt(input.dataset.index, 10);
@@ -1580,10 +1703,14 @@
         var onSelectProduto = function (selected) {
           var nomeInput = document.getElementById('id_itens-' + index + '-item_prod_nome');
           if (nomeInput) nomeInput.value = selected.label || selected.text || '';
-          calcularItem(index);
+          if (kohlerModeActive) {
+            calcularItemKohler(index);
+          } else {
+            calcularItem(index);
+          }
         };
-        setupAutocomplete(input.id, 'id_itens-' + index + '-item_prod', URL_AUTO_PRODUTOS, onSelectProduto);
-        prefillAutocomplete(input.id, 'id_itens-' + index + '-item_prod', URL_AUTO_PRODUTOS, onSelectProduto);
+        setupAutocomplete(input.id, 'id_itens-' + index + '-item_prod', URL_AUTO_PRODUTOS, onSelectProduto, true);
+        prefillAutocomplete(input.id, 'id_itens-' + index + '-item_prod', URL_AUTO_PRODUTOS, onSelectProduto, true);
         maybeInitialCalc(index);
       });
 

@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% block content %}
+
 <style>
   :root {
     --bg: #151925;
@@ -78,6 +79,23 @@
     white-space: nowrap;
   }
 
+  .status-select {
+    background: var(--input-bg) !important;
+    border: 1px solid var(--border2) !important;
+    color: var(--text) !important;
+    font-size: 12px !important;
+    border-radius: 6px !important;
+    padding: 4px 10px !important;
+    min-width: 140px;
+    cursor: pointer;
+  }
+
+  .status-select:focus {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 0.15rem var(--accent-glow) !important;
+    outline: none;
+  }
+
   .pedido-body {
     padding: 16px;
   }
@@ -111,8 +129,8 @@
   select,
   textarea {
     background: var(--input-bg) !important;
-    border: 1px solid #3b4780 !important;
-    color: #eef3ff !important;
+    border: 1px solid var(--border2) !important;
+    color: var(--text) !important;
     font-size: 12px !important;
     border-radius: 6px !important;
     transition: border-color .15s, box-shadow .15s;
@@ -174,16 +192,12 @@
     overflow: auto;
   }
 
-  .itens-table-wrap table {
-    min-width: 1320px;
-  }
-
   .itens-table-wrap thead th {
     position: sticky;
     top: 0;
     z-index: 2;
     background: var(--bg3) !important;
-    color: #aebcff;
+    color: var(--muted);
     font-size: 10px;
     text-transform: uppercase;
     white-space: nowrap;
@@ -192,7 +206,7 @@
   }
 
   .itens-table-wrap td {
-    border-color: #2c355f !important;
+    border-color: var(--border) !important;
     vertical-align: middle;
     padding: 4px 6px !important;
   }
@@ -207,23 +221,39 @@
   }
 
   .calc-field {
-    background: #0e1320 !important;
-    border-color: #252d52 !important;
-    color: #6ee7b7 !important;
+    background: var(--bg3) !important;
+    border-color: var(--border) !important;
+    color: var(--success) !important;
     cursor: not-allowed;
   }
 
   .badge-caix {
     display: inline-block;
-    background: #1e3a5f;
-    border: 1px solid #2d5a9e;
-    color: #93c5fd;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    color: var(--accent);
     font-size: 11px;
     font-weight: 700;
     border-radius: 5px;
     padding: 2px 8px;
     min-width: 40px;
     text-align: center;
+  }
+
+  [data-bs-theme="light"] .table-dark {
+    --bs-table-bg: var(--bg2);
+    --bs-table-striped-bg: var(--bg3);
+    --bs-table-striped-color: var(--text);
+    --bs-table-active-bg: var(--bg3);
+    --bs-table-active-color: var(--text);
+    --bs-table-hover-bg: var(--bg3);
+    --bs-table-hover-color: var(--text);
+    --bs-table-color: var(--text);
+    --bs-table-border-color: var(--border);
+  }
+
+  [data-bs-theme="light"] .table-dark thead th {
+    color: var(--muted) !important;
   }
 
   .autocomplete-box {
@@ -319,7 +349,6 @@
     border-top: 1px solid var(--border2);
     display: flex;
     gap: 8px;
-    flex-wrap: wrap;
   }
 
   .field-error {
@@ -384,13 +413,20 @@
     0%, 100% { opacity: 1; }
     50% { opacity: 0.7; }
   }
+
+  @media (min-width: 1200px) {
+    .pedido-body {
+      min-height: 580px;
+    }
+  }
 </style>
 
+<!-- ── Toasts ── -->
 <div class="toast-container position-fixed top-0 end-0 p-3">
   {% if form.errors or formset.errors or formset.non_form_errors %}
   <div class="toast text-bg-danger border-0 show" role="alert">
     <div class="toast-header text-bg-danger border-0">
-      <strong class="me-auto">Erro ao gravar orçamento</strong>
+      <strong class="me-auto">Erro ao gravar pedido</strong>
       <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
     </div>
     <div class="toast-body">Existem campos obrigatórios ou inválidos. Confira os dados e os itens.</div>
@@ -409,13 +445,13 @@
 </div>
 
 <div class="pedido-wrapper">
+  <!-- ── Header ── -->
   <div class="pedido-header">
     <div class="pedido-header-left">
-      <i class="bi bi-receipt-cutoff"></i>
-      Orçamento Pisos
-      {% if orcamento %}<span style="color:var(--muted);font-weight:400">#{{ orcamento.orca_nume }}</span>{% endif %}
+      <i class="bi bi-patch-check"></i>
+      Pedido Pisos
+      {% if pedido %}<span style="color:var(--muted);font-weight:400">#{{ pedido.pedi_nume }}</span>{% endif %}
     </div>
-
     <div class="pedido-header-right">
       <span class="status-label">Status</span>
       <span id="statusAtualBadge" class="badge px-3 py-2"
@@ -423,7 +459,7 @@
         {{ status_atual.stat_desc|default:'Sem status' }}
       </span>
 
-      {% if orcamento %}
+      {% if pedido %}
       <button type="button" class="btn btn-sm btn-outline-primary" onclick="abrirModalStatus()">
         Alterar
       </button>
@@ -435,57 +471,51 @@
 
   <form method="post" novalidate>
     {% csrf_token %}
-    <div class="d-none">{{ form.orca_empr }}</div>
+    <input type="hidden" name="parametros" id="id_parametros" value="{}">
+    <div class="d-none">{{ form.pedi_empr }}</div>
 
     <div class="pedido-body">
       <div class="row g-3 align-items-start">
 
         <!-- ── Coluna esquerda ── -->
-        <div class="col-12 col-xl-3">
+        <div id="pedido-left-col" class="col-12 col-xl-3">
           <div class="section-card mb-3">
-            <div class="section-title"><i class="bi bi-file-text me-1"></i>Dados do Orçamento</div>
+            <div class="section-title"><i class="bi bi-file-text me-1"></i>Dados do Pedido</div>
             <div class="row g-2">
               <div class="col-4">
                 <label>Loja</label>
-                {{ form.orca_fili }}
+                {{ form.pedi_fili }}
               </div>
-
               <div class="col-8 position-relative">
                 <label>Cliente</label>
-                {# FIX: adicionado value="{{ cliente_label|default:'' }}" para prefill funcionar #}
                 <input id="cliente_nome" class="form-control" placeholder="Buscar cliente..."
                   value="{{ cliente_label|default:'' }}">
-                <div class="d-none">{{ form.orca_clie }}</div>
+                <div class="d-none">{{ form.pedi_clie }}</div>
               </div>
-
               <div class="col-4">
-                <label>Orçamento</label>
-                <input class="form-control"
-                  value="{% if orcamento %}{{ orcamento.orca_nume }}{% else %}(novo){% endif %}" readonly>
+                <label>Pedido</label>
+                <input class="form-control" value="{% if pedido %}{{ pedido.pedi_nume }}{% else %}(novo){% endif %}"
+                  readonly>
               </div>
-
               <div class="col-4">
                 <label>Data</label>
-                {{ form.orca_data }}
+                {{ form.pedi_data }}
               </div>
-
               <div class="col-4">
                 <label>Prev. Entrega</label>
-                {{ form.orca_data_prev_entr }}
+                {{ form.pedi_data_prev_entr }}
               </div>
-
               <div class="col-12 position-relative">
                 <label>Vendedor</label>
-                {# FIX: adicionado value="{{ vendedor_label|default:'' }}" para prefill funcionar #}
                 <input id="vendedor_nome" class="form-control" placeholder="Buscar vendedor..."
                   value="{{ vendedor_label|default:'' }}">
-                <div class="d-none">{{ form.orca_vend }}</div>
+                <div class="d-none">{{ form.pedi_vend }}</div>
               </div>
 
               <!-- ── KOHLER SWITCH ── -->
               <div class="col-12">
                 <div class="form-check form-switch" style="padding-top:8px">
-                  <input class="form-check-input" type="checkbox" id="kohler-mode"
+                  <input class="form-check-input" type="checkbox" id="kohler-mode" 
                     style="width:2.5rem;height:1.5rem;cursor:pointer">
                   <label class="form-check-label" for="kohler-mode" style="font-size:12px;color:var(--muted);margin-top:2px">
                     <strong style="color:var(--warning)">Kohler</strong> <span style="font-size:10px">(Marca 98)</span>
@@ -495,48 +525,26 @@
 
               <div class="col-12">
                 <label>Observações</label>
-                {{ form.orca_obse }}
+                {{ form.pedi_obse }}
               </div>
             </div>
           </div>
 
           <div class="section-card">
             <div class="tabs">
-              <div class="tab active" data-tab="financeiro">Financeiro</div>
+              <div class="tab active" data-tab="dados_entrega">Dados de Entrega</div>
+              <div class="tab" data-tab="financeiro">Financeiro</div>
               <div class="tab" data-tab="croqui">Croqui</div>
+              <div class="tab" data-tab="arquivos">Arquivos</div>
+              <div class="tab" data-tab="servicos">Serviços</div>
               <div class="tab" data-tab="workflow">Workflow</div>
             </div>
-
-            <div id="tab-financeiro" class="tab-content active">
-              <div class="row g-2">
-                <div class="col-12">
-                  <label>Condição de Preço</label>
-                  <select id="preco-condicao" class="form-control">
-                    <option value="0" selected>À Vista</option>
-                    <option value="1">A Prazo</option>
-                  </select>
-                </div>
-                <div class="col-4"><label>Desconto (R$)</label>{{ form.orca_desc }}</div>
-                <div class="col-4"><label>Frete (R$)</label>{{ form.orca_fret }}</div>
-                <div class="col-4"><label>Crédito</label>{{ form.orca_cred }}</div>
-                <div class="col-12 d-flex align-items-center gap-2 mt-1">
-                  <input type="checkbox" class="form-check-input" id="usar-credito">
-                  <label for="usar-credito" style="margin:0">Usar crédito disponível</label>
-                  <span class="ms-auto" style="font-size:11px;color:#93c5fd">Disponível: <b
-                      id="credito-disponivel-label">R$ 0,00</b></span>
-                </div>
-                <div class="col-4"><label>Total</label>{{ form.orca_tota }}</div>
-              </div>
-            </div>
-
-            <div id="tab-croqui" class="tab-content">
-              <label>Croqui / Informações</label>
-              {{ form.orca_croq_info }}
-            </div>
-
-            <div id="tab-workflow" class="tab-content">
-              <div style="font-size:11px;color:#a0aec8;">Workflow disponível após exportação para pedido.</div>
-            </div>
+            {% include 'Pisos/parciais/tab_dados_entrega.html' %}
+            {% include 'Pisos/parciais/tab_financeiro.html' %}
+            {% include 'Pisos/parciais/tab_croqui.html' %}
+            {% include 'Pisos/parciais/tab_arquivos.html' %}
+            {% include 'Pisos/parciais/tab_servicos.html' %}
+            {% include 'Pisos/parciais/tab_workflow.html' %}
           </div>
         </div>
 
@@ -545,7 +553,7 @@
           <div class="section-card h-100 d-flex flex-column" style="padding-bottom:0">
             <div class="d-flex justify-content-between align-items-center mb-2">
               <div class="section-title mb-0">
-                <i class="bi bi-grid-3x3 me-1"></i>Itens do Orçamento
+                <i class="bi bi-grid-3x3 me-1"></i>Itens do Pedido
                 <span id="kohler-badge" class="kohler-badge d-none">Kohler</span>
               </div>
               <button type="button" id="btn-add-item" class="btn btn-sm btn-outline-primary">
@@ -555,9 +563,7 @@
 
             {{ formset.management_form }}
 
-
             <style>
-              /* Melhor handling para evitar barra lateral da página e caber a tabela no container */
               .itens-table-wrap {
                 overflow-x: auto;
                 overflow-y: auto;
@@ -579,7 +585,6 @@
                 vertical-align: middle;
               }
 
-              /* Permitir quebra para colunas de texto (produto/descrição) e encurtar números */
               .itens-table-wrap table th,
               .itens-table-wrap table td {
                 white-space: nowrap;
@@ -593,7 +598,6 @@
                 word-break: break-word;
               }
 
-              /* Tornar inputs e conteúdo adaptáveis */
               .itens-table-wrap input.form-control {
                 padding: 0.25rem 0.4rem;
                 font-size: 0.86rem;
@@ -631,17 +635,17 @@
               <table class="table table-sm table-dark table-hover align-middle mb-0" id="itens-table">
                 <thead>
                   <tr>
-                    <th style="min-width:80px;max-width:80px">Ambiente</th>
+                    <th style="min-width:55px;max-width:55px">Ambiente</th>
                     <th style="min-width:60px;max-width:60px">Caixas</th>
-                    <th style="min-width:60px;max-width:60px">M²</th>
-                    <th style="min-width:60px;max-width:60px">KG</th>
-                    <th style="min-width:110px;max-width:110px"><a href="{% url 'produtos_web' slug=slug %}"
+                    <th style="min-width:65px;max-width:65px">M²</th>
+                    <th style="min-width:65px;max-width:65px">KG</th>
+                    <th style="min-width:80px;max-width:80px"><a href="{% url 'produtos_web' slug=slug %}"
                         title="Ir para a listagem de produtos" class="prod-link">Produto</a></th>
-                    <th style="min-width:120px;max-width:120px">Descrição do Item</th>
-                    <th style="min-width:65px;max-width:65px">Quant.</th>
-                    <th style="min-width:75px;max-width:75px">Unitário</th>
-                    <th style="min-width:60px;max-width:60px">Desc %</th>
-                    <th style="min-width:60px;max-width:60px">Quebra %</th>
+                    <th>Nome Produto</th>
+                    <th>Quant.</th>
+                    <th style="min-width:45px;max-width:45px">Unitário</th>
+                    <th style="min-width:45px;max-width:45px">Desc %</th>
+                    <th style="min-width:45px;max-width:45px">Quebra %</th>
                     <th style="min-width:75px;max-width:75px">Subtotal</th>
                     <th style="min-width:55px;max-width:55px">Obs</th>
                     <th style="min-width:36px;max-width:36px">Del</th>
@@ -650,49 +654,48 @@
                 <tbody id="itens-tbody">
                   {% for f in formset %}
                   <tr data-index="{{ forloop.counter0 }}">
-                    <td style="min-width:80px;max-width:80px">
+                    <td style="min-width:55px;max-width:55px">
                       {{ f.item_nome_ambi }}
                       {{ f.item_ambi.as_hidden }}
                     </td>
                     <td style="min-width:60px;max-width:60px">
                       <input type="number" step="0.0001" id="caix-{{ forloop.counter0 }}"
-                        class="form-control form-control-sm item-caix" value="{{ f.item_caix.value|default:'' }}" style="width:100%">
+                        class="form-control form-control-sm item-caix" value="{{ f.item_caix.value|default:'' }}">
                       <div class="d-none">{{ f.item_caix }}</div>
                     </td>
-                    <td class="position-relative" style="min-width:60px;max-width:60px">
+                    <td class="position-relative" style="min-width:65px;max-width:65px">
                       <input type="number" step="0.01" id="m2-{{ forloop.counter0 }}"
                         class="form-control form-control-sm item-m2" value="{{ f.item_m2.value|default:'' }}"
-                        data-index="{{ forloop.counter0 }}" placeholder="0,00" style="width:100%">
+                        data-index="{{ forloop.counter0 }}" placeholder="0,00">
                       <div class="d-none">{{ f.item_m2 }}</div>
                       <div class="calc-spinner" id="spin-{{ forloop.counter0 }}"></div>
                     </td>
-                    {# FIX: removido spinner duplicado que estava no td do KG #}
-                    <td style="min-width:60px;max-width:60px">
+                    <td style="min-width:65px;max-width:65px">
                       <input id="kg-{{ forloop.counter0 }}" class="form-control form-control-sm item-kg calc-field"
                         placeholder="0,00" data-index="{{ forloop.counter0 }}" value="{{ f.item_kg.value|default:'' }}"
                         readonly tabindex="-1" style="width:100%">
                       <div class="d-none">{{ f.item_kg }}</div>
                     </td>
-                    <td class="position-relative" style="min-width:110px;max-width:110px">
+                    <td class="position-relative" style="min-width:80px;max-width:80px">
                       <input id="produto_busca_{{ forloop.counter0 }}" class="form-control form-control-sm"
                         placeholder="Buscar produto" data-index="{{ forloop.counter0 }}"
                         value="{{ f.item_prod_nome.value|default:'' }}" style="width:100%">
                       <div class="d-none">{{ f.item_prod }}</div>
                     </td>
-                    <td style="min-width:120px;max-width:120px">{{ f.item_prod_nome }}</td>
-                    <td style="min-width:65px;max-width:65px">
+                    <td>{{ f.item_prod_nome }}</td>
+                    <td>
                       <input type="number" step="0.0001" id="quan-{{ forloop.counter0 }}"
                         class="form-control form-control-sm item-quan" value="{{ f.item_quan.value|default:'' }}">
                       <div class="d-none">{{ f.item_quan }}</div>
                     </td>
-                    <td style="min-width:75px;max-width:75px">
+                    <td style="min-width:45px;max-width:45px">
                       <input type="number" step="0.01" id="unit-{{ forloop.counter0 }}"
                         class="form-control form-control-sm item-unit" value="{{ f.item_unit.value|default:'' }}"
-                        data-index="{{ forloop.counter0 }}" placeholder="0,00" style="width:100%">
+                        data-index="{{ forloop.counter0 }}" placeholder="0,00">
                       <div class="d-none">{{ f.item_unit }}</div>
                     </td>
-                    <td style="min-width:60px;max-width:60px">{{ f.item_desc }}</td>
-                    <td style="min-width:60px;max-width:60px">
+                    <td style="min-width:45px;max-width:45px">{{ f.item_desc }}</td>
+                    <td style="min-width:45px;max-width:45px">
                       <input type="number" step="0.01" min="0" max="100" id="queb-{{ forloop.counter0 }}"
                         class="form-control form-control-sm item-queb" value="{{ f.item_queb.value|default:'' }}"
                         data-index="{{ forloop.counter0 }}" placeholder="0" style="width:100%">
@@ -716,6 +719,7 @@
               </table>
             </div>
 
+            <!-- Totais bar -->
             <div class="totais-bar">
               <div class="total-item">
                 <span>Subtotal itens</span>
@@ -745,20 +749,27 @@
     </div>
 
     <div class="actions">
-      <button class="btn btn-outline-success btn-sm" type="submit" name="acao" value="salvar">
+      <button class="btn btn-outline-success btn-sm" type="submit">
         <i class="bi bi-check-lg"></i> Gravar
       </button>
-      <button class="btn btn-outline-primary btn-sm" type="submit" name="acao" value="exportar">
-        <i class="bi bi-box-arrow-right"></i> Gravar e Exportar
-      </button>
-      <a class="btn btn-outline-danger btn-sm" href="{% url 'PisosWeb:orcamentos_pisos_listar' slug=slug %}">
+      <a class="btn btn-outline-danger btn-sm" href="{% url 'PisosWeb:pedidos_pisos_listar' slug=slug %}">
         <i class="bi bi-x-lg"></i> Cancelar
       </a>
+      <button class="btn btn-outline-success btn-sm" type="button" id="btn_romaneio_entrega"
+        onclick="showRomaneioEntregaModal()">
+        <i class="bi bi-box-seam"></i> Romaneio de Entrega
+      </button>
+      <button class="btn btn-outline-info btn-sm" type="button" id="btn_emitir_nfe" onclick="showEmitirNFeModal()">
+        <i class="bi bi-file-binary"></i> Emitir NF-e
+      </button>
     </div>
   </form>
 </div>
 
-{# ── Modal fora do <form> ── #}
+{# ── Modais — TODOS fora do <form> ── #}
+  {% include 'Pisos/modal_workflow.html' %}
+  {% include 'Pisos/modal_romaneio_entrega.html' %}
+  {% include 'Pisos/parciais/modal_emitir_nfe.html' %}
   {% include 'Pisos/modal_alterar_status.html' %}
 
   <script>
@@ -769,11 +780,15 @@
     const URL_AUTO_VENDEDORES = "{% url 'PisosWeb:autocomplete_vendedores' slug=slug %}";
     const URL_AUTO_PRODUTOS = "{% url 'PisosWeb:autocomplete_produtos' slug=slug %}";
     const URL_CREDITO = `/api/${SLUG}/pisos/credito-troca/`;
-    const EXCLUIR_ORCAMENTO = "{% if orcamento %}{{ orcamento.orca_nume }}{% endif %}";
-    const ORCAMENTO_STAT = "{% if orcamento %}{{ orcamento.orca_stat }}{% endif %}";
-    const URL_ALTERAR_STATUS = "{% if orcamento %}{% url 'PisosWeb:orcamentos_pisos_alterar_status' slug=slug pk=orcamento.orca_nume %}{% endif %}";
-    const STATUS_EMPRESA = "{{ orcamento.orca_empr|default:'' }}";
-    const STATUS_FILIAL = "{{ orcamento.orca_fili|default:'' }}";
+    const EXCLUIR_PEDIDO = "{% if pedido %}{{ pedido.pedi_nume }}{% endif %}";
+    const PEDIDO_NUME = "{% if pedido %}{{ pedido.pedi_nume }}{% endif %}";
+    const URL_TITULOS_PISOS = PEDIDO_NUME
+      ? `/api/${SLUG}/pisos/pedidos-pisos/${PEDIDO_NUME}/financeiro/`
+      : null;
+    const URL_ROMANEIO_ENTREGA = "{% if pedido %}{% url 'PisosWeb:pedidos_pisos_romaneio_entrega_ajax' slug=slug pk=pedido.pedi_nume %}{% endif %}";
+    const URL_ALTERAR_STATUS = "{% if pedido %}{% url 'PisosWeb:pedidos_pisos_alterar_status' slug=slug pk=pedido.pedi_nume %}{% endif %}";
+    const STATUS_EMPRESA = "{{ pedido.pedi_empr|default:'' }}";
+    const STATUS_FILIAL = "{{ pedido.pedi_fili|default:'' }}";
 
     /* ── KOHLER MODE ── */
     const KOHLER_MARCA = '98';
@@ -783,10 +798,10 @@
       const kohlerSwitch = document.getElementById('kohler-mode');
       const kohlerbadge = document.getElementById('kohler-badge');
       if (!kohlerSwitch) return;
-
+      
       kohlerModeActive = kohlerSwitch.checked;
       const wrapper = document.querySelector('.pedido-wrapper');
-
+      
       if (kohlerModeActive) {
         wrapper?.classList.add('kohler-mode');
         kohlerbadge?.classList.remove('d-none');
@@ -796,7 +811,7 @@
         kohlerbadge?.classList.add('d-none');
         console.log('❌ Modo Kohler DESATIVADO');
       }
-
+      
       atualizarTotais();
     }
 
@@ -811,35 +826,47 @@
       const quanInput = document.getElementById('quan-' + index);
       const unitInput = document.getElementById('unit-' + index);
       const sutoInput = document.getElementById('suto-' + index);
-
+      
       const quant = parseNumberBR(quanInput?.value || 0);
       const unit = parseNumberBR(unitInput?.value || 0);
-
+      
       const subtotal = quant * unit;
-
+      
       if (sutoInput) {
         sutoInput.value = subtotal.toFixed(2);
       }
-
+      
       const hiddenQuan = document.getElementById('id_itens-' + index + '-item_quan');
       const hiddenUnit = document.getElementById('id_itens-' + index + '-item_unit');
-
+      
       if (hiddenQuan) hiddenQuan.value = String(quant);
       if (hiddenUnit) hiddenUnit.value = String(unit);
-
+      
       atualizarTotais();
     }
 
     function debounceCalcKohler(index, delay) {
       delay = delay || 300;
       clearTimeout(calcTimers[index]);
-      calcTimers[index] = setTimeout(function () {
+      calcTimers[index] = setTimeout(function () { 
         calcularItemKohler(index);
       }, delay);
     }
 
-    function orcamentoExportado() {
-      return String(ORCAMENTO_STAT || '').trim() === '2';
+    /* ── Modal NF-e ── */
+    function showEmitirNFeModal() {
+      {% if not pedido %}
+      showToast('Grave o pedido antes de emitir a NF-e.', 'danger');
+      return;
+      {% endif %}
+      var modalEl = document.getElementById('emitirNFeModal');
+      if (!modalEl) { console.error('[NFE] #emitirNFeModal não encontrado no DOM'); return; }
+      bootstrap.Modal.getOrCreateInstance(modalEl).show();
+      if (typeof window.carregarItensNFe === 'function') {
+        window.carregarItensNFe();
+      } else {
+        console.error('[NFE] carregarItensNFe indefinida — verifique o partial modal_emitir_nfe.html');
+      }
     }
 
     /* ── Modal Alterar Status ── */
@@ -926,34 +953,6 @@
       return String(parseNumberBR(s));
     }
 
-    var creditoDisponivel = 0;
-
-    async function carregarCreditoCliente() {
-      var clie = (document.getElementById('id_orca_clie')?.value || '').trim();
-      var empresa = (document.getElementById('id_orca_empr')?.value || '').trim();
-      var filial = (document.getElementById('id_orca_fili')?.value || '').trim();
-      if (!clie || !empresa || !filial) {
-        creditoDisponivel = 0;
-        var lbl0 = document.getElementById('credito-disponivel-label');
-        if (lbl0) lbl0.textContent = fmtBRL(0);
-        return;
-      }
-      try {
-        var qs = new URLSearchParams({ cliente: clie, empresa, filial });
-        if (EXCLUIR_ORCAMENTO) qs.set('excluir_orcamento', EXCLUIR_ORCAMENTO);
-        var resp = await fetch(URL_CREDITO + '?' + qs.toString(), { headers: { 'Accept': 'application/json' } });
-        if (!resp.ok) throw new Error('HTTP ' + resp.status);
-        var data = await resp.json();
-        creditoDisponivel = parseNumberBR(data.total_disponivel);
-        var lbl = document.getElementById('credito-disponivel-label');
-        if (lbl) lbl.textContent = fmtBRL(creditoDisponivel);
-      } catch (e) {
-        creditoDisponivel = 0;
-        var lbl = document.getElementById('credito-disponivel-label');
-        if (lbl) lbl.textContent = fmtBRL(0);
-      }
-    }
-
     function showToast(message, type) {
       type = type || 'danger';
       var container = document.querySelector('.toast-container');
@@ -968,6 +967,74 @@
         '<div class="toast-body">' + message + '</div>';
       container.appendChild(toast);
       setTimeout(function () { toast.remove(); }, 6500);
+    }
+
+    function gerarTitulosFinanceiro() {
+      var body = document.getElementById('fin-titulos-body');
+      if (!body) return;
+      var total = parseFloat(document.getElementById('id_pedi_tota')?.value || 0) || 0;
+      var entrada = parseFloat(document.getElementById('fin-entrada')?.value || 0) || 0;
+      var restante = Math.max(total - entrada, 0);
+      var parcelas = Math.max(parseInt(document.getElementById('fin-parcelas')?.value || '1', 10), 1);
+      var cond = (document.getElementById('fin-condicao')?.value || '').trim();
+      var dias = cond ? cond.split(/\s+/).map(x => parseInt(x, 10)).filter(x => !isNaN(x)) : [];
+      var valorParcela = restante / parcelas;
+      var base = new Date();
+      var formaEl = document.getElementById('id_pedi_form_paga');
+      var formaLabel = formaEl?.selectedOptions?.[0]?.text || '-';
+      body.innerHTML = '';
+      for (var i = 0; i < parcelas; i++) {
+        var d = new Date(base);
+        d.setDate(d.getDate() + (dias[i] || (30 * i)));
+        var venc = d.toISOString().slice(0, 10).split('-').reverse().join('/');
+        body.innerHTML += '<tr><td>' + (i + 1) + '</td><td>' + venc + '</td><td class="text-end">' +
+          fmtBRL(valorParcela) + '</td><td>' + formaLabel + '</td><td>Aberto</td></tr>';
+      }
+      var finRest = document.getElementById('fin-restante');
+      if (finRest) finRest.value = fmtBRL(restante);
+    }
+
+    function isoToBR(iso) {
+      if (!iso) return '';
+      var s = String(iso);
+      if (!s.includes('-')) return s;
+      var parts = s.split('-');
+      return parts[2] + '/' + parts[1] + '/' + parts[0];
+    }
+
+    async function carregarTitulosFinanceiro() {
+      var body = document.getElementById('fin-titulos-body');
+      if (!body || !URL_TITULOS_PISOS) return;
+      try {
+        var resp = await fetch(URL_TITULOS_PISOS, { headers: { 'Accept': 'application/json' } });
+        if (!resp.ok) return;
+        var data = await resp.json();
+        var entradaEl = document.getElementById('fin-entrada');
+        var parcelasEl = document.getElementById('fin-parcelas');
+        var condEl = document.getElementById('fin-condicao');
+        var restanteEl = document.getElementById('fin-restante');
+        var entrada = parseNumberBR(data.entrada);
+        if (entradaEl) entradaEl.value = entrada.toFixed(2);
+        if (parcelasEl) parcelasEl.value = String(data.parcelas || 1);
+        if (condEl) condEl.value = String(data.condicao || '').trim();
+        var total = parseNumberBR(document.getElementById('id_pedi_tota')?.value);
+        var restante = Math.max(total - entrada, 0);
+        if (restanteEl) restanteEl.value = fmtBRL(restante);
+        var titulos = Array.isArray(data.titulos) ? data.titulos : [];
+        body.innerHTML = '';
+        titulos.forEach(function (t) {
+          var parc = t.parcela ?? '';
+          var venc = isoToBR(t.vencimento);
+          var valor = fmtBRL(t.valor);
+          var forma = t.forma_label || t.forma_pagamento || '-';
+          var aberto = String(t.aberto || '').toUpperCase();
+          var status = aberto === 'A' ? 'ABERTO' : (aberto ? 'FECHADO' : '-');
+          body.innerHTML += '<tr><td>' + parc + '</td><td>' + venc + '</td><td class="text-end">' +
+            valor + '</td><td>' + forma + '</td><td>' + status + '</td></tr>';
+        });
+      } catch (e) {
+        console.error('Erro ao carregar títulos:', e);
+      }
     }
 
     /* ── Tabs ── */
@@ -1036,8 +1103,7 @@
           try {
             positionBox();
             var urlComMarca = getAutoCompleteUrlWithMarca(url, applyMarca);
-            var separator = urlComMarca.includes('?') ? '&' : '?';
-            var res = await fetch(urlComMarca + separator + 'term=' + encodeURIComponent(term));
+            var res = await fetch(urlComMarca + '?term=' + encodeURIComponent(term));
             var payload = await res.json();
             var data = Array.isArray(payload) ? payload : (payload.results || []);
             box.innerHTML = '';
@@ -1078,8 +1144,7 @@
       if (!currentId || String(input.value || '').trim()) return;
       try {
         var urlComMarca = getAutoCompleteUrlWithMarca(url, applyMarca);
-        var separator = urlComMarca.includes('?') ? '&' : '?';
-        var res = await fetch(urlComMarca + separator + 'term=' + encodeURIComponent(currentId));
+        var res = await fetch(urlComMarca + '?term=' + encodeURIComponent(currentId));
         var payload = await res.json();
         var data = Array.isArray(payload) ? payload : (payload.results || []);
         if (Array.isArray(data) && data.length) {
@@ -1096,74 +1161,40 @@
 
     var creditoDisponivel = 0;
 
-    async function calcularItem(index) {
-      var prodInput = document.getElementById('id_itens-' + index + '-item_prod');
-      var m2Input = document.getElementById('m2-' + index);
-      var kgInput = document.getElementById('kg-' + index);
-      var sutoInput = document.getElementById('suto-' + index);
-      var unitInput = document.getElementById('unit-' + index);
-      var quebInput = document.getElementById('queb-' + index);
-      var spinner = document.getElementById('spin-' + index);
-
-      var prod_id = String(prodInput?.value || '').trim();
-      var m2 = parseNumberBR(m2Input?.value);
-      var quanInput = document.getElementById('quan-' + index);
-      var quantidade = parseNumberBR(quanInput?.value);
-      var unit = parseNumberBR(unitInput?.value);
-      var queb = parseNumberBR(quebInput?.value);
-
-      if (!prod_id) return;
-      var precisaPreco = unit <= 0;
-      if (m2 <= 0 && quantidade <= 0 && !precisaPreco) return;
-      var condicao = getPrecoCondicao();
-
-      if (spinner) spinner.style.display = 'block';
-      try {
-        var res = await fetch(URL_CALCULAR, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
-          body: JSON.stringify({ item_prod: prod_id, item_m2: m2, item_unit: unit, item_queb: queb, condicao, item_caix: parseInt(document.getElementById('caix-' + index)?.value || 0), item_quan: parseNumberBR(document.getElementById('quan-' + index)?.value) }),
-        });
-        if (!res.ok) throw new Error('Erro HTTP ' + res.status);
-        var data = await res.json();
-
-        var caixInput = document.getElementById('caix-' + index);
-        var quanInput = document.getElementById('quan-' + index);
-        var hiddenCaix = document.getElementById('id_itens-' + index + '-item_caix');
-        var hiddenQuan = document.getElementById('id_itens-' + index + '-item_quan');
-        var hiddenKg = document.getElementById('id_itens-' + index + '-item_kg');
-        var hiddenUnit = document.getElementById('id_itens-' + index + '-item_unit');
-
-        if (caixInput) caixInput.value = data.caixas || '';
-        if (quanInput) quanInput.value = data.quantidade || '';
-        if (kgInput) kgInput.value = data.kg_total || data.kg || '';
-        if (sutoInput) sutoInput.value = parseFloat(data.total || 0).toFixed(2);
-        if (hiddenCaix) hiddenCaix.value = data.caixas || '';
-        if (hiddenQuan) hiddenQuan.value = data.quantidade || '';
-        if (hiddenKg) hiddenKg.value = data.kg_total || data.kg || '';
-        if (precisaPreco && unitInput && data.preco_unitario) {
-          unitInput.value = String(data.preco_unitario).replace(',', '.');
-          unitInput.dataset.autoPrice = '1';
-          if (hiddenUnit) hiddenUnit.value = normalizeNumberBR(unitInput.value);
-        }
-        atualizarTotais();
+    async function carregarCreditoCliente() {
+      var clie = (document.getElementById('id_pedi_clie')?.value || '').trim();
+      var empresa = (document.getElementById('id_pedi_empr')?.value || '').trim();
+      var filial = (document.getElementById('id_pedi_fili')?.value || '').trim();
+      if (!clie || !empresa || !filial) {
+        creditoDisponivel = 0;
+        var lbl0 = document.getElementById('credito-disponivel-label');
+        if (lbl0) lbl0.textContent = fmtBRL(0);
+        return;
       }
-      catch (e) {
-        console.error('Erro ao calcular item:', e);
-        showToast('Erro ao calcular item ' + index + ': ' + e.message, 'danger');
-      } finally {
-        if (spinner) spinner.style.display = 'none';  // ← sempre esconde o spinner
+      try {
+        var qs = new URLSearchParams({ cliente: clie, empresa, filial });
+        if (EXCLUIR_PEDIDO) qs.set('excluir_pedido', EXCLUIR_PEDIDO);
+        var resp = await fetch(URL_CREDITO + '?' + qs.toString(), { headers: { 'Accept': 'application/json' } });
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        var data = await resp.json();
+        creditoDisponivel = parseNumberBR(data.total_disponivel);
+        var lbl = document.getElementById('credito-disponivel-label');
+        if (lbl) lbl.textContent = fmtBRL(creditoDisponivel);
+      } catch (e) {
+        creditoDisponivel = 0;
+        var lbl = document.getElementById('credito-disponivel-label');
+        if (lbl) lbl.textContent = fmtBRL(0);
       }
     }
 
     function aplicarCreditoAuto() {
-      var credEl = document.getElementById('id_orca_cred');
+      var credEl = document.getElementById('id_pedi_cred');
       var chk = document.getElementById('usar-credito');
       if (!credEl || !chk) return;
       if (!chk.checked) { credEl.value = '0'; atualizarTotais(); return; }
       var subtotal = parseNumberBR(document.getElementById('total-itens')?.textContent);
-      var desc = parseNumberBR(document.getElementById('id_orca_desc')?.value);
-      var fret = parseNumberBR(document.getElementById('id_orca_fret')?.value);
+      var desc = parseNumberBR(document.getElementById('id_pedi_desc')?.value);
+      var fret = parseNumberBR(document.getElementById('id_pedi_fret')?.value);
       var totalSemCred = Math.max(subtotal - desc + fret, 0);
       var aplicar = Math.min(creditoDisponivel || 0, totalSemCred);
       credEl.value = aplicar.toFixed(2);
@@ -1172,31 +1203,110 @@
 
     var calcTimers = {};
 
-    function getPrecoCondicao() {
-      var sel = document.getElementById('preco-condicao');
-      return sel ? String(sel.value || '0').trim() || '0' : '0';
+    function bindCaixasInputs(index) {
+      var el = document.getElementById('caix-' + index);
+      if (!el) return;
+      el.addEventListener('input', function () {
+        var hiddenCaix = document.getElementById('id_itens-' + index + '-item_caix');
+        if (hiddenCaix) hiddenCaix.value = String(parseInt(el.value || 0));
+        var badge = document.getElementById('badge-caix-' + index);
+        if (badge) badge.textContent = el.value ? String(parseInt(el.value)) : '—';
+        clearTimeout(calcTimers['caix-' + index]);
+        calcTimers['caix-' + index] = setTimeout(function () { calcularItem(index); }, 400);
+      });
     }
 
-    function bindCalcInputs(index) {
-      ['m2', 'unit', 'queb', 'caix', 'quan'].forEach(function (tipo) {
-        var el = document.getElementById(tipo + '-' + index);
-        if (!el) return;
-        el.addEventListener('input', function () {
-          if (kohlerModeActive) {
-            debounceCalcKohler(index);
-          } else {
-            debounceCalc(index);
-          }
+    function getPrecoCondicao() {
+      var sel = document.getElementById('preco-condicao');
+      var manual = sel && sel.dataset.manual === '1';
+      if (manual) return String(sel.value || '0').trim() || '0';
+      var parcelas = parseInt(document.getElementById('fin-parcelas')?.value || '1', 10) || 1;
+      var condStr = String(document.getElementById('fin-condicao')?.value || '').trim();
+      var derived = '0';
+      if (parcelas > 1) {
+        derived = '1';
+      } else if (condStr) {
+        var first = parseInt(condStr.split(/[\s,;\/]+/).filter(Boolean)[0] || '0', 10) || 0;
+        if (first > 0) derived = '1';
+      }
+      if (sel) sel.value = derived;
+      return derived;
+    }
+
+    async function calcularItem(index) {
+      var prodInput = document.getElementById('id_itens-' + index + '-item_prod');
+      var prodBuscaInput = document.getElementById('produto_busca_' + index);
+      var quanInput = document.getElementById('quan-' + index);
+      var m2Input = document.getElementById('m2-' + index);
+      var unitInput = document.getElementById('unit-' + index);
+      var quebInput = document.getElementById('queb-' + index);
+      var spinner = document.getElementById('spin-' + index);
+
+      var prod_id = String(prodInput?.value || '').trim();
+      if (!prod_id && prodBuscaInput?.value) {
+        var match = String(prodBuscaInput.value).match(/^(\d+)/);
+        if (match) { prod_id = match[1]; if (prodInput) prodInput.value = prod_id; }
+      }
+
+      var m2 = parseNumberBR(m2Input?.value);
+
+      var quanInput = document.getElementById('quan-' + index);
+      var quantidade = parseNumberBR(quanInput?.value);
+      var unit = parseNumberBR(unitInput?.value);
+      var queb = parseNumberBR(quebInput?.value);
+
+      if (!prod_id) return;
+      var precisaPreco = unit <= 0;
+      if (m2 <= 0 && quantidade <= 0 && !precisaPreco) return;
+
+      var condicao = getPrecoCondicao();
+      if (spinner) spinner.style.display = 'block';
+
+      try {
+        var res = await fetch(URL_CALCULAR, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+          body: JSON.stringify({ item_prod: prod_id, item_m2: m2, item_unit: unit, item_queb: queb, condicao, item_caix: parseInt(document.getElementById('caix-' + index)?.value || 0), item_quan: parseNumberBR(document.getElementById('quan-' + index)?.value) })
         });
-        if (tipo === 'unit') {
-          el.addEventListener('input', function () { delete el.dataset.autoPrice; });
+        var data = await res.json();
+        if (!res.ok) throw new Error(data.erro || 'Erro HTTP ' + res.status);
+
+        var caixInput = document.getElementById('caix-' + index);
+        var quanInput = document.getElementById('quan-' + index);
+        var kgInput = document.getElementById('kg-' + index);
+        var sutoInput = document.getElementById('suto-' + index);
+        var hiddenCaix = document.getElementById('id_itens-' + index + '-item_caix');
+        var hiddenKg = document.getElementById('id_itens-' + index + '-item_kg');
+        var hiddenQuan = document.getElementById('id_itens-' + index + '-item_quan');
+        var hiddenUnit = document.getElementById('id_itens-' + index + '-item_unit');
+
+        if (caixInput) caixInput.value = data.caixas || '';
+        if (hiddenCaix && !caixInput) hiddenCaix.value = data.caixas || '';
+        if (kgInput) kgInput.value = data.kg_total || '0.00';
+        if (hiddenKg) hiddenKg.value = data.kg_total || '0.00';
+        var m2Input = document.getElementById('m2-' + index);
+        var hiddenM2 = document.getElementById('id_itens-' + index + '-item_m2');
+        if (m2Input) m2Input.value = data.quantidade || '';
+        if (hiddenM2) hiddenM2.value = normalizeNumberBR(data.quantidade || '');
+        if (quanInput) {
+          quanInput.value = data.quantidade || '';
         }
-        el.addEventListener('change', function () {
-          var hiddenMap = { m2: 'item_m2', unit: 'item_unit', queb: 'item_queb', caix: 'item_caix', quan: 'item_quan' };
-          var hidden = document.getElementById('id_itens-' + index + '-' + hiddenMap[tipo]);
-          if (hidden) hidden.value = normalizeNumberBR(el.value);
-        });
-      });
+        if (hiddenQuan) hiddenQuan.value = data.quantidade || '';
+        if (sutoInput) sutoInput.value = parseFloat(data.total || 0).toFixed(2);
+
+
+        if (precisaPreco && unitInput && data.preco_unitario) {
+          unitInput.value = String(data.preco_unitario).replace(',', '.');
+          unitInput.dataset.autoPrice = '1';
+          if (hiddenUnit) hiddenUnit.value = normalizeNumberBR(unitInput.value);
+        }
+        atualizarTotais();
+      } catch (e) {
+        console.error('Erro ao calcular item:', e);
+        showToast('Erro ao calcular item ' + index + ': ' + e.message, 'danger');
+      } finally {
+        if (spinner) spinner.style.display = 'none';
+      }
     }
 
     function debounceCalc(index, delay) {
@@ -1204,8 +1314,6 @@
       clearTimeout(calcTimers[index]);
       calcTimers[index] = setTimeout(function () { calcularItem(index); }, delay);
     }
-
-    
 
     function bindRemoveButtons() {
       document.addEventListener('click', function (e) {
@@ -1231,9 +1339,9 @@
         var suto = document.getElementById('suto-' + index);
         subtotal += parseNumberBR(suto?.value);
       });
-      var desc = parseNumberBR(document.getElementById('id_orca_desc')?.value);
-      var fret = parseNumberBR(document.getElementById('id_orca_fret')?.value);
-      var credito = parseNumberBR(document.getElementById('id_orca_cred')?.value);
+      var desc = parseNumberBR(document.getElementById('id_pedi_desc')?.value);
+      var fret = parseNumberBR(document.getElementById('id_pedi_fret')?.value);
+      var credito = parseNumberBR(document.getElementById('id_pedi_cred')?.value);
       var total = Math.max(subtotal - desc - credito + fret, 0);
 
       document.getElementById('total-itens').textContent = fmtBRL(subtotal);
@@ -1242,11 +1350,31 @@
       document.getElementById('total-cred').textContent = fmtBRL(credito);
       document.getElementById('total-geral').textContent = fmtBRL(total);
 
-      var totalField = document.getElementById('id_orca_tota');
-      if (totalField) totalField.value = total.toFixed(2);
+      var totalField = document.getElementById('id_pedi_tota');
+      if (totalField && !totalField.disabled) totalField.value = total.toFixed(2);
     }
 
-
+    function bindCalcInputs(index) {
+      ['m2', 'unit', 'queb', 'caix', 'quan'].forEach(function (tipo) {
+        var el = document.getElementById(tipo + '-' + index);
+        if (!el) return;
+        el.addEventListener('input', function () { 
+          if (kohlerModeActive) {
+            debounceCalcKohler(index);
+          } else {
+            debounceCalc(index);
+          }
+        });
+        if (tipo === 'unit') {
+          el.addEventListener('input', function () { delete el.dataset.autoPrice; });
+        }
+        el.addEventListener('change', function () {
+          var hiddenMap = { m2: 'item_m2', unit: 'item_unit', queb: 'item_queb', caix: 'item_caix', quan: 'item_quan' };
+          var hidden = document.getElementById('id_itens-' + index + '-' + hiddenMap[tipo]);
+          if (hidden) hidden.value = normalizeNumberBR(el.value);
+        });
+      })
+    }
 
     function maybeInitialCalc(index) {
       var prod_id = document.getElementById('id_itens-' + index + '-item_prod')?.value;
@@ -1270,42 +1398,40 @@
         var tr = document.createElement('tr');
         tr.dataset.index = index;
         tr.innerHTML =
-         '<td style="min-width:80px;max-width:80px">' +
+          '<td style="min-width:55px;max-width:55px">' +
           '<input name="' + prefix + '-item_nome_ambi" class="form-control form-control-sm" placeholder="Ambiente" style="width:100%">' +
           '<input type="hidden" name="' + prefix + '-item_ambi" id="id_itens-' + index + '-item_ambi" value="' + (index + 1) + '">' +
-          '</td>' +   // ← esse aqui
-          '<td>' +
-          '<input type="number" step="0.0001" id="caix-' + index + '" class="form-control form-control-sm item-caix" placeholder="0">' +
-          '<input type="hidden" name="' + prefix + '-item_caix" id="id_itens-' + index + '-item_caix" value="">' +
           '</td>' +
-          '<td class="position-relative" style="min-width:60px;max-width:60px">' +
-          '<input type="number" step="0.01" id="m2-' + index + '" class="form-control form-control-sm item-m2" data-index="' + index + '" placeholder="0,00" style="width:100%">' +
+          '<td style="min-width:60px;max-width:60px">' +
+          '<input type="number" step="0.0001" id="caix-' + index + '" name="' + prefix + '-item_caix" class="form-control form-control-sm item-caix" placeholder="0">' +
+          '</td>' +
+          '<td style="min-width:65px;max-width:65px">' +
+          '<input type="number" step="0.01" id="m2-' + index + '" class="form-control form-control-sm item-m2" data-index="' + index + '" placeholder="0,00">' +
           '<input type="hidden" name="' + prefix + '-item_m2" id="id_itens-' + index + '-item_m2" value="">' +
           '<div class="calc-spinner" id="spin-' + index + '"></div>' +
           '</td>' +
-          '<td style="min-width:60px;max-width:60px">' +
+          '<td style="min-width:65px;max-width:65px">' +
           '<input type="number" step="0.01" id="kg-' + index + '" class="form-control form-control-sm item-kg calc-field" data-index="' + index + '" placeholder="0,00" readonly tabindex="-1" style="width:100%">' +
           '<input type="hidden" name="' + prefix + '-item_kg" id="id_itens-' + index + '-item_kg" value="">' +
           '</td>' +
-          '<td class="position-relative" style="min-width:110px;max-width:110px">' +
+          '<td class="position-relative" style="min-width:80px;max-width:80px">' +
           '<input id="produto_busca_' + index + '" class="form-control form-control-sm" placeholder="Buscar produto" data-index="' + index + '" style="width:100%">' +
           '<input type="hidden" name="' + prefix + '-item_prod" id="id_itens-' + index + '-item_prod" value="">' +
           '</td>' +
-          '<td style="min-width:120px;max-width:120px">' +
-          '<input name="' + prefix + '-item_prod_nome" id="id_itens-' + index + '-item_prod_nome" class="form-control form-control-sm" placeholder="—" style="width:100%">' +
+          '<td>' +
+          '<input name="' + prefix + '-item_prod_nome" id="id_itens-' + index + '-item_prod_nome" class="form-control form-control-sm" placeholder="—">' +
           '</td>' +
-          '<td style="min-width:65px;max-width:65px">' +
-          '<input type="number" step="0.0001" id="quan-' + index + '" name="' + prefix + '-item_quan" class="form-control form-control-sm item-quan" placeholder="0">' +
-          '<input type="hidden" name="' + prefix + '-item_quan" id="id_itens-' + index + '-item_quan" value="">' +
+          '<td>' +
+          '<input type="number" step="0.0001" id="quan-' + index + '" name="' + prefix + '-item_quan" class="form-control form-control-sm item-quan">' +
           '</td>' +
-          '<td style="min-width:75px;max-width:75px">' +
-          '<input type="number" step="0.01" id="unit-' + index + '" class="form-control form-control-sm item-unit" data-index="' + index + '" placeholder="0,00" style="width:100%">' +
+          '<td style="min-width:45px;max-width:45px">' +
+          '<input type="number" step="0.01" id="unit-' + index + '" class="form-control form-control-sm item-unit" data-index="' + index + '" placeholder="0,00">' +
           '<input type="hidden" name="' + prefix + '-item_unit" id="id_itens-' + index + '-item_unit" value="">' +
           '</td>' +
-          '<td style="min-width:60px;max-width:60px">' +
+          '<td style="min-width:45px;max-width:45px">' +
           '<input type="number" step="0.01" name="' + prefix + '-item_desc" class="form-control form-control-sm" placeholder="0" style="width:100%">' +
           '</td>' +
-          '<td style="min-width:60px;max-width:60px">' +
+          '<td style="min-width:45px;max-width:45px">' +
           '<input type="number" step="0.01" id="queb-' + index + '" class="form-control form-control-sm item-queb" data-index="' + index + '" placeholder="0" style="width:100%">' +
           '<input type="hidden" name="' + prefix + '-item_queb" id="id_itens-' + index + '-item_queb" value="">' +
           '</td>' +
@@ -1321,28 +1447,29 @@
           '</td>';
         tbody.appendChild(tr);
         bindCalcInputs(index);
-        setupAutocomplete(
-          'produto_busca_' + index,
-          'id_itens-' + index + '-item_prod',
-          URL_AUTO_PRODUTOS,
-          function (selected) {
-            var nomeInput = document.getElementById('id_itens-' + index + '-item_prod_nome');
-            if (nomeInput) nomeInput.value = selected.label || selected.text || '';
-            if (kohlerModeActive) {
-              calcularItemKohler(index);
-            } else {
-              calcularItem(index);
-            }
-          },
-          true
-        );
+        setupAutocomplete('produto_busca_' + index, 'id_itens-' + index + '-item_prod', URL_AUTO_PRODUTOS, function (selected) {
+          var nomeInput = document.getElementById('id_itens-' + index + '-item_prod_nome');
+          if (nomeInput) nomeInput.value = selected.label || selected.text || '';
+          if (kohlerModeActive) {
+            calcularItemKohler(index);
+          } else {
+            calcularItem(index);
+          }
+        }, true);
       });
     }
 
     function bindPrecoCondicao() {
       var sel = document.getElementById('preco-condicao');
       if (!sel) return;
+      var parcelasEl = document.getElementById('fin-parcelas');
+      var condEl = document.getElementById('fin-condicao');
+      var sync = function () { delete sel.dataset.manual; getPrecoCondicao(); };
+      if (parcelasEl) parcelasEl.addEventListener('input', sync);
+      if (condEl) condEl.addEventListener('input', sync);
+      sync();
       sel.addEventListener('change', function () {
+        sel.dataset.manual = '1';
         document.querySelectorAll('#itens-tbody tr').forEach(function (tr) {
           var index = tr.dataset.index;
           var del = document.getElementById('id_itens-' + index + '-DELETE');
@@ -1361,14 +1488,37 @@
       });
     }
 
+    function markServerErrors() {
+      document.querySelectorAll('.errorlist').forEach(function (el) {
+        var field = el.closest('.mb-1, .col-12, .col-4, .col-8, td');
+        if (field) {
+          var input = field.querySelector('input, select, textarea');
+          if (input) input.classList.add('field-error');
+        }
+      });
+    }
+
     function validateBeforeSubmit() {
       var form = document.querySelector('form');
       form.addEventListener('submit', function (event) {
+        var entrada = parseNumberBR(document.getElementById('fin-entrada')?.value);
+        var parcelas = parseInt(document.getElementById('fin-parcelas')?.value || '1', 10) || 1;
+        var condicao = String(document.getElementById('fin-condicao')?.value || '').trim();
+        var chkCred = document.getElementById('usar-credito');
+        var credEl = document.getElementById('id_pedi_cred');
+        var parametrosEl = document.getElementById('id_parametros');
+        if (parametrosEl) {
+          parametrosEl.value = JSON.stringify({
+            financeiro: { entrada, parcelas, condicao },
+            usar_credito: !!chkCred?.checked,
+            valor_credito: parseNumberBR(credEl?.value)
+          });
+        }
         var required = [
-          { id: 'id_orca_fili', label: 'Loja' },
-          { id: 'id_orca_clie', label: 'Cliente' },
-          { id: 'id_orca_vend', label: 'Vendedor' },
-          { id: 'id_orca_data', label: 'Data do orçamento' },
+          { id: 'id_pedi_fili', label: 'Loja' },
+          { id: 'id_pedi_clie', label: 'Cliente' },
+          { id: 'id_pedi_vend', label: 'Vendedor' },
+          { id: 'id_pedi_data', label: 'Data do pedido' }
         ];
         var hasError = false, msgs = [];
         required.forEach(function (f) {
@@ -1392,10 +1542,124 @@
       });
     }
 
+    function fmtQtdBR(v, maxCasas) {
+      maxCasas = maxCasas || 4;
+      return parseNumberBR(v).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: maxCasas });
+    }
+
+    function renderRomaneioEntrega(itens) {
+      var body = document.getElementById('romaneio-entrega-body');
+      var info = document.getElementById('romaneio-entrega-info');
+      if (!body) return;
+      var lista = Array.isArray(itens) ? itens : [];
+      var pendentes = lista;
+      body.innerHTML = '';
+      if (pendentes.length === 0) {
+        body.innerHTML = '<tr><td colspan="13" class="text-center" style="color:var(--muted);">Nenhum item no pedido.</td></tr>';
+        if (info) info.textContent = '';
+        return;
+      }
+      pendentes.forEach(function (it) {
+        var maxQtd = Math.max(parseNumberBR(it.item_quan_pend), 0);
+        var maxCx = Math.max(parseNumberBR(it.item_caix_pend), 0);
+        var entregarQtd = maxQtd > 0 ? maxQtd : 0;
+        var entregarCx = maxCx > 0 ? maxCx : 0;
+        var tr = document.createElement('tr');
+        tr.dataset.itemNume = String(it.item_nume || '');
+
+        var dataEntr = it.item_data_entr || '';
+        var nfeEntr = it.item_nfe_entr || '';
+
+        tr.innerHTML =
+          '<td>' + String(it.item_nome_ambi || '').trim() + '</td>' +
+          '<td>' + String(it.item_prod || '').trim() + '</td>' +
+          '<td>' + String(it.item_prod_nome || '').trim() + '</td>' +
+          '<td class="text-end">' + fmtQtdBR(it.item_quan) + '</td>' +
+          '<td class="text-end">' + fmtQtdBR(it.item_quan_entr) + '</td>' +
+          '<td class="text-end">' + fmtQtdBR(it.item_quan_pend) + '</td>' +
+          '<td><input type="number" class="form-control form-control-sm rom-qtd" step="0.01" min="0" max="' + maxQtd + '" value="' + entregarQtd + '"></td>' +
+          '<td class="text-end">' + fmtQtdBR(it.item_caix, 2) + '</td>' +
+          '<td class="text-end">' + fmtQtdBR(it.item_caix_entr, 2) + '</td>' +
+          '<td class="text-end">' + fmtQtdBR(it.item_caix_pend, 2) + '</td>' +
+          '<td><input type="number" class="form-control form-control-sm rom-cx" step="1" min="0" max="' + maxCx + '" value="' + entregarCx + '"></td>' +
+          +'<td class="text-center">' + (dataEntr ? dataEntr : '') + '</td>' +
+          +'<td class="text-center">' + (nfeEntr ? nfeEntr : '') + '</td>';
+        body.appendChild(tr);
+      });
+      if (info) info.textContent = pendentes.length + ' item(ns) pendente(s)';
+    }
+
+    async function carregarRomaneioEntrega() {
+      if (!URL_ROMANEIO_ENTREGA || !PEDIDO_NUME) return;
+      var body = document.getElementById('romaneio-entrega-body');
+      var obs = document.getElementById('romaneio-entrega-observacao');
+      var info = document.getElementById('romaneio-entrega-info');
+      if (body) body.innerHTML = '<tr><td colspan="11" class="text-center" style="color:var(--muted);">Carregando...</td></tr>';
+      if (info) info.textContent = '';
+      try {
+        var resp = await fetch(URL_ROMANEIO_ENTREGA, { headers: { 'Accept': 'application/json' } });
+        var payload = await resp.json();
+        if (!resp.ok || !payload.ok) { showToast(payload.erro || 'Erro ao carregar romaneio.', 'danger'); return; }
+        if (obs) obs.value = String(payload.pedi_obse_roma || '');
+        renderRomaneioEntrega(payload.itens || []);
+      } catch (e) { showToast('Erro ao carregar romaneio.', 'danger'); }
+    }
+
+    async function enviarRomaneioEntrega() {
+      if (!URL_ROMANEIO_ENTREGA || !PEDIDO_NUME) return;
+      var btn = document.getElementById('btn-romaneio-entrega-salvar');
+      var rows = Array.from(document.querySelectorAll('#romaneio-entrega-body tr'));
+      var obs = document.getElementById('romaneio-entrega-observacao');
+      var entregas = [];
+      for (var i = 0; i < rows.length; i++) {
+        var tr = rows[i];
+        var itemNume = String(tr.dataset.itemNume || '').trim();
+        if (!itemNume) continue;
+        var qtdEl = tr.querySelector('.rom-qtd');
+        var cxEl = tr.querySelector('.rom-cx');
+        var qtd = parseNumberBR(qtdEl?.value);
+        var cx = parseNumberBR(cxEl?.value);
+        var maxQtd = parseNumberBR(qtdEl?.max);
+        var maxCx = parseNumberBR(cxEl?.max);
+        if (qtd < 0 || cx < 0) { showToast('Informe valores maiores ou iguais a zero.', 'danger'); return; }
+        if (qtd > maxQtd + 1e-9) { showToast('Quantidade a entregar maior que a pendente no item ' + itemNume + '.', 'danger'); return; }
+        if (cx > maxCx + 1e-9) { showToast('Caixas a entregar maior que a pendente no item ' + itemNume + '.', 'danger'); return; }
+        if (qtd > 0 || cx > 0) entregas.push({ item_nume: Number(itemNume), quantidade: String(qtd), caixas: String(cx) });
+      }
+      if (entregas.length === 0) { showToast('Informe ao menos um item para entregar.', 'danger'); return; }
+      try {
+        if (btn) { btn.disabled = true; btn.textContent = 'Entregando...'; }
+        var resp = await fetch(URL_ROMANEIO_ENTREGA, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF, 'Accept': 'application/json' },
+          body: JSON.stringify({ entregas, pedi_obse_roma: obs ? obs.value : '' })
+        });
+        var payload = await resp.json();
+        if (!resp.ok || !payload.ok) { showToast(payload.erro || 'Erro ao salvar entrega.', 'danger'); return; }
+        showToast('Entrega registrada com sucesso.', 'success');
+        if (obs) obs.value = String(payload.pedi_obse_roma || obs.value || '');
+        renderRomaneioEntrega(payload.itens || []);
+      } catch (e) { showToast('Erro ao salvar entrega.', 'danger'); }
+      finally { if (btn) { btn.disabled = false; btn.textContent = 'Entregar'; } }
+    }
+
+    function showRomaneioEntregaModal() {
+      if (!PEDIDO_NUME || !URL_ROMANEIO_ENTREGA) {
+        showToast('Grave o pedido antes de abrir o romaneio de entrega.', 'danger');
+        return;
+      }
+      var modalEl = document.getElementById('romaneioEntregaModal');
+      if (!modalEl) return;
+      new bootstrap.Modal(modalEl).show();
+      carregarRomaneioEntrega();
+    }
+
     /* ── Init ── */
     document.addEventListener('DOMContentLoaded', function () {
       bindTabs();
+      renderWorkflow();
       validateBeforeSubmit();
+      markServerErrors();
       bindPrecoCondicao();
 
       /* Kohler Switch */
@@ -1411,20 +1675,25 @@
         atualizarPreviewStatus();
       }
 
-      setupAutocomplete('cliente_nome', 'id_orca_clie', URL_AUTO_CLIENTES, async function () {
+      document.getElementById('fin-gerar')?.addEventListener('click', gerarTitulosFinanceiro);
+      document.getElementById('fin-limpar')?.addEventListener('click', function () {
+        var b = document.getElementById('fin-titulos-body');
+        if (b) b.innerHTML = '';
+      });
+
+      setupAutocomplete('cliente_nome', 'id_pedi_clie', URL_AUTO_CLIENTES, async function () {
+        await carregarCreditoCliente(); aplicarCreditoAuto();
+      });
+      prefillAutocomplete('cliente_nome', 'id_pedi_clie', URL_AUTO_CLIENTES, async function () {
         await carregarCreditoCliente();
-        if (!orcamentoExportado()) aplicarCreditoAuto();
-      }, false);
-      prefillAutocomplete('cliente_nome', 'id_orca_clie', URL_AUTO_CLIENTES, async function () {
-        await carregarCreditoCliente();
-        var credAtual = parseNumberBR(document.getElementById('id_orca_cred')?.value);
+        var credAtual = parseNumberBR(document.getElementById('id_pedi_cred')?.value);
         var chk = document.getElementById('usar-credito');
         if (chk) chk.checked = credAtual > 0;
-        if (!orcamentoExportado()) aplicarCreditoAuto();
-      }, false);
+        aplicarCreditoAuto();
+      });
 
-      setupAutocomplete('vendedor_nome', 'id_orca_vend', URL_AUTO_VENDEDORES, null, false);
-      prefillAutocomplete('vendedor_nome', 'id_orca_vend', URL_AUTO_VENDEDORES, null, false);
+      setupAutocomplete('vendedor_nome', 'id_pedi_vend', URL_AUTO_VENDEDORES);
+      prefillAutocomplete('vendedor_nome', 'id_pedi_vend', URL_AUTO_VENDEDORES);
 
       document.querySelectorAll('[id^="produto_busca_"]').forEach(function (input) {
         var index = parseInt(input.dataset.index, 10);
@@ -1443,34 +1712,31 @@
         maybeInitialCalc(index);
       });
 
-      ['id_orca_desc', 'id_orca_fret'].forEach(function (id) {
+      ['id_pedi_desc', 'id_pedi_fret'].forEach(function (id) {
         document.getElementById(id)?.addEventListener('input', function () {
-          if (orcamentoExportado()) { atualizarTotais(); return; }
           if (document.getElementById('usar-credito')?.checked) aplicarCreditoAuto();
           else atualizarTotais();
         });
       });
 
-      document.getElementById('usar-credito')?.addEventListener('change', function () {
-        if (orcamentoExportado()) return;
-        aplicarCreditoAuto();
-      });
+      document.getElementById('usar-credito')?.addEventListener('change', function () { aplicarCreditoAuto(); });
 
       setupAddItem();
-      bindRemoveButtons();
       atualizarTotais();
+      carregarTitulosFinanceiro();
       carregarCreditoCliente().then(function () {
-        var credAtual = parseNumberBR(document.getElementById('id_orca_cred')?.value);
+        var credAtual = parseNumberBR(document.getElementById('id_pedi_cred')?.value);
         var chk = document.getElementById('usar-credito');
         if (chk) chk.checked = credAtual > 0;
-        if (orcamentoExportado()) {
-          if (chk) chk.disabled = true;
-          atualizarTotais();
-          return;
-        }
         if (chk && chk.checked) aplicarCreditoAuto();
         atualizarTotais();
       });
+      document.getElementById('btn-romaneio-entrega-salvar')?.addEventListener('click', enviarRomaneioEntrega);
+      bindRemoveButtons();
+
+      {% if form.errors or formset.errors or formset.non_form_errors %}
+      showToast('O formulário voltou com erros. Revise os campos destacados.', 'danger');
+      {% endif %}
     });
   </script>
 
