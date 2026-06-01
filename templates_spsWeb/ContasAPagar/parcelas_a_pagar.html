@@ -4,18 +4,10 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
 <link rel="stylesheet" href="{% static 'css/form.css' %}">
-{% if messages %}
-<div class="container py-2">
-    {% for message in messages %}
-    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-        <i class="bi bi-{% if 'error' in message.tags %}exclamation-triangle-fill{% elif 'warning' in message.tags %}exclamation-circle-fill{% elif 'success' in message.tags %}check-circle-fill{% else %}info-circle-fill{% endif %} me-2"></i>
-        {{ message }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-    {% endfor %}
-</div>
-{% endif %}
+
 <div class="container py-4">
+    {% include 'ContasAReceber/partials/messages.html' %}
+
     <div class="card shadow-lg border-0">
         <div class="card-header text-center py-3">
             <h3 class="mb-0 d-flex align-items-center justify-content-center">
@@ -24,6 +16,22 @@
             </h3>
         </div>
         <div class="card-body p-4">
+            <!-- Exibição de erros não-campo -->
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                <div class="d-flex align-items-start">
+                    <i class="bi bi-exclamation-triangle-fill me-3 mt-1" style="font-size: 1.2rem;"></i>
+                    <div class="flex-grow-1">
+                        <strong>Erro na criação</strong>
+                        {% for error in form.non_field_errors %}
+                        <div class="mt-2">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            </div>
+            {% endif %}
+
             <form method="post">
                 {% csrf_token %}
                 <div class="form-section">
@@ -40,51 +48,80 @@
                         </div>
                         <div class="col-md-8 position-relative">
                             <label class="form-label" for="{{ form.titu_forn.id_for_label }}">Fornecedor</label>
-                            <input type="text" class="form-control" id="autocomplete-fornecedor" placeholder="Digite nome ou código do fornecedor">
+                            <input type="text" class="form-control" id="autocomplete-fornecedor"
+                                placeholder="Digite nome ou código do fornecedor">
                             {{ form.titu_forn.as_hidden }}
+                            {% if form.titu_forn.errors %}
+                            <div class="invalid-feedback d-block">{{ form.titu_forn.errors|striptags }}</div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
+
                 <div class="form-section">
                     <div class="row g-3">
                         <div class="col-md-4">
                             <label class="form-label" for="{{ form.titu_titu.id_for_label }}">Título</label>
                             {{ form.titu_titu }}
+                            {% if form.titu_titu.errors %}
+                            <div class="invalid-feedback d-block">{{ form.titu_titu.errors|striptags }}</div>
+                            {% endif %}
                         </div>
                         <div class="col-md-4">
                             <label class="form-label" for="{{ form.titu_seri.id_for_label }}">Série</label>
                             {{ form.titu_seri }}
+                            {% if form.titu_seri.errors %}
+                            <div class="invalid-feedback d-block">{{ form.titu_seri.errors|striptags }}</div>
+                            {% endif %}
                         </div>
                         <div class="col-md-4">
                             <label class="form-label" for="{{ form.titu_parc.id_for_label }}">Qtde Parcelas</label>
                             {{ form.titu_parc }}
+                            {% if form.titu_parc.errors %}
+                            <div class="invalid-feedback d-block">{{ form.titu_parc.errors|striptags }}</div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
+
                 <div class="form-section">
                     <div class="row g-3">
                         <div class="col-md-4">
                             <label class="form-label" for="{{ form.titu_valo.id_for_label }}">Valor Total (R$)</label>
                             {{ form.titu_valo }}
+                            {% if form.titu_valo.errors %}
+                            <div class="invalid-feedback d-block">{{ form.titu_valo.errors|striptags }}</div>
+                            {% endif %}
                         </div>
                         <div class="col-md-4">
                             <label class="form-label" for="{{ form.titu_emis.id_for_label }}">Emissão</label>
                             {{ form.titu_emis }}
+                            {% if form.titu_emis.errors %}
+                            <div class="invalid-feedback d-block">{{ form.titu_emis.errors|striptags }}</div>
+                            {% endif %}
                         </div>
                         <div class="col-md-4">
                             <label class="form-label" for="{{ form.titu_venc.id_for_label }}">1º Vencimento</label>
                             {{ form.titu_venc }}
+                            {% if form.titu_venc.errors %}
+                            <div class="invalid-feedback d-block">{{ form.titu_venc.errors|striptags }}</div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
+
                 <div class="form-section">
                     <div class="row g-3">
                         <div class="col-md-4">
                             <label class="form-label" for="{{ form.titu_cecu.id_for_label }}">Centro de Custo</label>
                             {{ form.titu_cecu }}
+                            {% if form.titu_cecu.errors %}
+                            <div class="invalid-feedback d-block">{{ form.titu_cecu.errors|striptags }}</div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
+
                 <div class="d-flex gap-2 justify-content-end">
                     <a href="{% url 'contas_a_pagar_web:titulos_pagar_list' slug=request.resolver_match.kwargs.slug %}"
                         class="btn btn-secondary">
@@ -98,71 +135,72 @@
         </div>
     </div>
 </div>
+
 <script>
-  const slugTplP = '{{ slug|default:"" }}';
-  const slugP = slugTplP || (function () {
-    try {
-      const p = location.pathname.split('/');
-      return p.length > 2 ? p[2] : ''
-    } catch (e) {
-      return ''
-    }
-  })();
-  (function(){
-    const input = document.getElementById('autocomplete-fornecedor');
-    const hidden = document.getElementById('{{ form.titu_forn.id_for_label }}');
-    if (!input || !hidden) return;
-    let controller = null;
-    let dd = null;
-    function dropdown() {
-      if (dd) return dd;
-      dd = document.createElement('div');
-      dd.className = 'list-group position-absolute w-100';
-      dd.style.zIndex = '1000';
-      dd.style.maxHeight = '260px';
-      dd.style.overflowY = 'auto';
-      dd.style.marginTop = '4px';
-      input.parentElement.appendChild(dd);
-      return dd;
-    }
-    input.addEventListener('input', async function () {
-      const term = this.value.trim();
-      if (term.length < 2) { if (dd) dd.innerHTML=''; return; }
-      try {
-        if (controller) controller.abort();
-        controller = new AbortController();
-        const url = `/web/${slugP}/contas-a-pagar/autocomplete/fornecedores/?q=${encodeURIComponent(term)}`;
-        const r = await fetch(url, { signal: controller.signal });
-        const j = await r.json();
-        const results = j.results || [];
-        const d = dropdown(); d.innerHTML = '';
-        if (results.length === 0) {
-          const empty = document.createElement('div');
-          empty.className = 'list-group-item text-muted';
-          empty.textContent = 'Nenhum fornecedor encontrado';
-          d.appendChild(empty);
-          return;
+    const slugTplP = '{{ slug|default:"" }}';
+    const slugP = slugTplP || (function () {
+        try {
+            const p = location.pathname.split('/');
+            return p.length > 2 ? p[2] : ''
+        } catch (e) {
+            return ''
         }
-        results.forEach(it => {
-          const a = document.createElement('a');
-          a.href = '#';
-          a.className = 'list-group-item list-group-item-action';
-          a.textContent = it.text || it.id || '';
-          a.addEventListener('click', ev => {
-            ev.preventDefault();
-            hidden.value = it.id || '';
-            input.value = it.text || it.id || '';
-            d.innerHTML = '';
-          });
-          d.appendChild(a);
+    })();
+    (function () {
+        const input = document.getElementById('autocomplete-fornecedor');
+        const hidden = document.getElementById('{{ form.titu_forn.id_for_label }}');
+        if (!input || !hidden) return;
+        let controller = null;
+        let dd = null;
+        function dropdown() {
+            if (dd) return dd;
+            dd = document.createElement('div');
+            dd.className = 'list-group position-absolute w-100';
+            dd.style.zIndex = '1000';
+            dd.style.maxHeight = '260px';
+            dd.style.overflowY = 'auto';
+            dd.style.marginTop = '4px';
+            input.parentElement.appendChild(dd);
+            return dd;
+        }
+        input.addEventListener('input', async function () {
+            const term = this.value.trim();
+            if (term.length < 2) { if (dd) dd.innerHTML = ''; return; }
+            try {
+                if (controller) controller.abort();
+                controller = new AbortController();
+                const url = `/web/${slugP}/contas-a-pagar/autocomplete/fornecedores/?q=${encodeURIComponent(term)}`;
+                const r = await fetch(url, { signal: controller.signal });
+                const j = await r.json();
+                const results = j.results || [];
+                const d = dropdown(); d.innerHTML = '';
+                if (results.length === 0) {
+                    const empty = document.createElement('div');
+                    empty.className = 'list-group-item text-muted';
+                    empty.textContent = 'Nenhum fornecedor encontrado';
+                    d.appendChild(empty);
+                    return;
+                }
+                results.forEach(it => {
+                    const a = document.createElement('a');
+                    a.href = '#';
+                    a.className = 'list-group-item list-group-item-action';
+                    a.textContent = it.text || it.id || '';
+                    a.addEventListener('click', ev => {
+                        ev.preventDefault();
+                        hidden.value = it.id || '';
+                        input.value = it.text || it.id || '';
+                        d.innerHTML = '';
+                    });
+                    d.appendChild(a);
+                });
+            } catch (e) {
+                if (e.name !== 'AbortError') console.error(e);
+            }
         });
-      } catch(e) {
-        if (e.name !== 'AbortError') console.error(e);
-      }
-    });
-    document.addEventListener('click', e => {
-      if (dd && !input.parentElement.contains(e.target)) dd.innerHTML = '';
-    });
-  })();
+        document.addEventListener('click', e => {
+            if (dd && !input.parentElement.contains(e.target)) dd.innerHTML = '';
+        });
+    })();
 </script>
 {% endblock %}

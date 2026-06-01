@@ -39,15 +39,6 @@ class TitulosReceberCreateView(DBAndSlugMixin, CreateView):
             qs = qs.filter(enti_empr=emp)
         row = qs.values('enti_nome').first()
         return row.get('enti_nome') if row else ''
-    
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        form = context.get('form')
-        cliente_id = None
-        if form:
-            cliente_id = (form.data.get('titu_clie') or form.initial.get('titu_clie'))
-        context['cliente_nome'] = (self.cliente_nome(cliente_id) if cliente_id else '') 
-        return context
 
     def form_valid(self, form):
         banco = get_licenca_db_config(self.request) or 'default'
@@ -82,7 +73,7 @@ class TitulosReceberCreateView(DBAndSlugMixin, CreateView):
         )
         
         if queryset.exists():
-            messages.error(self.request, 'Já existe um título com as mesmas condições lançado no sistema.')
+            form.add_error(None, '❌ Já existe um título com essas condições (mesma empresa, filial, cliente, número, série e parcela).')
             return self.form_invalid(form)
         
         avisos = validar_datas_titulo(
@@ -103,6 +94,7 @@ class TitulosReceberCreateView(DBAndSlugMixin, CreateView):
             titulo=self.object,
             banco=banco,
         )
+        messages.success(self.request, '✅ Título criado com sucesso!')
         return redirect('contas_a_receber_web:titulos_receber_list', slug=self.slug)
 
 
@@ -149,15 +141,18 @@ class TitulosReceberParcelasCreateView(DBAndSlugMixin, CreateView):
         )
         
         if queryset.exists():
-            messages.error(self.request, 'Já existe um título com as mesmas condições lançado no sistema.')
+            form.add_error(None, '❌ Já existe um título com essas condições (mesma empresa, filial, cliente, número, série e parcela).')
             return self.form_invalid(form)
         
         avisos = validar_datas_titulo(
             titu_emis=dados.get('titu_emis'),
             titu_venc=dados.get('titu_venc'),
         )
-        for aviso in avisos:
-            messages.warning(self.request, aviso)
+        
+        if avisos:
+            for aviso in avisos:
+                form.add_error(None, f'⚠️ {aviso}')
+            return self.form_invalid(form)
 
         from ...services import criar_titulo_receber, gera_parcelas_a_receber
         self.object = criar_titulo_receber(
@@ -170,4 +165,5 @@ class TitulosReceberParcelasCreateView(DBAndSlugMixin, CreateView):
             titulo=self.object,
             banco=banco,
         )
+        messages.success(self.request, '✅ Parcelas criadas com sucesso!')
         return redirect('contas_a_receber_web:parcelas_a_receber_list', slug=self.slug)
