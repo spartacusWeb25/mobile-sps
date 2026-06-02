@@ -232,10 +232,17 @@ class OrcamentoPisosListView(VendedorEntidadeMixin, ListView):
         # Get empresas and filiais for filters
         try:
             from Licencas.models import Empresas, Filiais
+            # Usar nome fantasia (empr_fant) para exibição nas listas
             context["empresas_list"] = list(
-                Empresas.objects.using(self.banco).only("empr_codi", "empr_nome").order_by("empr_nome")
+                Empresas.objects.using(self.banco)
+                .values("empr_codi", "empr_fant", "empr_nome")
+                .order_by("empr_fant")
             )
-            filiais_qs = Filiais.objects.using(self.banco).only("empr_empr", "empr_codi", "empr_nome").order_by("empr_nome")
+            filiais_qs = (
+                Filiais.objects.using(self.banco)
+                .values("empr_empr", "empr_codi", "empr_fant", "empr_nome")
+                .order_by("empr_fant")
+            )
             if empresa_id:
                 try:
                     filiais_qs = filiais_qs.filter(empr_empr=int(empresa_id))
@@ -245,6 +252,7 @@ class OrcamentoPisosListView(VendedorEntidadeMixin, ListView):
         except Exception:
             context["empresas_list"] = []
             context["filiais_list"] = []
+          
 
         # Calculate metrics based on filtered queryset
         context["metricas"] = {
@@ -269,7 +277,7 @@ class OrcamentoPisosListView(VendedorEntidadeMixin, ListView):
                     try:
                         emp = Empresas.objects.using(self.banco).filter(empr_codi=item['orca_empr']).first()
                         if emp:
-                            empresa_dict[item['orca_empr']] = emp.empr_nome
+                            empresa_dict[item['orca_empr']] = emp.empr_fant or emp.empr_nome
                     except:
                         pass
         except:

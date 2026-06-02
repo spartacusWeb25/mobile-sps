@@ -156,7 +156,7 @@
             <select name="empresa_id" id="empresa_id" class="form-select form-select-sm">
               <option value="">Todas</option>
               {% for emp in empresas_list %}
-              <option value="{{ emp.empr_codi }}" {% if filtros.empresa_id == emp.empr_codi %}selected{% endif %}>{{ emp.empr_nome }}</option>
+              <option value="{{ emp.empr_codi }}" {% if filtros.empresa_id == emp.empr_codi %}selected{% endif %}>{{ emp.empr_fant|default:emp.empr_nome }}</option>
               {% endfor %}
             </select>
           </div>
@@ -166,7 +166,7 @@
             <select name="filial_id" id="filial_id" class="form-select form-select-sm">
               <option value="">Todas</option>
               {% for fil in filiais_list %}
-              <option value="{{ fil.empr_codi }}" {% if filtros.filial_id == fil.empr_codi %}selected{% endif %}>{{ fil.empr_nome }}</option>
+              <option value="{{ fil.empr_codi }}" {% if filtros.filial_id == fil.empr_codi %}selected{% endif %}>{{ fil.empr_fant|default:fil.empr_nome }}</option>
               {% endfor %}
             </select>
           </div>
