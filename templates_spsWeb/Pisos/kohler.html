@@ -826,22 +826,27 @@
       const quanInput = document.getElementById('quan-' + index);
       const unitInput = document.getElementById('unit-' + index);
       const sutoInput = document.getElementById('suto-' + index);
-      
+
       const quant = parseNumberBR(quanInput?.value || 0);
       const unit = parseNumberBR(unitInput?.value || 0);
-      
+
+      // Se unit não estiver definido, delega ao cálculo normal que busca preço no servidor
+      if (!unit || unit <= 0) {
+        return calcularItem(index);
+      }
+
       const subtotal = quant * unit;
-      
+
       if (sutoInput) {
         sutoInput.value = subtotal.toFixed(2);
       }
-      
+
       const hiddenQuan = document.getElementById('id_itens-' + index + '-item_quan');
       const hiddenUnit = document.getElementById('id_itens-' + index + '-item_unit');
-      
+
       if (hiddenQuan) hiddenQuan.value = String(quant);
       if (hiddenUnit) hiddenUnit.value = String(unit);
-      
+
       atualizarTotais();
     }
 

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatório de Contas a Pagar</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            padding: 20px;
+            color: #333;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #333;
+        }
+
+        .header img {
+            max-height: 80px;
+            margin-bottom: 10px;
+        }
+
+        .header h1 {
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 11px;
+            color: #666;
+            margin: 0;
+        }
+
+        .company-info {
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+        }
+
+        .company-info p {
+            margin: 2px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        th,
+        td {
+            padding: 8px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f0f0f0;
+            font-weight: bold;
+        }
+
+        .total-row {
+            background-color: #e9ecef;
+            font-weight: bold;
+        }
+
+        .grand-total {
+            background-color: #d1e7dd;
+            font-weight: bold;
+            font-size: 14px;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+
+        .grand-total .row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .badge {
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .badge-success {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .badge-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .badge-warning {
+            background-color: #ffc107;
+            color: #000;
+        }
+
+        .badge-primary {
+            background-color: #007bff;
+            color: white;
+        }
+
+        @media print {
+            body {
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        {% if header_logo %}
+        <img src="data:image/png;base64,{{ header_logo }}" alt="Logo da Filial">
+        {% endif %}
+        <h1>Relatório de Contas a Pagar {% if status == 'quitado' %}(Pagas){% endif %}</h1>
+        <p>Período: {% if period == 'hoje' %}Hoje{% else %}Semana{% endif %} | Emitido em:{{ today|date:"d/m/Y" }}</p>
+    </div>
+
+    <div class="company-info">
+        <p><strong>Empresa:</strong> {{ empresa_nome }} {% if empresa_fantasia %}({{ empresa_fantasia }}){% endif %}</p>
+        <p><strong>Filial:</strong> {{ filial_nome }} {% if filial_fantasia %}({{ filial_fantasia }}){% endif %}</p>
+    </div>
+
+    {% regroup data by empresa_id as empresas_grouped %}
+
+    {% for empresa in empresas_grouped %}
+    <div class="company-info">
+        <p><strong>Empresa:</strong> {{ empresa.list.0.empresa_nome }}</p>
+    </div>
+
+    {% regroup empresa.list by filial_id as filiais_grouped %}
+    {% for filial in filiais_grouped %}
+    <div style="margin-top:8px; margin-bottom:4px;">
+        <strong>Filial:</strong> {{ filial.list.0.filial_nome }} {% if filial.list.0.filial_fantasia %}({{
+        filial.list.0.filial_fantasia }}){% endif %}
+
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Título</th>
+                <th>Fornecedor</th>
+                <th>Valor</th>
+                <th>Parcela</th>
+                <th>Vencimento</th>
+                <th>Data Pagamento</th>
+                <th>Estado</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in filial.list %}
+            <tr>
+                <td>{{ item.titu_titu }}</td>
+                <td>{{ item.fornecedor_nome }}</td>
+                <td>{{ item.titu_valo }}</td>
+                <td>{{ item.titu_parc }}</td>
+                <td>{{ item.titu_venc }}</td>
+                <td>{{ item.bapa_dpag }}</td>
+                <td>
+                    {% if item.titu_aber == 'T' %}
+                    <span class="badge badge-success">Quitado</span>
+                    {% else %}
+                    <span class="badge badge-primary">Aberto</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr class="total-row">
+                <td colspan="2" class="text-end">Total Filial:</td>
+                <td>
+                    {% for emp_id, fil_map in filial_totals.items %}
+                    {% if emp_id == empresa.grouper %}
+                    {% for f_id, f_data in fil_map.items %}
+                    {% if f_id == filial.grouper %}
+                    {{ f_data.valor|floatformat:2 }}
+                    {% endif %}
+                    {% endfor %}
+                    {% endif %}
+                    {% endfor %}
+                </td>
+                <td colspan="4">Títulos: {{ filial.list|length }}</td>
+            </tr>
+        </tfoot>
+    </table>
+    {% endfor %}
+
+    <div style="margin-top:6px;">
+        <strong>Total {{ empresa.list.0.empresa_nome }}:</strong>
+        {% for emp_id, emp_data in empresas_totals.items %}
+        {% if emp_id == empresa.grouper %}
+        {{ emp_data.valor|floatformat:2 }} ({{ emp_data.count }} títulos)
+        {% endif %}
+        {% endfor %}
+    </div>
+
+    {% endfor %}
+
+    <div class="grand-total">
+        <div class="row">
+            <div><strong>Total Geral:</strong></div>
+            <div><strong>{{ total_sum|floatformat:2 }}</strong> ({{ total_count }} títulos)</div>
+        </div>
+    </div>
+
+    <script>
+        window.onload = function () {
+            window.print();
+        };
+    </script>
+</body>
+
+</html>

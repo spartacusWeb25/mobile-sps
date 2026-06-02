@@ -1,11 +1,111 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block content %}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+{% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/list.css' %}">
+<style>
+  @media print {
+    .no-print {
+      display: none !important;
+    }
+    
+    .print-header {
+      display: block !important;
+      text-align: center;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid #333;
+    }
+    
+    .print-header img {
+      max-height: 80px;
+      margin-bottom: 1rem;
+    }
+    
+    .print-header h2 {
+      font-size: 1.8rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .print-header p {
+      font-size: 1rem;
+      color: #666;
+      margin: 0;
+    }
+    
+    .container {
+      max-width: 100%;
+      padding: 0;
+    }
+    
+    .table {
+      font-size: 0.9rem;
+    }
+    
+    .empresa-section {
+      page-break-inside: avoid;
+      margin-bottom: 2rem;
+    }
+    
+    .empresa-header {
+      font-weight: bold;
+      page-break-inside: avoid;
+    }
+    
+    .total-row {
+      font-weight: bold;
+      page-break-inside: avoid;
+    }
+    
+    .grand-total {
+      font-weight: bold;
+      font-size: 1.1rem;
+      page-break-inside: avoid;
+    }
+  }
+  
+  .print-header {
+    display: none;
+  }
+  
+  .empresa-section {
+    margin-bottom: 2rem;
+  }
+  
+  .empresa-header {
+    font-weight: 600;
+  }
+  
+  .total-row {
+    font-weight: 600;
+  }
+  
+  .grand-total {
+    font-weight: 700;
+  }
+</style>
+{% endblock %}
+
 <div class="container py-3">
-  <h3 class="page-title">Contas a Receber (Recebidas)</h3>
-  <form method="get" class="row g-2 mb-3">
+  <div class="d-flex justify-content-between align-items-center mb-3 no-print">
+    <h3 class="mb-0">Contas a Receber {% if request.GET.status == 'quitado' %}(Recebidas){% endif %}</h3>
+    <div>
+      <a class="btn btn-sm btn-primary me-2" href="{% url 'notificacoes_web:imprimir_receber' slug=slug %}?{% if period %}period={{ period }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if object_list %}&empresa_id={{ object_list.0.empresa_id }}&filial_id={{ object_list.0.filial_id }}{% endif %}" target="_blank">
+        <i class="bi bi-printer"></i> Imprimir
+      </a>
+      <a class="btn btn-sm btn-outline-secondary" href="/web/{{ slug }}/notificacoes/">
+        <i class="bi bi-arrow-left"></i> Voltar
+      </a>
+    </div>
+  </div>
+
+  <div class="print-header">
+    <img src="" alt="Logo da Empresa" id="print-logo">
+    <h2>Relatório de Contas a Receber {% if request.GET.status == 'quitado' %}(Recebidas){% endif %}</h2>
+    <p>Período: {% if period == 'hoje' %}Hoje{% else %}Semana{% endif %} | Emitido em: {% now "d/m/Y H:i" %}</p>
+  </div>
+
+  <form method="get" class="row g-2 mb-3 no-print">
     <div class="col-auto">
       <select name="period" class="form-select form-select-sm">
         <option value="hoje" {% if period == 'hoje' %}selected{% endif %}>Hoje</option>
@@ -19,64 +119,130 @@
         <option value="quitado" {% if request.GET.status == 'quitado' %}selected{% endif %}>Quitados</option>
       </select>
     </div>
-    <div class="col-auto"><button class="btn btn-sm btn-primary" type="submit">Filtrar</button></div>
+    <div class="col-auto"><button class="btn btn-sm btn-outline-primary" type="submit"><i class="bi bi-filter"></i> Filtrar</button></div>
     <div class="col-auto ms-auto">
       <a class="btn btn-sm btn-outline-success" href="{% url 'notificacoes_web:exportar_receber' slug=slug %}?{% if period %}period={{ period }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">
         <i class="bi bi-file-earmark-excel"></i> Exportar Excel
       </a>
     </div>
   </form>
-  <div class="table-responsive">
-    <table class="table table-sm align-middle">
-      <thead>
-        <tr>
-          <th>Título</th>
-          <th>Cliente</th>
-          <th>Nome Cliente</th>
-          <th>Valor</th>
-          <th>Parcela</th>
-          <th>Vencimento</th>
-          <th>Data Recebimento</th>
-          <th>Estado</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for t in object_list %}
-        <tr>
-          <td>{{ t.titu_titu }}</td>
-          <td>{{ t.titu_clie }}</td>
-          <td>{{ t.cliente_nome }}</td>
-          <td>{{ t.titu_valo }}</td>
-          <td>{{ t.titu_parc }}</td>
-          <td>{{ t.titu_venc }}</td>
-          <td>{{ t.bapa_dpag }}</td>
-          <td>
-            {% if t.titu_aber == 'T' %}
-            <span class="badge bg-success">Recebido</span>
-            {% else %}
-            {% if t.titu_venc == today %}
-            <span class="badge bg-warning text-dark">Vence Hoje</span>
-            {% elif t.titu_venc < today %}
-            <span class="badge bg-danger">Vencido</span>
-            {% else %}
-            <span class="badge bg-primary">Em Aberto</span>
-            {% endif %}
-            {% endif %}
-          </td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="4" class="text-center">Sem registros</td></tr>
-        {% endfor %}
-      </tbody>
-      <tfoot>
-        <tr>
-          <th colspan="3" class="text-end">Totais</th>
-          <th>{{ total_sum|floatformat:2 }}</th>
-          <th colspan="3">Títulos: {{ total_count }}</th>
-        </tr>
-      </tfoot>
-    </table>
+
+  {% regroup object_list by empresa_id as empresas_grouped %}
+  
+  {% for empresa in empresas_grouped %}
+  <div class="empresa-section">
+    <div class="card mb-3">
+      <div class="card-header empresa-header">
+        <h6 class="mb-0">
+          <i class="bi bi-building"></i> 
+          {{ empresa.list.0.empresa_nome }}
+          {% if empresa.list.0.empresa_fantasia %}
+          <small class="text-muted">({{ empresa.list.0.empresa_fantasia }})</small>
+          {% endif %}
+        </h6>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead>
+              <tr>
+                <th>Empresa</th>
+                <th>Filial</th>
+                <th>Título</th>
+                <th>Cliente</th>
+                <th>Valor</th>
+                <th>Parcela</th>
+                <th>Vencimento</th>
+                <th>Data Recebimento</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for t in empresa.list %}
+              <tr>
+                <td>{{ t.empresa_nome }}</td>
+                <td>
+                  {{ t.filial_nome }}
+                  {% if t.filial_fantasia %}
+                  <small class="text-muted">({{ t.filial_fantasia }})</small>
+                  {% endif %}
+                </td>
+                <td>{{ t.titu_titu }}</td>
+                <td>{{ t.cliente_nome }}</td>
+                <td>{{ t.titu_valo }}</td>
+                <td>{{ t.titu_parc }}</td>
+                <td>{{ t.titu_venc }}</td>
+                <td>{{ t.bapa_dpag }}</td>
+                <td>
+                  {% if t.titu_aber == 'T' %}
+                  <span class="badge bg-success">Recebido</span>
+                  {% else %}
+                  {% if t.titu_venc == today %}
+                  <span class="badge bg-warning text-dark">Vence Hoje</span>
+                  {% elif t.titu_venc < today %}
+                  <span class="badge bg-danger">Vencido</span>
+                  {% else %}
+                  <span class="badge bg-primary">Em Aberto</span>
+                  {% endif %}
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+            <tfoot>
+              <tr class="total-row">
+                <td colspan="4" class="text-end">Total {{ empresa.list.0.empresa_nome }}:</td>
+                <td>
+                  {% for emp_id, emp_data in empresas_totals.items %}
+                    {% if emp_id == empresa.grouper %}
+                      {{ emp_data.valor|floatformat:2 }}
+                    {% endif %}
+                  {% endfor %}
+                </td>
+                <td colspan="3">Títulos: {{ empresa.list|length }}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
   </div>
+  {% endfor %}
+
+  <div class="card grand-total">
+    <div class="card-body">
+      <div class="row align-items-center">
+        <div class="col-md-6">
+          <h5 class="mb-0">
+            <i class="bi bi-sum"></i> Total Geral
+          </h5>
+        </div>
+        <div class="col-md-6 text-end">
+          <span class="h4 mb-0">{{ total_sum|floatformat:2 }}</span>
+          <small class="text-muted">({{ total_count }} títulos)</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% if not object_list %}
+  <div class="alert alert-info text-center">
+    <i class="bi bi-info-circle"></i> Nenhum registro encontrado.
+  </div>
+  {% endif %}
+
   {% include 'components/pagination.html' %}
 </div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const printLogo = document.getElementById('print-logo');
+    {% for t in object_list|slice:":1" %}
+    {% if t.tem_logo %}
+    // printLogo.src = '/api/filiais/{{ t.empresa_id }}/{{ t.filial_id }}/logo/';
+    break;
+    {% endif %}
+    {% endfor %}
+  });
+</script>
 {% endblock %}

@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatório de Contas a Receber</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #333;
+        }
+        
+        .header img {
+            max-height: 80px;
+            margin-bottom: 10px;
+        }
+        
+        .header h1 {
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            font-size: 11px;
+            color: #666;
+            margin: 0;
+        }
+        
+        .company-info {
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+        }
+        
+        .company-info p {
+            margin: 2px 0;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+        
+        th {
+            background-color: #f0f0f0;
+            font-weight: bold;
+        }
+        
+        .total-row {
+            background-color: #e9ecef;
+            font-weight: bold;
+        }
+        
+        .grand-total {
+            background-color: #d1e7dd;
+            font-weight: bold;
+            font-size: 14px;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+        
+        .grand-total .row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .badge {
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+        
+        .badge-success { background-color: #28a745; color: white; }
+        .badge-danger { background-color: #dc3545; color: white; }
+        .badge-warning { background-color: #ffc107; color: #000; }
+        .badge-primary { background-color: #007bff; color: white; }
+        
+        @media print {
+            body {
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        {% if filial_logo %}
+        <img src="data:image/png;base64,{{ filial_logo }}" alt="Logo da Filial">
+        {% endif %}
+        <h1>Relatório de Contas a Receber {% if status == 'quitado' %}(Recebidas){% endif %}</h1>
+        <p>Período: {% if period == 'hoje' %}Hoje{% else %}Semana{% endif %} | Emitido em: {{ today|date:"d/m/Y H:i" }}</p>
+    </div>
+    
+    <div class="company-info">
+        <p><strong>Empresa:</strong> {{ empresa_nome }} {% if empresa_fantasia %}({{ empresa_fantasia }}){% endif %}</p>
+        <p><strong>Filial:</strong> {{ filial_nome }} {% if filial_fantasia %}({{ filial_fantasia }}){% endif %}</p>
+    </div>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Título</th>
+                <th>Cliente</th>
+                <th>Valor</th>
+                <th>Parcela</th>
+                <th>Vencimento</th>
+                <th>Data Recebimento</th>
+                <th>Estado</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in data %}
+            <tr>
+                <td>{{ item.titu_titu }}</td>
+                <td>{{ item.cliente_nome }}</td>
+                <td>{{ item.titu_valo }}</td>
+                <td>{{ item.titu_parc }}</td>
+                <td>{{ item.titu_venc }}</td>
+                <td>{{ item.bapa_dpag }}</td>
+                <td>
+                    {% if item.titu_aber == 'T' %}
+                    <span class="badge badge-success">Recebido</span>
+                    {% else %}
+                    <span class="badge badge-primary">Em Aberto</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr class="total-row">
+                <td colspan="2" style="text-align: right;"><strong>Total:</strong></td>
+                <td colspan="5"><strong>{{ total_sum|floatformat:2 }}</strong></td>
+            </tr>
+        </tfoot>
+    </table>
+    
+    <div class="grand-total">
+        <div class="row">
+            <div><strong>Total Geral:</strong></div>
+            <div><strong>{{ total_sum|floatformat:2 }}</strong> ({{ total_count }} títulos)</div>
+        </div>
+    </div>
+    
+    <script>
+        window.onload = function() {
+            window.print();
+        };
+    </script>
+</body>
+</html>

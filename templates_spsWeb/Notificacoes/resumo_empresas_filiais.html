@@ -1,0 +1,355 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="{% static 'css/list.css' %}">
+
+<style>
+  .print-header {
+    display: none;
+  }
+  
+  .empresa-section {
+    margin-bottom: 2rem;
+    page-break-inside: avoid;
+  }
+  
+  .filial-card {
+    border-left: 4px solid #007bff;
+    margin-bottom: 1rem;
+    transition: all 0.2s ease;
+  }
+  
+  .filial-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  
+  .stat-badge {
+    font-size: 1.1rem;
+    font-weight: 700;
+    padding: 0.5rem 1rem;
+  }
+  
+  .total-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+  }
+  
+  @media print {
+    .no-print {
+      display: none !important;
+    }
+    
+    .print-header {
+      display: block;
+      text-align: center;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid #333;
+    }
+    
+    .print-header img {
+      max-height: 80px;
+      margin-bottom: 1rem;
+    }
+    
+    .print-header h2 {
+      font-size: 1.8rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .print-header p {
+      font-size: 1rem;
+      color: #666;
+      margin: 0;
+    }
+    
+    .container {
+      max-width: 100%;
+      padding: 0;
+    }
+    
+    .card {
+      border: 1px solid #ddd;
+      box-shadow: none;
+      page-break-inside: avoid;
+    }
+    
+    .table {
+      font-size: 0.9rem;
+    }
+    
+    .empresa-section {
+      page-break-inside: avoid;
+    }
+    
+    .total-section {
+      page-break-inside: avoid;
+      margin-top: 2rem;
+      padding-top: 1rem;
+      border-top: 2px solid #333;
+      background: #f8f9fa !important;
+      color: #333 !important;
+    }
+    
+    .filial-card {
+      page-break-inside: avoid;
+    }
+  }
+  
+  .clickable-row {
+    cursor: pointer;
+  }
+  
+  .clickable-row:hover {
+    background-color: rgba(0, 123, 255, 0.1);
+  }
+</style>
+
+<div class="container py-3">
+  <div class="d-flex justify-content-between align-items-center mb-4 no-print">
+    <h3 class="page-title mb-0">
+      <i class="bi bi-building"></i> Resumo por Empresa e Filial
+    </h3>
+    <div>
+      <button class="btn btn-primary me-2" onclick="window.print()">
+        <i class="bi bi-printer"></i> Imprimir
+      </button>
+      <a class="btn btn-outline-secondary" href="/web/{{ slug }}/notificacoes/">
+        <i class="bi bi-arrow-left"></i> Voltar
+      </a>
+    </div>
+  </div>
+
+  <!-- Print Header -->
+  <div class="print-header">
+    <img src="" alt="Logo da Empresa" id="print-logo">
+    <h2>Resumo de Notificações por Empresa e Filial</h2>
+    <p>Emitido em: {% now "d/m/Y H:i" %}</p>
+  </div>
+
+  <!-- Total Geral -->
+  <div class="card total-section mb-4">
+    <div class="card-body">
+      <h4 class="mb-3">
+        <i class="bi bi-sum"></i> Total Geral de Todas as Empresas e Filiais
+      </h4>
+      <div class="row g-3">
+        <div class="col-6 col-md-3">
+          <div class="text-center">
+            <div class="stat-badge bg-danger text-white rounded">Pagar Hoje</div>
+            <div class="h3 mb-0">{{ total_geral.pagar_hoje }}</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="text-center">
+            <div class="stat-badge bg-warning text-dark rounded">Pagar Semana</div>
+            <div class="h3 mb-0">{{ total_geral.pagar_semana }}</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="text-center">
+            <div class="stat-badge bg-success text-white rounded">Receber Hoje</div>
+            <div class="h3 mb-0">{{ total_geral.receber_hoje }}</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="text-center">
+            <div class="stat-badge bg-info text-white rounded">Receber Semana</div>
+            <div class="h3 mb-0">{{ total_geral.receber_semana }}</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="text-center">
+            <div class="stat-badge bg-secondary text-white rounded">Pagas Hoje</div>
+            <div class="h3 mb-0">{{ total_geral.pagas_hoje }}</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="text-center">
+            <div class="stat-badge bg-light text-dark rounded">Pagas Semana</div>
+            <div class="h3 mb-0">{{ total_geral.pagas_semana }}</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="text-center">
+            <div class="stat-badge bg-success text-white rounded">Recebidas Hoje</div>
+            <div class="h3 mb-0">{{ total_geral.recebidas_hoje }}</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="text-center">
+            <div class="stat-badge bg-info text-white rounded">Recebidas Semana</div>
+            <div class="h3 mb-0">{{ total_geral.recebidas_semana }}</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="text-center">
+            <div class="stat-badge bg-primary text-white rounded">Orçamentos</div>
+            <div class="h3 mb-0">{{ total_geral.orcamentos_hoje }}</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="text-center">
+            <div class="stat-badge bg-dark text-white rounded">Pedidos</div>
+            <div class="h3 mb-0">{{ total_geral.pedidos_hoje }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empresas e Filiais -->
+  {% regroup resumo by empresa_id as empresas_grouped %}
+  {% for empresa in empresas_grouped %}
+  <div class="empresa-section">
+    <div class="card mb-3">
+      <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">
+          <i class="bi bi-building"></i> 
+          {{ empresa.list.0.empresa_nome }}
+          {% if empresa.list.0.empresa_fantasia %}
+          <small class="text-white-50">({{ empresa.list.0.empresa_fantasia }})</small>
+          {% endif %}
+        </h5>
+      </div>
+      <div class="card-body">
+        {% for item in empresa.list %}
+        <div class="card filial-card">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h6 class="mb-0">
+                <i class="bi bi-shop"></i> {{ item.filial_nome }}
+                {% if item.filial_fantasia %}
+                <small class="text-muted">({{ item.filial_fantasia }})</small>
+                {% endif %}
+              </h6>
+              {% if item.tem_logo %}
+              <span class="badge bg-success">
+                <i class="bi bi-image"></i> Logo
+              </span>
+              {% endif %}
+            </div>
+            
+            <div class="row g-2">
+              <div class="col-6 col-md-3">
+                <a href="/web/{{ slug }}/notificacoes/pagar/?period=hoje&empresa_id={{ item.empresa_id }}&filial_id={{ item.filial_id }}" 
+                   class="text-decoration-none clickable-row">
+                  <div class="p-2 rounded bg-danger bg-opacity-10 text-center">
+                    <div class="small text-danger">Pagar Hoje</div>
+                    <div class="h5 mb-0 text-danger">{{ item.pagar_hoje }}</div>
+                  </div>
+                </a>
+              </div>
+              <div class="col-6 col-md-3">
+                <a href="/web/{{ slug }}/notificacoes/pagar/?period=semana&empresa_id={{ item.empresa_id }}&filial_id={{ item.filial_id }}" 
+                   class="text-decoration-none clickable-row">
+                  <div class="p-2 rounded bg-warning bg-opacity-10 text-center">
+                    <div class="small text-warning">Pagar Semana</div>
+                    <div class="h5 mb-0 text-warning">{{ item.pagar_semana }}</div>
+                  </div>
+                </a>
+              </div>
+              <div class="col-6 col-md-3">
+                <a href="/web/{{ slug }}/notificacoes/receber/?period=hoje&empresa_id={{ item.empresa_id }}&filial_id={{ item.filial_id }}" 
+                   class="text-decoration-none clickable-row">
+                  <div class="p-2 rounded bg-success bg-opacity-10 text-center">
+                    <div class="small text-success">Receber Hoje</div>
+                    <div class="h5 mb-0 text-success">{{ item.receber_hoje }}</div>
+                  </div>
+                </a>
+              </div>
+              <div class="col-6 col-md-3">
+                <a href="/web/{{ slug }}/notificacoes/receber/?period=semana&empresa_id={{ item.empresa_id }}&filial_id={{ item.filial_id }}" 
+                   class="text-decoration-none clickable-row">
+                  <div class="p-2 rounded bg-info bg-opacity-10 text-center">
+                    <div class="small text-info">Receber Semana</div>
+                    <div class="h5 mb-0 text-info">{{ item.receber_semana }}</div>
+                  </div>
+                </a>
+              </div>
+              <div class="col-6 col-md-3">
+                <a href="/web/{{ slug }}/notificacoes/pagar/?period=hoje&status=quitado&empresa_id={{ item.empresa_id }}&filial_id={{ item.filial_id }}" 
+                   class="text-decoration-none clickable-row">
+                  <div class="p-2 rounded bg-secondary bg-opacity-10 text-center">
+                    <div class="small text-secondary">Pagas Hoje</div>
+                    <div class="h5 mb-0 text-secondary">{{ item.pagas_hoje }}</div>
+                  </div>
+                </a>
+              </div>
+              <div class="col-6 col-md-3">
+                <a href="/web/{{ slug }}/notificacoes/pagar/?period=semana&status=quitado&empresa_id={{ item.empresa_id }}&filial_id={{ item.filial_id }}" 
+                   class="text-decoration-none clickable-row">
+                  <div class="p-2 rounded bg-light text-center">
+                    <div class="small text-dark">Pagas Semana</div>
+                    <div class="h5 mb-0 text-dark">{{ item.pagas_semana }}</div>
+                  </div>
+                </a>
+              </div>
+              <div class="col-6 col-md-3">
+                <a href="/web/{{ slug }}/notificacoes/receber/?period=hoje&status=quitado&empresa_id={{ item.empresa_id }}&filial_id={{ item.filial_id }}" 
+                   class="text-decoration-none clickable-row">
+                  <div class="p-2 rounded bg-success bg-opacity-10 text-center">
+                    <div class="small text-success">Recebidas Hoje</div>
+                    <div class="h5 mb-0 text-success">{{ item.recebidas_hoje }}</div>
+                  </div>
+                </a>
+              </div>
+              <div class="col-6 col-md-3">
+                <a href="/web/{{ slug }}/notificacoes/receber/?period=semana&status=quitado&empresa_id={{ item.empresa_id }}&filial_id={{ item.filial_id }}" 
+                   class="text-decoration-none clickable-row">
+                  <div class="p-2 rounded bg-info bg-opacity-10 text-center">
+                    <div class="small text-info">Recebidas Semana</div>
+                    <div class="h5 mb-0 text-info">{{ item.recebidas_semana }}</div>
+                  </div>
+                </a>
+              </div>
+              <div class="col-6 col-md-3">
+                <a href="/web/{{ slug }}/notificacoes/orcamentos/?empresa_id={{ item.empresa_id }}&filial_id={{ item.filial_id }}" 
+                   class="text-decoration-none clickable-row">
+                  <div class="p-2 rounded bg-primary bg-opacity-10 text-center">
+                    <div class="small text-primary">Orçamentos</div>
+                    <div class="h5 mb-0 text-primary">{{ item.orcamentos_hoje }}</div>
+                  </div>
+                </a>
+              </div>
+              <div class="col-6 col-md-3">
+                <a href="/web/{{ slug }}/notificacoes/pedidos/?empresa_id={{ item.empresa_id }}&filial_id={{ item.filial_id }}" 
+                   class="text-decoration-none clickable-row">
+                  <div class="p-2 rounded bg-dark bg-opacity-10 text-center">
+                    <div class="small text-dark">Pedidos</div>
+                    <div class="h5 mb-0 text-dark">{{ item.pedidos_hoje }}</div>
+                  </div>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+
+  {% if not resumo %}
+  <div class="alert alert-info text-center">
+    <i class="bi bi-info-circle"></i> Nenhuma empresa ou filial encontrada.
+  </div>
+  {% endif %}
+</div>
+
+<script>
+  // Set print logo from first filial with logo
+  document.addEventListener('DOMContentLoaded', function() {
+    const printLogo = document.getElementById('print-logo');
+    {% for item in resumo %}
+    {% if item.tem_logo %}
+    // You can set the logo URL here if you have an endpoint to serve logos
+    // printLogo.src = '/api/filiais/{{ item.empresa_id }}/{{ item.filial_id }}/logo/';
+    break;
+    {% endif %}
+    {% endfor %}
+  });
+</script>
+{% endblock %}

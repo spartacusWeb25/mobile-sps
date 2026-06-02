@@ -381,8 +381,15 @@
   }
 
   @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
+
+    0%,
+    100% {
+      opacity: 1;
+    }
+
+    50% {
+      opacity: 0.7;
+    }
   }
 </style>
 
@@ -487,7 +494,8 @@
                 <div class="form-check form-switch" style="padding-top:8px">
                   <input class="form-check-input" type="checkbox" id="kohler-mode"
                     style="width:2.5rem;height:1.5rem;cursor:pointer">
-                  <label class="form-check-label" for="kohler-mode" style="font-size:12px;color:var(--muted);margin-top:2px">
+                  <label class="form-check-label" for="kohler-mode"
+                    style="font-size:12px;color:var(--muted);margin-top:2px">
                     <strong style="color:var(--warning)">Kohler</strong> <span style="font-size:10px">(Marca 98)</span>
                   </label>
                 </div>
@@ -656,7 +664,8 @@
                     </td>
                     <td style="min-width:60px;max-width:60px">
                       <input type="number" step="0.0001" id="caix-{{ forloop.counter0 }}"
-                        class="form-control form-control-sm item-caix" value="{{ f.item_caix.value|default:'' }}" style="width:100%">
+                        class="form-control form-control-sm item-caix" value="{{ f.item_caix.value|default:'' }}"
+                        style="width:100%">
                       <div class="d-none">{{ f.item_caix }}</div>
                     </td>
                     <td class="position-relative" style="min-width:60px;max-width:60px">
@@ -814,6 +823,11 @@
 
       const quant = parseNumberBR(quanInput?.value || 0);
       const unit = parseNumberBR(unitInput?.value || 0);
+
+      // Se unit não estiver definido, delega ao cálculo normal que busca preço no servidor
+      if (!unit || unit <= 0) {
+        return calcularItem(index);
+      }
 
       const subtotal = quant * unit;
 
@@ -1122,7 +1136,7 @@
         var res = await fetch(URL_CALCULAR, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
-          body: JSON.stringify({ item_prod: prod_id, item_m2: m2, item_unit: unit, item_queb: queb, condicao, item_caix: parseInt(document.getElementById('caix-' + index)?.value || 0), item_quan: parseNumberBR(document.getElementById('quan-' + index)?.value) }),
+          body: JSON.stringify({ item_prod: prod_id, item_m2: m2, item_unit: unit, item_queb: queb, condicao, item_caix: parseInt(document.getElementById('caix-' + index)?.value || 0), item_quan: parseNumberBR(document.getElementById('quan-' + index)?.value), marca: kohlerModeActive ? KOHLER_MARCA : null }),
         });
         if (!res.ok) throw new Error('Erro HTTP ' + res.status);
         var data = await res.json();
@@ -1205,7 +1219,7 @@
       calcTimers[index] = setTimeout(function () { calcularItem(index); }, delay);
     }
 
-    
+
 
     function bindRemoveButtons() {
       document.addEventListener('click', function (e) {
@@ -1270,7 +1284,7 @@
         var tr = document.createElement('tr');
         tr.dataset.index = index;
         tr.innerHTML =
-         '<td style="min-width:80px;max-width:80px">' +
+          '<td style="min-width:80px;max-width:80px">' +
           '<input name="' + prefix + '-item_nome_ambi" class="form-control form-control-sm" placeholder="Ambiente" style="width:100%">' +
           '<input type="hidden" name="' + prefix + '-item_ambi" id="id_itens-' + index + '-item_ambi" value="' + (index + 1) + '">' +
           '</td>' +   // ← esse aqui
