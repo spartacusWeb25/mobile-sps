@@ -12,11 +12,12 @@ from decimal import Decimal, InvalidOperation
 from datetime import date
 from django.db.models import Sum, Count, IntegerField
 from django.db.models.functions import Cast
-from .models import Orcamentopisos, Pedidospisos, Itensorcapisos, Itenspedidospisos                            
+from django.views.decorators.csrf import csrf_exempt
+from .models import Orcamentopisos, Pedidospisos, Itensorcapisos, Itenspedidospisos
 from .serializers import (
-    OrcamentopisosSerializer, 
-    PedidospisosSerializer, 
-    ItensorcapisosSerializer, 
+    OrcamentopisosSerializer,
+    PedidospisosSerializer,
+    ItensorcapisosSerializer,
     ItenspedidospisosSerializer,
     RomaneioEntregaPostSerializer,
 )
@@ -31,6 +32,7 @@ from Pisos.services.orcamento_exportar_service import OrcamentoExportarPedidoSer
 from Pisos.services.metragem_service import MetragemProdutoService
 from Pisos.services.credito_troca_service import CreditoTrocaPisosService
 from Pisos.services.romaneio_entrega_service import RomaneioEntregaService
+from Pisos.services.painel_gestao_compras_pisos import PainelPedidosService
 from contas_a_receber.models import Titulosreceber, FORMA_RECEBIMENTO
 from rest_framework.authentication import SessionAuthentication, BaseAuthentication
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -709,6 +711,46 @@ class PedidospisosViewSet(BaseMultiDBModelViewSet, VendedorEntidadeMixin):
         except Exception as e:
             logger.exception("Erro ao obter itens nfe para pedido %s: %s", getattr(pedido, "pedi_nume", "?"), e)
             return Response({"ok": False, "erro": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=["get"], url_path="detalhes-compras")
+    def detalhes_compras(self, request, *args, **kwargs):
+        banco = self.get_banco()
+        pedido = self.get_object()
+        
+        try:
+            dados = PainelPedidosService.detalhes_pedido_compras(
+                banco=banco,
+                pedido_numero=getattr(pedido, "pedi_nume"),
+                empresa=getattr(pedido, "pedi_empr"),
+                filial=getattr(pedido, "pedi_fili"),
+            )
+            return Response(dados)
+        except Exception as e:
+            logger.exception("Erro ao obter detalhes de compras para pedido %s: %s", getattr(pedido, "pedi_nume", "?"), e)
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=["post"], url_path="salvar-compras", permission_classes=[])
+    @csrf_exempt
+    def salvar_compras(self, request, *args, **kwargs):
+        banco = self.get_banco()
+        pedido = self.get_object()
+
+        logger.info(f"[salvar_compras] Iniciando salvamento para pedido {getattr(pedido, 'pedi_nume')}")
+        logger.info(f"[salvar_compras] Dados recebidos: {request.data}")
+
+        try:
+            dados = PainelPedidosService.salvar_compras(
+                banco=banco,
+                pedido_numero=getattr(pedido, "pedi_nume"),
+                empresa=request.data.get('empresa'),
+                filial=request.data.get('filial'),
+                itens_atualizados=request.data.get('itens', []),
+            )
+            logger.info(f"[salvar_compras] Salvamento concluído: {dados}")
+            return Response(dados)
+        except Exception as e:
+            logger.exception("Erro ao salvar compras para pedido %s: %s", getattr(pedido, "pedi_nume", "?"), e)
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class ItensorcapisosViewSet(BaseMultiDBModelViewSet):

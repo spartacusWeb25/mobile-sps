@@ -410,8 +410,15 @@
   }
 
   @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
+
+    0%,
+    100% {
+      opacity: 1;
+    }
+
+    50% {
+      opacity: 0.7;
+    }
   }
 
   @media (min-width: 1200px) {
@@ -515,9 +522,10 @@
               <!-- ── KOHLER SWITCH ── -->
               <div class="col-12">
                 <div class="form-check form-switch" style="padding-top:8px">
-                  <input class="form-check-input" type="checkbox" id="kohler-mode" 
+                  <input class="form-check-input" type="checkbox" id="kohler-mode"
                     style="width:2.5rem;height:1.5rem;cursor:pointer">
-                  <label class="form-check-label" for="kohler-mode" style="font-size:12px;color:var(--muted);margin-top:2px">
+                  <label class="form-check-label" for="kohler-mode"
+                    style="font-size:12px;color:var(--muted);margin-top:2px">
                     <strong style="color:var(--warning)">Kohler</strong> <span style="font-size:10px">(Marca 98)</span>
                   </label>
                 </div>
@@ -762,6 +770,12 @@
       <button class="btn btn-outline-info btn-sm" type="button" id="btn_emitir_nfe" onclick="showEmitirNFeModal()">
         <i class="bi bi-file-binary"></i> Emitir NF-e
       </button>
+      {% if pedido %}
+      <button class="btn btn-outline-warning btn-sm" type="button"
+        onclick='abrirDetalhesCompras({{ pedido.pedi_nume }}, {{ pedido.pedi_empr }}, {{ pedido.pedi_fili }}, SLUG)'>
+        <i class="bi bi-cart-check"></i> Detalhes Compras
+      </button>
+      {% endif %}
     </div>
   </form>
 </div>
@@ -771,6 +785,7 @@
   {% include 'Pisos/modal_romaneio_entrega.html' %}
   {% include 'Pisos/parciais/modal_emitir_nfe.html' %}
   {% include 'Pisos/modal_alterar_status.html' %}
+  {% include 'Pisos/modal_detalhes_compras.html' %}
 
   <script>
     const SLUG = "{{ slug }}";
@@ -798,10 +813,10 @@
       const kohlerSwitch = document.getElementById('kohler-mode');
       const kohlerbadge = document.getElementById('kohler-badge');
       if (!kohlerSwitch) return;
-      
+
       kohlerModeActive = kohlerSwitch.checked;
       const wrapper = document.querySelector('.pedido-wrapper');
-      
+
       if (kohlerModeActive) {
         wrapper?.classList.add('kohler-mode');
         kohlerbadge?.classList.remove('d-none');
@@ -811,7 +826,7 @@
         kohlerbadge?.classList.add('d-none');
         console.log('❌ Modo Kohler DESATIVADO');
       }
-      
+
       atualizarTotais();
     }
 
@@ -826,29 +841,29 @@
       const quanInput = document.getElementById('quan-' + index);
       const unitInput = document.getElementById('unit-' + index);
       const sutoInput = document.getElementById('suto-' + index);
-      
+
       const quant = parseNumberBR(quanInput?.value || 0);
       const unit = parseNumberBR(unitInput?.value || 0);
-      
+
       const subtotal = quant * unit;
-      
+
       if (sutoInput) {
         sutoInput.value = subtotal.toFixed(2);
       }
-      
+
       const hiddenQuan = document.getElementById('id_itens-' + index + '-item_quan');
       const hiddenUnit = document.getElementById('id_itens-' + index + '-item_unit');
-      
+
       if (hiddenQuan) hiddenQuan.value = String(quant);
       if (hiddenUnit) hiddenUnit.value = String(unit);
-      
+
       atualizarTotais();
     }
 
     function debounceCalcKohler(index, delay) {
       delay = delay || 300;
       clearTimeout(calcTimers[index]);
-      calcTimers[index] = setTimeout(function () { 
+      calcTimers[index] = setTimeout(function () {
         calcularItemKohler(index);
       }, delay);
     }
@@ -1360,7 +1375,7 @@
       ['m2', 'unit', 'queb', 'caix', 'quan'].forEach(function (tipo) {
         var el = document.getElementById(tipo + '-' + index);
         if (!el) return;
-        el.addEventListener('input', function () { 
+        el.addEventListener('input', function () {
           if (kohlerModeActive) {
             debounceCalcKohler(index);
           } else {

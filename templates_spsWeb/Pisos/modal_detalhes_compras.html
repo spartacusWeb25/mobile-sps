@@ -1,0 +1,215 @@
+<div class="modal fade" id="detalhesComprasModal" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered" style="max-width: 95vw;">
+    <div class="modal-content"
+      style="background:var(--panel); color:var(--text); border:1px solid var(--border2); height: 90vh;">
+      <div class="modal-header">
+        <h6 class="modal-title">Detalhes de Compras — Pedido #<span id="detalhes-compras-pedido-numero"></span></h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <!-- Informações do Pedido -->
+        <div class="card mb-3" style="background:var(--panel2); border:1px solid var(--border2);">
+          <div class="card-body py-2">
+            <div class="row">
+              <div class="col-md-3">
+                <small class="text-muted d-block">Data do Pedido</small>
+                <span id="detalhes-compras-data-pedido">-</span>
+              </div>
+              <div class="col-md-3">
+                <small class="text-muted d-block">Data Prevista Entrega</small>
+                <span id="detalhes-compras-data-prevista">-</span>
+              </div>
+              <div class="col-md-3">
+                <small class="text-muted d-block">Status Workflow Compra</small>
+                <span id="detalhes-compras-status-workflow">-</span>
+              </div>
+              <div class="col-md-3">
+                <small class="text-muted d-block">Data Compra Workflow</small>
+                <span id="detalhes-compras-data-compra-workflow">-</span>
+              </div>
+            </div>
+            <div class="row mt-2" id="detalhes-compras-obs-row" style="display:none;">
+              <div class="col-12">
+                <small class="text-muted d-block">Observação Compra</small>
+                <span id="detalhes-compras-observacao">-</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabela de Itens -->
+        <div class="table-responsive">
+          <table class="table table-sm table-hover align-middle mb-2" style="color:var(--text);">
+            <thead>
+              <tr>
+                <th>Ambiente</th>
+                <th>Código Produto</th>
+                <th>Nome Produto</th>
+                <th class="text-end">Qtd Necessária</th>
+                <th class="text-end">Saldo Estoque</th>
+                <th class="text-end">Qtd Comprada</th>
+                <th class="text-end">Qtd Falta</th>
+                <th style="width:120px">Nova Qtd Comprada</th>
+                <th class="text-center">Compra Efetuada</th>
+                <th class="text-center">Data Compra</th>
+                <th class="text-center">Em Estoque</th>
+              </tr>
+            </thead>
+            <tbody id="detalhes-compras-body"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <div class="me-auto small" id="detalhes-compras-info" style="color:var(--muted);"></div>
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
+        <button type="button" class="btn btn-sm btn-success" id="btn-salvar-compras">Salvar Compras</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function abrirDetalhesCompras(pedidoId, empresa, filial, slug) {
+    const modal = new bootstrap.Modal(document.getElementById('detalhesComprasModal'));
+    const tbody = document.getElementById('detalhes-compras-body');
+    tbody.innerHTML = '<tr><td colspan="10" class="text-center">Carregando...</td></tr>';
+    modal.show();
+
+    fetch(`/api/${slug}/pisos/pedidos-pisos/${pedidoId}/detalhes-compras/?pedi_empr=${empresa}&pedi_fili=${filial}`)
+      .then(response => response.json())
+      .then(data => {
+        if (data.error) {
+          tbody.innerHTML = `<tr><td colspan="10" class="text-center text-danger">${data.error}</td></tr>`;
+          return;
+        }
+
+        // Preencher informações do pedido
+        document.getElementById('detalhes-compras-pedido-numero').textContent = data.pedido?.numero || '-';
+        document.getElementById('detalhes-compras-data-pedido').textContent = data.pedido?.data || '-';
+        document.getElementById('detalhes-compras-data-prevista').textContent = data.pedido?.data_prevista_entrega || '-';
+        document.getElementById('detalhes-compras-status-workflow').textContent = data.pedido?.status || '-';
+        document.getElementById('detalhes-compras-data-compra-workflow').textContent = data.pedido?.data_compra_workflow || '-';
+
+        if (data.pedido?.observacao_compra) {
+          document.getElementById('detalhes-compras-obs-row').style.display = 'block';
+          document.getElementById('detalhes-compras-observacao').textContent = data.pedido.observacao_compra;
+        } else {
+          document.getElementById('detalhes-compras-obs-row').style.display = 'none';
+        }
+
+        // Preencher tabela de itens
+        if (data.itens && data.itens.length > 0) {
+          tbody.innerHTML = data.itens.map(item => `
+          <tr data-item-num="${item.item_nume}">
+            <td>${item.ambiente}</td>
+            <td>${item.produto_codigo}</td>
+            <td>${item.produto_nome}</td>
+            <td class="text-end">${item.quantidade_necessaria.toFixed(2)}</td>
+            <td class="text-end">${item.saldo_estoque.toFixed(2)}</td>
+            <td class="text-end">${item.quantidade_comprada.toFixed(2)}</td>
+            <td class="text-end ${item.quantidade_falta > 0 ? 'text-danger' : 'text-success'}">${item.quantidade_falta.toFixed(2)}</td>
+            <td>
+              <input type="number" step="0.01" min="0" max="${item.quantidade_necessaria}"
+                class="form-control form-control-sm input-qtd-comprada"
+                value="${item.quantidade_comprada.toFixed(2)}"
+                data-qtd-necessaria="${item.quantidade_necessaria}">
+            </td>
+            <td class="text-center">
+              ${item.compra_efetuada ?
+              '<span class="badge bg-success">Sim</span>' :
+              '<span class="badge bg-secondary">Não</span>'}
+            </td>
+            <td class="text-center">${item.data_compra || '-'}</td>
+            <td class="text-center">
+              ${item.em_estoque ?
+              '<span class="badge bg-primary">Sim</span>' :
+              '<span class="badge bg-secondary">Não</span>'}
+            </td>
+          </tr>
+        `).join('');
+
+          // Atualizar informações
+          const totalItens = data.itens.length;
+          const itensComprados = data.itens.filter(i => i.compra_efetuada).length;
+          const itensFalta = data.itens.filter(i => i.quantidade_falta > 0).length;
+          document.getElementById('detalhes-compras-info').textContent =
+            `Total: ${totalItens} itens | Comprados: ${itensComprados} | Compra Pendente: ${itensFalta}`;
+        } else {
+          tbody.innerHTML = '<tr><td colspan="10" class="text-center">Nenhum item encontrado</td></tr>';
+          document.getElementById('detalhes-compras-info').textContent = '';
+        }
+      })
+      .catch(error => {
+        tbody.innerHTML = `<tr><td colspan="10" class="text-center text-danger">Erro ao carregar dados: ${error.message}</td></tr>`;
+      });
+
+    // Configurar botão de salvar
+    document.getElementById('btn-salvar-compras').onclick = function () {
+      salvarCompras(pedidoId, empresa, filial, slug);
+    };
+  }
+
+  function salvarCompras(pedidoId, empresa, filial, slug) {
+    const tbody = document.getElementById('detalhes-compras-body');
+    const inputs = tbody.querySelectorAll('.input-qtd-comprada');
+    const itens = [];
+
+    inputs.forEach(input => {
+      const tr = input.closest('tr');
+      const itemNum = tr.dataset.itemNum;
+      const qtdNecessaria = parseFloat(input.dataset.qtdNecessaria);
+      const novaQtdComprada = parseFloat(input.value) || 0;
+
+      itens.push({
+        item_nume: itemNum,
+        quantidade_comprada: novaQtdComprada,
+        quantidade_necessaria: qtdNecessaria
+      });
+    });
+
+    const btn = document.getElementById('btn-salvar-compras');
+    btn.disabled = true;
+    btn.textContent = 'Salvando...';
+
+    fetch(`/api/${slug}/pisos/pedidos-pisos/${pedidoId}/salvar-compras/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCSRFToken()
+      },
+      body: JSON.stringify({
+        empresa: empresa,
+        filial: filial,
+        itens: itens
+      })
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.error) {
+          alert('Erro ao salvar: ' + data.error);
+        } else {
+          alert('Compras salvas com sucesso!');
+          // Recarregar os dados
+          abrirDetalhesCompras(pedidoId, empresa, filial, slug);
+        }
+      })
+      .catch(error => {
+        alert('Erro ao salvar: ' + error.message);
+      })
+      .finally(() => {
+        btn.disabled = false;
+        btn.textContent = 'Salvar Compras';
+      });
+  }
+
+  function getCSRFToken() {
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+      const [name, value] = cookie.trim().split('=');
+      if (name === 'csrftoken') {
+        return decodeURIComponent(value);
+      }
+    }
+    return '';
+  }
+</script>

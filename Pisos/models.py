@@ -235,21 +235,26 @@ class Itenspedidospisos(models.Model):
     field_log_data = models.DateField(db_column='_log_data', blank=True, null=True)  
     field_log_time = models.TimeField(db_column='_log_time', blank=True, null=True)  
     item_nome_ambi = models.CharField(max_length=100, blank=True, null=True)
-    item_data_entr = models.DateField(blank=True, null=True)
     item_nume = models.IntegerField(primary_key=True)
     item_nfe_fatu = models.IntegerField(blank=True, null=True)
     item_nfe_entr = models.IntegerField(blank=True, null=True)
+    
+    
     item_comp_efet = models.DateField(blank=True, null=True)
     item_em_esto = models.BooleanField(blank=True, null=True)
+    
     item_caix = models.IntegerField(blank=True, null=True)
     item_stat_manu = models.CharField(max_length=30, blank=True, null=True)
     item_desc = models.DecimalField(max_digits=15, decimal_places=4, blank=True, null=True)
     item_queb = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
+    
+    
     #romaneio de entrega
     item_stat_manu_data = models.DateField(blank=True, null=True)
     item_stat_manu_user = models.IntegerField(blank=True, null=True)
     item_prod_nome = models.CharField(max_length=100, blank=True, null=True)
     item_quan_entr = models.DecimalField(max_digits=16, decimal_places=2, blank=True, null=True)
+    item_data_entr = models.DateField(blank=True, null=True)
     item_caix_entr = models.DecimalField(max_digits=16, decimal_places=2, blank=True, null=True)
     item_quan_emit = models.DecimalField(max_digits=16, decimal_places=2, blank=True, null=True)
 

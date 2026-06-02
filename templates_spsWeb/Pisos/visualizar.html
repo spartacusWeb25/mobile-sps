@@ -107,6 +107,10 @@
       <a class="btn btn-outline-primary-white btn-sm" target="_blank"
         href="{% url 'PisosWeb:pedidos_pisos_imprimir' slug=slug pk=pedido.pedi_nume %}"><i class="bi bi-printer"></i>
         Imprimir</a>
+      <button type="button" class="btn btn-outline-info btn-sm"
+        onclick="abrirDetalhesCompras({{ pedido.pedi_nume }}, {{ pedido.pedi_empr }}, {{ pedido.pedi_fili }}, '{{ slug }}')">
+        <i class="bi bi-cart-check"></i> Detalhes Compras
+      </button>
     </div>
   </div>
 
@@ -194,4 +198,6 @@
     </div>
   </div>
 </div>
+
+{% include 'Pisos/modal_detalhes_compras.html' %}
 {% endblock %}
