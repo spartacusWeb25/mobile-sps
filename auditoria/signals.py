@@ -105,6 +105,11 @@ def capturar_dados_antes_salvar(sender, instance, **kwargs):
             # Ignorar se não existe ou se há múltiplos objetos com a mesma PK
             # Isso pode acontecer em modelos com chaves primárias compostas mal definidas
             pass
+        except Exception as e:
+            # Se houver qualquer erro (ex.: parsing de datas inválidas no banco), não devemos
+            # impedir o fluxo de salvamento — registramos e seguimos.
+            logger.warning(f"Não foi possível obter dados anteriores para {sender.__name__} pk={instance.pk}: {e}")
+            return
 
 @receiver(post_save)
 def log_criacao_atualizacao(sender, instance, created, **kwargs):

@@ -55,9 +55,16 @@ def criar_orcamento_pisos(request, slug):
             "itens_input": itens,
         }
         try:
+            # Use payload that ensures empresa/filial are the session values
+            payload = {
+                **form.cleaned_data,
+                "orca_empr": empresa_id,
+                "orca_fili": filial_id,
+                "itens_input": itens,
+            }
             orcamento = OrcamentoCriarService().executar(
                 banco=banco,
-                dados=form.cleaned_data,
+                dados=payload,
                 itens=itens,
             )
             if request.POST.get("acao") == "exportar":

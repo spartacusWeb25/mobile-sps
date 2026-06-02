@@ -93,6 +93,16 @@ class OrcamentoCriarService:
             .first()
         )
 
+        # Normalize empresa/filial to ints to avoid mismatches
+        try:
+            dados_empr = int(dados.get("orca_empr"))
+        except Exception:
+            dados_empr = dados.get("orca_empr")
+        try:
+            dados_fili = int(dados.get("orca_fili"))
+        except Exception:
+            dados_fili = dados.get("orca_fili")
+
         proximo_numero = (ultimo.orca_nume + 1) if ultimo else 1
 
         dados_orcamento = dict(dados)
@@ -102,55 +112,54 @@ class OrcamentoCriarService:
         dados_orcamento.pop("usar_credito", None)
         dados_orcamento.pop("valor_credito", None)
 
+        # Ensure orca_empr/orca_fili present in payload used to create the instance
+        dados_orcamento["orca_empr"] = dados_empr
+        dados_orcamento["orca_fili"] = dados_fili
         dados_orcamento["orca_tota"] = Decimal("0.00")
-        
+
         # Encontrar próximo número livre (pular números já existentes)
-        max_tentativas = 100
+        max_tentativas = 200
         tentativa = 0
+
+        import logging
+        logger = logging.getLogger(__name__)
+
         while tentativa < max_tentativas:
             tentativa += 1
             dados_orcamento["orca_nume"] = proximo_numero
-            
+
             # Verificar se já existe
             existe = Orcamentopisos.objects.using(banco).filter(
-                orca_empr=dados["orca_empr"],
-                orca_fili=dados["orca_fili"],
+                orca_empr=dados_empr,
+                orca_fili=dados_fili,
                 orca_nume=proximo_numero
             ).exists()
-            
-            if not existe:
-                break
-            
-            proximo_numero += 1
-        
-        if tentativa >= max_tentativas:
-            raise ValueError("Não foi possível encontrar um número disponível para o orçamento após 100 tentativas.")
-        
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.info(f"Criando orçamento com número {proximo_numero} para empresa {dados['orca_empr']}, filial {dados['orca_fili']}")
-        
-        orcamento = Orcamentopisos(**dados_orcamento)
-        orcamento.save(using=banco, force_insert=True)
-        print(
-                Orcamentopisos.objects.using(banco)
-                .filter(
-                    orca_empr=orcamento.orca_empr,
-                    orca_fili=orcamento.orca_fili,
-                    orca_nume=orcamento.orca_nume
-                )
-                .exists()
-            )
 
-        print("PASSO 1")
+            if not existe:
+                # Tentar salvar; pode haver condição de corrida -> capturar IntegrityError e tentar próximo número
+                orcamento = Orcamentopisos(**dados_orcamento)
+                try:
+                    orcamento.save(using=banco, force_insert=True)
+                    logger.info(f"Orçamento criado: empr={dados_empr} fili={dados_fili} num={proximo_numero}")
+                    break
+                except Exception as e:
+                    # Se for violação de chave única, incrementa e tenta novamente
+                    if 'duplicate key' in str(e).lower() or 'unique constraint' in str(e).lower():
+                        logger.warning(f"Número {proximo_numero} já foi ocupado, tentando próximo. Erro: {e}")
+                        proximo_numero += 1
+                        continue
+                    # Caso contrário, relança
+                    raise
+            else:
+                proximo_numero += 1
+
+        if tentativa >= max_tentativas:
+            raise ValueError("Não foi possível encontrar um número disponível para o orçamento após várias tentativas.")
 
         ClienteEnderecoService.preencher_orcamento(
             banco=banco,
             orcamento=orcamento,
         )
-
-        print("PASSO 2")
-        print("PASSO 3")
 
         return orcamento
 

@@ -33,6 +33,10 @@ class OrcamentoAtualizarService:
             if 'orca_stat' in dados_orcamento and (dados_orcamento.get('orca_stat') is None or str(dados_orcamento.get('orca_stat')).strip() == ""):
                 dados_orcamento.pop('orca_stat', None)
 
+            # Não permitir alteração das chaves primárias (empresa/filial/número) via update
+            for _pk in ('orca_empr', 'orca_fili', 'orca_nume'):
+                dados_orcamento.pop(_pk, None)
+
             for campo, valor in dados_orcamento.items():
                 setattr(orcamento, campo, valor)
 
@@ -75,6 +79,15 @@ class OrcamentoAtualizarService:
 
             orcamento.orca_cred = credito_aplicado
             orcamento.orca_tota = arredondar(total_liquido_sem_credito - credito_aplicado)
-            orcamento.save(using=banco)
+            # Salvar explicitamente apenas campos editáveis (evita alteração de PKs e unique constraints)
+            update_fields = [f.name for f in orcamento._meta.fields if f.name not in ('orca_empr', 'orca_fili', 'orca_nume')]
+            try:
+                orcamento.save(using=banco, update_fields=update_fields)
+            except Exception as e:
+                # Normalizar erro para mensagem mais amigável
+                from django.db import IntegrityError
+                if isinstance(e, IntegrityError) or 'duplicate key' in str(e).lower():
+                    raise ValueError('Violação de integridade ao atualizar o orçamento: possível conflito de número/empresa/filial.')
+                raise
 
             return orcamento

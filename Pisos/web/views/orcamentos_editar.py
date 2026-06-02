@@ -36,7 +36,29 @@ def editar_orcamento_pisos(request, slug, pk):
         "orca_vend"
     )
 
-    # First try without empresa/filial filters
+    # Apply session company/branch filter to avoid picking same number from other companies
+    empresa_id = (
+        request.session.get('empresa_id')
+        or request.session.get('empresa')
+        or request.session.get('empr_codi')
+    )
+    filial_id = (
+        request.session.get('filial_id')
+        or request.session.get('filial')
+        or request.session.get('fili_codi')
+    )
+    if empresa_id is not None:
+        try:
+            qs = qs.filter(orca_empr=int(empresa_id))
+        except Exception:
+            qs = qs.filter(orca_empr=empresa_id)
+    if filial_id is not None:
+        try:
+            qs = qs.filter(orca_fili=int(filial_id))
+        except Exception:
+            qs = qs.filter(orca_fili=filial_id)
+
+    # First try with empresa/filial filters applied
     try:
         orcamento = get_object_or_404(qs, orca_nume=pk)
     except ValueError as e:
