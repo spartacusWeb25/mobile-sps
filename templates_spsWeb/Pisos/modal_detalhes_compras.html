@@ -156,9 +156,17 @@
 
     inputs.forEach(input => {
       const tr = input.closest('tr');
-      const itemNum = tr.dataset.itemNum;
+      const itemNum = tr.getAttribute('data-item-num'); // ← CORRIGIDO: usar getAttribute
       const qtdNecessaria = parseFloat(input.dataset.qtdNecessaria);
       const novaQtdComprada = parseFloat(input.value) || 0;
+
+      // LOG para debug
+      console.log(`Item: ${itemNum}, Qtd: ${novaQtdComprada}, Necessária: ${qtdNecessaria}`);
+
+      if (!itemNum) {
+        console.error('item_nume não encontrado para linha:', tr);
+        return;
+      }
 
       itens.push({
         item_nume: itemNum,
@@ -166,6 +174,14 @@
         quantidade_necessaria: qtdNecessaria
       });
     });
+
+    if (itens.length === 0) {
+      alert('Nenhum item para salvar ou erro ao coletar dados!');
+      console.log('itens coletados:', itens);
+      return;
+    }
+
+    console.log('Dados a enviar:', itens);
 
     const btn = document.getElementById('btn-salvar-compras');
     btn.disabled = true;
@@ -183,9 +199,17 @@
         itens: itens
       })
     })
-      .then(response => response.json())
-      .then(data => {
-        if (data.error) {
+      .then(response => {
+        console.log('Response status:', response.status);
+        return response.json().then(data => ({ status: response.status, data }));
+      })
+      .then(({ status, data }) => {
+        console.log('Response data:', data);
+
+        if (status >= 400) {
+          alert('Erro ao salvar: ' + (data.error || JSON.stringify(data)));
+          console.error('Erro no servidor:', data);
+        } else if (data.error) {
           alert('Erro ao salvar: ' + data.error);
         } else {
           alert('Compras salvas com sucesso!');
@@ -194,6 +218,7 @@
         }
       })
       .catch(error => {
+        console.error('Erro na requisição:', error);
         alert('Erro ao salvar: ' + error.message);
       })
       .finally(() => {

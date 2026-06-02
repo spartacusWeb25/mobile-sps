@@ -317,6 +317,7 @@ class PedidospisosViewSet(BaseMultiDBModelViewSet, VendedorEntidadeMixin):
     ]
     lookup_field = 'pedi_nume'
     
+    
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         
@@ -729,7 +730,7 @@ class PedidospisosViewSet(BaseMultiDBModelViewSet, VendedorEntidadeMixin):
             logger.exception("Erro ao obter detalhes de compras para pedido %s: %s", getattr(pedido, "pedi_nume", "?"), e)
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    @action(detail=True, methods=["post"], url_path="salvar-compras", permission_classes=[])
+    @action(detail=True, methods=["post"], url_path="salvar-compras", permission_classes=(), authentication_classes=())
     @csrf_exempt
     def salvar_compras(self, request, *args, **kwargs):
         banco = self.get_banco()

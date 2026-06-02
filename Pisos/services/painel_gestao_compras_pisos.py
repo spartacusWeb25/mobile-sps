@@ -214,8 +214,14 @@ class PainelPedidosService:
         - Atualiza o status do pedido se todas as compras foram efetuadas
         """
         
+        import logging
+        logger = logging.getLogger(__name__)
+        
         from django.utils.timezone import now
         hoje = now().date()
+        
+        logger.info(f"[salvar_compras] Iniciando salvamento para pedido {pedido_numero}, empresa {empresa}, filial {filial}")
+        logger.info(f"[salvar_compras] Itens atualizados: {itens_atualizados}")
         
         # Buscar itens do pedido
         itens_pedido = Itenspedidospisos.objects.using(banco).filter(
@@ -224,12 +230,16 @@ class PainelPedidosService:
             item_pedi=pedido_numero
         )
         
+        logger.info(f"[salvar_compras] Itens do pedido encontrados: {itens_pedido.count()}")
+        
         todas_compras_efetuadas = True
         
         for item_data in itens_atualizados:
             item_nume = item_data['item_nume']
             nova_qtd_comprada = Decimal(str(item_data['quantidade_comprada']))
             qtd_necessaria = Decimal(str(item_data['quantidade_necessaria']))
+            
+            logger.info(f"[salvar_compras] Processando item {item_nume}: qtd_comprada={nova_qtd_comprada}, qtd_necessaria={qtd_necessaria}")
             
             try:
                 item = itens_pedido.get(item_nume=item_nume)
@@ -240,19 +250,29 @@ class PainelPedidosService:
                 # Se quantidade comprada > 0, marcar como compra efetuada
                 if nova_qtd_comprada > 0:
                     item.item_comp_efet = hoje
+                    logger.info(f"[salvar_compras] Item {item_nume}: compra efetuada em {hoje}")
                 else:
                     item.item_comp_efet = None
+                    logger.info(f"[salvar_compras] Item {item_nume}: compra não efetuada (qtd=0)")
                 
                 # Verificar se a compra foi totalmente efetuada
                 if nova_qtd_comprada < qtd_necessaria:
                     todas_compras_efetuadas = False
+                    logger.info(f"[salvar_compras] Item {item_nume}: compra incompleta ({nova_qtd_comprada} < {qtd_necessaria})")
+                else:
+                    logger.info(f"[salvar_compras] Item {item_nume}: compra completa ({nova_qtd_comprada} >= {qtd_necessaria})")
                 
                 item.save(using=banco)
+                logger.info(f"[salvar_compras] Item {item_nume}: salvo com sucesso")
                 
             except Itenspedidospisos.DoesNotExist:
+                logger.error(f"[salvar_compras] Item {item_nume}: não encontrado no pedido")
+                todas_compras_efetuadas = False
                 continue
         
         # Atualizar status do pedido se todas as compras foram efetuadas
+        logger.info(f"[salvar_compras] Todas as compras efetuadas: {todas_compras_efetuadas}")
+        
         if todas_compras_efetuadas:
             try:
                 pedido = Pedidospisos.objects.using(banco).get(
@@ -263,7 +283,12 @@ class PainelPedidosService:
                 # Atualizar data de compra workflow
                 pedido.pedi_data_comp_work = hoje
                 pedido.save(using=banco)
+                logger.info(f"[salvar_compras] Pedido {pedido_numero}: data_compra_workflow atualizada para {hoje}")
             except Pedidospisos.DoesNotExist:
+                logger.error(f"[salvar_compras] Pedido {pedido_numero}: não encontrado")
                 pass
+        else:
+            logger.info(f"[salvar_compras] Pedido {pedido_numero}: nem todas as compras foram efetuadas, não atualizando data_compra_workflow")
         
+        logger.info(f"[salvar_compras] Salvamento concluído com sucesso para pedido {pedido_numero}")
         return {'success': True, 'message': 'Compras salvas com sucesso'}

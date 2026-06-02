@@ -488,7 +488,7 @@ class AuditoriaMiddleware:
                 '/parametros-admin/configuracao-inicial/' in request.path):
                 logger.info(f'Endpoint público acessado: {url}')
                 return response
-
+            
             if not user:
                 logger.warning(f'Log ignorado - Usuário não autenticado: {url}')
                 return response
