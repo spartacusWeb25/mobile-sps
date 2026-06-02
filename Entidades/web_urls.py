@@ -17,4 +17,5 @@ urlpatterns = [
     path('exportar/', ExportarEntidadesView.as_view(), name='exportar_entidades_web'),
     path('relatorio/', RelatorioEntidadesView.as_view(), name='relatorio_entidades_web'),
     path('autocomplete/vendedores/', autocomplete_vendedores, name='entidades_autocomplete_vendedores'),
+    # Reuse endpoint atual para arquitetos (apenas frontend reusa mesma URL)
 ]

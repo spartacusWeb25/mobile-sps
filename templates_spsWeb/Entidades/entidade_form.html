@@ -19,7 +19,8 @@
       {% endfor %} {% endif %}
       {% if form.non_field_errors or form.errors %}
       <div class="alert alert-danger" role="alert">
-        <div class="fw-semibold mb-1">Existem campos obrigatórios ou inválidos. Corrija os itens abaixo e tente novamente.</div>
+        <div class="fw-semibold mb-1">Existem campos obrigatórios ou inválidos. Corrija os itens abaixo e tente
+          novamente.</div>
         {% if form.non_field_errors %}
         <div class="mb-2">{{ form.non_field_errors|striptags }}</div>
         {% endif %}
@@ -39,14 +40,14 @@
 
         <div class="row">
           <div class="col-md-6"></div>
-          
+
           <div class="col-md-2">
             <div class="form-group">
               <label class="d-block mb-2">Transportadora</label>
               <div class="form-check form-switch">
                 {{ form.is_transportadora }}
                 <label class="form-check-label" for="{{ form.is_transportadora.id_for_label }}">
-                   Sim
+                  Sim
                 </label>
               </div>
               {% if form.is_transportadora.errors %}
@@ -65,7 +66,7 @@
               <div class="form-check form-switch">
                 {{ form.is_motorista }}
                 <label class="form-check-label" for="{{ form.is_motorista.id_for_label }}">
-                   Sim
+                  Sim
                 </label>
               </div>
               {% if form.is_motorista.errors %}
@@ -84,7 +85,7 @@
               <div class="form-check form-switch">
                 {{ form.enti_situ }}
                 <label class="form-check-label" for="{{ form.enti_situ.id_for_label }}">
-                   Ativo
+                  Ativo
                 </label>
               </div>
               {% if form.enti_situ.errors %}
@@ -216,15 +217,33 @@
             </div>
 
             <div class="row">
-               
+
               <div class="col-md-4">
                 <div class="form-group">
                   <label for="{{ form.enti_vend.id_for_label }}">Vendedor Responsável</label>
                   {{ form.enti_vend }}
-                  <input id="autocomplete-enti-vend" type="text" class="form-control mt-1" placeholder="Buscar vendedor por nome ou código">
+                  <input id="autocomplete-enti-vend" type="text" class="form-control mt-1"
+                    placeholder="Buscar vendedor por nome ou código">
                   {% if form.enti_vend.errors %}
                   <div class="text-danger">
                     {% for error in form.enti_vend.errors %}
+                    <p>{{ error }}</p>
+                    {% endfor %}
+                  </div>
+                  {% endif %}
+                </div>
+              </div>
+
+              <div class="col-md-4">
+                <div class="form-group">
+                  <label for="{{ form.enti_arqu.id_for_label }}">Arquiteto Responsável</label>
+                  {{ form.enti_arqu }}
+                  <input id="autocomplete-enti-arqu" type="text" class="form-control mt-1 " value="{{ form.enti_arqu.value }}"
+                    data-enti-arqu="{{ form.enti_arqu.value }}"
+                    placeholder="Buscar arquiteto por nome ou código">
+                  {% if form.enti_arqu.errors %}
+                  <div class="text-danger">
+                    {% for error in form.enti_arqu.errors %}
                     <p>{{ error }}</p>
                     {% endfor %}
                   </div>
@@ -560,6 +579,31 @@
       const inputEl = document.getElementById('autocomplete-enti-vend');
       const hiddenEl = document.getElementById('id_enti_vend');
       const url = "{% url 'entidades_autocomplete_vendedores' slug=slug %}";
+      setupInputAutocomplete({ inputEl, hiddenEl, url });
+    })();
+
+
+    (async function prefillArquiteto() {
+      const hiddenEl = document.getElementById('id_enti_arqu');
+      const inputEl = document.getElementById('autocomplete-enti-arqu');
+      if (!hiddenEl || !inputEl) return;
+      const val = (hiddenEl.value || '').trim();
+      if (!val) return;
+      const url = "{% url 'entidades_autocomplete_vendedores' slug=slug %}"; // reusa endpoint, filtra por tipo AR no backend
+      try {
+        const resp = await fetch(`${url}?term=${encodeURIComponent(val)}`);
+        const json = await resp.json();
+        const match = (json.results || []).find(r => String(r.id) === String(val));
+        if (match) inputEl.value = match.text;
+      } catch (e) {
+        console.error('Erro ao prefill arquiteto:', e);
+      }
+    })();
+
+    (function bindArquitetoAutocomplete() {
+      const inputEl = document.getElementById('autocomplete-enti-arqu');
+      const hiddenEl = document.getElementById('id_enti_arqu');
+      const url = "{% url 'entidades_autocomplete_vendedores' slug=slug %}"; // reusa endpoint
       setupInputAutocomplete({ inputEl, hiddenEl, url });
     })();
   });

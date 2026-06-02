@@ -45,7 +45,7 @@ class EntidadesForm(forms.ModelForm):
             'enti_nome', 'enti_tipo_enti', 'enti_espe_enti', 'enti_fant', 
             'enti_cpf', 'enti_cnpj', 'enti_insc_esta', 'enti_cep', 'enti_ende', 
             'enti_nume', 'enti_cida','enti_codi_cida', 'enti_esta', 'enti_fone', 'enti_celu', 
-            'enti_emai', 'enti_situ', 'enti_vend'
+            'enti_emai', 'enti_situ', 'enti_vend', 'enti_arqu'
         ]
         widgets = {
             'enti_nome': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nome completo'}),
@@ -65,6 +65,7 @@ class EntidadesForm(forms.ModelForm):
             'enti_celu': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Celular', 'maxlength': '15'}),
             'enti_emai': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Email Pessoal'}),
             'enti_vend': forms.HiddenInput(attrs={'class': 'form-control'}),
+            'enti_arqu': forms.HiddenInput(attrs={'class': 'form-control'}),
             
         }
 
@@ -88,6 +89,13 @@ class EntidadesForm(forms.ModelForm):
             self.fields['is_motorista'].initial = (enti_tien == 'M')
             self.fields['is_transportadora'].initial = (enti_tien == 'T')
             self.fields['enti_espe_enti'].initial = getattr(self.instance, 'enti_espe_enti', None) or '000'
+            # Inicializa campo arquiteto responsável
+            try:
+                enti_arqu = getattr(self.instance, 'enti_arqu', None)
+            except Exception:
+                enti_arqu = None
+            if 'enti_arqu' in self.fields:
+                self.fields['enti_arqu'].initial = enti_arqu
 
         # Tornar certos campos não obrigatórios
         for field in ['enti_cpf', 'enti_cnpj', 'enti_fone', 'enti_emai',

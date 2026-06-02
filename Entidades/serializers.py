@@ -141,6 +141,9 @@ class EntidadesSerializer(serializers.ModelSerializer):
         self.fields['enti_fant'].required = False
         if 'enti_espe_enti' in self.fields:
             self.fields['enti_espe_enti'].required = False
+        # Marca o campo do arquiteto não obrigatório se existir
+        if 'enti_arqu' in self.fields:
+            self.fields['enti_arqu'].required = False
 
     
     def get_empresa_nome(self, obj):
@@ -160,7 +163,6 @@ class EntidadesSerializer(serializers.ModelSerializer):
             return obj.get_enti_espe_enti_display()
         except Exception:
             return None
-
 
 
 

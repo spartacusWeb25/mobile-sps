@@ -72,6 +72,7 @@ class Entidades(models.Model):
         ('OU', 'OUTROS'),
         ('VE', 'VENDEDOR'),
         ('FU', 'FUNCIONÁRIOS'),
+        ('AR', 'ARQUITETOS'),
     ]
     
         
@@ -132,6 +133,7 @@ class Entidades(models.Model):
     enti_usua_foto = models.BooleanField(default=True) # Permissão Foto Usuário 2
     
     enti_vend = models.IntegerField(blank=True, null=True, verbose_name='Vendedor responsável')  
+    enti_arqu = models.IntegerField(blank=True, null=True, verbose_name='Arquiteto responsável')
     enti_situ = models.CharField(max_length=100,choices=[('0', 'INATIVO'), ('1', 'ATIVO')], default='1')
 
     # Campos adicionais para banco/caixa

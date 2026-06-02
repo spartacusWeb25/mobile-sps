@@ -187,6 +187,16 @@
                             {% endfor %}
                         </select>
                     </div>
+                    <div class="col-md-2 d-flex flex-column justify-content-end">
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" id="filter_has_vendedor" name="has_vendedor" value="1" {% if filter_has_vendedor %}checked{% endif %}>
+                            <label class="form-check-label small" for="filter_has_vendedor">Apenas com vendedor</label>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="filter_has_arquiteto" name="has_arquiteto" value="1" {% if filter_has_arquiteto %}checked{% endif %}>
+                            <label class="form-check-label small" for="filter_has_arquiteto">Apenas com arquiteto</label>
+                        </div>
+                    </div>
                     <div class="col-md-2 d-flex align-items-end gap-2">
                         <button type="submit" class="btn btn-outline-primary" id="btn-filtrar-entidades">
                             <i class="bi bi-search"></i> Filtrar
@@ -237,6 +247,9 @@
                                 {% endif %}
                                 {% if entidade.enti_vend %}
                                 <div><i class="bi bi-person"></i> {{ entidade.enti_vend }} - {{ entidade.vendedor_responsavel_nome|default_if_none:"" }}</div>
+                                {% endif %}
+                                {% if entidade.enti_arqu %}
+                                <div><i class="bi bi-person"></i> {{ entidade.enti_arqu }} - {{ entidade.arquiteto_responsavel_nome|default_if_none:"" }}</div>
                                 {% endif %}
                             </div>
                         </div>

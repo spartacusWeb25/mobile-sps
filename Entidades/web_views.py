@@ -94,10 +94,19 @@ class EntidadeListView(DBAndSlugMixin, ListView):
         if self.empresa_id:
             vendedores_sub = vendedores_sub.filter(enti_empr=int(self.empresa_id))
 
+        arquitetos_sub = Entidades.objects.using(db_alias).filter(
+            enti_clie=Cast(OuterRef("enti_arqu"), BigIntegerField())
+        )
+        if self.empresa_id:
+            arquitetos_sub = arquitetos_sub.filter(enti_empr=int(self.empresa_id))
+
         qs = qs.annotate(
             vendedor_responsavel_nome=Subquery(
                 vendedores_sub.values("enti_nome")[:1]
-            )
+            ),
+            arquiteto_responsavel_nome=Subquery(
+                arquitetos_sub.values("enti_nome")[:1]
+            ),
         )
         return qs
 
@@ -111,8 +120,10 @@ class EntidadeListView(DBAndSlugMixin, ListView):
         classificacao = request.GET.get('enti_espe_enti', '')
         situacao = request.GET.get('enti_situ', '')
         vendedor_responsavel = request.GET.get('enti_vend', '')
+        arquiteto_responsavel = request.GET.get('enti_arqu', '')
         db_alias = getattr(request, 'db_alias', None)
         vendedor_responsavel_nome = CadastrosDomainService.vendedor_nome_por_enti_clie(vendedor_responsavel, db_alias)
+        arquiteto_responsavel_nome = CadastrosDomainService.vendedor_nome_por_enti_clie(arquiteto_responsavel, db_alias)
         
         total_entidades = qs.count()
         total_de_clientes = qs.filter(enti_tipo_enti='CL').count()
@@ -150,10 +161,14 @@ class EntidadeListView(DBAndSlugMixin, ListView):
             extra_parts.append('&enti_situ=' + quote_plus(situacao))
         if vendedor_responsavel:
             extra_parts.append('&enti_vend=' + quote_plus(vendedor_responsavel))
+        if arquiteto_responsavel:
+            extra_parts.append('&enti_arqu=' + quote_plus(arquiteto_responsavel))
             
         context['extra_query'] = ''.join(extra_parts)
         context['vendedor_responsavel_nome'] = vendedor_responsavel_nome
         context['vendedor_responsavel_selecionado'] = int(vendedor_responsavel) if str(vendedor_responsavel or '').strip().isdigit() else None
+        context['arquiteto_responsavel_nome'] = arquiteto_responsavel_nome
+        context['arquiteto_responsavel_selecionado'] = int(arquiteto_responsavel) if str(arquiteto_responsavel or '').strip().isdigit() else None
         try:
             empresa_id = int(self.empresa_id) if self.empresa_id not in [None, ""] else None
         except Exception:
@@ -166,6 +181,18 @@ class EntidadeListView(DBAndSlugMixin, ListView):
             vendedores_qs = vendedores_qs.filter(enti_empr=empresa_id)
         vendedores_qs = vendedores_qs.only("enti_clie", "enti_nome").order_by("enti_nome")[:500]
         context['vendedores_entidade'] = [(v.enti_clie, f"{v.enti_clie} - {v.enti_nome}") for v in vendedores_qs]
+        # Flags para filtros de presença (utilizadas pelo template)
+        context['filter_has_vendedor'] = bool(self.request.GET.get('has_vendedor'))
+        context['filter_has_arquiteto'] = bool(self.request.GET.get('has_arquiteto'))
+
+        arquitetos_qs = Entidades.objects.using(db_alias).filter(
+            enti_tipo_enti__in=["AR"],
+            enti_situ="1",
+        )
+        if empresa_id is not None:
+            arquitetos_qs = arquitetos_qs.filter(enti_empr=empresa_id)
+        arquitetos_qs = arquitetos_qs.only("enti_clie", "enti_nome").order_by("enti_nome")[:500]
+        context['arquitetos_entidade'] = [(v.enti_clie, f"{v.enti_clie} - {v.enti_nome}") for v in arquitetos_qs]
         return context
 
 
@@ -181,7 +208,7 @@ def autocomplete_vendedores(request, slug=None):
 
     qs = Entidades.objects.using(banco).filter(
         enti_empr=empresa_id,
-        enti_tipo_enti__in=["VE", "AM", "FU"],
+        enti_tipo_enti__in=["VE", "AM", "FU", "AR"],
         enti_situ="1",
     )
     if term:

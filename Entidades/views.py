@@ -20,6 +20,7 @@ from django.core.cache import cache
 from .services.entidades_tipooutros import EntidadeServico
 from .services.cadastro_rapido import EntidadeCadastroRapido
 from .services.cadastro_rapido_simplificado import EntidadeCadastroRapidoSimplificado
+from .services.entidades_filters import apply_vinculo_filters
 
 
 BANCOS_CEP_FIXO = {"savexml896", "pg pisos", 'demonstracao'}
@@ -69,6 +70,12 @@ class EntidadesViewSet(ModuloRequeridoMixin,viewsets.ModelViewSet):
                 Q(enti_nume__icontains=search_query)
             )
         
+        # Filtro por vínculo com vendedor / arquiteto (query params 'has_vendedor' / 'has_arquiteto')
+        has_vendedor = self.request.query_params.get('has_vendedor')
+        has_arquiteto = self.request.query_params.get('has_arquiteto')
+        if has_vendedor or has_arquiteto:
+            queryset = apply_vinculo_filters(queryset, has_vendedor=has_vendedor, has_arquiteto=has_arquiteto)
+
         # Ordenação otimizada
         return queryset.order_by('enti_empr', 'enti_nome')
 
@@ -111,11 +118,39 @@ class EntidadesViewSet(ModuloRequeridoMixin,viewsets.ModelViewSet):
         return EntidadesSerializer
     
     def get_serializer_context(self):
+        """Adiciona contexto com banco e flags para suportar arquiteto_responsavel quando serializando."""
+        context = super().get_serializer_context()
+        context['banco'] = get_licenca_db_config(self.request)
+        # Flag para serializers saberem que devem incluir/permitir campos relacionados ao arquiteto/responsavel
+        context['include_enti_arqu'] = True
+        return context
+
+    def perform_create(self, serializer):
+        empresa_id = (
+            self.request.data.get('enti_empr')
+            or self.request.headers.get("X-Empresa")
+            or self.request.session.get("empresa_id")
+            or self.request.headers.get("Empresa_id")
+        )
+        try:
+            empresa_id = int(empresa_id) if empresa_id is not None else None
+        except Exception:
+            pass
+        # Se o cliente informar o arquiteto via API, ele virá em request.data['enti_arqu'] e será salvo
+        serializer.save(enti_empr=empresa_id)
+
+    def perform_update(self, serializer):
+        instance = self.get_object()
+        serializer.save(enti_empr=instance.enti_empr)
+
+    def get_serializer_context(self):
+        """Adiciona contexto com banco e flags para suportar arquiteto_responsavel quando serializando."""
         context = super().get_serializer_context()
         context['banco'] = get_licenca_db_config(self.request)
         return context
 
     def perform_create(self, serializer):
+        # Permite que o campo enti_arqu seja salvo via API quando informado
         empresa_id = (
             self.request.data.get('enti_empr')
             or self.request.headers.get("X-Empresa")
@@ -131,7 +166,6 @@ class EntidadesViewSet(ModuloRequeridoMixin,viewsets.ModelViewSet):
     def perform_update(self, serializer):
         instance = self.get_object()
         serializer.save(enti_empr=instance.enti_empr)
-
     @action(detail=False, methods=['get'], url_path='buscar-endereco')
     @modulo_necessario('Entidades')
     def buscar_endereco(self, request, slug=None):
