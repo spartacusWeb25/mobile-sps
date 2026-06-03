@@ -146,14 +146,38 @@ class OrcamentopisosSerializer(BancoContextMixin, serializers.ModelSerializer):
 
     def create(self, validated_data):
         banco = self.context.get("banco")
+        request = self.context.get("request")
 
         if not banco:
             raise ValidationError("Banco não definido no contexto.")
 
+        empresa = None
+        filial = None
+        if request is not None:
+            empresa = (
+                getattr(request, "empresa", None)
+                or getattr(getattr(request, "session", None), "get", lambda *_: None)("empresa_id")
+                or request.headers.get("X-Empresa")
+            )
+            filial = (
+                getattr(request, "filial", None)
+                or getattr(getattr(request, "session", None), "get", lambda *_: None)("filial_id")
+                or request.headers.get("X-Filial")
+            )
+        if empresa not in (None, ""):
+            try:
+                validated_data["orca_empr"] = int(empresa)
+            except Exception:
+                pass
+        if filial not in (None, ""):
+            try:
+                validated_data["orca_fili"] = int(filial)
+            except Exception:
+                pass
+
         itens_data = validated_data.pop("itens_input", None)
 
         if itens_data is None:
-            request = self.context.get("request")
             if request and hasattr(request, "data"):
                 itens_data = request.data.get("itens_input") or request.data.get("itens")
 
@@ -172,14 +196,40 @@ class OrcamentopisosSerializer(BancoContextMixin, serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         banco = self.context.get("banco")
+        request = self.context.get("request")
 
         if not banco:
             raise ValidationError("Banco não definido no contexto.")
 
+        empresa = None
+        filial = None
+        if request is not None:
+            empresa = (
+                getattr(request, "empresa", None)
+                or getattr(getattr(request, "session", None), "get", lambda *_: None)("empresa_id")
+                or request.headers.get("X-Empresa")
+            )
+            filial = (
+                getattr(request, "filial", None)
+                or getattr(getattr(request, "session", None), "get", lambda *_: None)("filial_id")
+                or request.headers.get("X-Filial")
+            )
+        if empresa not in (None, ""):
+            try:
+                if int(empresa) != int(getattr(instance, "orca_empr", 0) or 0):
+                    raise ValidationError("Orçamento não pertence à empresa logada.")
+            except Exception:
+                pass
+        if filial not in (None, ""):
+            try:
+                if int(filial) != int(getattr(instance, "orca_fili", 0) or 0):
+                    raise ValidationError("Orçamento não pertence à filial logada.")
+            except Exception:
+                pass
+
         itens_data = validated_data.pop("itens_input", None)
 
         if itens_data is None:
-            request = self.context.get("request")
             if request and hasattr(request, "data"):
                 itens_data = request.data.get("itens_input") or request.data.get("itens")
 
@@ -381,14 +431,38 @@ class PedidospisosSerializer(BancoContextMixin, serializers.ModelSerializer):
 
     def create(self, validated_data):
         banco = self.context.get("banco")
+        request = self.context.get("request")
 
         if not banco:
             raise ValidationError("Banco não definido no contexto.")
 
+        empresa = None
+        filial = None
+        if request is not None:
+            empresa = (
+                getattr(request, "empresa", None)
+                or getattr(getattr(request, "session", None), "get", lambda *_: None)("empresa_id")
+                or request.headers.get("X-Empresa")
+            )
+            filial = (
+                getattr(request, "filial", None)
+                or getattr(getattr(request, "session", None), "get", lambda *_: None)("filial_id")
+                or request.headers.get("X-Filial")
+            )
+        if empresa not in (None, ""):
+            try:
+                validated_data["pedi_empr"] = int(empresa)
+            except Exception:
+                pass
+        if filial not in (None, ""):
+            try:
+                validated_data["pedi_fili"] = int(filial)
+            except Exception:
+                pass
+
         itens_data = validated_data.pop("itens_input", None)
 
         if itens_data is None:
-            request = self.context.get("request")
             if request and hasattr(request, "data"):
                 itens_data = request.data.get("itens_input") or request.data.get("itens")
 
@@ -405,14 +479,40 @@ class PedidospisosSerializer(BancoContextMixin, serializers.ModelSerializer):
         
     def update(self, instance, validated_data):
         banco = self.context.get("banco")
+        request = self.context.get("request")
 
         if not banco:
             raise ValidationError("Banco não definido no contexto.")
 
+        empresa = None
+        filial = None
+        if request is not None:
+            empresa = (
+                getattr(request, "empresa", None)
+                or getattr(getattr(request, "session", None), "get", lambda *_: None)("empresa_id")
+                or request.headers.get("X-Empresa")
+            )
+            filial = (
+                getattr(request, "filial", None)
+                or getattr(getattr(request, "session", None), "get", lambda *_: None)("filial_id")
+                or request.headers.get("X-Filial")
+            )
+        if empresa not in (None, ""):
+            try:
+                if int(empresa) != int(getattr(instance, "pedi_empr", 0) or 0):
+                    raise ValidationError("Pedido não pertence à empresa logada.")
+            except Exception:
+                pass
+        if filial not in (None, ""):
+            try:
+                if int(filial) != int(getattr(instance, "pedi_fili", 0) or 0):
+                    raise ValidationError("Pedido não pertence à filial logada.")
+            except Exception:
+                pass
+
         itens_data = validated_data.pop("itens_input", None)
 
         if itens_data is None:
-            request = self.context.get("request")
             if request and hasattr(request, "data"):
                 itens_data = request.data.get("itens_input") or request.data.get("itens")
 
