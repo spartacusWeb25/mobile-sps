@@ -156,7 +156,7 @@
     }
 
     .tbl-itens .grupo td {
-      background: #d0d3d6;
+      background: #80a7af;
       font-weight: 700;
       text-align: center;
     }
@@ -281,10 +281,17 @@
       <tr>
         <td class="logo" rowspan="2"><img src="data:image/png;base64,{{ logo_pedido_b64 }}" alt="PG Pisos"></td>
         <td class="empresa" rowspan="2">
-          <div>PG PISOS</div>
-          <div>AVENIDA DOUTOR FRANCISCO BURZIO - 934 -</div>
-          <div>CENTRO</div>
-          <div>PONTA GROSSA, PR - Fone: (42)3223-9577</div>
+          <div>{{ filial.empr_fant|default:filial.empr_nome|default:"" }}</div>
+          <div>
+            {{ filial.empr_ende|default:"" }}
+            {% if filial.empr_nume %} - {{ filial.empr_nume }}{% endif %}
+            {% if filial.empr_comp %} - {{ filial.empr_comp }}{% endif %}
+          </div>
+          <div>{{ filial.empr_bair|default:"" }}</div>
+          <div>
+            {{ filial.empr_cida|default:"" }}{% if filial.empr_esta %}, {{ filial.empr_esta }}{% endif %}
+            {% if filial.empr_fone %} - Fone: {{ filial.empr_fone }}{% endif %}
+          </div>
         </td>
         <td class="pedido">Pedido: {{ pedido.pedi_nume }}</td>
       </tr>
@@ -337,10 +344,14 @@
           <th style="width:46px">Qtde.</th>
           <th style="width:64px">Código</th>
           <th>Descrição</th>
+          {% if not ocultar_kg_caixas %}
           <th style="width:52px">Caixas</th>
           <th style="width:56px">KG</th>
+          {% endif %}
           <th style="width:66px">Marca</th>
+          {% if not ocultar_kg_caixas %}
           <th style="width:44px">U.M</th>
+          {% endif %}
           <th style="width:72px">Valor Unit.</th>
           <th style="width:72px">Total</th>
         </tr>
@@ -348,23 +359,27 @@
       <tbody>
         {% for grupo in grupos %}
         <tr class="grupo">
-          <td colspan="9">{{ grupo.nome }}</td>
+          <td colspan="{% if ocultar_kg_caixas %}6{% else %}9{% endif %}">{{ grupo.nome }}</td>
         </tr>
         {% for i in grupo.itens %}
         <tr>
           <td class="num">{{ i.item_quan|numbr:"auto" }}</td>
           <td class="cen">{{ i.item_prod }}</td>
           <td>{{ i.item_prod_nome|default:i.item_prod }}{% if i.item_obse %}<br>{{ i.item_obse|linebreaksbr }}{% endif %}</td>
+          {% if not ocultar_kg_caixas %}
           <td class="cen">{{ i.item_caixas|default:0 }}</td>
           <td class="num">{{ i.item_kg_total|default:"0"|numbr }}</td>
+          {% endif %}
           <td class="cen">{{ i.item_marc|default:"" }}</td>
+          {% if not ocultar_kg_caixas %}
           <td class="cen">{{ i.item_unid|default:"" }}</td>
+          {% endif %}
           <td class="num">{{ i.item_unit|numbr }}</td>
           <td class="num">{{ i.item_suto|numbr }}</td>
         </tr>
         {% endfor %}
         <tr>
-          <td colspan="7"></td>
+          <td colspan="{% if ocultar_kg_caixas %}4{% else %}7{% endif %}"></td>
           <td class="num"><b>Total Amb:</b></td>
           <td class="num"><b>{{ grupo.total|numbr }}</b></td>
         </tr>

@@ -35,7 +35,7 @@ def get_filial_logo(db_alias, empresa_id, filial_id):
     return None
 
 
-def prepare_pagar_print_data(db_alias, empresa_id, filial_id, period='hoje', status=None):
+def prepare_pagar_print_data(db_alias, empresa_id, filial_id, period='hoje', status=None, vencimento_inicial=None, vencimento_final=None):
     """
     Prepare data for accounts payable print view
     """
@@ -44,6 +44,19 @@ def prepare_pagar_print_data(db_alias, empresa_id, filial_id, period='hoje', sta
     from datetime import datetime
     
     today = _local_today()
+    venc_ini = None
+    venc_fim = None
+    try:
+        if vencimento_inicial:
+            venc_ini = date.fromisoformat(str(vencimento_inicial).strip())
+    except Exception:
+        venc_ini = None
+    try:
+        if vencimento_final:
+            venc_fim = date.fromisoformat(str(vencimento_final).strip())
+    except Exception:
+        venc_fim = None
+    usar_intervalo = bool(venc_ini or venc_fim)
     
     print(f"DEBUG: prepare_pagar_print_data called with empresa_id={empresa_id}, filial_id={filial_id}, period={period}, status={status}")
     
@@ -77,11 +90,18 @@ def prepare_pagar_print_data(db_alias, empresa_id, filial_id, period='hoje', sta
             qs = qs.filter(bapa_empr=empresa_id)
         if filial_id:
             qs = qs.filter(bapa_fili=filial_id)
-        if period == 'semana':
-            qs = qs.filter(bapa_dpag__gte=w_start_date, bapa_dpag__lt=w_end_date + timedelta(days=1))
+        if usar_intervalo:
+            if venc_ini:
+                qs = qs.filter(bapa_venc__gte=venc_ini)
+            if venc_fim:
+                qs = qs.filter(bapa_venc__lte=venc_fim)
+            qs = qs.order_by('bapa_empr', 'bapa_fili', 'bapa_venc', 'bapa_titu')
         else:
-            qs = qs.filter(bapa_dpag__gte=d_start_date, bapa_dpag__lt=d_end_date)
-        qs = qs.order_by('bapa_empr', 'bapa_fili', 'bapa_dpag', 'bapa_titu')
+            if period == 'semana':
+                qs = qs.filter(bapa_dpag__gte=w_start_date, bapa_dpag__lt=w_end_date + timedelta(days=1))
+            else:
+                qs = qs.filter(bapa_dpag__gte=d_start_date, bapa_dpag__lt=d_end_date)
+            qs = qs.order_by('bapa_empr', 'bapa_fili', 'bapa_dpag', 'bapa_titu')
     else:
         qs = Titulospagar.objects.using(db_alias).all()
         # apply company/filial filters only when provided
@@ -93,16 +113,22 @@ def prepare_pagar_print_data(db_alias, empresa_id, filial_id, period='hoje', sta
             (Q(titu_emis__isnull=True) | Q(titu_emis__gte=date(1900,1,1))),
             (Q(titu_venc__isnull=True) | Q(titu_venc__gte=date(1900,1,1))),
         )
-        if period == 'semana':
-            w_start_date = today - timedelta(days=today.weekday())
-            w_end_date = w_start_date + timedelta(days=6)
-            print(f"DEBUG: semana mode - w_start={w_start_date}, w_end={w_end_date}")
-            qs = qs.filter(titu_venc__gte=w_start_date, titu_venc__lt=w_end_date + timedelta(days=1))
+        if usar_intervalo:
+            if venc_ini:
+                qs = qs.filter(titu_venc__gte=venc_ini)
+            if venc_fim:
+                qs = qs.filter(titu_venc__lte=venc_fim)
         else:
-            d_start_date = today
-            d_end_date = today + timedelta(days=1)
-            print(f"DEBUG: hoje mode - d_start={d_start_date}, d_end={d_end_date}")
-            qs = qs.filter(titu_venc__gte=d_start_date, titu_venc__lt=d_end_date)
+            if period == 'semana':
+                w_start_date = today - timedelta(days=today.weekday())
+                w_end_date = w_start_date + timedelta(days=6)
+                print(f"DEBUG: semana mode - w_start={w_start_date}, w_end={w_end_date}")
+                qs = qs.filter(titu_venc__gte=w_start_date, titu_venc__lt=w_end_date + timedelta(days=1))
+            else:
+                d_start_date = today
+                d_end_date = today + timedelta(days=1)
+                print(f"DEBUG: hoje mode - d_start={d_start_date}, d_end={d_end_date}")
+                qs = qs.filter(titu_venc__gte=d_start_date, titu_venc__lt=d_end_date)
         if status == 'aberto':
             qs = qs.filter(titu_aber='A')
         qs = qs.order_by('titu_empr', 'titu_fili', 'titu_forn', 'titu_venc', 'titu_titu')
@@ -216,7 +242,7 @@ def prepare_pagar_print_data(db_alias, empresa_id, filial_id, period='hoje', sta
     }
 
 
-def prepare_receber_print_data(db_alias, empresa_id, filial_id, period='hoje', status=None):
+def prepare_receber_print_data(db_alias, empresa_id, filial_id, period='hoje', status=None, vencimento_inicial=None, vencimento_final=None):
     """
     Prepare data for accounts receivable print view
     """
@@ -225,6 +251,19 @@ def prepare_receber_print_data(db_alias, empresa_id, filial_id, period='hoje', s
     from datetime import datetime
     
     today = _local_today()
+    venc_ini = None
+    venc_fim = None
+    try:
+        if vencimento_inicial:
+            venc_ini = date.fromisoformat(str(vencimento_inicial).strip())
+    except Exception:
+        venc_ini = None
+    try:
+        if vencimento_final:
+            venc_fim = date.fromisoformat(str(vencimento_final).strip())
+    except Exception:
+        venc_fim = None
+    usar_intervalo = bool(venc_ini or venc_fim)
     
     # Get empresa and filial info
     empresa_info = Empresas.objects.using(db_alias).filter(empr_codi=empresa_id).first()
@@ -249,11 +288,18 @@ def prepare_receber_print_data(db_alias, empresa_id, filial_id, period='hoje', s
             bare_empr=empresa_id,
             bare_fili=filial_id
         )
-        if period == 'semana':
-            qs = qs.filter(bare_dpag__gte=w_start, bare_dpag__lt=w_end_inclusive)
+        if usar_intervalo:
+            if venc_ini:
+                qs = qs.filter(bare_venc__gte=venc_ini)
+            if venc_fim:
+                qs = qs.filter(bare_venc__lte=venc_fim)
+            qs = qs.order_by('bare_empr', 'bare_fili', 'bare_venc', 'bare_titu')
         else:
-            qs = qs.filter(bare_dpag__gte=d_start, bare_dpag__lt=d_end)
-        qs = qs.order_by('bare_empr', 'bare_fili', 'bare_dpag', 'bare_titu')
+            if period == 'semana':
+                qs = qs.filter(bare_dpag__gte=w_start, bare_dpag__lt=w_end_inclusive)
+            else:
+                qs = qs.filter(bare_dpag__gte=d_start, bare_dpag__lt=d_end)
+            qs = qs.order_by('bare_empr', 'bare_fili', 'bare_dpag', 'bare_titu')
     else:
         qs = Titulosreceber.objects.using(db_alias).filter(
             titu_empr=empresa_id,
@@ -263,12 +309,18 @@ def prepare_receber_print_data(db_alias, empresa_id, filial_id, period='hoje', s
             (Q(titu_emis__isnull=True) | Q(titu_emis__gte=date(1900,1,1))),
             (Q(titu_venc__isnull=True) | Q(titu_venc__gte=date(1900,1,1))),
         )
-        if period == 'semana':
-            w_start, w_end = _week_range(today.date())
-            qs = qs.filter(titu_venc__gte=w_start, titu_venc__lt=w_end + timedelta(days=1))
+        if usar_intervalo:
+            if venc_ini:
+                qs = qs.filter(titu_venc__gte=venc_ini)
+            if venc_fim:
+                qs = qs.filter(titu_venc__lte=venc_fim)
         else:
-            d_start, d_end = _day_bounds(today)
-            qs = qs.filter(titu_venc__gte=d_start, titu_venc__lt=d_end)
+            if period == 'semana':
+                w_start, w_end = _week_range(today)
+                qs = qs.filter(titu_venc__gte=w_start, titu_venc__lt=w_end + timedelta(days=1))
+            else:
+                d_start, d_end = _day_bounds(today)
+                qs = qs.filter(titu_venc__gte=d_start, titu_venc__lt=d_end)
         if status == 'aberto':
             qs = qs.filter(titu_aber='A')
         if status == 'quitado':

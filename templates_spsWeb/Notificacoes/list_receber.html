@@ -90,7 +90,7 @@
   <div class="d-flex justify-content-between align-items-center mb-3 no-print">
     <h3 class="mb-0">Contas a Receber {% if request.GET.status == 'quitado' %}(Recebidas){% endif %}</h3>
     <div>
-      <a class="btn btn-sm btn-primary me-2" href="{% url 'notificacoes_web:imprimir_receber' slug=slug %}?{% if period %}period={{ period }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if object_list %}&empresa_id={{ object_list.0.empresa_id }}&filial_id={{ object_list.0.filial_id }}{% endif %}" target="_blank">
+      <a class="btn btn-sm btn-primary me-2" href="{% url 'notificacoes_web:imprimir_receber' slug=slug %}?{% if period %}period={{ period }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.vencimento_inicial %}&vencimento_inicial={{ request.GET.vencimento_inicial }}{% endif %}{% if request.GET.vencimento_final %}&vencimento_final={{ request.GET.vencimento_final }}{% endif %}{% if object_list %}&empresa_id={{ object_list.0.empresa_id }}&filial_id={{ object_list.0.filial_id }}{% endif %}" target="_blank">
         <i class="bi bi-printer"></i> Imprimir
       </a>
       <a class="btn btn-sm btn-outline-secondary" href="/web/{{ slug }}/notificacoes/">
@@ -119,9 +119,15 @@
         <option value="quitado" {% if request.GET.status == 'quitado' %}selected{% endif %}>Quitados</option>
       </select>
     </div>
+    <div class="col-auto">
+      <input type="date" name="vencimento_inicial" class="form-control form-control-sm" value="{{ request.GET.vencimento_inicial }}" placeholder="Vencimento inicial">
+    </div>
+    <div class="col-auto">
+      <input type="date" name="vencimento_final" class="form-control form-control-sm" value="{{ request.GET.vencimento_final }}" placeholder="Vencimento final">
+    </div>
     <div class="col-auto"><button class="btn btn-sm btn-outline-primary" type="submit"><i class="bi bi-filter"></i> Filtrar</button></div>
     <div class="col-auto ms-auto">
-      <a class="btn btn-sm btn-outline-success" href="{% url 'notificacoes_web:exportar_receber' slug=slug %}?{% if period %}period={{ period }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">
+      <a class="btn btn-sm btn-outline-success" href="{% url 'notificacoes_web:exportar_receber' slug=slug %}?{% if period %}period={{ period }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.vencimento_inicial %}&vencimento_inicial={{ request.GET.vencimento_inicial }}{% endif %}{% if request.GET.vencimento_final %}&vencimento_final={{ request.GET.vencimento_final }}{% endif %}">
         <i class="bi bi-file-earmark-excel"></i> Exportar Excel
       </a>
     </div>

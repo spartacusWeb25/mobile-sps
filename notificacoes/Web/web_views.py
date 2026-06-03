@@ -254,6 +254,21 @@ class TitulosAPagarListView(DBAndSlugMixin, ListView):
         status = self.request.GET.get('status')
         filter_empresa_id = self.request.GET.get('empresa_id')
         filter_filial_id = self.request.GET.get('filial_id')
+        venc_ini_raw = self.request.GET.get('vencimento_inicial') or self.request.GET.get('venc_ini')
+        venc_fim_raw = self.request.GET.get('vencimento_final') or self.request.GET.get('venc_fim')
+
+        def _parse_iso_date(v):
+            v = (v or "").strip()
+            if not v:
+                return None
+            try:
+                return date.fromisoformat(v)
+            except Exception:
+                return None
+
+        venc_ini = _parse_iso_date(venc_ini_raw)
+        venc_fim = _parse_iso_date(venc_fim_raw)
+        usar_intervalo = bool(venc_ini or venc_fim)
         
         # Buscar informações de empresa e filial
         empresa_info = None
@@ -278,11 +293,18 @@ class TitulosAPagarListView(DBAndSlugMixin, ListView):
                 qs = qs.filter(bapa_empr=empresa_id)
             if filial_id:
                 qs = qs.filter(bapa_fili=filial_id)
-            if period == 'semana':
-                qs = qs.filter(bapa_dpag__gte=w_start, bapa_dpag__lt=w_end_inclusive)
+            if usar_intervalo:
+                if venc_ini:
+                    qs = qs.filter(bapa_venc__gte=venc_ini)
+                if venc_fim:
+                    qs = qs.filter(bapa_venc__lte=venc_fim)
+                qs = qs.order_by('bapa_venc', 'bapa_titu')
             else:
-                qs = qs.filter(bapa_dpag__gte=d_start, bapa_dpag__lt=d_end)
-            qs = qs.order_by('bapa_dpag', 'bapa_titu')
+                if period == 'semana':
+                    qs = qs.filter(bapa_dpag__gte=w_start, bapa_dpag__lt=w_end_inclusive)
+                else:
+                    qs = qs.filter(bapa_dpag__gte=d_start, bapa_dpag__lt=d_end)
+                qs = qs.order_by('bapa_dpag', 'bapa_titu')
         else:
             qs = Titulospagar.objects.using(self.db_alias).all()
             # apply filters only when provided
@@ -294,12 +316,18 @@ class TitulosAPagarListView(DBAndSlugMixin, ListView):
                 (Q(titu_emis__isnull=True) | Q(titu_emis__gte=date(1900,1,1))),
                 (Q(titu_venc__isnull=True) | Q(titu_venc__gte=date(1900,1,1))),
             )
-            if period == 'semana':
-                w_start, w_end = _week_range(today)
-                qs = qs.filter(titu_venc__gte=w_start, titu_venc__lt=w_end + timedelta(days=1))
+            if usar_intervalo:
+                if venc_ini:
+                    qs = qs.filter(titu_venc__gte=venc_ini)
+                if venc_fim:
+                    qs = qs.filter(titu_venc__lte=venc_fim)
             else:
-                d_start, d_end = _day_bounds(today)
-                qs = qs.filter(titu_venc__gte=d_start, titu_venc__lt=d_end)
+                if period == 'semana':
+                    w_start, w_end = _week_range(today)
+                    qs = qs.filter(titu_venc__gte=w_start, titu_venc__lt=w_end + timedelta(days=1))
+                else:
+                    d_start, d_end = _day_bounds(today)
+                    qs = qs.filter(titu_venc__gte=d_start, titu_venc__lt=d_end)
             if status == 'aberto':
                 qs = qs.filter(titu_aber='A')
             qs = qs.order_by('titu_forn', 'titu_venc', 'titu_titu')
@@ -401,6 +429,8 @@ class TitulosAPagarListView(DBAndSlugMixin, ListView):
             'today': _local_today(),
             'period': (self.request.GET.get('period') or 'hoje').lower(),
             'slug': self.slug,
+            'vencimento_inicial': (self.request.GET.get('vencimento_inicial') or '').strip(),
+            'vencimento_final': (self.request.GET.get('vencimento_final') or '').strip(),
             'total_count': total_count,
             'total_sum': total_sum,
             'empresas_totals': empresas_totals,
@@ -423,6 +453,21 @@ class TitulosAReceberListView(DBAndSlugMixin, ListView):
         status = self.request.GET.get('status')
         filter_empresa_id = self.request.GET.get('empresa_id')
         filter_filial_id = self.request.GET.get('filial_id')
+        venc_ini_raw = self.request.GET.get('vencimento_inicial') or self.request.GET.get('venc_ini')
+        venc_fim_raw = self.request.GET.get('vencimento_final') or self.request.GET.get('venc_fim')
+
+        def _parse_iso_date(v):
+            v = (v or "").strip()
+            if not v:
+                return None
+            try:
+                return date.fromisoformat(v)
+            except Exception:
+                return None
+
+        venc_ini = _parse_iso_date(venc_ini_raw)
+        venc_fim = _parse_iso_date(venc_fim_raw)
+        usar_intervalo = bool(venc_ini or venc_fim)
         
         # Buscar informações de empresa e filial
         empresa_info = None
@@ -442,23 +487,36 @@ class TitulosAReceberListView(DBAndSlugMixin, ListView):
             d_start, d_end = _day_bounds(today)
             w_end_inclusive = w_end + timedelta(days=1)
             qs = Baretitulos.objects.using(self.db_alias).filter(bare_empr=empresa_id, bare_fili=filial_id)
-            if period == 'semana':
-                qs = qs.filter(bare_dpag__gte=w_start, bare_dpag__lt=w_end_inclusive)
+            if usar_intervalo:
+                if venc_ini:
+                    qs = qs.filter(bare_venc__gte=venc_ini)
+                if venc_fim:
+                    qs = qs.filter(bare_venc__lte=venc_fim)
+                qs = qs.order_by('bare_venc', 'bare_titu')
             else:
-                qs = qs.filter(bare_dpag__gte=d_start, bare_dpag__lt=d_end)
-            qs = qs.order_by('bare_dpag', 'bare_titu')
+                if period == 'semana':
+                    qs = qs.filter(bare_dpag__gte=w_start, bare_dpag__lt=w_end_inclusive)
+                else:
+                    qs = qs.filter(bare_dpag__gte=d_start, bare_dpag__lt=d_end)
+                qs = qs.order_by('bare_dpag', 'bare_titu')
         else:
             qs = Titulosreceber.objects.using(self.db_alias).filter(titu_empr=empresa_id, titu_fili=filial_id)
             qs = qs.filter(
                 (Q(titu_emis__isnull=True) | Q(titu_emis__gte=date(1900,1,1))),
                 (Q(titu_venc__isnull=True) | Q(titu_venc__gte=date(1900,1,1))),
             )
-            if period == 'semana':
-                w_start, w_end = _week_range(today)
-                qs = qs.filter(titu_venc__gte=w_start, titu_venc__lt=w_end + timedelta(days=1))
+            if usar_intervalo:
+                if venc_ini:
+                    qs = qs.filter(titu_venc__gte=venc_ini)
+                if venc_fim:
+                    qs = qs.filter(titu_venc__lte=venc_fim)
             else:
-                d_start, d_end = _day_bounds(today)
-                qs = qs.filter(titu_venc__gte=d_start, titu_venc__lt=d_end)
+                if period == 'semana':
+                    w_start, w_end = _week_range(today)
+                    qs = qs.filter(titu_venc__gte=w_start, titu_venc__lt=w_end + timedelta(days=1))
+                else:
+                    d_start, d_end = _day_bounds(today)
+                    qs = qs.filter(titu_venc__gte=d_start, titu_venc__lt=d_end)
             if status == 'aberto':
                 qs = qs.filter(titu_aber='A')
             if status == 'quitado':
@@ -549,6 +607,8 @@ class TitulosAReceberListView(DBAndSlugMixin, ListView):
             'today': _local_today(),
             'period': (self.request.GET.get('period') or 'hoje').lower(),
             'slug': self.slug,
+            'vencimento_inicial': (self.request.GET.get('vencimento_inicial') or '').strip(),
+            'vencimento_final': (self.request.GET.get('vencimento_final') or '').strip(),
             'total_count': total_count,
             'total_sum': total_sum,
             'empresas_totals': empresas_totals,
@@ -572,6 +632,8 @@ class ImprimirPagarView(DBAndSlugMixin, TemplateView):
         status = self.request.GET.get('status')
         filter_empresa_id = self.request.GET.get('empresa_id')
         filter_filial_id = self.request.GET.get('filial_id')
+        venc_ini = self.request.GET.get('vencimento_inicial') or self.request.GET.get('venc_ini')
+        venc_fim = self.request.GET.get('vencimento_final') or self.request.GET.get('venc_fim')
         
         # Use empresa_id and filial_id from request if available, otherwise None (to include ALL)
         empresa_id = int(filter_empresa_id) if filter_empresa_id else None
@@ -582,7 +644,9 @@ class ImprimirPagarView(DBAndSlugMixin, TemplateView):
             empresa_id,
             filial_id,
             period,
-            status
+            status,
+            vencimento_inicial=venc_ini,
+            vencimento_final=venc_fim,
         )
         
         ctx.update(print_data)
@@ -603,6 +667,8 @@ class ImprimirReceberView(DBAndSlugMixin, TemplateView):
         status = self.request.GET.get('status')
         filter_empresa_id = self.request.GET.get('empresa_id')
         filter_filial_id = self.request.GET.get('filial_id')
+        venc_ini = self.request.GET.get('vencimento_inicial') or self.request.GET.get('venc_ini')
+        venc_fim = self.request.GET.get('vencimento_final') or self.request.GET.get('venc_fim')
         
         empresa_id = int(filter_empresa_id) if filter_empresa_id else self.empresa_id
         filial_id = int(filter_filial_id) if filter_filial_id else self.filial_id
@@ -612,7 +678,9 @@ class ImprimirReceberView(DBAndSlugMixin, TemplateView):
             empresa_id,
             filial_id,
             period,
-            status
+            status,
+            vencimento_inicial=venc_ini,
+            vencimento_final=venc_fim,
         )
         
         ctx.update(print_data)
@@ -890,6 +958,21 @@ class ExportarTitulosAPagarListView(DBAndSlugMixin,View):
         today = _local_today()
         period = (request.GET.get('period') or 'hoje').lower()
         status = request.GET.get('status')
+        venc_ini_raw = request.GET.get('vencimento_inicial') or request.GET.get('venc_ini')
+        venc_fim_raw = request.GET.get('vencimento_final') or request.GET.get('venc_fim')
+
+        def _parse_iso_date(v):
+            v = (v or "").strip()
+            if not v:
+                return None
+            try:
+                return date.fromisoformat(v)
+            except Exception:
+                return None
+
+        venc_ini = _parse_iso_date(venc_ini_raw)
+        venc_fim = _parse_iso_date(venc_fim_raw)
+        usar_intervalo = bool(venc_ini or venc_fim)
 
         # Buscar informações de empresa e filial
         empresa_info = None
@@ -905,23 +988,36 @@ class ExportarTitulosAPagarListView(DBAndSlugMixin,View):
             d_start, d_end = _day_bounds(today)
             w_end_inclusive = w_end + timedelta(days=1)
             qs = Bapatitulos.objects.using(self.db_alias).filter(bapa_empr=self.empresa_id, bapa_fili=self.filial_id)
-            if period == 'semana':
-                qs = qs.filter(bapa_dpag__gte=w_start, bapa_dpag__lt=w_end_inclusive)
+            if usar_intervalo:
+                if venc_ini:
+                    qs = qs.filter(bapa_venc__gte=venc_ini)
+                if venc_fim:
+                    qs = qs.filter(bapa_venc__lte=venc_fim)
+                qs = qs.order_by('bapa_venc', 'bapa_titu')
             else:
-                qs = qs.filter(bapa_dpag__gte=d_start, bapa_dpag__lt=d_end)
-            qs = qs.order_by('bapa_dpag', 'bapa_titu')
+                if period == 'semana':
+                    qs = qs.filter(bapa_dpag__gte=w_start, bapa_dpag__lt=w_end_inclusive)
+                else:
+                    qs = qs.filter(bapa_dpag__gte=d_start, bapa_dpag__lt=d_end)
+                qs = qs.order_by('bapa_dpag', 'bapa_titu')
         else:
             qs = Titulospagar.objects.using(self.db_alias).filter(titu_empr=self.empresa_id, titu_fili=self.filial_id)
             qs = qs.filter(
                 (Q(titu_emis__isnull=True) | Q(titu_emis__gte=date(1900,1,1))),
                 (Q(titu_venc__isnull=True) | Q(titu_venc__gte=date(1900,1,1))),
             )
-            if period == 'semana':
-                w_start, w_end = _week_range(today)
-                qs = qs.filter(titu_venc__gte=w_start, titu_venc__lt=w_end + timedelta(days=1))
+            if usar_intervalo:
+                if venc_ini:
+                    qs = qs.filter(titu_venc__gte=venc_ini)
+                if venc_fim:
+                    qs = qs.filter(titu_venc__lte=venc_fim)
             else:
-                d_start, d_end = _day_bounds(today)
-                qs = qs.filter(titu_venc__gte=d_start, titu_venc__lt=d_end)
+                if period == 'semana':
+                    w_start, w_end = _week_range(today)
+                    qs = qs.filter(titu_venc__gte=w_start, titu_venc__lt=w_end + timedelta(days=1))
+                else:
+                    d_start, d_end = _day_bounds(today)
+                    qs = qs.filter(titu_venc__gte=d_start, titu_venc__lt=d_end)
             if status == 'aberto':
                 qs = qs.filter(titu_aber='A')
             qs = qs.order_by('titu_forn', 'titu_venc', 'titu_titu').only('titu_titu','titu_parc','titu_venc','titu_aber','titu_forn','titu_valo')
@@ -1024,6 +1120,21 @@ class ExportarTitulosAReceberListView(DBAndSlugMixin,View):
         today = _local_today()
         period = (request.GET.get('period') or 'hoje').lower()
         status = request.GET.get('status')
+        venc_ini_raw = request.GET.get('vencimento_inicial') or request.GET.get('venc_ini')
+        venc_fim_raw = request.GET.get('vencimento_final') or request.GET.get('venc_fim')
+
+        def _parse_iso_date(v):
+            v = (v or "").strip()
+            if not v:
+                return None
+            try:
+                return date.fromisoformat(v)
+            except Exception:
+                return None
+
+        venc_ini = _parse_iso_date(venc_ini_raw)
+        venc_fim = _parse_iso_date(venc_fim_raw)
+        usar_intervalo = bool(venc_ini or venc_fim)
 
         # Buscar informações de empresa e filial
         empresa_info = None
@@ -1039,23 +1150,36 @@ class ExportarTitulosAReceberListView(DBAndSlugMixin,View):
             d_start, d_end = _day_bounds(today)
             w_end_inclusive = w_end + timedelta(days=1)
             qs = Baretitulos.objects.using(self.db_alias).filter(bare_empr=self.empresa_id, bare_fili=self.filial_id)
-            if period == 'semana':
-                qs = qs.filter(bare_dpag__gte=w_start, bare_dpag__lt=w_end_inclusive)
+            if usar_intervalo:
+                if venc_ini:
+                    qs = qs.filter(bare_venc__gte=venc_ini)
+                if venc_fim:
+                    qs = qs.filter(bare_venc__lte=venc_fim)
+                qs = qs.order_by('bare_venc', 'bare_titu')
             else:
-                qs = qs.filter(bare_dpag__gte=d_start, bare_dpag__lt=d_end)
-            qs = qs.order_by('bare_dpag', 'bare_titu')
+                if period == 'semana':
+                    qs = qs.filter(bare_dpag__gte=w_start, bare_dpag__lt=w_end_inclusive)
+                else:
+                    qs = qs.filter(bare_dpag__gte=d_start, bare_dpag__lt=d_end)
+                qs = qs.order_by('bare_dpag', 'bare_titu')
         else:
             qs = Titulosreceber.objects.using(self.db_alias).filter(titu_empr=self.empresa_id, titu_fili=self.filial_id)
             qs = qs.filter(
                 (Q(titu_emis__isnull=True) | Q(titu_emis__gte=date(1900,1,1))),
                 (Q(titu_venc__isnull=True) | Q(titu_venc__gte=date(1900,1,1))),
             )
-            if period == 'semana':
-                w_start, w_end = _week_range(today)
-                qs = qs.filter(titu_venc__gte=w_start, titu_venc__lt=w_end + timedelta(days=1))
+            if usar_intervalo:
+                if venc_ini:
+                    qs = qs.filter(titu_venc__gte=venc_ini)
+                if venc_fim:
+                    qs = qs.filter(titu_venc__lte=venc_fim)
             else:
-                d_start, d_end = _day_bounds(today)
-                qs = qs.filter(titu_venc__gte=d_start, titu_venc__lt=d_end)
+                if period == 'semana':
+                    w_start, w_end = _week_range(today)
+                    qs = qs.filter(titu_venc__gte=w_start, titu_venc__lt=w_end + timedelta(days=1))
+                else:
+                    d_start, d_end = _day_bounds(today)
+                    qs = qs.filter(titu_venc__gte=d_start, titu_venc__lt=d_end)
             if status == 'aberto':
                 qs = qs.filter(titu_aber='A')
             if status == 'quitado':

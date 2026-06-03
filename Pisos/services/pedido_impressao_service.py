@@ -7,6 +7,7 @@ from decimal import Decimal
 from itertools import groupby, zip_longest
  
 from Entidades.models import Entidades
+from Licencas.models import Filiais
 from Pisos.models import Itenspedidospisos
 from django.utils import timezone
  
@@ -24,7 +25,36 @@ class PedidoPisosImpressaoService:
             return ""
 
     @staticmethod
+    @lru_cache(maxsize=32)
+    def _carregar_logo_filial_b64(*, banco: str, empresa_id: int, filial_id: int) -> str:
+        try:
+            filial = (
+                Filiais.objects.using(banco)
+                .filter(empr_empr=empresa_id, empr_codi=filial_id)
+                .first()
+            )
+            if not filial:
+                return ""
+            raw = getattr(filial, "empr_logo", None)
+            if not raw:
+                raw = getattr(filial, "empr_logo_2", None)
+            if not raw:
+                return ""
+            if isinstance(raw, memoryview):
+                raw = raw.tobytes()
+            if isinstance(raw, bytes):
+                return base64.b64encode(raw).decode("utf-8")
+            return base64.b64encode(bytes(raw)).decode("utf-8")
+        except Exception:
+            return ""
+
+    @staticmethod
     def obter_contexto(*, banco: str, pedido) -> dict:
+        filial = (
+            Filiais.objects.using(banco)
+            .filter(empr_empr=pedido.pedi_empr, empr_codi=pedido.pedi_fili)
+            .first()
+        )
         cliente = (
             Entidades.objects.using(banco)
             .filter(enti_clie=pedido.pedi_clie)
@@ -58,9 +88,13 @@ class PedidoPisosImpressaoService:
         data_hoje_extenso = PedidoPisosImpressaoService._formatar_data_hoje_extenso()
         financeiro_linhas = [{"seq": i + 1, "obj": f} for i, f in enumerate(financeiro)]
         financeiro_colunas = list(zip_longest(financeiro_linhas[::2], financeiro_linhas[1::2]))
-        logo_pedido_b64 = PedidoPisosImpressaoService._carregar_logo_b64("logopgpisos.png")
+        logo_pedido_b64 = PedidoPisosImpressaoService._carregar_logo_filial_b64(
+            banco=banco, empresa_id=pedido.pedi_empr, filial_id=pedido.pedi_fili
+        ) or PedidoPisosImpressaoService._carregar_logo_b64("logopgpisos.png")
  
         return {
+            "filial": filial,
+            "ocultar_kg_caixas": bool(getattr(filial, "empr_codi", None) == 4),
             "cliente": cliente,
             "vendedor": vendedor,
             "itens": itens,
@@ -108,21 +142,23 @@ class PedidoPisosImpressaoService:
 
     @staticmethod
     def _agrupar_itens_por_ambiente(itens):
-        def _chave_ambiente(item):
+        def _nome_ambiente(item):
             valor = getattr(item, "item_nome_ambi", None) or getattr(item, "item_ambi", "") or ""
             if isinstance(valor, str):
-                valor = valor.strip()
+                return valor.strip()
+            return str(valor)
 
-            return (str(valor), str(getattr(item, "item_nume", "") or ""))
+        def _ordem_item(item):
+            return str(getattr(item, "item_nume", "") or "")
 
-        itens_ordenados = sorted(itens, key=_chave_ambiente)
+        itens_ordenados = sorted(itens, key=lambda i: (_nome_ambiente(i), _ordem_item(i)))
         grupos = []
-        for nome_ambiente, itens_iter in groupby(itens_ordenados, key=_chave_ambiente):
+        for nome_ambiente, itens_iter in groupby(itens_ordenados, key=_nome_ambiente):
             itens_grupo = list(itens_iter)
             total = Decimal("0")
             for item in itens_grupo:
                 total += Decimal(str(getattr(item, "item_suto", 0) or 0))
-            grupos.append({"nome": nome_ambiente[0], "itens": itens_grupo, "total": total})
+            grupos.append({"nome": nome_ambiente, "itens": itens_grupo, "total": total})
         return grupos
 
     @staticmethod

@@ -8,6 +8,7 @@ from decimal import Decimal
 from itertools import groupby, zip_longest
  
 from Entidades.models import Entidades
+from Licencas.models import Filiais
 from Pisos.models import Itensorcapisos
 from django.utils import timezone
  
@@ -25,7 +26,36 @@ class OrcamentoPisosImpressaoService:
             return ""
 
     @staticmethod
+    @lru_cache(maxsize=32)
+    def _carregar_logo_filial_b64(*, banco: str, empresa_id: int, filial_id: int) -> str:
+        try:
+            filial = (
+                Filiais.objects.using(banco)
+                .filter(empr_empr=empresa_id, empr_codi=filial_id)
+                .first()
+            )
+            if not filial:
+                return ""
+            raw = getattr(filial, "empr_logo", None)
+            if not raw:
+                raw = getattr(filial, "empr_logo_2", None)
+            if not raw:
+                return ""
+            if isinstance(raw, memoryview):
+                raw = raw.tobytes()
+            if isinstance(raw, bytes):
+                return base64.b64encode(raw).decode("utf-8")
+            return base64.b64encode(bytes(raw)).decode("utf-8")
+        except Exception:
+            return ""
+
+    @staticmethod
     def obter_contexto(*, banco: str, orcamento) -> dict:
+        filial = (
+            Filiais.objects.using(banco)
+            .filter(empr_empr=orcamento.orca_empr, empr_codi=orcamento.orca_fili)
+            .first()
+        )
         cliente = (
             Entidades.objects.using(banco)
             .filter(enti_clie=orcamento.orca_clie)
@@ -59,9 +89,13 @@ class OrcamentoPisosImpressaoService:
         data_hoje_extenso = OrcamentoPisosImpressaoService._formatar_data_hoje_extenso()
         financeiro_linhas = [{"seq": i + 1, "obj": f} for i, f in enumerate(financeiro)]
         financeiro_colunas = list(zip_longest(financeiro_linhas[::2], financeiro_linhas[1::2]))
-        logo_orcamento_b64 = OrcamentoPisosImpressaoService._carregar_logo_b64("logopgorcamentos.png")
+        logo_orcamento_b64 = OrcamentoPisosImpressaoService._carregar_logo_filial_b64(
+            banco=banco, empresa_id=orcamento.orca_empr, filial_id=orcamento.orca_fili
+        ) or OrcamentoPisosImpressaoService._carregar_logo_b64("logopgorcamentos.png")
  
         return {
+            "filial": filial,
+            "ocultar_kg_caixas": bool(getattr(filial, "empr_codi", None) == 4),
             "cliente": cliente,
             "vendedor": vendedor,
             "itens": itens,
