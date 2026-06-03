@@ -235,40 +235,67 @@ class PainelPedidosService:
         todas_compras_efetuadas = True
         
         for item_data in itens_atualizados:
-            item_nume = item_data['item_nume']
             nova_qtd_comprada = Decimal(str(item_data['quantidade_comprada']))
             qtd_necessaria = Decimal(str(item_data['quantidade_necessaria']))
-            
-            logger.info(f"[salvar_compras] Processando item {item_nume}: qtd_comprada={nova_qtd_comprada}, qtd_necessaria={qtd_necessaria}")
-            
-            try:
-                item = itens_pedido.get(item_nume=item_nume)
-                
-                # Atualizar quantidade comprada
-                item.item_quan_entr = nova_qtd_comprada
-                
+
+            # Usar item_nume se disponível, senão usar item_ambi + item_prod
+            if 'item_nume' in item_data and item_data['item_nume']:
+                item_nume = item_data['item_nume']
+                logger.info(f"[salvar_compras] Processando item {item_nume}: qtd_comprada={nova_qtd_comprada}, qtd_necessaria={qtd_necessaria}")
+                try:
+                    item = itens_pedido.get(item_nume=item_nume)
+                    item.item_quan_entr = nova_qtd_comprada
+
+                    # Se quantidade comprada > 0, marcar como compra efetuada
+                    if nova_qtd_comprada > 0:
+                        item.item_comp_efet = hoje
+                        logger.info(f"[salvar_compras] Item {item_nume}: compra efetuada em {hoje}")
+                    else:
+                        item.item_comp_efet = None
+                        logger.info(f"[salvar_compras] Item {item_nume}: compra não efetuada (qtd=0)")
+
+                    # Verificar se a compra foi totalmente efetuada
+                    if nova_qtd_comprada < qtd_necessaria:
+                        todas_compras_efetuadas = False
+                        logger.info(f"[salvar_compras] Item {item_nume}: compra incompleta ({nova_qtd_comprada} < {qtd_necessaria})")
+                    else:
+                        logger.info(f"[salvar_compras] Item {item_nume}: compra completa ({nova_qtd_comprada} >= {qtd_necessaria})")
+
+                    item.save(using=banco)
+                    logger.info(f"[salvar_compras] Item {item_nume}: salvo com sucesso")
+                except Itenspedidospisos.DoesNotExist:
+                    logger.error(f"[salvar_compras] Item {item_nume}: não encontrado no pedido")
+                    todas_compras_efetuadas = False
+                    continue
+            else:
+                item_ambi = item_data.get('item_ambi')
+                item_prod = item_data.get('item_prod')
+                logger.info(f"[salvar_compras] Processando item por ambiente+produto: ambi={item_ambi}, prod={item_prod}, qtd_comprada={nova_qtd_comprada}")
+
+                # Usar update() diretamente no queryset para evitar problemas com PK
+                update_data = {'item_quan_entr': nova_qtd_comprada}
+
                 # Se quantidade comprada > 0, marcar como compra efetuada
                 if nova_qtd_comprada > 0:
-                    item.item_comp_efet = hoje
-                    logger.info(f"[salvar_compras] Item {item_nume}: compra efetuada em {hoje}")
+                    update_data['item_comp_efet'] = hoje
+                    logger.info(f"[salvar_compras] Item ambi={item_ambi}, prod={item_prod}: compra efetuada em {hoje}")
                 else:
-                    item.item_comp_efet = None
-                    logger.info(f"[salvar_compras] Item {item_nume}: compra não efetuada (qtd=0)")
-                
+                    update_data['item_comp_efet'] = None
+                    logger.info(f"[salvar_compras] Item ambi={item_ambi}, prod={item_prod}: compra não efetuada (qtd=0)")
+
                 # Verificar se a compra foi totalmente efetuada
                 if nova_qtd_comprada < qtd_necessaria:
                     todas_compras_efetuadas = False
-                    logger.info(f"[salvar_compras] Item {item_nume}: compra incompleta ({nova_qtd_comprada} < {qtd_necessaria})")
+                    logger.info(f"[salvar_compras] Item ambi={item_ambi}, prod={item_prod}: compra incompleta ({nova_qtd_comprada} < {qtd_necessaria})")
                 else:
-                    logger.info(f"[salvar_compras] Item {item_nume}: compra completa ({nova_qtd_comprada} >= {qtd_necessaria})")
-                
-                item.save(using=banco)
-                logger.info(f"[salvar_compras] Item {item_nume}: salvo com sucesso")
-                
-            except Itenspedidospisos.DoesNotExist:
-                logger.error(f"[salvar_compras] Item {item_nume}: não encontrado no pedido")
-                todas_compras_efetuadas = False
-                continue
+                    logger.info(f"[salvar_compras] Item ambi={item_ambi}, prod={item_prod}: compra completa ({nova_qtd_comprada} >= {qtd_necessaria})")
+
+                updated = itens_pedido.filter(item_ambi=item_ambi, item_prod=item_prod).update(**update_data)
+                if updated == 0:
+                    logger.error(f"[salvar_compras] Item com ambi={item_ambi}, prod={item_prod}: não encontrado no pedido (0 linhas atualizadas)")
+                    todas_compras_efetuadas = False
+                else:
+                    logger.info(f"[salvar_compras] Item ambi={item_ambi}, prod={item_prod}: {updated} linha(s) atualizada(s) com sucesso")
         
         # Atualizar status do pedido se todas as compras foram efetuadas
         logger.info(f"[salvar_compras] Todas as compras efetuadas: {todas_compras_efetuadas}")

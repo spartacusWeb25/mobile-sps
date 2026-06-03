@@ -729,30 +729,124 @@ class PedidospisosViewSet(BaseMultiDBModelViewSet, VendedorEntidadeMixin):
         except Exception as e:
             logger.exception("Erro ao obter detalhes de compras para pedido %s: %s", getattr(pedido, "pedi_nume", "?"), e)
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
 
-    @action(detail=True, methods=["post"], url_path="salvar-compras", permission_classes=(), authentication_classes=())
-    @csrf_exempt
+        
+    @action(detail=True, methods=["post"], url_path="salvar-compras", authentication_classes=[], permission_classes=[])
     def salvar_compras(self, request, *args, **kwargs):
+        """
+        POST /api/{slug}/pisos/pedidos-pisos/{pedi_nume}/salvar-compras/
+        
+        Body esperado:
+        {
+            "empresa": 1,
+            "filial": 1,
+            "itens": [
+                {
+                    "item_nume": "123",
+                    "quantidade_comprada": 10.5,
+                    "quantidade_necessaria": 15.0
+                }
+            ]
+        }
+        """
         banco = self.get_banco()
-        pedido = self.get_object()
-
-        logger.info(f"[salvar_compras] Iniciando salvamento para pedido {getattr(pedido, 'pedi_nume')}")
-        logger.info(f"[salvar_compras] Dados recebidos: {request.data}")
-
+        
         try:
-            dados = PainelPedidosService.salvar_compras(
+            pedido = self.get_object()
+            pedido_numero = getattr(pedido, "pedi_nume")
+            
+            logger.info(f"[salvar_compras] Action iniciada para pedido {pedido_numero}")
+            logger.info(f"[salvar_compras] User: {self.request.user}")
+            logger.debug(f"[salvar_compras] Request data: {request.data}")
+            
+            # Validar dados obrigatórios
+            empresa = request.data.get('empresa')
+            filial = request.data.get('filial')
+            itens = request.data.get('itens', [])
+            
+            logger.info(f"[salvar_compras] Dados brutos: empresa={repr(empresa)} (type={type(empresa).__name__}), filial={repr(filial)} (type={type(filial).__name__})")
+            
+            # Validar se não são None/null/string "null"
+            if empresa is None or empresa == '' or (isinstance(empresa, str) and empresa.lower() == 'null'):
+                logger.warning(f"[salvar_compras] ❌ Empresa inválida: {repr(empresa)}")
+                return Response(
+                    {"error": "Empresa é obrigatória e deve ser um número válido"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            if filial is None or filial == '' or (isinstance(filial, str) and filial.lower() == 'null'):
+                logger.warning(f"[salvar_compras] ❌ Filial inválida: {repr(filial)}")
+                return Response(
+                    {"error": "Filial é obrigatória e deve ser um número válido"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            if not itens or len(itens) == 0:
+                logger.warning("[salvar_compras] ❌ Nenhum item para atualizar")
+                return Response(
+                    {"error": "Nenhum item para atualizar"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Validar tipos de dados e converter
+            try:
+                empresa = int(empresa)
+                filial = int(filial)
+                logger.info(f"[salvar_compras] ✓ Empresa e filial convertidas: {empresa}/{filial}")
+            except (ValueError, TypeError) as e:
+                logger.error(f"[salvar_compras] ❌ Erro ao converter empresa/filial")
+                logger.error(f"    empresa={repr(empresa)} (type={type(empresa).__name__})")
+                logger.error(f"    filial={repr(filial)} (type={type(filial).__name__})")
+                logger.error(f"    erro={e}")
+                return Response(
+                    {
+                        "error": f"Empresa e filial devem ser números válidos",
+                        "recebido": {
+                            "empresa": repr(empresa),
+                            "filial": repr(filial)
+                        }
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Executar serviço
+            logger.info(f"[salvar_compras] ✓ Chamando PainelPedidosService.salvar_compras")
+            logger.info(f"    Pedido: {pedido_numero}, Empresa: {empresa}, Filial: {filial}")
+            logger.info(f"    Itens: {len(itens)}")
+            
+            resultado = PainelPedidosService.salvar_compras(
                 banco=banco,
-                pedido_numero=getattr(pedido, "pedi_nume"),
-                empresa=request.data.get('empresa'),
-                filial=request.data.get('filial'),
-                itens_atualizados=request.data.get('itens', []),
+                pedido_numero=pedido_numero,
+                empresa=empresa,
+                filial=filial,
+                itens_atualizados=itens,
             )
-            logger.info(f"[salvar_compras] Salvamento concluído: {dados}")
-            return Response(dados)
+            
+            logger.info(f"[salvar_compras] ✓ Sucesso! Resultado: {resultado}")
+            return Response(resultado, status=status.HTTP_200_OK)
+            
+        except ValueError as e:
+            # Erros de validação do serviço
+            logger.warning(f"[salvar_compras] ❌ ValueError: {e}")
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
         except Exception as e:
-            logger.exception("Erro ao salvar compras para pedido %s: %s", getattr(pedido, "pedi_nume", "?"), e)
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
+            # Erros inesperados
+            logger.exception(
+                f"[salvar_compras] ❌ ERRO CRÍTICO",
+                extra={
+                    'pedido': getattr(pedido, 'pedi_nume', '?'),
+                    'user': self.request.user,
+                }
+            )
+            return Response(
+                {"error": f"Erro interno do servidor: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 class ItensorcapisosViewSet(BaseMultiDBModelViewSet):
     modulo_necessario = 'Pisos'

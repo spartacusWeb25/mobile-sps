@@ -100,7 +100,7 @@
         // Preencher tabela de itens
         if (data.itens && data.itens.length > 0) {
           tbody.innerHTML = data.itens.map(item => `
-          <tr data-item-num="${item.item_nume}">
+          <tr data-item-num="${item.item_nume}" data-ambi="${item.ambiente}" data-prod="${item.produto_codigo}">
             <td>${item.ambiente}</td>
             <td>${item.produto_codigo}</td>
             <td>${item.produto_nome}</td>
@@ -156,20 +156,22 @@
 
     inputs.forEach(input => {
       const tr = input.closest('tr');
-      const itemNum = tr.getAttribute('data-item-num'); // ← CORRIGIDO: usar getAttribute
+      const itemNum = tr.getAttribute('data-item-num');
+      const ambi = tr.getAttribute('data-ambi');
+      const prod = tr.getAttribute('data-prod');
       const qtdNecessaria = parseFloat(input.dataset.qtdNecessaria);
       const novaQtdComprada = parseFloat(input.value) || 0;
 
       // LOG para debug
-      console.log(`Item: ${itemNum}, Qtd: ${novaQtdComprada}, Necessária: ${qtdNecessaria}`);
+      console.log(`Item: ${itemNum}, Ambiente: ${ambi}, Produto: ${prod}, Qtd: ${novaQtdComprada}, Necessária: ${qtdNecessaria}`);
 
-      if (!itemNum) {
-        console.error('item_nume não encontrado para linha:', tr);
-        return;
-      }
+      // Usar item_nume se disponível, senão usar combinação ambiente+produto
+      const identificador = itemNum && itemNum !== 'null' && itemNum !== ''
+        ? { item_nume: itemNum }
+        : { item_ambi: ambi, item_prod: prod };
 
       itens.push({
-        item_nume: itemNum,
+        ...identificador,
         quantidade_comprada: novaQtdComprada,
         quantidade_necessaria: qtdNecessaria
       });
