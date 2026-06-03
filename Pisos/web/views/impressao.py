@@ -10,12 +10,18 @@ from Pisos.services.pedido_impressao_service import PedidoPisosImpressaoService
  
 def _get_empresa_filial_sessao(request):
     empresa_id = (
-        request.session.get('empresa_id')
+        request.GET.get('empresa_id')
+        or request.GET.get('empresa')
+        or request.GET.get('empr')
+        or request.session.get('empresa_id')
         or request.session.get('empresa')
         or request.session.get('empr_codi')
     )
     filial_id = (
-        request.session.get('filial_id')
+        request.GET.get('filial_id')
+        or request.GET.get('filial')
+        or request.GET.get('fili')
+        or request.session.get('filial_id')
         or request.session.get('filial')
         or request.session.get('fili_codi')
     )

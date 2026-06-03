@@ -275,6 +275,8 @@ class LicencaMiddleware:
         except (ValueError, IndexError):
             return
 
+        emp, fil = self._validar_empresa_filial(request, emp, fil)
+
         if emp:
             self._session_set(request, "empresa_id", emp)
 
@@ -292,16 +294,75 @@ class LicencaMiddleware:
         h_emp = _n(request.headers.get("X-Empresa"))
         h_fil = _n(request.headers.get("X-Filial"))
 
-        s_emp = self._session_get(request, "empresa_id")
-        s_fil = self._session_get(request, "filial_id")
+        q_emp = _n(
+            request.GET.get("empresa_id")
+            or request.GET.get("empresa")
+            or request.GET.get("empr")
+        )
+        q_fil = _n(
+            request.GET.get("filial_id")
+            or request.GET.get("filial")
+            or request.GET.get("fili")
+        )
 
-        # Headers têm prioridade, depois sessão, depois default
-        emp = h_emp if h_emp is not None else (s_emp or 1)
-        fil = h_fil if h_fil is not None else (s_fil or 1)
+        s_emp = _n(self._session_get(request, "empresa_id"))
+        s_fil = _n(self._session_get(request, "filial_id"))
+
+        # Headers têm prioridade, depois querystring, depois sessão, depois default
+        emp = h_emp if h_emp is not None else (q_emp if q_emp is not None else (s_emp or 1))
+        fil = h_fil if h_fil is not None else (q_fil if q_fil is not None else (s_fil or 1))
+
+        emp, fil = self._validar_empresa_filial(request, emp, fil)
+
+        self._session_set(request, "empresa_id", emp)
+        self._session_set(request, "filial_id", fil)
 
         # Sempre define no request (independente da sessão)
         request.empresa = emp
         request.filial = fil
+
+    def _validar_empresa_filial(self, request, emp, fil):
+        if not emp:
+            emp = 1
+        if not fil:
+            fil = 1
+
+        try:
+            banco = get_licenca_db_config(request)
+        except Exception:
+            banco = None
+
+        if not banco:
+            return emp, fil
+
+        try:
+            from Licencas.models import Empresas, Filiais
+
+            if not Empresas.objects.using(banco).filter(empr_codi=emp).exists():
+                emp_alt = (
+                    Empresas.objects.using(banco)
+                    .order_by("empr_codi")
+                    .values_list("empr_codi", flat=True)
+                    .first()
+                )
+                emp = int(emp_alt) if emp_alt not in (None, "") else 1
+
+            if not Filiais.objects.using(banco).filter(empr_empr=emp, empr_codi=fil).exists():
+                fil_alt = (
+                    Filiais.objects.using(banco)
+                    .filter(empr_empr=emp)
+                    .order_by("empr_codi")
+                    .values_list("empr_codi", flat=True)
+                    .first()
+                )
+                if fil_alt not in (None, ""):
+                    fil = int(fil_alt)
+                else:
+                    fil = 1
+        except Exception:
+            return emp, fil
+
+        return emp, fil
 
     def _load_modulos(self, request):
         """Carrega módulos com tratamento de erro."""

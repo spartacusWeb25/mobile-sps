@@ -50,6 +50,27 @@ class OrcamentoPisosImpressaoService:
             return ""
 
     @staticmethod
+    def _intro_por_filial(filial_id) -> str:
+        try:
+            filial_id = int(filial_id)
+        except Exception:
+            filial_id = None
+
+        if filial_id == 4:
+            return (
+                "Agradecemos a oportunidade de apresentar esta proposta e parabenizamos sua escolha em conhecer as soluções Kohler.<br><br>"
+                "Com mais de 150 anos de tradição, a Kohler é uma referência mundial em design, inovação e qualidade, desenvolvendo produtos que aliam sofisticação, tecnologia e desempenho. Presente nos mais exigentes projetos residenciais e corporativos, a marca é reconhecida por criar ambientes que agregam valor, conforto e elegância."
+            )
+
+        return (
+            "Estamos muito felizes pela oportunidade de apresentar essa proposta a você!<br>"
+            "A PG PISOS é especializada em pisos, materiais de acabamento, louças, metais e<br>"
+            "portas e janelas termoacústicas. Desde 2007 em Ponta Grossa, contamos com<br>"
+            "equipe própria e especializada, garantindo qualidade com as melhores marcas do<br>"
+            "mercado nacional e internacional."
+        )
+
+    @staticmethod
     def obter_contexto(*, banco: str, orcamento) -> dict:
         filial = (
             Filiais.objects.using(banco)
@@ -96,6 +117,7 @@ class OrcamentoPisosImpressaoService:
         return {
             "filial": filial,
             "ocultar_kg_caixas": bool(getattr(filial, "empr_codi", None) == 4),
+            "intro_html": OrcamentoPisosImpressaoService._intro_por_filial(getattr(filial, "empr_codi", None)),
             "cliente": cliente,
             "vendedor": vendedor,
             "itens": itens,
