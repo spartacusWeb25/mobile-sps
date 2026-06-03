@@ -123,6 +123,13 @@ class ItemPedidoPisosForm(forms.Form):
     item_obse = forms.CharField(required=False, widget=forms.TextInput(attrs={"rows": 1}))
     item_quan_emit = forms.DecimalField(required=False, decimal_places=4, max_digits=15)
 
+    def clean_item_prod_nome(self):
+        valor = self.cleaned_data.get("item_prod_nome")
+        if valor is None:
+            return ""
+        valor = str(valor).strip()
+        return valor[:100]
+
 
 ItemPedidoPisosFormSet = formset_factory(ItemPedidoPisosForm, extra=0, can_delete=True)
 
@@ -170,6 +177,13 @@ class ItemOrcamentoPisosForm(forms.Form):
     item_queb = forms.DecimalField(required=False, decimal_places=2, max_digits=5)
     item_obse = forms.CharField(required=False, widget=forms.TextInput(attrs={"rows": 1}))
     item_prod_nome = forms.CharField(required=False, max_length=100)
+
+    def clean_item_prod_nome(self):
+        valor = self.cleaned_data.get("item_prod_nome")
+        if valor is None:
+            return ""
+        valor = str(valor).strip()
+        return valor[:100]
 
 
 ItemOrcamentoPisosFormSet = formset_factory(ItemOrcamentoPisosForm, extra=0, can_delete=True)
