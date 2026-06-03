@@ -1,6 +1,7 @@
 from django.shortcuts import get_object_or_404, render
+from django.db.models import CharField
 from django.db.models import Value
-from django.db.models.functions import Coalesce, Lower
+from django.db.models.functions import Cast, Coalesce, Lower
 
 from core.utils import get_db_from_slug
 from core.mixins.vendedor_mixin import VendedorEntidadeMixin
@@ -92,7 +93,11 @@ def visualizar_orcamento_pisos(request, slug, pk):
             item_fili=orcamento.orca_fili,
             item_orca=pk,
         )
-        .annotate(_amb_sort=Lower(Coalesce("item_nome_ambi", Value(""))))
+        .annotate(
+            _amb_sort=Lower(
+                Coalesce("item_nome_ambi", Cast("item_ambi", output_field=CharField()), Value(""))
+            )
+        )
         .order_by("_amb_sort", "item_ambi", "item_nume")
     )
 

@@ -168,6 +168,7 @@
         <table class="table table-sm table-dark table-striped align-middle mb-0">
           <thead>
             <tr>
+              <th>Ambiente</th>
               <th><a href="{% url 'produtos_web' slug=slug %}" title="Ir para a listagem de produtos"
                   class="prod-link">Produto</a></th>
               <th class="text-start">Nome Produto</th>
@@ -180,6 +181,7 @@
           <tbody>
             {% for i in itens %}
             <tr>
+              <td>{{ i.item_nome_ambi|default:i.item_ambi }}</td>
               <td>{{ i.item_prod }}</td>
               <td>{{ i.item_prod_nome }}</td>
               <td>{{ i.item_prod_ncm }}</td>
@@ -189,7 +191,7 @@
             </tr>
             {% empty %}
             <tr>
-              <td colspan="8">Sem itens</td>
+              <td colspan="7">Sem itens</td>
             </tr>
             {% endfor %}
           </tbody>

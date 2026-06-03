@@ -1,6 +1,7 @@
 from django.shortcuts import get_object_or_404, render
+from django.db.models import CharField
 from django.db.models import Value
-from django.db.models.functions import Coalesce, Lower
+from django.db.models.functions import Cast, Coalesce, Lower
 import Entidades
 from core.utils import get_db_from_slug
 from core.mixins.vendedor_mixin import VendedorEntidadeMixin
@@ -92,7 +93,11 @@ def visualizar_pedido_pisos(request, slug, pk):
             item_fili=pedido.pedi_fili,
             item_pedi=pk,
         )
-        .annotate(_amb_sort=Lower(Coalesce("item_nome_ambi", Value(""))))
+        .annotate(
+            _amb_sort=Lower(
+                Coalesce("item_nome_ambi", Cast("item_ambi", output_field=CharField()), Value(""))
+            )
+        )
         .order_by("_amb_sort", "item_ambi", "item_nume")
     )
 
@@ -119,6 +124,7 @@ def visualizar_pedido_pisos(request, slug, pk):
         item.item_quan = item.item_quan or 0
         item.item_m2 = item.item_m2 or 0
         item.item_prod_nome = getattr(produto, 'prod_nome', '')
+        item.item_nome_ambi = (getattr(item, "item_nome_ambi", "") or "").strip()
 
     return render(
         request,
