@@ -558,6 +558,21 @@
         aliqIcmsSt: document.getElementById('spartacus-aliq-icms-st'),
         reducaoIcmsSt: document.getElementById('spartacus-reducao-icms-st'),
         mvaSt: document.getElementById('spartacus-mva-st'),
+        beneficioFiscal: document.getElementById('spartacus-beneficio-fiscal'),
+        ibscbsCst: document.getElementById('spartacus-ibscbs-cst'),
+        ibscbsClasse: document.getElementById('spartacus-ibscbs-classe'),
+        ibsPaliqEfetUf: document.getElementById('spartacus-ibs-paliqefetuf'),
+        ibsPibsUf: document.getElementById('spartacus-ibs-pibsuf'),
+        ibsPdifMun: document.getElementById('spartacus-ibs-pdifmun'),
+        ibsPaliqEfetMun: document.getElementById('spartacus-ibs-paliqefetmun'),
+        ibsPredMun: document.getElementById('spartacus-ibs-predmun'),
+        adremIbsRet: document.getElementById('spartacus-adremibsret'),
+        cbsPaliqEfetReg: document.getElementById('spartacus-cbs-paliqefetreg'),
+        ibscbsCstReg: document.getElementById('spartacus-ibscbs-cstreg'),
+        ibscbsClasseReg: document.getElementById('spartacus-ibscbs-cclasstribreg'),
+        ibscbsCstRegId: document.getElementById('spartacus-ibscbs-cstregid'),
+        ibsPaliqEfetUfReg: document.getElementById('spartacus-ibs-paliqefetufreg'),
+        ibsPaliqEfetMunReg: document.getElementById('spartacus-ibs-paliqefetmunreg'),
       };
 
       const cloneFields = {
@@ -599,6 +614,21 @@
         fields.aliqIcmsSt.value = '';
         fields.reducaoIcmsSt.value = '';
         fields.mvaSt.value = '';
+        if (fields.beneficioFiscal) fields.beneficioFiscal.value = '';
+        if (fields.ibscbsCst) fields.ibscbsCst.value = '';
+        if (fields.ibscbsClasse) fields.ibscbsClasse.value = '';
+        if (fields.ibsPaliqEfetUf) fields.ibsPaliqEfetUf.value = '';
+        if (fields.ibsPibsUf) fields.ibsPibsUf.value = '';
+        if (fields.ibsPdifMun) fields.ibsPdifMun.value = '';
+        if (fields.ibsPaliqEfetMun) fields.ibsPaliqEfetMun.value = '';
+        if (fields.ibsPredMun) fields.ibsPredMun.value = '';
+        if (fields.adremIbsRet) fields.adremIbsRet.value = '';
+        if (fields.cbsPaliqEfetReg) fields.cbsPaliqEfetReg.value = '';
+        if (fields.ibscbsCstReg) fields.ibscbsCstReg.value = '';
+        if (fields.ibscbsClasseReg) fields.ibscbsClasseReg.value = '';
+        if (fields.ibscbsCstRegId) fields.ibscbsCstRegId.value = '';
+        if (fields.ibsPaliqEfetUfReg) fields.ibsPaliqEfetUfReg.value = '';
+        if (fields.ibsPaliqEfetMunReg) fields.ibsPaliqEfetMunReg.value = '';
       };
 
       const fillSpartacusForm = (row) => {
@@ -617,6 +647,21 @@
         fields.aliqIcmsSt.value = asNumber(row.aliquota_icms_st);
         fields.reducaoIcmsSt.value = asNumber(row.reducao_icms_st);
         fields.mvaSt.value = asNumber(row.mva_icms_st);
+        if (fields.beneficioFiscal) fields.beneficioFiscal.value = asText(row.beneficio_fiscal);
+        if (fields.ibscbsCst) fields.ibscbsCst.value = asText(row.ibscbs_cst);
+        if (fields.ibscbsClasse) fields.ibscbsClasse.value = asText(row.ibscbs_cclasstrib);
+        if (fields.ibsPaliqEfetUf) fields.ibsPaliqEfetUf.value = asNumber(row.ibs_paliqefetuf);
+        if (fields.ibsPibsUf) fields.ibsPibsUf.value = asNumber(row.ibs_pibsuf);
+        if (fields.ibsPdifMun) fields.ibsPdifMun.value = asNumber(row.ibs_pdifmun);
+        if (fields.ibsPaliqEfetMun) fields.ibsPaliqEfetMun.value = asNumber(row.ibs_paliqefetmun);
+        if (fields.ibsPredMun) fields.ibsPredMun.value = asNumber(row.ibs_predmun);
+        if (fields.adremIbsRet) fields.adremIbsRet.value = asNumber(row.adremibsret);
+        if (fields.cbsPaliqEfetReg) fields.cbsPaliqEfetReg.value = asNumber(row.cbs_pcbs ?? row.cbs_paliqefetreg);
+        if (fields.ibscbsCstReg) fields.ibscbsCstReg.value = asText(row.ibscbs_cstreg);
+        if (fields.ibscbsClasseReg) fields.ibscbsClasseReg.value = asText(row.ibscbs_cclasstribreg);
+        if (fields.ibscbsCstRegId) fields.ibscbsCstRegId.value = asNumber(row.ibscbs_cstregid);
+        if (fields.ibsPaliqEfetUfReg) fields.ibsPaliqEfetUfReg.value = asNumber(row.ibs_paliqefetufreg);
+        if (fields.ibsPaliqEfetMunReg) fields.ibsPaliqEfetMunReg.value = asNumber(row.ibs_paliqefetmunreg);
       };
 
       const buildPayload = () => ({
@@ -635,17 +680,40 @@
         aliquota_icms_st: fields.aliqIcmsSt.value || null,
         reducao_icms_st: fields.reducaoIcmsSt.value || null,
         mva_icms_st: fields.mvaSt.value || null,
+        beneficio_fiscal: fields.beneficioFiscal?.value || null,
+        ibscbs_cclasstrib: fields.ibscbsClasse?.value || null,
+        ibscbs_cst: fields.ibscbsCst?.value || null,
+        ibs_paliqefetuf: fields.ibsPaliqEfetUf?.value || null,
+        ibs_pibsuf: fields.ibsPibsUf?.value || null,
+        ibs_pdifmun: fields.ibsPdifMun?.value || null,
+        ibs_paliqefetmun: fields.ibsPaliqEfetMun?.value || null,
+        ibs_predmun: fields.ibsPredMun?.value || null,
+        adremibsret: fields.adremIbsRet?.value || null,
+        cbs_paliqefetreg: fields.cbsPaliqEfetReg?.value || null,
+        cbs_pcbs: fields.cbsPaliqEfetReg?.value || null,
+        ibs_paliqefetmunreg: fields.ibsPaliqEfetMunReg?.value || null,
+        ibs_paliqefetufreg: fields.ibsPaliqEfetUfReg?.value || null,
+        ibscbs_cclasstribreg: fields.ibscbsClasseReg?.value || null,
+        ibscbs_cstreg: fields.ibscbsCstReg?.value || null,
+        ibscbs_cstregid: fields.ibscbsCstRegId?.value || null,
       });
 
       const renderRows = (rows) => {
         if (!listEl) return;
         if (!rows.length) {
-          listEl.innerHTML = '<tr><td colspan="8" class="text-center text-muted">Nenhuma tributação gravada para este produto.</td></tr>';
+          listEl.innerHTML = '<tr><td colspan="10" class="text-center text-muted">Nenhuma tributação gravada para este produto.</td></tr>';
           return;
         }
 
         listEl.innerHTML = '';
         rows.forEach((row) => {
+          const ibsUf = row.ibs_paliqefetufreg ?? row.ibs_paliqefetuf ?? '';
+          const ibsMun = row.ibs_paliqefetmunreg ?? row.ibs_paliqefetmun ?? '';
+          const cbs = row.cbs_pcbs ?? row.cbs_paliqefetreg ?? '';
+          const cstIbsCbs = row.ibscbs_cstreg ?? row.ibscbs_cst ?? '';
+          const cClassTrib = row.ibscbs_cclasstribreg ?? row.ibscbs_cclasstrib ?? '';
+          const beneficio = row.beneficio_fiscal ?? '';
+
           const tr = document.createElement('tr');
           tr.innerHTML = `
             <td>${row.estado_label || row.estado || ''}</td>
@@ -654,6 +722,8 @@
             <td>${row.cst_pis || '-'} / ${row.aliquota_pis || '0'}</td>
             <td>${row.cst_cofins || '-'} / ${row.aliquota_cofins || '0'}</td>
             <td>${row.aliquota_icms_st || '0'} | MVA ${row.mva_icms_st || '0'}</td>
+            <td><small>${cstIbsCbs || '-'}${cClassTrib ? ` • ${cClassTrib}` : ''}<br>% IBS UF ${ibsUf || '0'} • % IBS Mun ${ibsMun || '0'} • % CBS ${cbs || '0'}</small></td>
+            <td><small>${beneficio || '-'}</small></td>
             <td><small>${row.cfop_label || row.cfop || '-'}</small></td>
             <td class="text-end">
               <button type="button" class="btn btn-sm btn-outline-primary me-1" data-action="edit">Editar</button>

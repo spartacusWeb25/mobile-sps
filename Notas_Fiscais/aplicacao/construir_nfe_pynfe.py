@@ -189,7 +189,12 @@ def construir_nfe_pynfe(dto):
                 'valor': item.valor_cbs, 
                 'base': item.base_cbs, 
                 'aliq': item.aliq_cbs
-            }
+            },
+            'ibscbs': {
+                'cst': getattr(item, 'ibscbs_cst', None) or getattr(item, 'cst_ibs', None) or getattr(item, 'cst_cbs', None),
+                'cClassTrib': getattr(item, 'ibscbs_cclasstrib', None),
+            },
+            'beneficio_fiscal': getattr(item, 'beneficio_fiscal', None),
         })
 
     return nota_fiscal

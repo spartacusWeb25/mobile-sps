@@ -58,6 +58,11 @@ class ItemDTO(BaseModel):
     cst_icms: str
     cst_pis: str
     cst_cofins: str
+    cst_ibs: Optional[str] = None
+    cst_cbs: Optional[str] = None
+    beneficio_fiscal: Optional[str] = None
+    ibscbs_cst: Optional[str] = None
+    ibscbs_cclasstrib: Optional[str] = None
 
     base_icms: Optional[Decimal] = None
     valor_icms: Optional[Decimal] = None

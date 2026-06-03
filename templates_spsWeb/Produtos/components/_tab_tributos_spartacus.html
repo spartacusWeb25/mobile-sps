@@ -105,21 +105,106 @@
         </div>
 
         <div class="row g-3 mt-1">
-          <div class="col-md-4">
+          <div class="col-md-3">
             <label class="form-label" for="spartacus-reducao-icms-st">Redução ICMS ST</label>
             <input type="number" id="spartacus-reducao-icms-st" class="form-control" step="0.0001">
           </div>
-          <div class="col-md-4">
+          <div class="col-md-3">
             <label class="form-label" for="spartacus-mva-st">MVA ST</label>
             <input type="number" id="spartacus-mva-st" class="form-control" step="0.01">
           </div>
-          <div class="col-md-4 d-flex align-items-end">
+        
+        </div>
+        <h5 class="mt-4" style="text-align: center;">IBS/CBS (Reforma Tributária)</h5>
+        <hr class="my-4">
+
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label" for="spartacus-ibscbs-cst">CST's (IBS/CBS)</label>
+            <select id="spartacus-ibscbs-cst" class="form-select">
+              <option value="">Selecione</option>
+              {% for value, label in tributos_spartacus_cst_ibs_choices %}
+              <option value="{{ value }}">{{ value }} - {{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+           <div class="col-md-4">
+            <label class="form-label" for="spartacus-cbs-paliqefetreg">% CBS (Aliquota)</label>
+            <input type="number" id="spartacus-cbs-paliqefetreg" class="form-control" step="0.01">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label" for="spartacus-ibs-pibsuf">% IBS (Aliquota)</label>
+            <input type="number" id="spartacus-ibs-pibsuf" class="form-control" step="0.01">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label" for="spartacus-ibs-paliqefetuf">% IBS UF</label>
+            <input type="number" id="spartacus-ibs-paliqefetuf" class="form-control" step="0.01">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label" for="spartacus-ibs-paliqefetmun">% IBS Mun</label>
+            <input type="number" id="spartacus-ibs-paliqefetmun" class="form-control" step="0.01">
+          </div>
+           <div class="col-md-3">
+            <label class="form-label" for="spartacus-ibs-pdifmun">% Diferimento IBS Mun</label>
+            <input type="number" id="spartacus-ibs-pdifmun" class="form-control" step="0.01">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label" for="spartacus-adremibsret">% Adrem IBS Ret</label>
+            <input type="number" id="spartacus-adremibsret" class="form-control" step="0.01">
+          </div>
+        </div>
+
+        <div class="row g-3 mt-1">
+          <div class="col-md-3">
+            <label class="form-label" for="spartacus-ibscbs-classe">Classificação (cClassTrib)</label>
+            <input type="text" id="spartacus-ibscbs-classe" class="form-control" maxlength="6">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label" for="spartacus-ibs-predmun">% Redução IBS Mun</label>
+            <input type="number" id="spartacus-ibs-predmun" class="form-control" step="0.01">
+          </div>
+        </div>
+
+        <div class="row g-3 mt-1">
+          <div class="col-md-3">
+            <label class="form-label" for="spartacus-ibscbs-cstreg">CST IBS/CBS (Regular)</label>
+            <select id="spartacus-ibscbs-cstreg" class="form-select">
+              <option value="">Selecione</option>
+              {% for value, label in tributos_spartacus_cst_ibs_choices %}
+              <option value="{{ value }}">{{ value }} - {{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label" for="spartacus-ibscbs-cclasstribreg">Classificação (Regular)</label>
+            <input type="text" id="spartacus-ibscbs-cclasstribreg" class="form-control" maxlength="6">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label" for="spartacus-ibscbs-cstregid">CST IBS/CBS ID (Regular)</label>
+            <input type="number" id="spartacus-ibscbs-cstregid" class="form-control" step="1">
+          </div>
+        </div>
+
+        <div class="row g-3 mt-1">
+          <div class="col-md-3">
+            <label class="form-label" for="spartacus-ibs-paliqefetufreg">% IBS UF (Regular)</label>
+            <input type="number" id="spartacus-ibs-paliqefetufreg" class="form-control" step="0.01">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label" for="spartacus-ibs-paliqefetmunreg">% IBS Mun (Regular)</label>
+            <input type="number" id="spartacus-ibs-paliqefetmunreg" class="form-control" step="0.01">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label" for="spartacus-beneficio-fiscal">Benefício Fiscal</label>
+            <input type="text" id="spartacus-beneficio-fiscal" class="form-control" maxlength="10">
+          </div>
+        </div>
+      </div>
+        <div class="col-md-3 d-flex align-items-end">
             <button type="button" class="btn btn-outline-primary w-100" id="tributos-spartacus-salvar">
               <i class="bi bi-save"></i> Salvar Tributação
             </button>
           </div>
-        </div>
-      </div>
     </div>
 
     <div class="card mb-4">
@@ -198,13 +283,15 @@
                 <th>PIS</th>
                 <th>COFINS</th>
                 <th>ST</th>
+                <th>CBS/IBS</th>
+                <th>Benefício</th>
                 <th>CFOP</th>
                 <th class="text-end">Ações</th>
               </tr>
             </thead>
             <tbody id="tributos-spartacus-lista">
               <tr>
-                <td colspan="8" class="text-center text-muted">Nenhuma tributação carregada.</td>
+                <td colspan="10" class="text-center text-muted">Nenhuma tributação carregada.</td>
               </tr>
             </tbody>
           </table>

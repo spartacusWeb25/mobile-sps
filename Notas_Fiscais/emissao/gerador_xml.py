@@ -223,6 +223,9 @@ class GeradorXML:
             group = etree.SubElement(icms, tag)
             etree.SubElement(group, "orig").text = orig
             etree.SubElement(group, "CSOSN").text = cst
+            c_benef = str(item.get("beneficio_fiscal") or "").strip()
+            if c_benef:
+                etree.SubElement(group, "cBenef").text = c_benef
             
             if cst == "101":
                 # pCredSN e vCredICMSSN
@@ -257,6 +260,9 @@ class GeradorXML:
             group = etree.SubElement(icms, tag)
             etree.SubElement(group, "orig").text = orig
             etree.SubElement(group, "CST").text = cst
+            c_benef = str(item.get("beneficio_fiscal") or "").strip()
+            if c_benef:
+                etree.SubElement(group, "cBenef").text = c_benef
 
             if cst in ("00", "10", "20", "51", "70", "90"):
                 etree.SubElement(group, "modBC").text = "3" # Valor Operação

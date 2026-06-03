@@ -167,6 +167,11 @@ class NotaBuilder:
                 cst_icms=it.cst_icms,
                 cst_pis=it.cst_pis,
                 cst_cofins=it.cst_cofins,
+                cst_ibs=getattr(it, "cst_ibs", None),
+                cst_cbs=getattr(it, "cst_cbs", None),
+                beneficio_fiscal=getattr(it, "beneficio_fiscal", None),
+                ibscbs_cst=getattr(it, "ibscbs_cst", None),
+                ibscbs_cclasstrib=getattr(it, "ibscbs_cclasstrib", None),
 
                 base_icms=imp.icms_base if imp else None,
                 valor_icms=imp.icms_valor if imp else None,

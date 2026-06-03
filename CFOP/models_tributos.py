@@ -106,6 +106,26 @@ class Tributos(models.Model):
                                         verbose_name=_('Alíquota do COFINS'))
     trib_cfop = models.IntegerField(blank=True, null=True, 
                                     verbose_name=_('CFOP'))
+    trib_codi_bene = models.CharField(max_length=10, blank=True, null=True, verbose_name=_('Beneficio Fiscal'))
+    trib_aliq_ipi = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True, verbose_name=_('Aliquota do IPI'))
+    trib_cst_ipi_trib = models.CharField(max_length=2, blank=True, null=True, verbose_name=_('CST IPI'))
+    trib_ibscbs_cclasstrib = models.CharField(max_length=6, blank=True, null=True, verbose_name=_('Classe Tributária'))
+    trib_ibscbs_cst = models.CharField(max_length=3, blank=True, null=True, verbose_name=_('CST IBSCBS'))
+    #trib_ibs_pdifuf = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
+    #trib_ibs_preduf = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True, verbose_name=_('Redução do ICMS UF'))
+    trib_ibs_paliqefetuf = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True, verbose_name=_('% Alíquota Efvetiva do ICMS UF'))
+    trib_ibs_pibsuf = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True, verbose_name=_('PIB ICMS UF'))
+    trib_ibs_pdifmun = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True, verbose_name=_('Diferimento ICMS Municípal'))
+    trib_ibs_paliqefetmun = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True, verbose_name=_('% Alíquota Efvetiva do ICMS Municípal'))
+    trib_ibs_predmun = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True, verbose_name=_('% Redução do ICMS Municípal'))
+    trib_adremibsret = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True, verbose_name=_('% Retenção do IPI'))  
+    trib_cbs_paliqefetreg = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True, verbose_name=_('% Alíquota Efvetiva do PIS'))
+    trib_cbs_pcbs = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True, verbose_name=_('% CBS'))
+    trib_ibs_paliqefetmunreg = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True, verbose_name=_('% Alíquota Efvetiva do COFINS'))
+    trib_ibs_paliqefetufreg = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True, verbose_name=_('% Alíquota Efvetiva do ICMS UF'))
+    trib_ibscbs_cclasstribreg = models.CharField(max_length=6, blank=True, null=True, verbose_name=_('Classe Tributária'))
+    trib_ibscbs_cstreg = models.CharField(max_length=3, blank=True, null=True, verbose_name=_('CST IBSCBS'))
+    trib_ibscbs_cstregid = models.IntegerField(blank=True, null=True, verbose_name=_('CST IBSCBS ID'))
 
 
     class Meta:

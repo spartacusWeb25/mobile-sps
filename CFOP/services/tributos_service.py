@@ -13,6 +13,16 @@ class TributoSpartacusAdapter:
     origem: Tributos
     fonte: str = "SPARTACUS"
 
+    def _to_decimal(self, v):
+        if v in (None, ""):
+            return None
+        if isinstance(v, Decimal):
+            return v
+        try:
+            return Decimal(str(v))
+        except Exception:
+            return None
+
     @property
     def uf_origem(self):
         return None
@@ -43,11 +53,19 @@ class TributoSpartacusAdapter:
 
     @property
     def cst_cbs(self):
-        return None
+        return (
+            getattr(self.origem, "trib_ibscbs_cstreg", None)
+            or getattr(self.origem, "trib_ibscbs_cst", None)
+            or None
+        )
 
     @property
     def cst_ibs(self):
-        return None
+        return (
+            getattr(self.origem, "trib_ibscbs_cstreg", None)
+            or getattr(self.origem, "trib_ibscbs_cst", None)
+            or None
+        )
 
     @property
     def aliq_icms(self):
@@ -67,11 +85,24 @@ class TributoSpartacusAdapter:
 
     @property
     def aliq_cbs(self):
-        return None
+        return (
+            getattr(self.origem, "trib_cbs_pcbs", None)
+            or getattr(self.origem, "trib_cbs_paliqefetreg", None)
+            or None
+        )
 
     @property
     def aliq_ibs(self):
-        return None
+        uf_reg = getattr(self.origem, "trib_ibs_paliqefetufreg", None)
+        mun_reg = getattr(self.origem, "trib_ibs_paliqefetmunreg", None)
+        if uf_reg is not None or mun_reg is not None:
+            return (self._to_decimal(uf_reg) or Decimal("0")) + (self._to_decimal(mun_reg) or Decimal("0"))
+
+        uf = getattr(self.origem, "trib_ibs_paliqefetuf", None)
+        mun = getattr(self.origem, "trib_ibs_paliqefetmun", None)
+        if uf is None and mun is None:
+            return None
+        return (self._to_decimal(uf) or Decimal("0")) + (self._to_decimal(mun) or Decimal("0"))
 
     @property
     def aliq_icms_st(self):
@@ -96,6 +127,18 @@ class TributoSpartacusAdapter:
     @property
     def redu_base(self):
         return getattr(self.origem, "trib_redu_base", None)
+
+    @property
+    def beneficio_fiscal(self):
+        return getattr(self.origem, "trib_codi_bene", None)
+
+    @property
+    def ibscbs_cclasstrib(self):
+        return (
+            getattr(self.origem, "trib_ibscbs_cclasstribreg", None)
+            or getattr(self.origem, "trib_ibscbs_cclasstrib", None)
+            or None
+        )
 
 
 class TributoService:
@@ -217,6 +260,7 @@ class TributoService:
         return TributoSpartacusAdapter(origem=tributo)
 
     def _defaults_from_data(self, dados: dict) -> dict:
+        ibscbs = dados.get("ibscbs") or {}
         return {
             "trib_aliq_icms": self._to_decimal(dados["icms"]["aliquota"]),
             "trib_redu_icms": self._to_decimal(dados["icms"]["reducao"]),
@@ -229,6 +273,22 @@ class TributoService:
             "trib_cst_cofi": dados["cofins"]["cst"] or None,
             "trib_aliq_cofi": self._to_decimal(dados["cofins"]["aliquota"]),
             "trib_cfop": self._to_int(dados["cfop"]) if dados["cfop"] not in (None, "") else None,
+            "trib_codi_bene": (dados.get("beneficio_fiscal") or None),
+            "trib_ibscbs_cclasstrib": (ibscbs.get("cclasstrib") or None),
+            "trib_ibscbs_cst": (ibscbs.get("cst") or None),
+            "trib_ibs_paliqefetuf": self._to_decimal(ibscbs.get("ibs_paliqefetuf")),
+            "trib_ibs_pibsuf": self._to_decimal(ibscbs.get("ibs_pibsuf")),
+            "trib_ibs_pdifmun": self._to_decimal(ibscbs.get("ibs_pdifmun")),
+            "trib_ibs_paliqefetmun": self._to_decimal(ibscbs.get("ibs_paliqefetmun")),
+            "trib_ibs_predmun": self._to_decimal(ibscbs.get("ibs_predmun")),
+            "trib_adremibsret": self._to_decimal(ibscbs.get("adremibsret")),
+            "trib_cbs_paliqefetreg": self._to_decimal(ibscbs.get("cbs_paliqefetreg")),
+            "trib_cbs_pcbs": self._to_decimal(ibscbs.get("cbs_pcbs") or ibscbs.get("cbs_paliqefetreg")),
+            "trib_ibs_paliqefetmunreg": self._to_decimal(ibscbs.get("ibs_paliqefetmunreg")),
+            "trib_ibs_paliqefetufreg": self._to_decimal(ibscbs.get("ibs_paliqefetufreg")),
+            "trib_ibscbs_cclasstribreg": (ibscbs.get("cclasstribreg") or None),
+            "trib_ibscbs_cstreg": (ibscbs.get("cstreg") or None),
+            "trib_ibscbs_cstregid": self._to_int(ibscbs.get("cstregid")) if ibscbs.get("cstregid") not in (None, "") else None,
         }
 
     def salvar(self, dados: dict) -> Tributos:
@@ -334,6 +394,24 @@ class TributoService:
                 "aliquota": origem.trib_aliq_cofi,
             },
             "cfop": origem.trib_cfop,
+            "beneficio_fiscal": origem.trib_codi_bene,
+            "ibscbs": {
+                "cclasstrib": origem.trib_ibscbs_cclasstrib,
+                "cst": origem.trib_ibscbs_cst,
+                "ibs_paliqefetuf": origem.trib_ibs_paliqefetuf,
+                "ibs_pibsuf": origem.trib_ibs_pibsuf,
+                "ibs_pdifmun": origem.trib_ibs_pdifmun,
+                "ibs_paliqefetmun": origem.trib_ibs_paliqefetmun,
+                "ibs_predmun": origem.trib_ibs_predmun,
+                "adremibsret": origem.trib_adremibsret,
+                "cbs_paliqefetreg": origem.trib_cbs_paliqefetreg,
+                "cbs_pcbs": getattr(origem, "trib_cbs_pcbs", None),
+                "ibs_paliqefetmunreg": origem.trib_ibs_paliqefetmunreg,
+                "ibs_paliqefetufreg": origem.trib_ibs_paliqefetufreg,
+                "cclasstribreg": origem.trib_ibscbs_cclasstribreg,
+                "cstreg": origem.trib_ibscbs_cstreg,
+                "cstregid": origem.trib_ibscbs_cstregid,
+            },
         }
 
         criados = []

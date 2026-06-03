@@ -114,6 +114,9 @@ class NotaItem(models.Model):
     cst_cofins = models.CharField(max_length=2)
     cst_ibs = models.CharField(max_length=3, blank=True, null=True)
     cst_cbs = models.CharField(max_length=3, blank=True, null=True)
+    beneficio_fiscal = models.CharField(max_length=10, blank=True, null=True)
+    ibscbs_cst = models.CharField(max_length=3, blank=True, null=True)
+    ibscbs_cclasstrib = models.CharField(max_length=6, blank=True, null=True)
 
     fonte_tributacao = models.CharField(max_length=20, null=True, blank=True)
 

@@ -28,8 +28,8 @@ class IBSCBSCalculator(BaseCalculator):
             if getattr(ctx.fiscal_padrao, "aliq_ibs", None) is not None:
                 aliq_ibs = ctx.fiscal_padrao.aliq_ibs
 
-        cst_cbs = getattr(getattr(ctx, "fiscal_padrao", None), "cst_cbs", None) or "01"
-        cst_ibs = getattr(getattr(ctx, "fiscal_padrao", None), "cst_ibs", None) or "01"
+        cst_cbs = getattr(getattr(ctx, "fiscal_padrao", None), "cst_cbs", None) or "000"
+        cst_ibs = getattr(getattr(ctx, "fiscal_padrao", None), "cst_ibs", None) or "000"
 
         cbs = {
             "base": base if exige_cbs else None,

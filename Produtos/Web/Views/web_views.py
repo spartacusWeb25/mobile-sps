@@ -145,6 +145,8 @@ class DBAndSlugMixin:
             "tributos_spartacus_cst_icms_choices": cst_choices.get("icms", []),
             "tributos_spartacus_cst_pis_choices": cst_choices.get("pis", []),
             "tributos_spartacus_cst_cofins_choices": cst_choices.get("cofins", []),
+            "tributos_spartacus_cst_ibs_choices": cst_choices.get("ibs", []),
+            "tributos_spartacus_cst_cbs_choices": cst_choices.get("cbs", []),
         }
 
 class SimularImpostosView(DBAndSlugMixin, View):

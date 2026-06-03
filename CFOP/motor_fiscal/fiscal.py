@@ -290,5 +290,8 @@ class FiscalEngine:
 
         "extras": {
             "mva_st": ctx.icms_data.get("mva_st"),
+            "beneficio_fiscal": getattr(getattr(ctx, "fiscal_padrao", None), "beneficio_fiscal", None),
+            "ibscbs_cst": getattr(getattr(ctx, "fiscal_padrao", None), "cst_ibs", None) or getattr(getattr(ctx, "fiscal_padrao", None), "cst_cbs", None),
+            "ibscbs_cclasstrib": getattr(getattr(ctx, "fiscal_padrao", None), "ibscbs_cclasstrib", None),
         }
     }

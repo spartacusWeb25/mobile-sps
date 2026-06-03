@@ -446,6 +446,17 @@ class CalculoImpostosService:
         item.cst_ibs = csts.get("ibs") or ""
         item.cst_cbs = csts.get("cbs") or ""
 
+        extras = pacote.get("extras") or {}
+        beneficio = extras.get("beneficio_fiscal")
+        if beneficio not in (None, ""):
+            item.beneficio_fiscal = str(beneficio).strip()
+        ibscbs_cst = extras.get("ibscbs_cst")
+        if ibscbs_cst not in (None, ""):
+            item.ibscbs_cst = str(ibscbs_cst).strip()
+        ibscbs_cclasstrib = extras.get("ibscbs_cclasstrib")
+        if ibscbs_cclasstrib not in (None, ""):
+            item.ibscbs_cclasstrib = str(ibscbs_cclasstrib).strip()
+
         item.save(using=self.banco)
 
         # Atualizar ou Criar NotaItemImposto

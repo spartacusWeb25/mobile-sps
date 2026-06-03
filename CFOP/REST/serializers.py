@@ -112,6 +112,23 @@ class TributoSpartacusSerializer(serializers.ModelSerializer):
     aliquota_pis = serializers.DecimalField(source="trib_aliq_pis", max_digits=5, decimal_places=2, required=False, allow_null=True)
     aliquota_cofins = serializers.DecimalField(source="trib_aliq_cofi", max_digits=5, decimal_places=2, required=False, allow_null=True)
     cfop = serializers.IntegerField(source="trib_cfop", required=False, allow_null=True)
+    beneficio_fiscal = serializers.CharField(source="trib_codi_bene", required=False, allow_blank=True, allow_null=True)
+
+    ibscbs_cclasstrib = serializers.CharField(source="trib_ibscbs_cclasstrib", required=False, allow_blank=True, allow_null=True)
+    ibscbs_cst = serializers.CharField(source="trib_ibscbs_cst", required=False, allow_blank=True, allow_null=True)
+    ibs_paliqefetuf = serializers.DecimalField(source="trib_ibs_paliqefetuf", max_digits=5, decimal_places=2, required=False, allow_null=True)
+    ibs_pibsuf = serializers.DecimalField(source="trib_ibs_pibsuf", max_digits=5, decimal_places=2, required=False, allow_null=True)
+    ibs_pdifmun = serializers.DecimalField(source="trib_ibs_pdifmun", max_digits=5, decimal_places=2, required=False, allow_null=True)
+    ibs_paliqefetmun = serializers.DecimalField(source="trib_ibs_paliqefetmun", max_digits=5, decimal_places=2, required=False, allow_null=True)
+    ibs_predmun = serializers.DecimalField(source="trib_ibs_predmun", max_digits=5, decimal_places=2, required=False, allow_null=True)
+    adremibsret = serializers.DecimalField(source="trib_adremibsret", max_digits=5, decimal_places=2, required=False, allow_null=True)
+    cbs_paliqefetreg = serializers.DecimalField(source="trib_cbs_paliqefetreg", max_digits=5, decimal_places=2, required=False, allow_null=True)
+    cbs_pcbs = serializers.DecimalField(source="trib_cbs_pcbs", max_digits=5, decimal_places=2, required=False, allow_null=True)
+    ibs_paliqefetmunreg = serializers.DecimalField(source="trib_ibs_paliqefetmunreg", max_digits=5, decimal_places=2, required=False, allow_null=True)
+    ibs_paliqefetufreg = serializers.DecimalField(source="trib_ibs_paliqefetufreg", max_digits=5, decimal_places=2, required=False, allow_null=True)
+    ibscbs_cclasstribreg = serializers.CharField(source="trib_ibscbs_cclasstribreg", required=False, allow_blank=True, allow_null=True)
+    ibscbs_cstreg = serializers.CharField(source="trib_ibscbs_cstreg", required=False, allow_blank=True, allow_null=True)
+    ibscbs_cstregid = serializers.IntegerField(source="trib_ibscbs_cstregid", required=False, allow_null=True)
     cfop_label = serializers.SerializerMethodField()
     entidade_label = serializers.SerializerMethodField()
     estado_label = serializers.SerializerMethodField()
@@ -138,6 +155,22 @@ class TributoSpartacusSerializer(serializers.ModelSerializer):
             "aliquota_pis",
             "aliquota_cofins",
             "cfop",
+            "beneficio_fiscal",
+            "ibscbs_cclasstrib",
+            "ibscbs_cst",
+            "ibs_paliqefetuf",
+            "ibs_pibsuf",
+            "ibs_pdifmun",
+            "ibs_paliqefetmun",
+            "ibs_predmun",
+            "adremibsret",
+            "cbs_paliqefetreg",
+            "cbs_pcbs",
+            "ibs_paliqefetmunreg",
+            "ibs_paliqefetufreg",
+            "ibscbs_cclasstribreg",
+            "ibscbs_cstreg",
+            "ibscbs_cstregid",
             "cfop_label",
         ]
 

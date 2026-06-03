@@ -561,6 +561,8 @@ class SefazAdapter:
 
             ibs_data = dados.get('ibs')
             cbs_data = dados.get('cbs')
+            ibscbs_data = dados.get('ibscbs') or {}
+            beneficio_fiscal = str(dados.get('beneficio_fiscal') or '').strip() or None
             
             valor_ibs = float((ibs_data or {}).get('valor') or 0)
             valor_cbs = float((cbs_data or {}).get('valor') or 0)
@@ -575,6 +577,22 @@ class SefazAdapter:
                 if cbs_data:
                     print(f"DEBUG: CBS zerado ({valor_cbs}), ignorando injeção para evitar erro 225.")
                 continue
+
+            if beneficio_fiscal:
+                icms = det.find('.//ns:ICMS', namespaces=ns) or det.find('.//ICMS')
+                if icms is not None:
+                    group = None
+                    for child in list(icms):
+                        group = child
+                        break
+                    if group is not None:
+                        for node in list(group):
+                            if node.tag in ("cBenef", f"{{{ns_uri}}}cBenef"):
+                                try:
+                                    group.remove(node)
+                                except Exception:
+                                    pass
+                        sub(group, "cBenef", beneficio_fiscal)
             
             for node in list(imposto):
                 if node.tag in ("IBS", "CBS", "IBSCBS", f"{{{ns_uri}}}IBS", f"{{{ns_uri}}}CBS", f"{{{ns_uri}}}IBSCBS"):
@@ -602,8 +620,10 @@ class SefazAdapter:
             vibs = float(valor_ibs or 0) + float(valor_ibs_mun or 0)
 
             ibscbs = sub(imposto, "IBSCBS")
-            sub(ibscbs, "CST", "000")
-            sub(ibscbs, "cClassTrib", "000001")
+            cst_ibscbs = str(ibscbs_data.get('cst') or '').strip()
+            cclasstrib = str(ibscbs_data.get('cClassTrib') or '').strip()
+            sub(ibscbs, "CST", (cst_ibscbs or "000")[:3])
+            sub(ibscbs, "cClassTrib", (cclasstrib or "000001")[:6])
             gibscbs = sub(ibscbs, "gIBSCBS")
             sub(gibscbs, "vBC", fmt(vbc))
             gibuf = sub(gibscbs, "gIBSUF")
