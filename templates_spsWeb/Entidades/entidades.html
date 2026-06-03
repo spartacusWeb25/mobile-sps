@@ -138,11 +138,13 @@
                         <input type="text" id="enti_nome" name="enti_nome" class="form-control"
                             value="{{ request.GET.enti_nome }}" placeholder="Filtrar por nome">
                     </div>
+                    
                     <div class="col-md-2">
-                        <label for="enti_clie" class="form-label">ID</label>
-                        <input type="text" id="enti_clie" name="enti_clie" class="form-control"
-                            value="{{ request.GET.enti_clie }}" placeholder="Filtrar por ID">
+                        <label for="enti_clie" class="form-label">Documento</label>
+                        <input type="text" id="documento" name="documento" class="form-control"
+                            value="{{ request.GET.documento }}" placeholder="Filtrar por documento">
                     </div>
+
                     <div class="col-md-2">
                         <label for="enti_tipo_enti" class="form-label">Tipo</label>
                         <select id="enti_tipo_enti" name="enti_tipo_enti" class="form-select">

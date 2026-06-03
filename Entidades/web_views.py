@@ -13,7 +13,7 @@ from .services.entidades_trasportadores import EntidadeTransportadoraServico
 from .services.entidades_motoristas import EntidadeMotoristaServico
 from .services.entidades_tipooutros import EntidadeServico
 from urllib.parse import quote_plus
-from django.db.models import BigIntegerField, Case, When, Value, CharField, IntegerField, OuterRef, Subquery
+from django.db.models import BigIntegerField, Case, When, Value, CharField, IntegerField, OuterRef, Subquery, Q
 from django.db.models.functions import Cast
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment
@@ -68,7 +68,10 @@ class EntidadeListView(DBAndSlugMixin, ListView):
         classificacao = request.GET.get('enti_espe_enti', '')
         vendedor_responsavel = request.GET.get('enti_vend', '')
         situacao = request.GET.get('enti_situ', '')
+        documento = (request.GET.get('documento') or '').strip()
         
+        if documento:
+            qs = qs.filter(Q(enti_cpf__icontains=documento) | Q(enti_cnpj__icontains=documento))
         if tipo:
             qs = qs.filter(enti_tipo_enti__icontains=tipo)
         if classificacao:

@@ -47,9 +47,25 @@ def get_modulos_usuario_db(request):
                 return None
 
         # Resolve empresa/filial sem stepover esquisito
+        get_q = getattr(request, "GET", None)
+        q_empresa = None
+        q_filial = None
+        if get_q is not None:
+            q_empresa = (
+                _to_int(get_q.get("empresa_id"))
+                or _to_int(get_q.get("empresa"))
+                or _to_int(get_q.get("empr"))
+            )
+            q_filial = (
+                _to_int(get_q.get("filial_id"))
+                or _to_int(get_q.get("filial"))
+                or _to_int(get_q.get("fili"))
+            )
+
         empresa = (
             _to_int(request.headers.get("X-Empresa"))
             or _to_int(request.headers.get("Empresa_id"))
+            or q_empresa
             or request.session.get("empresa_id")
             or _to_int(getattr(request.user, "usua_empr", None))
         )
@@ -57,6 +73,7 @@ def get_modulos_usuario_db(request):
         filial = (
             _to_int(request.headers.get("X-Filial"))
             or _to_int(request.headers.get("Filial_id"))
+            or q_filial
             or request.session.get("filial_id")
             or _to_int(getattr(request.user, "usua_fili", None))
         )
@@ -142,8 +159,13 @@ class ModuloRequeridoMixin:
                     return redirect(reverse("home"))
 
                 # se for API → 403 limpo
-                raise PermissionDenied(
-                    f"Módulo '{self.modulo_requerido}' não está liberado."
+                return JsonResponse(
+                    {
+                        "detail": f"Módulo '{self.modulo_requerido}' não está liberado.",
+                        "code": "MODULE_NOT_ALLOWED",
+                        "modulo": self.modulo_requerido,
+                    },
+                    status=403,
                 )
 
         return super().dispatch(request, *args, **kwargs)
