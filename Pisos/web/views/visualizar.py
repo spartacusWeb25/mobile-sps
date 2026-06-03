@@ -1,4 +1,6 @@
 from django.shortcuts import get_object_or_404, render
+from django.db.models import Value
+from django.db.models.functions import Coalesce, Lower
 import Entidades
 from core.utils import get_db_from_slug
 from core.mixins.vendedor_mixin import VendedorEntidadeMixin
@@ -84,11 +86,14 @@ def visualizar_pedido_pisos(request, slug, pk):
             raise
 
     itens = list(
-        Itenspedidospisos.objects.using(banco).filter(
+        Itenspedidospisos.objects.using(banco)
+        .filter(
             item_empr=pedido.pedi_empr,
             item_fili=pedido.pedi_fili,
             item_pedi=pk,
         )
+        .annotate(_amb_sort=Lower(Coalesce("item_nome_ambi", Value(""))))
+        .order_by("_amb_sort", "item_ambi", "item_nume")
     )
 
     produtos = Produtos.objects.using(banco).filter(
