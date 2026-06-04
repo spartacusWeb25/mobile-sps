@@ -117,7 +117,7 @@ class AuditoriaMiddleware:
             
             # Mapear nomes de modelos com hífen para nomes reais dos modelos
             modelo_mapping = {
-                
+
                 'titulos-pagar': 'Titulospagar',
                 'titulos-receber': 'Titulosreceber',
                 'ordemdeservico': 'OrdemdeServico',
@@ -135,6 +135,8 @@ class AuditoriaMiddleware:
                 'notas-fiscais': 'Nota',
                 'pedidos-geral': 'PedidoVenda',
                 'pedidos': 'PedidoVenda',
+                'pedidos-pisos': 'Pedidospisos',
+                'orcamentos-pisos': 'Orcamentopisos',
                 'entidades': 'Entidades',
                 'caixa': 'Caixageral',
                 'movicaixa': 'Movicaixa',
