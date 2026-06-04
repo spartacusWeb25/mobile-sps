@@ -119,14 +119,11 @@ class RomaneioEntregaService:
 
         with transaction.atomic(using=banco):
             if pedido_observacao is not None:
-                pedido = (
-                    Pedidospisos.objects.using(banco)
-                    .filter(pedi_nume=int(pedido_numero), pedi_empr=int(empresa), pedi_fili=int(filial))
-                    .first()
-                )
-                if pedido:
-                    pedido.pedi_obse_roma = str(pedido_observacao or "").strip()
-                    pedido.save(using=banco, update_fields=["pedi_obse_roma"])
+                Pedidospisos.objects.using(banco).filter(
+                    pedi_nume=int(pedido_numero),
+                    pedi_empr=int(empresa),
+                    pedi_fili=int(filial),
+                ).update(pedi_obse_roma=str(pedido_observacao or "").strip())
 
             alterados = 0
             try:
@@ -229,11 +226,13 @@ class RomaneioEntregaService:
                         update_fields.append("item_nfe_entr")
                     except Exception:
                         pass
-
-                item.save(
-                    using=banco,
-                    update_fields=update_fields,
-                )
+                update_data = {nome: getattr(item, nome) for nome in update_fields}
+                Itenspedidospisos.objects.using(banco).filter(
+                    item_nume=int(item_nume),
+                    item_pedi=int(pedido_numero),
+                    item_empr=int(empresa),
+                    item_fili=int(filial),
+                ).update(**update_data)
                 alterados += 1
 
             if alterados == 0:

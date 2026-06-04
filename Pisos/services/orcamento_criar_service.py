@@ -78,7 +78,14 @@ class OrcamentoCriarService:
 
             orcamento.orca_cred = credito_aplicado
             orcamento.orca_tota = arredondar(total_liquido_sem_credito - credito_aplicado)
-            orcamento.save(using=banco, update_fields=["orca_tota", "orca_cred"])
+            Orcamentopisos.objects.using(banco).filter(
+                orca_empr=orcamento.orca_empr,
+                orca_fili=orcamento.orca_fili,
+                orca_nume=orcamento.orca_nume,
+            ).update(
+                orca_tota=orcamento.orca_tota,
+                orca_cred=orcamento.orca_cred,
+            )
 
             return orcamento
 
@@ -180,6 +187,10 @@ class OrcamentoCriarService:
             valor_unitario = parse_decimal(dados_item.get("item_unit"))
             subtotal = arredondar(quantidade * valor_unitario)
 
+            item_ambi = dados_item.get("item_ambi")
+            if item_ambi in (None, "", 0, "0"):
+                item_ambi = idx
+
             extra_kwargs = {}
             if 'item_kg' in campos_permitidos:
                 extra_kwargs['item_kg'] = parse_decimal(dados_item.get("item_kg") or dados_item.get("kg_total") or dados_item.get("quilos_total"))
@@ -189,7 +200,7 @@ class OrcamentoCriarService:
                 item_fili=orcamento.orca_fili,
                 item_orca=orcamento.orca_nume,
                 item_nume=idx,
-                item_ambi=dados_item.get("item_ambi") or 1,
+                item_ambi=item_ambi,
                 item_suto=subtotal,
                 **extra_kwargs,
                 **{
@@ -242,8 +253,9 @@ class OrcamentoCriarService:
                 elif m2_por_caixa > 0:
                     dados["item_quan"] = m2_por_caixa * caixas
 
-        if not dados.get("item_ambi"):
-            dados["item_ambi"] = 1
+        item_ambi = dados.get("item_ambi")
+        if item_ambi in (None, "", 0, "0"):
+            dados.pop("item_ambi", None)
 
         if not dados.get("item_nome_ambi"):
             dados["item_nome_ambi"] = "Padrão"

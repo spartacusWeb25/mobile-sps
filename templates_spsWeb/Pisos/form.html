@@ -804,6 +804,7 @@
     const URL_ALTERAR_STATUS = "{% if pedido %}{% url 'PisosWeb:pedidos_pisos_alterar_status' slug=slug pk=pedido.pedi_nume %}{% endif %}";
     const STATUS_EMPRESA = "{{ pedido.pedi_empr|default:'' }}";
     const STATUS_FILIAL = "{{ pedido.pedi_fili|default:'' }}";
+    const KOHLER_INITIAL = "{% if kohler_inicial %}1{% else %}0{% endif %}";
 
     /* ── KOHLER MODE ── */
     const KOHLER_MARCA = '98';
@@ -1288,7 +1289,7 @@
         var res = await fetch(URL_CALCULAR, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
-          body: JSON.stringify({ item_prod: prod_id, item_m2: m2, item_unit: unit, item_queb: queb, condicao, item_caix: parseInt(document.getElementById('caix-' + index)?.value || 0), item_quan: parseNumberBR(document.getElementById('quan-' + index)?.value), marca: kohlerModeActive ? KOHLER_MARCA : null })
+          body: JSON.stringify({ item_prod: prod_id, item_m2: m2, item_unit: unit, item_queb: queb, condicao, item_caix: parseInt(document.getElementById('caix-' + index)?.value || 0), item_quan: parseNumberBR(document.getElementById('quan-' + index)?.value), item_kg: parseNumberBR(document.getElementById('kg-' + index)?.value), marca: kohlerModeActive ? KOHLER_MARCA : null })
         });
         var data = await res.json();
         if (!res.ok) throw new Error(data.erro || 'Erro HTTP ' + res.status);
@@ -1306,10 +1307,6 @@
         if (hiddenCaix && !caixInput) hiddenCaix.value = data.caixas || '';
         if (kgInput) kgInput.value = data.kg_total || '0.00';
         if (hiddenKg) hiddenKg.value = data.kg_total || '0.00';
-        var m2Input = document.getElementById('m2-' + index);
-        var hiddenM2 = document.getElementById('id_itens-' + index + '-item_m2');
-        if (m2Input) m2Input.value = data.quantidade || '';
-        if (hiddenM2) hiddenM2.value = normalizeNumberBR(data.quantidade || '');
         if (quanInput) {
           quanInput.value = data.quantidade || '';
         }
@@ -1399,6 +1396,7 @@
     }
 
     function maybeInitialCalc(index) {
+      if (kohlerModeActive) return;
       var prod_id = document.getElementById('id_itens-' + index + '-item_prod')?.value;
       var m2 = parseNumberBR(document.getElementById('m2-' + index)?.value);
       if (!prod_id || m2 <= 0) return;
@@ -1687,6 +1685,8 @@
       /* Kohler Switch */
       const kohlerSwitch = document.getElementById('kohler-mode');
       if (kohlerSwitch) {
+        kohlerSwitch.checked = String(KOHLER_INITIAL || '0') === '1';
+        toggleKohlerMode();
         kohlerSwitch.addEventListener('change', toggleKohlerMode);
       }
 
@@ -1720,9 +1720,12 @@
       document.querySelectorAll('[id^="produto_busca_"]').forEach(function (input) {
         var index = parseInt(input.dataset.index, 10);
         bindCalcInputs(index);
-        var onSelectProduto = function (selected) {
+        var applyProdutoLabel = function (selected) {
           var nomeInput = document.getElementById('id_itens-' + index + '-item_prod_nome');
           if (nomeInput) nomeInput.value = selected.label || selected.text || '';
+        };
+        var onSelectProduto = function (selected) {
+          applyProdutoLabel(selected);
           if (kohlerModeActive) {
             calcularItemKohler(index);
           } else {
@@ -1730,7 +1733,7 @@
           }
         };
         setupAutocomplete(input.id, 'id_itens-' + index + '-item_prod', URL_AUTO_PRODUTOS, onSelectProduto, true);
-        prefillAutocomplete(input.id, 'id_itens-' + index + '-item_prod', URL_AUTO_PRODUTOS, onSelectProduto, true);
+        prefillAutocomplete(input.id, 'id_itens-' + index + '-item_prod', URL_AUTO_PRODUTOS, applyProdutoLabel, true);
         maybeInitialCalc(index);
       });
 

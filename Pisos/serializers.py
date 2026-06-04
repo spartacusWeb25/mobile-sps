@@ -415,7 +415,7 @@ class PedidospisosSerializer(BancoContextMixin, serializers.ModelSerializer):
                 item_nume=idx,
                 item_prod=prod_id,
                 item_prod_nome=item_data.get("item_prod_nome", ""),
-                item_ambi=item_data.get("item_ambi") or 1,
+                item_ambi=item_data.get("item_ambi") or idx,
                 item_nome_ambi=item_data.get("item_nome_ambi", ""),
                 item_m2=item_data.get("item_m2") or 0,
                 item_queb=item_data.get("item_queb") or 0,

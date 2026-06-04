@@ -24,7 +24,11 @@ class WorkflowStatusPisosService:
         )
 
         pedido.pedi_stat = status.stat_codigo
-        pedido.save(using=banco, update_fields=["pedi_stat"])
+        Pedidospisos.objects.using(banco).filter(
+            pedi_empr=empresa,
+            pedi_fili=filial,
+            pedi_nume=numero,
+        ).update(pedi_stat=status.stat_codigo)
 
         return pedido, status
 
@@ -48,6 +52,10 @@ class WorkflowStatusPisosService:
         )
 
         orcamento.orca_stat = status.stat_codigo
-        orcamento.save(using=banco, update_fields=["orca_stat"])
+        Orcamentopisos.objects.using(banco).filter(
+            orca_empr=empresa,
+            orca_fili=filial,
+            orca_nume=numero,
+        ).update(orca_stat=status.stat_codigo)
 
         return orcamento, status

@@ -1,6 +1,7 @@
 import logging
 
 from django.contrib import messages
+from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 
 from core.utils import get_db_from_slug
@@ -13,6 +14,7 @@ from Pisos.services.status_listar import StatusPisosServices
 from Pisos.services.orcamento_atualizar_service import OrcamentoAtualizarService
 from Pisos.services.orcamento_exportar_service import OrcamentoExportarPedidoService
 from Pisos.web.forms import ItemOrcamentoPisosFormSet, OrcamentoPisosForm
+from Produtos.models import Produtos
 
 
 logger = logging.getLogger(__name__)
@@ -133,28 +135,71 @@ def editar_orcamento_pisos(request, slug, pk):
 
     initial_itens = []
 
-    if request.method != "POST":
-        for i in Itensorcapisos.objects.using(banco).filter(
+    itens_db = list(
+        Itensorcapisos.objects.using(banco).filter(
             item_empr=orcamento.orca_empr,
             item_fili=orcamento.orca_fili,
             item_orca=orcamento.orca_nume,
-        ).order_by("item_nume", "item_ambi"):
+        ).order_by("item_nume", "item_ambi")
+    )
+
+    if request.method != "POST":
+        for i in itens_db:
             initial_itens.append({
-                k: getattr(i, k)
-                for k in [
-                    "item_ambi",
-                    "item_nome_ambi",
-                    "item_prod",
-                    "item_m2",
-                    "item_quan",
-                    "item_caix",
-                    "item_unit",
-                    "item_suto",
-                    "item_desc",
-                    "item_queb",
-                    "item_obse",
-                ]
+                **{
+                    k: getattr(i, k)
+                    for k in [
+                        "item_ambi",
+                        "item_nome_ambi",
+                        "item_prod",
+                        "item_m2",
+                        "item_quan",
+                        "item_caix",
+                        "item_unit",
+                        "item_suto",
+                        "item_desc",
+                        "item_queb",
+                        "item_obse",
+                    ]
+                },
+                "item_prod_nome": "",
             })
+
+    prod_ids = [str(getattr(i, "item_prod", "") or "").strip() for i in itens_db]
+    prod_ids = [p for p in prod_ids if p]
+    kohler_inicial = False
+    if prod_ids:
+        produtos = Produtos.objects.using(banco).filter(
+            prod_empr=str(orcamento.orca_empr),
+        ).filter(
+            Q(prod_codi__in=list(set(prod_ids))) | Q(prod_codi_nume__in=list(set(prod_ids)))
+        ).values_list("prod_codi", "prod_codi_nume", "prod_nome", "prod_marc_id")
+
+        marca_por_prod = {}
+        nome_por_prod = {}
+        for codi, codi_nume, nome, marc_id in produtos:
+            marc_str = str(marc_id).strip() if marc_id is not None else None
+            codi_str = str(codi).strip() if codi else None
+            label = ""
+            if codi_str:
+                label = f"{codi_str} - {nome}" if nome else codi_str
+                marca_por_prod[codi_str] = marc_str
+                nome_por_prod[codi_str] = label
+            if codi_nume:
+                codi_nume_str = str(codi_nume).strip()
+                if codi_nume_str:
+                    marca_por_prod[codi_nume_str] = marc_str
+                    nome_por_prod[codi_nume_str] = label or codi_nume_str
+
+        marcas = [marca_por_prod.get(p) for p in prod_ids]
+        marcas_conhecidas = [m for m in marcas if m is not None and str(m).strip() != ""]
+        kohler_inicial = bool(marcas_conhecidas) and all(str(m).strip() == "98" for m in marcas_conhecidas)
+
+        if request.method != "POST":
+            for it in initial_itens:
+                pid = str(it.get("item_prod") or "").strip()
+                if not it.get("item_prod_nome") and pid:
+                    it["item_prod_nome"] = nome_por_prod.get(pid) or ""
 
     is_post = request.method == "POST"
 
@@ -270,5 +315,6 @@ def editar_orcamento_pisos(request, slug, pk):
             "status_opcoes": status_opcoes,
             "status_codigo_atual": orcamento.orca_stat,
             "status_atual": status_atual,
+            "kohler_inicial": kohler_inicial,
         },
     )

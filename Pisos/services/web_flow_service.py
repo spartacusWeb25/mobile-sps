@@ -70,12 +70,23 @@ def exportar_orcamento_para_pedido(banco, empresa, filial, numero):
         "pedi_stat": 0,
     }
     pedido = Pedidospisos.objects.using(banco).create(**dados_pedido)
-    for i in Itensorcapisos.objects.using(banco).filter(item_empr=empresa,item_fili=filial,item_orca=numero):
+    for idx, i in enumerate(
+        Itensorcapisos.objects.using(banco).filter(item_empr=empresa, item_fili=filial, item_orca=numero).order_by("item_ambi", "item_nume"),
+        start=1,
+    ):
+        item_nume = getattr(i, "item_nume", None)
+        if item_nume in (None, "", 0, "0"):
+            item_nume = idx
+
+        item_ambi = getattr(i, "item_ambi", None)
+        if item_ambi in (None, "", 0, "0"):
+            item_ambi = idx
+
         Itenspedidospisos.objects.using(banco).create(
             item_empr=pedido.pedi_empr,
             item_fili=pedido.pedi_fili,
             item_pedi=pedido.pedi_nume,
-            item_ambi=i.item_ambi,
+            item_ambi=item_ambi,
             item_prod=i.item_prod,
             item_m2=i.item_m2,
             item_quan=i.item_quan,
@@ -83,14 +94,19 @@ def exportar_orcamento_para_pedido(banco, empresa, filial, numero):
             item_suto=i.item_suto,
             item_obse=i.item_obse,
             item_nome_ambi=i.item_nome_ambi,
-            item_nume=i.item_nume,
+            item_nume=item_nume,
             item_caix=i.item_caix,
             item_desc=i.item_desc,
             item_queb=i.item_queb,
         )
-    orcamento.orca_stat = 2
-    orcamento.orca_pedi = pedido.pedi_nume
-    orcamento.save(using=banco)
+    Orcamentopisos.objects.using(banco).filter(
+        orca_empr=empresa,
+        orca_fili=filial,
+        orca_nume=numero,
+    ).update(
+        orca_stat=2,
+        orca_pedi=pedido.pedi_nume,
+    )
     return pedido.pedi_nume
 
 

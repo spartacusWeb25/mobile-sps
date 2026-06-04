@@ -121,17 +121,18 @@ def editar_pedido_pisos(request, slug, pk):
                 pedido=pedido
             )
 
-            pedido.save(
-                using=banco,
-                update_fields=[
-                    "pedi_ende",
-                    "pedi_nume_ende",
-                    "pedi_bair",
-                    "pedi_cida",
-                    "pedi_esta",
-                    "pedi_comp",
-                    "pedi_comp_fone",
-                ],
+            Pedidospisos.objects.using(banco).filter(
+                pedi_empr=pedido.pedi_empr,
+                pedi_fili=pedido.pedi_fili,
+                pedi_nume=pedido.pedi_nume,
+            ).update(
+                pedi_ende=getattr(pedido, "pedi_ende", None),
+                pedi_nume_ende=getattr(pedido, "pedi_nume_ende", None),
+                pedi_bair=getattr(pedido, "pedi_bair", None),
+                pedi_cida=getattr(pedido, "pedi_cida", None),
+                pedi_esta=getattr(pedido, "pedi_esta", None),
+                pedi_comp=getattr(pedido, "pedi_comp", None),
+                pedi_comp_fone=getattr(pedido, "pedi_comp_fone", None),
             )
 
     cliente_label = ""
@@ -233,6 +234,33 @@ def editar_pedido_pisos(request, slug, pk):
 
     item_kg = initial_itens[0].get("item_kg") if initial_itens else 0
     item = initial_itens[0] if initial_itens else {}
+
+    itens_prod_ids = list(
+        Itenspedidospisos.objects.using(banco)
+        .filter(item_empr=pedido.pedi_empr, item_fili=pedido.pedi_fili, item_pedi=pedido.pedi_nume)
+        .values_list("item_prod", flat=True)
+    )
+    itens_prod_ids = [str(p).strip() for p in itens_prod_ids if p]
+    kohler_inicial = False
+    if itens_prod_ids:
+        from django.db.models import Q
+        produtos = Produtos.objects.using(banco).filter(
+            prod_empr=str(pedido.pedi_empr),
+        ).filter(
+            Q(prod_codi__in=list(set(itens_prod_ids))) | Q(prod_codi_nume__in=list(set(itens_prod_ids)))
+        ).values_list("prod_codi", "prod_codi_nume", "prod_marc_id")
+
+        marca_por_prod = {}
+        for codi, codi_nume, marc_id in produtos:
+            marc_str = str(marc_id).strip() if marc_id is not None else None
+            if codi:
+                marca_por_prod[str(codi).strip()] = marc_str
+            if codi_nume:
+                marca_por_prod[str(codi_nume).strip()] = marc_str
+
+        marcas = [marca_por_prod.get(p) for p in itens_prod_ids]
+        marcas_conhecidas = [m for m in marcas if m is not None and str(m).strip() != ""]
+        kohler_inicial = bool(marcas_conhecidas) and all(str(m).strip() == "98" for m in marcas_conhecidas)
 
     if request.method == "POST":
         post_data = request.POST.copy()
@@ -358,5 +386,6 @@ def editar_pedido_pisos(request, slug, pk):
             "status_opcoes": status_opcoes,
             "status_codigo_atual": pedido.pedi_stat,
             "status_atual": status_atual,
+            "kohler_inicial": kohler_inicial,
         },
     )

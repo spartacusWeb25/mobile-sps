@@ -14,6 +14,11 @@ class OrcamentoAtualizarService:
             raise ValueError("Itens do orçamento são obrigatórios.")
 
         with transaction.atomic(using=banco):
+            chave = (
+                int(getattr(orcamento, "orca_empr")),
+                int(getattr(orcamento, "orca_fili")),
+                int(getattr(orcamento, "orca_nume")),
+            )
             parametros = (dados or {}).get("parametros") or {}
             dados_orcamento = dict(dados)
             dados_orcamento.pop("itens_input", None)
@@ -22,12 +27,11 @@ class OrcamentoAtualizarService:
             dados_orcamento.pop("usar_credito", None)
             dados_orcamento.pop("valor_credito", None)
 
-            # Garantir que qualquer alteração concorrente ao status seja carregada
-            try:
-                orcamento.refresh_from_db(using=banco)
-            except Exception:
-                # Se refresh falhar por algum motivo, prosseguir conservadoramente
-                pass
+            orcamento = (
+                Orcamentopisos.objects.using(banco)
+                .select_for_update()
+                .get(orca_empr=chave[0], orca_fili=chave[1], orca_nume=chave[2])
+            )
 
             # Se o formulário não enviou explicitamente orca_stat (campo vazio), não sobrescrever
             if 'orca_stat' in dados_orcamento and (dados_orcamento.get('orca_stat') is None or str(dados_orcamento.get('orca_stat')).strip() == ""):
@@ -79,10 +83,20 @@ class OrcamentoAtualizarService:
 
             orcamento.orca_cred = credito_aplicado
             orcamento.orca_tota = arredondar(total_liquido_sem_credito - credito_aplicado)
-            # Salvar explicitamente apenas campos editáveis (evita alteração de PKs e unique constraints)
-            update_fields = [f.name for f in orcamento._meta.fields if f.name not in ('orca_empr', 'orca_fili', 'orca_nume')]
             try:
-                orcamento.save(using=banco, update_fields=update_fields)
+                update_fields = [
+                    f.name
+                    for f in orcamento._meta.fields
+                    if f.name not in ("orca_empr", "orca_fili", "orca_nume")
+                ]
+                update_data = {nome: getattr(orcamento, nome) for nome in update_fields}
+                updated = Orcamentopisos.objects.using(banco).filter(
+                    orca_empr=chave[0],
+                    orca_fili=chave[1],
+                    orca_nume=chave[2],
+                ).update(**update_data)
+                if updated == 0:
+                    raise ValueError("Orçamento não encontrado para atualização (empresa/filial/número).")
             except Exception as e:
                 # Normalizar erro para mensagem mais amigável
                 from django.db import IntegrityError

@@ -1271,7 +1271,7 @@
         var res = await fetch(URL_CALCULAR, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
-          body: JSON.stringify({ item_prod: prod_id, item_m2: m2, item_unit: unit, item_queb: queb, condicao, item_caix: parseInt(document.getElementById('caix-' + index)?.value || 0), item_quan: parseNumberBR(document.getElementById('quan-' + index)?.value) })
+          body: JSON.stringify({ item_prod: prod_id, item_m2: m2, item_unit: unit, item_queb: queb, condicao, item_caix: parseInt(document.getElementById('caix-' + index)?.value || 0), item_quan: parseNumberBR(document.getElementById('quan-' + index)?.value), item_kg: parseNumberBR(document.getElementById('kg-' + index)?.value), marca: '98' })
         });
         var data = await res.json();
         if (!res.ok) throw new Error(data.erro || 'Erro HTTP ' + res.status);
@@ -1289,10 +1289,6 @@
         if (hiddenCaix && !caixInput) hiddenCaix.value = data.caixas || '';
         if (kgInput) kgInput.value = data.kg_total || '0.00';
         if (hiddenKg) hiddenKg.value = data.kg_total || '0.00';
-        var m2Input = document.getElementById('m2-' + index);
-        var hiddenM2 = document.getElementById('id_itens-' + index + '-item_m2');
-        if (m2Input) m2Input.value = data.quantidade || '';
-        if (hiddenM2) hiddenM2.value = normalizeNumberBR(data.quantidade || '');
         if (quanInput) {
           quanInput.value = data.quantidade || '';
         }

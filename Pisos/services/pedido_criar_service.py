@@ -56,7 +56,14 @@ class PedidoCriarService:
 
             pedido.pedi_cred = credito_aplicado
             pedido.pedi_tota = arredondar(total_liquido_sem_credito - credito_aplicado)
-            pedido.save(using=banco, update_fields=["pedi_tota", "pedi_cred"])
+            Pedidospisos.objects.using(banco).filter(
+                pedi_empr=pedido.pedi_empr,
+                pedi_fili=pedido.pedi_fili,
+                pedi_nume=pedido.pedi_nume,
+            ).update(
+                pedi_tota=pedido.pedi_tota,
+                pedi_cred=pedido.pedi_cred,
+            )
 
             self.gerar_titulos_receber(banco=banco, pedido=pedido, parametros=parametros)
 
@@ -217,7 +224,24 @@ class PedidoCriarService:
             pedido=pedido,
         )
 
-        pedido.save(using=banco)
+        update_data = {}
+        for campo in (
+            "pedi_ende",
+            "pedi_nume_ende",
+            "pedi_cida",
+            "pedi_esta",
+            "pedi_comp",
+            "pedi_bair",
+            "pedi_comp_fone",
+        ):
+            if hasattr(pedido, campo):
+                update_data[campo] = getattr(pedido, campo)
+        if update_data:
+            Pedidospisos.objects.using(banco).filter(
+                pedi_empr=pedido.pedi_empr,
+                pedi_fili=pedido.pedi_fili,
+                pedi_nume=pedido.pedi_nume,
+            ).update(**update_data)
 
         return pedido
 

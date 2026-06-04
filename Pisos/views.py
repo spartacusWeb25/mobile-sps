@@ -852,6 +852,7 @@ class ItensorcapisosViewSet(BaseMultiDBModelViewSet):
     modulo_necessario = 'Pisos'
     serializer_class = ItensorcapisosSerializer
     filter_backends = [DjangoFilterBackend]
+    http_method_names = ["get", "head", "options"]
     filterset_fields = [
         'item_empr', 'item_fili', 'item_orca', 'item_ambi', 'item_prod'
     ]
@@ -879,6 +880,7 @@ class ItenspedidospisosViewSet(BaseMultiDBModelViewSet):
     modulo_necessario = 'Pisos'
     serializer_class = ItenspedidospisosSerializer
     filter_backends = [DjangoFilterBackend]
+    http_method_names = ["get", "head", "options"]
     filterset_fields = [
         'item_empr', 'item_fili', 'item_pedi', 'item_ambi', 'item_prod'
     ]

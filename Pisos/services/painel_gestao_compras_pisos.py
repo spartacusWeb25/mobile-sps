@@ -244,14 +244,13 @@ class PainelPedidosService:
                 logger.info(f"[salvar_compras] Processando item {item_nume}: qtd_comprada={nova_qtd_comprada}, qtd_necessaria={qtd_necessaria}")
                 try:
                     item = itens_pedido.get(item_nume=item_nume)
-                    item.item_quan_entr = nova_qtd_comprada
+                    update_data = {"item_quan_entr": nova_qtd_comprada}
 
-                    # Se quantidade comprada > 0, marcar como compra efetuada
                     if nova_qtd_comprada > 0:
-                        item.item_comp_efet = hoje
+                        update_data["item_comp_efet"] = hoje
                         logger.info(f"[salvar_compras] Item {item_nume}: compra efetuada em {hoje}")
                     else:
-                        item.item_comp_efet = None
+                        update_data["item_comp_efet"] = None
                         logger.info(f"[salvar_compras] Item {item_nume}: compra não efetuada (qtd=0)")
 
                     # Verificar se a compra foi totalmente efetuada
@@ -261,7 +260,12 @@ class PainelPedidosService:
                     else:
                         logger.info(f"[salvar_compras] Item {item_nume}: compra completa ({nova_qtd_comprada} >= {qtd_necessaria})")
 
-                    item.save(using=banco)
+                    Itenspedidospisos.objects.using(banco).filter(
+                        item_empr=empresa,
+                        item_fili=filial,
+                        item_pedi=pedido_numero,
+                        item_nume=item_nume,
+                    ).update(**update_data)
                     logger.info(f"[salvar_compras] Item {item_nume}: salvo com sucesso")
                 except Itenspedidospisos.DoesNotExist:
                     logger.error(f"[salvar_compras] Item {item_nume}: não encontrado no pedido")
@@ -302,14 +306,11 @@ class PainelPedidosService:
         
         if todas_compras_efetuadas:
             try:
-                pedido = Pedidospisos.objects.using(banco).get(
+                Pedidospisos.objects.using(banco).filter(
                     pedi_empr=empresa,
                     pedi_fili=filial,
-                    pedi_nume=pedido_numero
-                )
-                # Atualizar data de compra workflow
-                pedido.pedi_data_comp_work = hoje
-                pedido.save(using=banco)
+                    pedi_nume=pedido_numero,
+                ).update(pedi_data_comp_work=hoje)
                 logger.info(f"[salvar_compras] Pedido {pedido_numero}: data_compra_workflow atualizada para {hoje}")
             except Pedidospisos.DoesNotExist:
                 logger.error(f"[salvar_compras] Pedido {pedido_numero}: não encontrado")

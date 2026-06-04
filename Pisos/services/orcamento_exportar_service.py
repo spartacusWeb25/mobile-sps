@@ -129,12 +129,20 @@ class OrcamentoExportarPedidoService:
                 item_orca=numero,
             )
 
-            for item in itens:
+            for idx, item in enumerate(itens.order_by("item_ambi", "item_nume"), start=1):
+                item_nume = getattr(item, "item_nume", None)
+                if item_nume in (None, "", 0, "0"):
+                    item_nume = idx
+
+                item_ambi = getattr(item, "item_ambi", None)
+                if item_ambi in (None, "", 0, "0"):
+                    item_ambi = idx
+
                 Itenspedidospisos.objects.using(banco).create(
                     item_empr=pedido.pedi_empr,
                     item_fili=pedido.pedi_fili,
                     item_pedi=pedido.pedi_nume,
-                    item_ambi=item.item_ambi,
+                    item_ambi=item_ambi,
                     item_prod=item.item_prod,
                     item_m2=item.item_m2,
                     item_quan=item.item_quan,
@@ -142,7 +150,7 @@ class OrcamentoExportarPedidoService:
                     item_suto=item.item_suto,
                     item_obse=item.item_obse,
                     item_nome_ambi=item.item_nome_ambi,
-                    item_nume=item.item_nume,
+                    item_nume=item_nume,
                     item_caix=item.item_caix,
                     item_desc=item.item_desc,
                     item_queb=item.item_queb,

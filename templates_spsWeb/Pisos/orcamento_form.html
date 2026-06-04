@@ -780,6 +780,7 @@
     const URL_CREDITO = `/api/${SLUG}/pisos/credito-troca/`;
     const EXCLUIR_ORCAMENTO = "{% if orcamento %}{{ orcamento.orca_nume }}{% endif %}";
     const ORCAMENTO_STAT = "{% if orcamento %}{{ orcamento.orca_stat }}{% endif %}";
+    const KOHLER_INITIAL = "{% if kohler_inicial %}1{% else %}0{% endif %}";
     const URL_ALTERAR_STATUS = "{% if orcamento %}{% url 'PisosWeb:orcamentos_pisos_alterar_status' slug=slug pk=orcamento.orca_nume %}{% endif %}";
     const STATUS_EMPRESA = "{{ orcamento.orca_empr|default:'' }}";
     const STATUS_FILIAL = "{{ orcamento.orca_fili|default:'' }}";
@@ -1136,7 +1137,7 @@
         var res = await fetch(URL_CALCULAR, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
-          body: JSON.stringify({ item_prod: prod_id, item_m2: m2, item_unit: unit, item_queb: queb, condicao, item_caix: parseInt(document.getElementById('caix-' + index)?.value || 0), item_quan: parseNumberBR(document.getElementById('quan-' + index)?.value), marca: kohlerModeActive ? KOHLER_MARCA : null }),
+          body: JSON.stringify({ item_prod: prod_id, item_m2: m2, item_unit: unit, item_queb: queb, condicao, item_caix: parseInt(document.getElementById('caix-' + index)?.value || 0), item_quan: parseNumberBR(document.getElementById('quan-' + index)?.value), item_kg: parseNumberBR(document.getElementById('kg-' + index)?.value), marca: kohlerModeActive ? KOHLER_MARCA : null }),
         });
         if (!res.ok) throw new Error('Erro HTTP ' + res.status);
         var data = await res.json();
@@ -1263,6 +1264,7 @@
 
 
     function maybeInitialCalc(index) {
+      if (kohlerModeActive) return;
       var prod_id = document.getElementById('id_itens-' + index + '-item_prod')?.value;
       var m2 = parseNumberBR(document.getElementById('m2-' + index)?.value);
       if (!prod_id || m2 <= 0) return;
@@ -1309,7 +1311,7 @@
           '<input name="' + prefix + '-item_prod_nome" id="id_itens-' + index + '-item_prod_nome" class="form-control form-control-sm" placeholder="—" style="width:100%">' +
           '</td>' +
           '<td style="min-width:65px;max-width:65px">' +
-          '<input type="number" step="0.0001" id="quan-' + index + '" name="' + prefix + '-item_quan" class="form-control form-control-sm item-quan" placeholder="0">' +
+          '<input type="number" step="0.0001" id="quan-' + index + '" class="form-control form-control-sm item-quan" placeholder="0">' +
           '<input type="hidden" name="' + prefix + '-item_quan" id="id_itens-' + index + '-item_quan" value="">' +
           '</td>' +
           '<td style="min-width:75px;max-width:75px">' +
@@ -1377,7 +1379,9 @@
 
     function validateBeforeSubmit() {
       var form = document.querySelector('form');
+      var submitting = false;
       form.addEventListener('submit', function (event) {
+        if (submitting) { event.preventDefault(); return; }
         var required = [
           { id: 'id_orca_fili', label: 'Loja' },
           { id: 'id_orca_clie', label: 'Cliente' },
@@ -1402,7 +1406,12 @@
           }
         }
         if (!hasValidItem) { hasError = true; msgs.push('Pelo menos 1 item'); }
-        if (hasError) { event.preventDefault(); showToast('Preencha: ' + [...new Set(msgs)].join(', '), 'danger'); }
+        if (hasError) { event.preventDefault(); showToast('Preencha: ' + [...new Set(msgs)].join(', '), 'danger'); return; }
+
+        submitting = true;
+        form.querySelectorAll('button[type="submit"]').forEach(function (btn) {
+          btn.disabled = true;
+        });
       });
     }
 
@@ -1415,6 +1424,8 @@
       /* Kohler Switch */
       const kohlerSwitch = document.getElementById('kohler-mode');
       if (kohlerSwitch) {
+        kohlerSwitch.checked = String(KOHLER_INITIAL || '0') === '1';
+        toggleKohlerMode();
         kohlerSwitch.addEventListener('change', toggleKohlerMode);
       }
 
@@ -1443,9 +1454,12 @@
       document.querySelectorAll('[id^="produto_busca_"]').forEach(function (input) {
         var index = parseInt(input.dataset.index, 10);
         bindCalcInputs(index);
-        var onSelectProduto = function (selected) {
+        var applyProdutoLabel = function (selected) {
           var nomeInput = document.getElementById('id_itens-' + index + '-item_prod_nome');
           if (nomeInput) nomeInput.value = selected.label || selected.text || '';
+        };
+        var onSelectProduto = function (selected) {
+          applyProdutoLabel(selected);
           if (kohlerModeActive) {
             calcularItemKohler(index);
           } else {
@@ -1453,7 +1467,7 @@
           }
         };
         setupAutocomplete(input.id, 'id_itens-' + index + '-item_prod', URL_AUTO_PRODUTOS, onSelectProduto, true);
-        prefillAutocomplete(input.id, 'id_itens-' + index + '-item_prod', URL_AUTO_PRODUTOS, onSelectProduto, true);
+        prefillAutocomplete(input.id, 'id_itens-' + index + '-item_prod', URL_AUTO_PRODUTOS, applyProdutoLabel, true);
         maybeInitialCalc(index);
       });
 

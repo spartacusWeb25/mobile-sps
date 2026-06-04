@@ -26,6 +26,8 @@ def api_calcular_item(request, slug):
         item_caix_override = int(body.get("item_caix") or 0)
 
     prod_id = body.get("item_prod")
+    marca = body.get("marca")
+    kohler_mode = str(marca or "").strip() == "98"
     condicao = str(body.get("condicao") or "0").strip()
     produto = None
     if prod_id:
@@ -88,6 +90,23 @@ def api_calcular_item(request, slug):
             preco_unit = get_preco_produto(banco, prod_id, condicao)
         except Exception:
             preco_unit = parse_decimal(getattr(produto, "prod_prec", 0) if produto else 0)
+
+    if kohler_mode:
+        quantidade = parse_decimal(body.get("item_quan") or 0)
+        caixas = parse_decimal(body.get("item_caix") or 0)
+        quantidade_kg = parse_decimal(body.get("item_kg") or 0)
+        total = quantidade * preco_unit
+        return JsonResponse({
+            "caixas": str(int(caixas) if caixas is not None else 0),
+            "quantidade": str(arredondar(quantidade, 2)),
+            "total": str(arredondar(total, 2)),
+            "preco_unitario": str(arredondar(preco_unit, 2)),
+            "m2_por_caixa": "0",
+            "pc_por_caixa": "0",
+            "kg": str(arredondar(quantidade_kg, 2)),
+            "kg_total": str(arredondar(quantidade_kg, 2)),
+            "kg_por_caixa": "0",
+        })
 
     unidade = _normalizar_unidade(produto)
     if unidade == "M2":

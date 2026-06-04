@@ -20,6 +20,11 @@ class PedidoAtualizarService:
             raise ValueError("Itens do pedido são obrigatórios.")
 
         with transaction.atomic(using=banco):
+            chave = (
+                int(getattr(pedido, "pedi_empr")),
+                int(getattr(pedido, "pedi_fili")),
+                int(getattr(pedido, "pedi_nume")),
+            )
             parametros = (dados or {}).get("parametros") or {}
             dados_pedido = dict(dados)
             chave_original_pedido = (
@@ -37,12 +42,11 @@ class PedidoAtualizarService:
             dados_pedido.pop("pedi_fili", None)
             dados_pedido.pop("pedi_nume", None)
 
-            # Atualiza campos
-            # Garantir que temos o estado mais recente (evita sobrescrever status mudado por modal/ajax)
-            try:
-                pedido.refresh_from_db(using=banco)
-            except Exception:
-                pass
+            pedido = (
+                Pedidospisos.objects.using(banco)
+                .select_for_update()
+                .get(pedi_empr=chave[0], pedi_fili=chave[1], pedi_nume=chave[2])
+            )
 
             # Se o formulário não enviou explicitamente pedi_stat (campo vazio), não sobrescrever
             if 'pedi_stat' in dados_pedido and (dados_pedido.get('pedi_stat') is None or str(dados_pedido.get('pedi_stat')).strip() == ""):
@@ -95,7 +99,19 @@ class PedidoAtualizarService:
             pedido.pedi_cred = credito_aplicado
             pedido.pedi_tota = arredondar(total_liquido_sem_credito - credito_aplicado)
 
-            pedido.save(using=banco)
+            update_fields = [
+                f.name
+                for f in pedido._meta.fields
+                if f.name not in ("pedi_empr", "pedi_fili", "pedi_nume")
+            ]
+            update_data = {nome: getattr(pedido, nome) for nome in update_fields}
+            updated = Pedidospisos.objects.using(banco).filter(
+                pedi_empr=chave[0],
+                pedi_fili=chave[1],
+                pedi_nume=chave[2],
+            ).update(**update_data)
+            if updated == 0:
+                raise ValueError("Pedido não encontrado para atualização (empresa/filial/número).")
 
             PedidoCriarService.gerar_titulos_receber(banco=banco, pedido=pedido, parametros=parametros)
 
