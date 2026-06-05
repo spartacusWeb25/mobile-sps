@@ -88,9 +88,30 @@ class NfseTomadasListView(ListView):
 
     def get_queryset(self):
         from nfse.models import Nfse
+        from nfse.models import NfseEvento
+        from django.db.models import Exists, OuterRef
 
         if self.empresa_id is None or self.filial_id is None:
             return Nfse.objects.using(self.db_alias).none()
+
+        ev_ref = (
+            NfseEvento.objects.using(self.db_alias)
+            .filter(
+                nfsev_empr=OuterRef("nfse_empr"),
+                nfsev_fili=OuterRef("nfse_fili"),
+                nfsev_nfse_id=OuterRef("nfse_id"),
+                nfsev_tip="referenciada",
+            )
+        )
+        ev_ciencia = (
+            NfseEvento.objects.using(self.db_alias)
+            .filter(
+                nfsev_empr=OuterRef("nfse_empr"),
+                nfsev_fili=OuterRef("nfse_fili"),
+                nfsev_nfse_id=OuterRef("nfse_id"),
+                nfsev_tip="ciencia",
+            )
+        )
 
         qs = (
             Nfse.objects.using(self.db_alias)
@@ -99,8 +120,17 @@ class NfseTomadasListView(ListView):
                 nfse_fili=int(self.filial_id),
                 nfse_statu='tomada',
             )
+            .annotate(referenciada=Exists(ev_ref))
+            .annotate(ciencia=Exists(ev_ciencia))
             .order_by('-nfse_id')
         )
+
+        ref = (self.request.GET.get("referenciada") or "").strip().lower()
+        if ref in ("1", "sim", "s", "true"):
+            qs = qs.filter(referenciada=True)
+        elif ref in ("0", "nao", "não", "n", "false"):
+            qs = qs.filter(referenciada=False)
+
         return qs
 
     def get_context_data(self, **kwargs):
@@ -114,6 +144,38 @@ class NfseTomadasListView(ListView):
         except Exception:
             cnpj = None
         ctx['tomador_cnpj'] = cnpj or ''
+        ref = (self.request.GET.get("referenciada") or "").strip()
+        ctx["filtro_referenciada"] = ref
+        params = self.request.GET.copy()
+        try:
+            if "page" in params:
+                del params["page"]
+        except Exception:
+            pass
+        ctx["qs_params"] = params.urlencode()
+
+        try:
+            from .services.notas_destinadas_service import NfseTomadasService
+
+            for n in ctx.get("nfse_list") or []:
+                pres_doc = (getattr(n, "nfse_pres_doc", "") or "").strip()
+                pres_nome = (getattr(n, "nfse_pres_nome", "") or "").strip()
+                if pres_doc and pres_doc != "0" and pres_nome and pres_nome != "Prestador":
+                    continue
+                xml = getattr(n, "nfse_xml_ret", "") or ""
+                if not xml:
+                    continue
+                try:
+                    info = NfseTomadasService._parse_nfse_xml(xml)
+                    if not pres_doc or pres_doc == "0":
+                        setattr(n, "nfse_pres_doc", info.get("prest_doc") or pres_doc)
+                    if not pres_nome or pres_nome == "Prestador":
+                        setattr(n, "nfse_pres_nome", info.get("prest_nome") or pres_nome)
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
         return ctx
 
 class NotaManualDetailView(DetailView):

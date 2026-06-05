@@ -25,6 +25,17 @@
         <div class="card-body">
             <div id="nfse-alert" class="alert d-none" role="alert"></div>
 
+            <form method="get" class="d-flex flex-wrap gap-2 align-items-center mb-3">
+                <div class="d-flex align-items-center gap-2">
+                    <label class="small text-muted mb-0">Referenciada</label>
+                    <select name="referenciada" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="" {% if not filtro_referenciada %}selected{% endif %}>Todas</option>
+                        <option value="sim" {% if filtro_referenciada == 'sim' or filtro_referenciada == '1' %}selected{% endif %}>Sim</option>
+                        <option value="nao" {% if filtro_referenciada == 'nao' or filtro_referenciada == 'não' or filtro_referenciada == '0' %}selected{% endif %}>Não</option>
+                    </select>
+                </div>
+            </form>
+
             <div class="table-responsive d-none d-md-block">
                 <table class="table table-striped">
                     <thead>
@@ -40,12 +51,42 @@
                         {% for n in nfse_list %}
                         <tr>
                             <td>{{ n.nfse_nume }}</td>
-                            <td>{{ n.nfse_pres_nome }}</td>
+                            <td>
+                                <div class="fw-semibold">{{ n.nfse_pres_nome }}</div>
+                                <div class="text-muted small">{{ n.nfse_pres_doc }}</div>
+                                <div class="mt-1">
+                                    {% if n.referenciada %}
+                                    <span class="badge bg-success">Referenciada</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Não referenciada</span>
+                                    {% endif %}
+                                    {% if n.ciencia %}
+                                    <span class="badge bg-info text-dark">Ciência</span>
+                                    {% endif %}
+                                </div>
+                            </td>
                             <td>{{ n.nfse_val_serv }}</td>
                             <td>{{ n.nfse_data_emis }}</td>
                             <td>
-                                <button class="btn btn-sm btn-success"
-                                    onclick="abrirContasPagar('{{ n.nfse_id }}')">Gerar contas a pagar</button>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <button class="btn btn-sm btn-outline-secondary"
+                                        data-nume="{{ n.nfse_nume }}"
+                                        data-pres-nome="{{ n.nfse_pres_nome|escapejs }}"
+                                        data-pres-doc="{{ n.nfse_pres_doc }}"
+                                        data-valor="{{ n.nfse_val_serv }}"
+                                        data-data="{{ n.nfse_data_emis }}"
+                                        data-referenciada="{% if n.referenciada %}1{% else %}0{% endif %}"
+                                        data-ciencia="{% if n.ciencia %}1{% else %}0{% endif %}"
+                                        onclick="abrirDetalheNfse(this)">Verificar</button>
+                                    <button class="btn btn-sm btn-success"
+                                        onclick="abrirContasPagar('{{ n.nfse_id }}')">Gerar contas a pagar</button>
+                                    <button class="btn btn-sm btn-outline-primary"
+                                        {% if n.referenciada %}disabled{% endif %}
+                                        onclick="referenciarNfse('{{ n.nfse_id }}')">Referenciar</button>
+                                    <button class="btn btn-sm btn-outline-info"
+                                        {% if not n.referenciada or n.ciencia %}disabled{% endif %}
+                                        onclick="manifestarCienciaNfse('{{ n.nfse_id }}')">Ciência</button>
+                                </div>
                             </td>
                         </tr>
                         {% empty %}
@@ -60,12 +101,12 @@
                     <ul class="pagination">
                         {% if page_obj.has_previous %}
                         <li class="page-item"><a class="page-link"
-                                href="?page={{ page_obj.previous_page_number }}">Anterior</a></li>
+                                href="{% if qs_params %}?{{ qs_params }}&page={{ page_obj.previous_page_number }}{% else %}?page={{ page_obj.previous_page_number }}{% endif %}">Anterior</a></li>
                         {% endif %}
                         <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
                         {% if page_obj.has_next %}
                         <li class="page-item"><a class="page-link"
-                                href="?page={{ page_obj.next_page_number }}">Próxima</a></li>
+                                href="{% if qs_params %}?{{ qs_params }}&page={{ page_obj.next_page_number }}{% else %}?page={{ page_obj.next_page_number }}{% endif %}">Próxima</a></li>
                         {% endif %}
                     </ul>
                 </nav>
@@ -82,11 +123,28 @@
                         </div>
                         <div class="mt-2 small">
                             <div><strong>Prestador:</strong> {{ n.nfse_pres_nome }}</div>
+                            <div><strong>Documento:</strong> {{ n.nfse_pres_doc }}</div>
                             <div><strong>Valor:</strong> {{ n.nfse_val_serv }}</div>
+                            <div class="mt-1">
+                                {% if n.referenciada %}
+                                <span class="badge bg-success">Referenciada</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Não referenciada</span>
+                                {% endif %}
+                                {% if n.ciencia %}
+                                <span class="badge bg-info text-dark">Ciência</span>
+                                {% endif %}
+                            </div>
                         </div>
                         <div class="mt-3 d-flex gap-2">
                             <button class="btn btn-sm btn-outline-success"
                                 onclick="abrirContasPagar('{{ n.nfse_id }}')">Contas a pagar</button>
+                            <button class="btn btn-sm btn-outline-primary"
+                                {% if n.referenciada %}disabled{% endif %}
+                                onclick="referenciarNfse('{{ n.nfse_id }}')">Referenciar</button>
+                            <button class="btn btn-sm btn-outline-info"
+                                {% if not n.referenciada or n.ciencia %}disabled{% endif %}
+                                onclick="manifestarCienciaNfse('{{ n.nfse_id }}')">Ciência</button>
                         </div>
                     </div>
                 </div>
@@ -98,12 +156,12 @@
                     <ul class="pagination pagination-sm">
                         {% if page_obj.has_previous %}
                         <li class="page-item"><a class="page-link"
-                                href="?page={{ page_obj.previous_page_number }}">Anterior</a></li>
+                                href="{% if qs_params %}?{{ qs_params }}&page={{ page_obj.previous_page_number }}{% else %}?page={{ page_obj.previous_page_number }}{% endif %}">Anterior</a></li>
                         {% endif %}
                         <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
                         {% if page_obj.has_next %}
                         <li class="page-item"><a class="page-link"
-                                href="?page={{ page_obj.next_page_number }}">Próxima</a></li>
+                                href="{% if qs_params %}?{{ qs_params }}&page={{ page_obj.next_page_number }}{% else %}?page={{ page_obj.next_page_number }}{% endif %}">Próxima</a></li>
                         {% endif %}
                     </ul>
                 </nav>
@@ -176,6 +234,30 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
                 <button type="button" class="btn btn-success" onclick="executarContasPagar()">Gerar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="nfse-det-modal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Verificar NFS-e</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="small">
+                    <div><strong>Número:</strong> <span id="nfse-det-nume"></span></div>
+                    <div class="mt-2"><strong>Prestador:</strong> <span id="nfse-det-pres-nome"></span></div>
+                    <div><strong>Documento:</strong> <span id="nfse-det-pres-doc"></span></div>
+                    <div class="mt-2"><strong>Valor:</strong> <span id="nfse-det-valor"></span></div>
+                    <div><strong>Data:</strong> <span id="nfse-det-data"></span></div>
+                    <div class="mt-2"><strong>Status:</strong> <span id="nfse-det-status"></span></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
             </div>
         </div>
     </div>
@@ -275,5 +357,66 @@
     window.executarSincronizacaoNfse = executarSincronizacaoNfse;
     window.abrirContasPagar = abrirContasPagar;
     window.executarContasPagar = executarContasPagar;
+
+    function abrirDetalheNfse(btn) {
+        const nume = btn.getAttribute('data-nume') || '';
+        const presNome = btn.getAttribute('data-pres-nome') || '';
+        const presDoc = btn.getAttribute('data-pres-doc') || '';
+        const valor = btn.getAttribute('data-valor') || '';
+        const data = btn.getAttribute('data-data') || '';
+        const referenciada = btn.getAttribute('data-referenciada') === '1';
+        const ciencia = btn.getAttribute('data-ciencia') === '1';
+
+        document.getElementById('nfse-det-nume').textContent = nume;
+        document.getElementById('nfse-det-pres-nome').textContent = presNome;
+        document.getElementById('nfse-det-pres-doc').textContent = presDoc;
+        document.getElementById('nfse-det-valor').textContent = valor;
+        document.getElementById('nfse-det-data').textContent = data;
+        document.getElementById('nfse-det-status').textContent = `${referenciada ? 'Referenciada' : 'Não referenciada'}${ciencia ? ' / Ciência' : ''}`;
+
+        const modal = document.getElementById('nfse-det-modal');
+        const modalEl = new bootstrap.Modal(modal);
+        modalEl.show();
+    }
+
+    async function referenciarNfse(nfseId) {
+        const slug = localStorage.getItem('slug');
+        const token = localStorage.getItem('access');
+        const url = `/api/${slug}/notasdestinadas/nfse/tomadas/${nfseId}/referenciar/`;
+        try {
+            const resp = await fetch(url, { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: '{}' });
+            const data = await resp.json();
+            if (!resp.ok) {
+                _nfseAlert('danger', data.error || data.detail || 'Erro ao referenciar NFS-e.');
+                return;
+            }
+            _nfseAlert('success', 'NFS-e marcada como referenciada.');
+            window.location.reload();
+        } catch (e) {
+            _nfseAlert('danger', 'Erro de comunicação com o servidor.');
+        }
+    }
+
+    async function manifestarCienciaNfse(nfseId) {
+        const slug = localStorage.getItem('slug');
+        const token = localStorage.getItem('access');
+        const url = `/api/${slug}/notasdestinadas/nfse/tomadas/${nfseId}/manifestar-ciencia/`;
+        try {
+            const resp = await fetch(url, { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: '{}' });
+            const data = await resp.json();
+            if (!resp.ok) {
+                _nfseAlert('danger', data.error || data.detail || 'Erro ao registrar ciência.');
+                return;
+            }
+            _nfseAlert('success', 'Ciência registrada.');
+            window.location.reload();
+        } catch (e) {
+            _nfseAlert('danger', 'Erro de comunicação com o servidor.');
+        }
+    }
+
+    window.abrirDetalheNfse = abrirDetalheNfse;
+    window.referenciarNfse = referenciarNfse;
+    window.manifestarCienciaNfse = manifestarCienciaNfse;
 </script>
 {% endblock %}

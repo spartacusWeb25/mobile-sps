@@ -1,6 +1,7 @@
+ 
 import logging
 from typing import List, Tuple, Optional
-
+ 
 try:
     from pynfe.utils import FileUtils
 except Exception:
@@ -9,15 +10,15 @@ try:
     from pynfe.processamento.comunicacao import ComunicacaoSefaz
 except Exception:
     ComunicacaoSefaz = None
-
+ 
 logger = logging.getLogger(__name__)
-
-
+ 
+ 
 class NotasDestinadasService:
     """
     Serviço de consulta de Notas Destinadas (Distribuição DF-e).
     """
-
+ 
     @classmethod
     def _get_certificado(cls, caminho_pfx: str, senha: str):
         """
@@ -26,7 +27,7 @@ class NotasDestinadasService:
         if FileUtils and hasattr(FileUtils, 'read_pfx'):
             return FileUtils.read_pfx(caminho_pfx, senha)
         return None
-
+ 
     @classmethod
     def _get_comunicacao(cls, uf: str, caminho_pfx: str, senha_pfx: str, ambiente: int = 1):
         """
@@ -36,7 +37,7 @@ class NotasDestinadasService:
             raise RuntimeError('Biblioteca pynfe indisponível')
         homologacao = 2 if int(ambiente or 1) == 2 else 1
         return ComunicacaoSefaz(uf, caminho_pfx, senha_pfx, homologacao == 2)
-
+ 
     @classmethod
     def consultar_notas_destinadas(
         cls,
@@ -54,30 +55,30 @@ class NotasDestinadasService:
         - novo_ultimo_nsu (para ser salvo e usado na próxima consulta)
         """
         com = cls._get_comunicacao(uf, caminho_pfx, senha_pfx, ambiente)
-
+ 
         import re
         import base64
         import gzip
         import xml.etree.ElementTree as ET
-
+ 
         cnpj_digits = re.sub(r"\D", "", str(cnpj))
         nsu_num = str(ultimo_nsu or '0')
         logger.info(f'Consultando DF-e para CNPJ={cnpj_digits} último_nsu={nsu_num}')
-
+ 
         resp = com.consulta_distribuicao(cnpj=cnpj_digits, nsu=nsu_num, consulta_nsu_especifico=False)
-
+ 
         xmls: List[str] = []
         novo_ultimo_nsu: Optional[str] = None
-
+ 
         try:
             texto = getattr(resp, 'text', None) or getattr(resp, 'content', b'')
             if isinstance(texto, bytes):
                 texto = texto.decode('utf-8', errors='ignore')
             root = ET.fromstring(texto)
-
+ 
             def tag(t):
                 return t.split('}')[-1]
-
+ 
             ret = None
             for e in root.iter():
                 if tag(e.tag) == 'retDistDFeInt':
@@ -101,55 +102,35 @@ class NotasDestinadasService:
                                     xmls.append(xml_str)
         except Exception:
             pass
-
+ 
         logger.info(f'Retorno DF-e: {len(xmls)} XML(s) completos. novo_ultimo_nsu={novo_ultimo_nsu}')
         return xmls, novo_ultimo_nsu
-
-
+ 
+ 
 class NfseDfeAdnService:
     @classmethod
     def _formatar_nsu(cls, nsu) -> str:
         return str(nsu or "0").strip().zfill(15)
-
+ 
     @classmethod
-    def _criar_arquivos_pem_de_pfx(cls, caminho_pfx: str, senha_pfx: str):
+    def _criar_arquivos_pem_de_pfx(cls, caminho_pfx: str, senha_pfx: str) -> Tuple[str, str]:
+        """
+        Carrega certificado PFX e cria arquivos PEM temporários.
+        """
         import os
-        import tempfile
-        from cryptography.hazmat.primitives.serialization.pkcs12 import load_key_and_certificates
-        from cryptography.hazmat.primitives import serialization
-
+        from core.util import carregar_certificado_pfx
+ 
         if not caminho_pfx or not os.path.isfile(caminho_pfx):
-            raise ValueError("Certificado A1 (pfx) não encontrado")
-
+            raise ValueError("Certificado A1 (pfx) não encontrado no caminho")
+  
         with open(caminho_pfx, "rb") as f:
             pfx_bytes = f.read()
-
-        private_key, cert, _additional = load_key_and_certificates(
-            pfx_bytes,
-            (senha_pfx or "").encode("utf-8"),
-        )
-        if not private_key or not cert:
-            raise ValueError("PFX inválido ou senha incorreta")
-
-        cert_pem = cert.public_bytes(serialization.Encoding.PEM)
-        key_pem = private_key.private_bytes(
-            encoding=serialization.Encoding.PEM,
-            format=serialization.PrivateFormat.TraditionalOpenSSL,
-            encryption_algorithm=serialization.NoEncryption(),
-        )
-
-        cert_tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".pem")
-        cert_tmp.write(cert_pem)
-        cert_tmp.flush()
-        cert_tmp.close()
-
-        key_tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".pem")
-        key_tmp.write(key_pem)
-        key_tmp.flush()
-        key_tmp.close()
-
-        return cert_tmp.name, key_tmp.name
-
+  
+        if not pfx_bytes:
+            raise ValueError("Arquivo PFX está vazio")
+  
+        return carregar_certificado_pfx(pfx_bytes, senha_pfx)
+ 
     @classmethod
     def consultar_dfe(
         cls,
@@ -162,10 +143,10 @@ class NfseDfeAdnService:
     ) -> str:
         import os
         import requests
-
+ 
         nsu_fmt = cls._formatar_nsu(nsu)
         url = f"{(base_url or '').rstrip('/')}/DFe/{nsu_fmt}"
-
+ 
         cert_path = None
         key_path = None
         try:
@@ -173,10 +154,21 @@ class NfseDfeAdnService:
             resp = requests.get(
                 url,
                 cert=(cert_path, key_path),
+                headers={"Accept": "application/xml,text/xml,*/*;q=0.9"},
                 timeout=int(timeout or 60),
             )
+            if resp.status_code == 404:
+                return ""
             resp.raise_for_status()
-            return resp.text or ""
+            raw = resp.content or b""
+            if not raw:
+                return ""
+
+            encoding = resp.encoding or "utf-8"
+            text = raw.decode(encoding, errors="replace")
+            text = (text or "").lstrip("\ufeff").lstrip()
+
+            return text
         finally:
             for p in [cert_path, key_path]:
                 try:
@@ -184,21 +176,95 @@ class NfseDfeAdnService:
                         os.remove(p)
                 except Exception:
                     pass
-
+ 
     @classmethod
     def _parse_retorno(cls, xml_text: str):
         import base64
+        import json
         import gzip
         import xml.etree.ElementTree as ET
-
+ 
         def tag(t: str) -> str:
             return (t or "").split("}")[-1]
-
+ 
         ult_nsu = None
         max_nsu = None
         docs = []
+ 
+        xml_text = (xml_text or "").lstrip("\ufeff").lstrip()
+        if xml_text.startswith("{") or xml_text.startswith("["):
+            try:
+                data = json.loads(xml_text)
+            except Exception:
+                inicio = (xml_text or "")[:200]
+                raise ValueError(f"JSON inválido retornado pela ADN. body_inicio={inicio!r}")
 
-        root = ET.fromstring(xml_text or "<root/>")
+            lote = None
+            if isinstance(data, dict):
+                lote = data.get("LoteDFe") or data.get("loteDFe") or data.get("loteDfe")
+                ult_nsu = (
+                    data.get("UltimoNSU")
+                    or data.get("ultNSU")
+                    or data.get("ult_nsu")
+                    or data.get("UltNSU")
+                    or ult_nsu
+                )
+                max_nsu = (
+                    data.get("MaxNSU")
+                    or data.get("maxNSU")
+                    or data.get("max_nsu")
+                    or data.get("MaiorNSU")
+                    or data.get("maiorNSU")
+                    or max_nsu
+                )
+
+            if not isinstance(lote, list):
+                lote = []
+
+            max_nsu_lote = None
+            for item in lote:
+                if not isinstance(item, dict):
+                    continue
+                nsu_item = item.get("NSU") or item.get("nsu")
+                try:
+                    nsu_item_int = int(str(nsu_item).strip())
+                except Exception:
+                    nsu_item_int = None
+                if nsu_item_int is not None:
+                    if max_nsu_lote is None or nsu_item_int > max_nsu_lote:
+                        max_nsu_lote = nsu_item_int
+
+                conteudo = (item.get("ArquivoXml") or item.get("arquivoXml") or item.get("arquivo_xml") or "").strip()
+                xml_str = ""
+                if conteudo:
+                    try:
+                        dados = base64.b64decode(conteudo)
+                        try:
+                            xml_str = gzip.decompress(dados).decode("utf-8", errors="ignore")
+                        except Exception:
+                            xml_str = dados.decode("utf-8", errors="ignore")
+                    except Exception:
+                        xml_str = ""
+
+                docs.append(
+                    {
+                        "schema": (item.get("TipoDocumento") or item.get("tipoDocumento") or item.get("tipo_documento")),
+                        "nsu": str(nsu_item).strip() if nsu_item is not None else None,
+                        "xml": xml_str,
+                    }
+                )
+
+            if not ult_nsu and max_nsu_lote is not None:
+                ult_nsu = str(max_nsu_lote)
+
+            return ult_nsu, max_nsu, docs
+
+        try:
+            root = ET.fromstring(xml_text or "<root/>")
+        except ET.ParseError as e:
+            inicio = (xml_text or "")[:200]
+            raise ValueError(f"XML inválido retornado pela ADN. body_inicio={inicio!r}") from e
+
         for e in root.iter():
             t = tag(e.tag)
             if t == "ultNSU":
@@ -226,9 +292,9 @@ class NfseDfeAdnService:
                         "xml": xml_str,
                     }
                 )
-
+ 
         return ult_nsu, max_nsu, docs
-
+ 
     @classmethod
     def sincronizar(
         cls,
@@ -240,35 +306,67 @@ class NfseDfeAdnService:
         timeout: int = 60,
         max_paginas: int = None,
     ):
+        """
+        Sincroniza documentos DFe em paginação.
+        
+        Usa certificado carregado via função central robusta.
+        """
         nsu = cls._formatar_nsu(ultimo_nsu)
         paginas = 0
         ult_nsu = None
         max_nsu = None
         documentos = []
-
+ 
+        logger.info(
+            f"Iniciando sincronização DFe: "
+            f"NSU inicial={nsu}, base_url={base_url}"
+        )
+ 
         while True:
-            xml = cls.consultar_dfe(
-                nsu=nsu,
-                caminho_pfx=caminho_pfx,
-                senha_pfx=senha_pfx,
-                base_url=base_url,
-                timeout=timeout,
-            )
-            ult_nsu, max_nsu, docs = cls._parse_retorno(xml)
-            documentos.extend(docs)
-            paginas += 1
+            try:
+                xml = cls.consultar_dfe(
+                    nsu=nsu,
+                    caminho_pfx=caminho_pfx,
+                    senha_pfx=senha_pfx,
+                    base_url=base_url,
+                    timeout=timeout,
+                )
+                ult_nsu, max_nsu, docs = cls._parse_retorno(xml)
+                documentos.extend(docs)
+                paginas += 1
+ 
+                logger.info(
+                    f"Página {paginas}: {len(docs)} docs, "
+                    f"ultNSU={ult_nsu}, maxNSU={max_nsu}"
+                )
+ 
+                if ult_nsu and max_nsu and ult_nsu == max_nsu:
+                    logger.info("Sincronização completa (ultNSU == maxNSU)")
+                    break
+ 
+                if max_paginas is not None and paginas >= int(max_paginas):
+                    logger.info(f"Limite de páginas atingido: {paginas}")
+                    break
+ 
+                if not ult_nsu:
+                    logger.info("Sem mais documentos (ultNSU vazio)")
+                    break
 
-            if ult_nsu and max_nsu and ult_nsu == max_nsu:
-                break
-
-            if max_paginas is not None and paginas >= int(max_paginas):
-                break
-
-            if not ult_nsu:
-                break
-
-            nsu = cls._formatar_nsu(ult_nsu)
-
+                if docs:
+                    try:
+                        nsu = cls._formatar_nsu(int(str(ult_nsu).strip()) + 1)
+                    except Exception:
+                        nsu = cls._formatar_nsu(ult_nsu)
+                else:
+                    break
+            except Exception as e:
+                logger.error(f"Erro na sincronização página {paginas}: {e}")
+                raise
+ 
+        logger.info(
+            f"Sincronização finalizada: "
+            f"{len(documentos)} documentos, {paginas} páginas"
+        )
         return documentos, ult_nsu, max_nsu, paginas
 
 
@@ -276,6 +374,85 @@ class NfseTomadasService:
     @classmethod
     def _localname(cls, tag: str) -> str:
         return (tag or "").split("}")[-1]
+
+    @classmethod
+    def _registrar_evento(cls, *, banco: str, empresa: int, filial: int, nfse_id: int, tipo: str, descricao: str = "") -> bool:
+        from nfse.models import NfseEvento
+
+        exists = (
+            NfseEvento.objects.using(banco)
+            .filter(
+                nfsev_empr=int(empresa),
+                nfsev_fili=int(filial),
+                nfsev_nfse_id=int(nfse_id),
+                nfsev_tip=str(tipo),
+            )
+            .exists()
+        )
+        if exists:
+            return False
+
+        NfseEvento.objects.using(banco).create(
+            nfsev_empr=int(empresa),
+            nfsev_fili=int(filial),
+            nfsev_nfse_id=int(nfse_id),
+            nfsev_tip=str(tipo),
+            nfsev_desc=(descricao or None),
+        )
+        return True
+
+    @classmethod
+    def marcar_referenciada(cls, *, banco: str, empresa: int, filial: int, nfse_id: int) -> dict:
+        from nfse.models import Nfse
+
+        nfse = (
+            Nfse.objects.using(banco)
+            .filter(nfse_id=int(nfse_id), nfse_empr=int(empresa), nfse_fili=int(filial), nfse_statu="tomada")
+            .first()
+        )
+        if not nfse:
+            raise ValueError("NFS-e não encontrada")
+
+        created = cls._registrar_evento(
+            banco=banco,
+            empresa=int(empresa),
+            filial=int(filial),
+            nfse_id=int(nfse_id),
+            tipo="referenciada",
+            descricao="NFS-e marcada como referenciada",
+        )
+        return {"nfse_id": int(nfse_id), "referenciada": True, "evento_criado": bool(created)}
+
+    @classmethod
+    def manifestar_ciencia(cls, *, banco: str, empresa: int, filial: int, nfse_id: int) -> dict:
+        from nfse.models import Nfse
+
+        nfse = (
+            Nfse.objects.using(banco)
+            .filter(nfse_id=int(nfse_id), nfse_empr=int(empresa), nfse_fili=int(filial), nfse_statu="tomada")
+            .first()
+        )
+        if not nfse:
+            raise ValueError("NFS-e não encontrada")
+
+        cls._registrar_evento(
+            banco=banco,
+            empresa=int(empresa),
+            filial=int(filial),
+            nfse_id=int(nfse_id),
+            tipo="referenciada",
+            descricao="NFS-e marcada como referenciada",
+        )
+
+        created = cls._registrar_evento(
+            banco=banco,
+            empresa=int(empresa),
+            filial=int(filial),
+            nfse_id=int(nfse_id),
+            tipo="ciencia",
+            descricao="Ciência registrada",
+        )
+        return {"nfse_id": int(nfse_id), "ciencia": True, "evento_criado": bool(created)}
 
     @classmethod
     def _normalizar_doc(cls, v: str) -> str:
@@ -321,17 +498,17 @@ class NfseTomadasService:
 
     @classmethod
     def _find_subtree(cls, root, names):
-        names = set(names or [])
+        names = {str(n).lower() for n in (names or [])}
         for el in root.iter():
-            if cls._localname(el.tag) in names:
+            if cls._localname(el.tag).lower() in names:
                 return el
         return None
 
     @classmethod
     def _find_text(cls, root, names):
-        names = set(names or [])
+        names = {str(n).lower() for n in (names or [])}
         for el in root.iter():
-            if cls._localname(el.tag) in names:
+            if cls._localname(el.tag).lower() in names:
                 txt = (el.text or "").strip()
                 if txt:
                     return txt
@@ -356,8 +533,35 @@ class NfseTomadasService:
         nfse_num = cls._find_text(root, ["NumeroNfse", "NumeroNFSe", "Numero", "nNFSe", "nNfse", "nfseNumero"])
         codigo_verificacao = cls._find_text(root, ["CodigoVerificacao", "CodigoVerificacaoNfse", "CodigoValidacao", "CodVerificacao"])
 
-        prest_doc, prest_nome = cls._find_doc_e_nome(root, ["Prestador", "PrestadorServico", "PrestadorServicos", "DadosPrestador", "InfPrestador"])
-        tom_doc, tom_nome = cls._find_doc_e_nome(root, ["Tomador", "TomadorServico", "TomadorServicos", "DadosTomador", "InfTomador"])
+        prest_doc, prest_nome = cls._find_doc_e_nome(
+            root,
+            [
+                "Prestador",
+                "PrestadorServico",
+                "PrestadorServicos",
+                "DadosPrestador",
+                "InfPrestador",
+                "prest",
+                "emit",
+            ],
+        )
+        if not prest_nome:
+            _doc, _nome = cls._find_doc_e_nome(root, ["emit", "Emitente", "DadosEmitente"])
+            prest_doc = prest_doc or _doc
+            prest_nome = prest_nome or _nome
+
+        tom_doc, tom_nome = cls._find_doc_e_nome(
+            root,
+            [
+                "Tomador",
+                "TomadorServico",
+                "TomadorServicos",
+                "DadosTomador",
+                "InfTomador",
+                "toma",
+                "tom",
+            ],
+        )
 
         data_emis = cls._find_text(root, ["DataEmissao", "dhEmi", "DtEmissao", "DataHoraEmissao", "DataEmissaoNfse"])
         dt = cls._to_datetime(data_emis)
@@ -457,16 +661,32 @@ class NfseTomadasService:
                 "nfse_xml_ret": xml_text,
             }
 
-            filtro = {
-                "nfse_empr": int(empresa),
-                "nfse_fili": int(filial),
-                "nfse_nume": numero or None,
-                "nfse_pres_doc": str(prest_doc),
-                "nfse_tom_doc": str(tom_doc_xml),
-                "nfse_statu": "tomada",
-            }
+            obj = (
+                Nfse.objects.using(banco)
+                .filter(
+                    nfse_empr=int(empresa),
+                    nfse_fili=int(filial),
+                    nfse_nume=(numero or None),
+                    nfse_tom_doc=str(tom_doc_xml),
+                    nfse_statu="tomada",
+                )
+                .first()
+            )
 
-            obj, created = Nfse.objects.using(banco).update_or_create(defaults=defaults, **filtro)
+            if obj:
+                Nfse.objects.using(banco).filter(nfse_id=int(obj.nfse_id)).update(**defaults)
+                created = False
+                obj = Nfse.objects.using(banco).filter(nfse_id=int(obj.nfse_id)).first()
+            else:
+                obj, created = Nfse.objects.using(banco).update_or_create(
+                    defaults=defaults,
+                    nfse_empr=int(empresa),
+                    nfse_fili=int(filial),
+                    nfse_nume=(numero or None),
+                    nfse_tom_doc=str(tom_doc_xml),
+                    nfse_statu="tomada",
+                )
+
             ids.append(int(obj.nfse_id))
             if created:
                 criadas += 1
@@ -494,7 +714,7 @@ class NfseTomadasService:
     ):
         from datetime import date, timedelta
         from django.db import transaction
-        from django.db.models import Q
+        from django.db.models import Q, Max
         from contas_a_pagar.models import Titulospagar
         from Entidades.models import Entidades
         from nfse.models import Nfse
@@ -517,7 +737,37 @@ class NfseTomadasService:
             Q(enti_cnpj=prest_doc) | Q(enti_cpf=prest_doc)
         ).first()
         if not fornecedor:
-            raise ValueError("Fornecedor não cadastrado para o prestador desta NFS-e")
+            prest_nome = (getattr(nfse, "nfse_pres_nome", "") or "").strip() or str(prest_doc)
+
+            ultimo_codigo = Entidades.objects.using(banco).aggregate(Max("enti_clie"))["enti_clie__max"] or 0
+            try:
+                novo_codigo = int(ultimo_codigo) + 1
+            except Exception:
+                novo_codigo = 1
+
+            while Entidades.objects.using(banco).filter(enti_clie=int(novo_codigo)).exists():
+                novo_codigo = int(novo_codigo) + 1
+
+            dados = {
+                "enti_empr": int(empresa),
+                "enti_clie": int(novo_codigo),
+                "enti_nome": prest_nome[:100],
+                "enti_fant": prest_nome[:100],
+                "enti_tipo_enti": "FO",
+                "enti_cep": "",
+                "enti_ende": "",
+                "enti_nume": "",
+                "enti_cida": "",
+                "enti_esta": "",
+                "enti_bair": "",
+            }
+
+            if len(prest_doc) == 14:
+                dados["enti_cnpj"] = prest_doc
+            elif len(prest_doc) == 11:
+                dados["enti_cpf"] = prest_doc
+
+            fornecedor = Entidades.objects.using(banco).create(**dados)
 
         fornecedor_id = int(getattr(fornecedor, "enti_clie"))
         numero = str(getattr(nfse, "nfse_nume", "") or getattr(nfse, "nfse_rps_nume", "") or "").strip() or str(nfse_id)
@@ -581,6 +831,15 @@ class NfseTomadasService:
                     titu_hist=f"NFS-e {numero} (tomada) - Parc {parc}",
                 )
                 titulos.append(titulo)
+
+        cls._registrar_evento(
+            banco=banco,
+            empresa=int(empresa),
+            filial=int(filial),
+            nfse_id=int(nfse_id),
+            tipo="referenciada",
+            descricao="Referenciada ao gerar contas a pagar",
+        )
 
         return {
             "nfse_id": int(nfse_id),

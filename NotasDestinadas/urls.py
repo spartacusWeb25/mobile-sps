@@ -6,6 +6,8 @@ from .views import (
     ConsultarNfseDistribuicaoView,
     ImportarNfseTomadasView,
     GerarContasPagarNfseView,
+    ReferenciarNfseTomadaView,
+    ManifestarCienciaNfseTomadaView,
 )
 
 router = DefaultRouter()
@@ -61,6 +63,16 @@ urlpatterns = [
         'nfse/tomadas/<int:nfse_id>/contas-a-pagar/',
         GerarContasPagarNfseView.as_view(),
         name='nfse-tomadas-contas-a-pagar'
+    ),
+    path(
+        'nfse/tomadas/<int:nfse_id>/referenciar/',
+        ReferenciarNfseTomadaView.as_view(),
+        name='nfse-tomadas-referenciar'
+    ),
+    path(
+        'nfse/tomadas/<int:nfse_id>/manifestar-ciencia/',
+        ManifestarCienciaNfseTomadaView.as_view(),
+        name='nfse-tomadas-manifestar-ciencia'
     ),
     path(
         'produtos/buscar/',

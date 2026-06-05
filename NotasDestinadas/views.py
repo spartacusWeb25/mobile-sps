@@ -651,14 +651,22 @@ class ConsultarNfseDistribuicaoView(APIView):
         if not f:
             return Response({"error": "Filial não encontrada"}, status=404)
 
+        senha_cert = ""
+        senha_cert_nfs = ""
+        try:
+            if getattr(f, "empr_senh_cert", None):
+                senha_cert = decrypt_str(f.empr_senh_cert) or ""
+        except Exception:
+            senha_cert = (getattr(f, "empr_senh_cert", "") or "").strip()
+
+        try:
+            if getattr(f, "empr_senh_cert_nfs", None):
+                senha_cert_nfs = decrypt_str(f.empr_senh_cert_nfs) or ""
+        except Exception:
+            senha_cert_nfs = (getattr(f, "empr_senh_cert_nfs", "") or "").strip()
+
         if not senha_pfx:
-            try:
-                if f.empr_senh_cert_nfs:
-                    senha_pfx = decrypt_str(f.empr_senh_cert_nfs)
-                elif f.empr_senh_cert:
-                    senha_pfx = decrypt_str(f.empr_senh_cert)
-            except Exception:
-                senha_pfx = (f.empr_senh_cert_nfs or f.empr_senh_cert or senha_pfx or "").strip()
+            senha_pfx = (senha_cert_nfs or senha_cert or "").strip()
 
         if not caminho_pfx:
             caminho_pfx = (f.empr_cert_nfs or f.empr_cert or "").strip()
@@ -679,6 +687,8 @@ class ConsultarNfseDistribuicaoView(APIView):
                     tmp.close()
                     tmp_pfx_path = tmp.name
                     caminho_pfx = tmp_pfx_path
+                    if senha_cert:
+                        senha_pfx = (senha_cert or "").strip()
                 except Exception:
                     pass
 
@@ -761,14 +771,22 @@ class ImportarNfseTomadasView(APIView):
         except Exception:
             tomador_doc = ""
 
+        senha_cert = ""
+        senha_cert_nfs = ""
+        try:
+            if getattr(f, "empr_senh_cert", None):
+                senha_cert = decrypt_str(f.empr_senh_cert) or ""
+        except Exception:
+            senha_cert = (getattr(f, "empr_senh_cert", "") or "").strip()
+
+        try:
+            if getattr(f, "empr_senh_cert_nfs", None):
+                senha_cert_nfs = decrypt_str(f.empr_senh_cert_nfs) or ""
+        except Exception:
+            senha_cert_nfs = (getattr(f, "empr_senh_cert_nfs", "") or "").strip()
+
         if not senha_pfx:
-            try:
-                if f.empr_senh_cert_nfs:
-                    senha_pfx = decrypt_str(f.empr_senh_cert_nfs)
-                elif f.empr_senh_cert:
-                    senha_pfx = decrypt_str(f.empr_senh_cert)
-            except Exception:
-                senha_pfx = (f.empr_senh_cert_nfs or f.empr_senh_cert or senha_pfx or "").strip()
+            senha_pfx = (senha_cert_nfs or senha_cert or "").strip()
 
         if not caminho_pfx:
             caminho_pfx = (f.empr_cert_nfs or f.empr_cert or "").strip()
@@ -789,6 +807,8 @@ class ImportarNfseTomadasView(APIView):
                     tmp.close()
                     tmp_pfx_path = tmp.name
                     caminho_pfx = tmp_pfx_path
+                    if senha_cert:
+                        senha_pfx = (senha_cert or "").strip()
                 except Exception:
                     pass
 
@@ -870,3 +890,51 @@ class GerarContasPagarNfseView(APIView):
             return Response({"error": str(e)}, status=400)
 
         return Response({"mensagem": "Contas a pagar geradas", **result}, status=200)
+
+
+class ReferenciarNfseTomadaView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, nfse_id=None, *args, **kwargs):
+        from .services.notas_destinadas_service import NfseTomadasService
+
+        banco = get_licenca_db_config(request)
+        empresa = request.headers.get("X-Empresa") or request.session.get("empresa_id")
+        filial = request.headers.get("X-Filial") or request.session.get("filial_id")
+        if not empresa or not filial:
+            return Response({"error": "empresa e filial são obrigatórios"}, status=400)
+
+        try:
+            result = NfseTomadasService.marcar_referenciada(
+                banco=banco,
+                empresa=int(empresa),
+                filial=int(filial),
+                nfse_id=int(nfse_id),
+            )
+            return Response({"mensagem": "NFS-e referenciada", **result}, status=200)
+        except Exception as e:
+            return Response({"error": str(e)}, status=400)
+
+
+class ManifestarCienciaNfseTomadaView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, nfse_id=None, *args, **kwargs):
+        from .services.notas_destinadas_service import NfseTomadasService
+
+        banco = get_licenca_db_config(request)
+        empresa = request.headers.get("X-Empresa") or request.session.get("empresa_id")
+        filial = request.headers.get("X-Filial") or request.session.get("filial_id")
+        if not empresa or not filial:
+            return Response({"error": "empresa e filial são obrigatórios"}, status=400)
+
+        try:
+            result = NfseTomadasService.manifestar_ciencia(
+                banco=banco,
+                empresa=int(empresa),
+                filial=int(filial),
+                nfse_id=int(nfse_id),
+            )
+            return Response({"mensagem": "Ciência registrada", **result}, status=200)
+        except Exception as e:
+            return Response({"error": str(e)}, status=400)
