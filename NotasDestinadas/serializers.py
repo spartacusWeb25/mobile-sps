@@ -91,3 +91,27 @@ class ImportarNotasDestinadasSerializer(serializers.Serializer):
     gerar_estoque = serializers.BooleanField(default=True)
     gerar_contas_pagar = serializers.BooleanField(default=True)
     manifestar_ciencia = serializers.BooleanField(default=True)
+
+
+class ConsultarNfseDistribuicaoSerializer(serializers.Serializer):
+    ultimo_nsu = serializers.CharField(max_length=20, default='0', required=False, allow_blank=True)
+    caminho_pfx = serializers.CharField(required=False, allow_blank=True)
+    senha_pfx = serializers.CharField(required=False, allow_blank=True)
+    max_paginas = serializers.IntegerField(required=False, default=10)
+    empresa = serializers.IntegerField(required=False)
+    filial = serializers.IntegerField(required=False)
+
+
+class ImportarNfseTomadasSerializer(serializers.Serializer):
+    ultimo_nsu = serializers.CharField(max_length=20, default='0', required=False, allow_blank=True)
+    caminho_pfx = serializers.CharField(required=False, allow_blank=True)
+    senha_pfx = serializers.CharField(required=False, allow_blank=True)
+    max_paginas = serializers.IntegerField(required=False, default=10)
+    empresa = serializers.IntegerField(required=False)
+    filial = serializers.IntegerField(required=False)
+
+
+class GerarContasPagarNfseSerializer(serializers.Serializer):
+    data_base = serializers.DateField(required=False)
+    parcelas = serializers.IntegerField(required=False, default=1)
+    intervalo_dias = serializers.IntegerField(required=False, default=30)

@@ -13,6 +13,7 @@ from nfse.services.cancelamento_service import CancelamentoNfseService
 from nfse.services.consulta_service import ConsultaNfseService
 from nfse.services.context import NfseContext
 from nfse.services.emissao_service import EmissaoNfseService
+from Produtos.models import Produtos
 
 
 class NfseViewSet(DBAndSlugMixin, viewsets.ViewSet):
@@ -88,3 +89,40 @@ class NfseViewSet(DBAndSlugMixin, viewsets.ViewSet):
         )
 
         return Response(NfseDetailSerializer(nfse_atualizada).data)
+
+    @action(detail=False, methods=['get'], url_path='autocomplete-servicos')
+    def autocomplete_servicos(self, request, slug=None):
+        """Autocomplete para serviços cadastrados no sistema"""
+        context = NfseContext.from_request(request, slug)
+        query = request.GET.get('q', '').strip()
+        
+        if not query:
+            return Response([])
+        
+        queryset = (
+            Produtos.objects.using(context.db_alias)
+            .filter(
+                prod_e_serv=True,
+                prod_empr=str(context.empresa_id)
+            )
+            .filter(
+                prod_desc_serv__icontains=query
+            )
+        )
+        
+        if len(query) >= 3:
+            queryset = queryset.filter(prod_codi__icontains=query)
+        
+        results = []
+        for servico in queryset[:20]:
+            results.append({
+                'value': servico.prod_codi,
+                'label': f"{servico.prod_codi} - {servico.prod_desc_serv}",
+                'codigo_servico': servico.prod_codi_serv or '',
+                'descricao_servico': servico.prod_desc_serv or '',
+                'cnae': servico.prod_cnae or '',
+                'iss_aliquota': float(servico.prod_iss) if servico.prod_iss else 0,
+                'iss_exigivel': servico.prod_exig_iss or 1,
+            })
+        
+        return Response(results)

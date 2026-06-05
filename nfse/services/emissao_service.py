@@ -12,7 +12,7 @@ class EmissaoNfseService:
     @staticmethod
     @transaction.atomic
     def emitir(context, data: dict):
-        payload = CalculoNfseService.aplicar(data)
+        payload = CalculoNfseService.aplicar(data, context)
         ValidacaoNfseService.validar_payload(payload)
 
         nfse = PersistenciaNfseService.criar_rascunho(context, dict(payload))

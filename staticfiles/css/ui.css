@@ -1,0 +1,305 @@
+/* UI compartilhado para páginas de detalhes e listas
+   Foco em legibilidade, acessibilidade e consistência visual */
+
+:root {
+  --brand-primary: #0d6efd; /* Bootstrap primary */
+  --brand-success: #198754;
+  --brand-warning: #ffc107;
+  --brand-muted: #6c757d;
+  --card-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  --card-border: 1px solid rgba(0, 0, 0, 0.08);
+  --card-radius: 12px;
+}
+
+.page-container {
+  padding-top: 16px;
+  padding-bottom: 24px;
+}
+
+.page-header-custom {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.page-header-custom .page-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.2;
+  color: #212529;
+  text-align: center;
+  width: 100%;
+}
+[data-bs-theme='dark'] .page-header-custom .page-title {
+  color: antiquewhite;
+}
+
+.page-header-custom .page-actions {
+  align-self: flex-end;
+}
+
+/* Tabela acessível e legível */
+.table caption {
+  caption-side: top;
+  color: #495057;
+  font-weight: 600;
+}
+.table thead th {
+  vertical-align: middle;
+}
+.table-hover tbody tr:hover {
+  background-color: rgba(13, 110, 253, 0.05);
+}
+
+/* Badges com contraste adequado */
+.badge.bg-warning.text-dark {
+  color: #212529 !important;
+}
+.badge.bg-success {
+  color: #fff;
+}
+.badge.bg-secondary {
+  color: #fff;
+}
+
+/* Microinterações sutis em botões */
+.btn {
+  transition:
+    transform 0.08s ease,
+    box-shadow 0.12s ease;
+}
+.btn:hover {
+  transform: translateY(-1px);
+}
+.btn:focus-visible {
+  outline: 2px solid rgba(13, 110, 253, 0.35);
+  outline-offset: 2px;
+}
+
+/* Conteúdo de cartões */
+.card-title {
+  font-weight: 600;
+}
+
+/* Dashboard KPIs */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.kpi-scroll {
+  width: 100%;
+  overflow-x: auto;
+}
+
+@media (max-width: 992px) {
+  .kpi-grid {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(200px, 1fr);
+    width: max-content;
+  }
+}
+@media (max-width: 576px) {
+  .kpi-grid {
+    grid-template-columns: none;
+    grid-auto-columns: minmax(78vw, 1fr);
+  }
+}
+
+.kpi-card {
+  border: var(--card-border);
+  box-shadow: var(--card-shadow);
+  border-radius: var(--card-radius);
+  background-color: rgba(33, 37, 41, 0.55);
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.12) 0%,
+    rgba(255, 255, 255, 0) 100%
+  );
+}
+.kpi-card .value {
+  font-size: 1.15rem;
+  font-weight: 700;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.kpi-card .value.neg {
+  color: rgba(220, 53, 69, 0.95);
+}
+.kpi-card .label {
+  color: var(--brand-muted);
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+/* Chart containers */
+.chart-card {
+  border: var(--card-border);
+  box-shadow: var(--card-shadow);
+  border-radius: var(--card-radius);
+  background-color: rgba(33, 37, 41, 0.28);
+  background-image:
+    radial-gradient(900px circle at 0% 0%, rgba(13, 110, 253, 0.08), rgba(13, 110, 253, 0) 55%),
+    radial-gradient(900px circle at 100% 0%, rgba(220, 53, 69, 0.07), rgba(220, 53, 69, 0) 55%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045) 0%, rgba(255, 255, 255, 0) 100%);
+}
+
+/* Escopo específico do dashboard de pedidos */
+.dashboard-pedidos .card {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+}
+.dashboard-pedidos .card-header {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+#dreFiltrosCard {
+  font-weight: 200;
+  padding: 12px;
+  background-color: rgba(33, 37, 41, 0.55) !important;
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.18) 0%,
+    rgba(255, 255, 255, 0) 100%
+  ) !important;
+}
+#dreFiltrarBtn {
+  margin-left: 12px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  transition: background-color 0.7s ease;
+  transform: translateY(-1px);
+}
+
+#dreFiltrarBtn:hover {
+  background-color: rgba(22, 51, 94, 0.911);
+  color: #fff;
+  border-color: rgba(22, 51, 94, 0.911);
+  transform: translateY(0);
+}
+
+.chart-card .card-header {
+  font-weight: 600;
+  text-align: center;
+}
+.chart-wrapper {
+  position: relative;
+  height: 320px;
+}
+.chart-wrapper canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Filtros e pills */
+.filters .form-label {
+  font-weight: 600;
+}
+.filter-pills {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.filter-pills .btn {
+  border-radius: 999px;
+  padding: 6px 12px;
+  border-color: rgba(13, 110, 253, 0.25);
+}
+.filter-pills .btn.active {
+  background-color: var(--brand-primary);
+  color: #fff;
+}
+
+/* Tabelas compactas */
+.table-compact th,
+.table-compact td {
+  padding: 0.35rem 0.5rem;
+}
+
+.nf-itens-table {
+  border-radius: 10px;
+}
+.nf-table-wrap {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.02);
+}
+.nf-itens-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+.nf-itens-table td,
+.nf-itens-table th {
+  vertical-align: top;
+}
+.nf-itens-table th,
+.nf-itens-table td {
+  padding: 0.75rem 0.55rem;
+}
+.nf-itens-table .form-control,
+.nf-itens-table .form-select {
+  font-size: 0.875rem;
+  padding: 0.35rem 0.6rem;
+}
+.nf-itens-table .nf-field-label {
+  font-size: 0.7rem;
+  line-height: 1;
+  color: #6c757d;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  margin-bottom: 0.2rem;
+}
+.nf-itens-table .nf-stack {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: 0.35rem 0.5rem;
+}
+.nf-itens-table .nf-cst-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(78px, 1fr));
+  gap: 0.35rem 0.5rem;
+}
+.nf-itens-table td.nf-num .form-control {
+  min-width: 88px;
+}
+.nf-itens-table td.nf-num {
+  white-space: nowrap;
+}
+.nf-itens-table td.nf-num input,
+.nf-itens-table .item-total-display {
+  text-align: right;
+}
+.nf-itens-table td.nf-num input {
+  white-space: nowrap;
+}
+.nf-itens-table .badge.text-bg-light {
+  font-weight: 600;
+}
+
+/* Utilitário de acessibilidade */
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* Preferência de usuário para reduzir movimentos */
+@media (prefers-reduced-motion: reduce) {
+  .btn {
+    transition: none;
+  }
+}

@@ -610,3 +610,263 @@ class ImportarNotasDestinadasView(APIView):
             'notas_criadas': NotaFiscalEntradaSerializer(notas_criadas, many=True, context={'banco': banco}).data,
         }
         return Response(resp, status=status.HTTP_201_CREATED)
+
+
+class ConsultarNfseDistribuicaoView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        from .serializers import ConsultarNfseDistribuicaoSerializer
+        from .services.notas_destinadas_service import NfseDfeAdnService
+        from Licencas.crypto import decrypt_bytes, decrypt_str
+        import os
+        import tempfile
+
+        banco = get_licenca_db_config(request)
+
+        serializer = ConsultarNfseDistribuicaoSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        ultimo_nsu = (data.get("ultimo_nsu") or "0").strip() or "0"
+        caminho_pfx = (data.get("caminho_pfx") or "").strip()
+        senha_pfx = (data.get("senha_pfx") or "").strip()
+        max_paginas = data.get("max_paginas")
+
+        empresa = (
+            request.headers.get("X-Empresa")
+            or request.session.get("empresa_id")
+            or data.get("empresa")
+        )
+        filial = (
+            request.headers.get("X-Filial")
+            or request.session.get("filial_id")
+            or data.get("filial")
+        )
+
+        if not empresa or not filial:
+            return Response({"error": "empresa e filial são obrigatórios"}, status=400)
+
+        f = Filiais.objects.using(banco).filter(empr_empr=int(filial), empr_codi=int(empresa)).first()
+        if not f:
+            return Response({"error": "Filial não encontrada"}, status=404)
+
+        if not senha_pfx:
+            try:
+                if f.empr_senh_cert_nfs:
+                    senha_pfx = decrypt_str(f.empr_senh_cert_nfs)
+                elif f.empr_senh_cert:
+                    senha_pfx = decrypt_str(f.empr_senh_cert)
+            except Exception:
+                senha_pfx = (f.empr_senh_cert_nfs or f.empr_senh_cert or senha_pfx or "").strip()
+
+        if not caminho_pfx:
+            caminho_pfx = (f.empr_cert_nfs or f.empr_cert or "").strip()
+
+        tmp_pfx_path = None
+        try:
+            if getattr(f, "empr_cert_digi", None):
+                try:
+                    raw = f.empr_cert_digi
+                    if isinstance(raw, memoryview):
+                        raw = raw.tobytes()
+                    elif isinstance(raw, bytearray):
+                        raw = bytes(raw)
+                    data_bytes = decrypt_bytes(raw)
+                    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".pfx")
+                    tmp.write(data_bytes)
+                    tmp.flush()
+                    tmp.close()
+                    tmp_pfx_path = tmp.name
+                    caminho_pfx = tmp_pfx_path
+                except Exception:
+                    pass
+
+            if not caminho_pfx or not os.path.isfile(caminho_pfx):
+                return Response({"error": "Certificado A1 (pfx) não encontrado"}, status=400)
+            if not senha_pfx:
+                return Response({"error": "Senha do certificado A1 é obrigatória"}, status=400)
+
+            documentos, ult_nsu, max_nsu, paginas = NfseDfeAdnService.sincronizar(
+                ultimo_nsu=ultimo_nsu,
+                caminho_pfx=caminho_pfx,
+                senha_pfx=senha_pfx,
+                max_paginas=max_paginas,
+            )
+        except Exception as e:
+            logger.exception(f"Erro ao consultar NFS-e DF-e (ADN): {e}")
+            return Response({"error": "Falha ao consultar NFS-e DF-e (ADN)."}, status=400)
+        finally:
+            try:
+                if tmp_pfx_path and os.path.exists(tmp_pfx_path):
+                    os.remove(tmp_pfx_path)
+            except Exception:
+                pass
+
+        parcial = bool(ult_nsu and max_nsu and ult_nsu != max_nsu)
+        resp = {
+            "ultimo_nsu_informado": ultimo_nsu,
+            "novo_ultimo_nsu": ult_nsu,
+            "max_nsu": max_nsu,
+            "paginas": paginas,
+            "parcial": parcial,
+            "quantidade_documentos": len(documentos),
+            "documentos": documentos,
+        }
+        return Response(resp, status=200)
+
+
+class ImportarNfseTomadasView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        from .serializers import ImportarNfseTomadasSerializer
+        from .services.notas_destinadas_service import NfseDfeAdnService, NfseTomadasService
+        from Licencas.crypto import decrypt_bytes, decrypt_str
+        import os
+        import tempfile
+
+        banco = get_licenca_db_config(request)
+
+        serializer = ImportarNfseTomadasSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        ultimo_nsu = (data.get("ultimo_nsu") or "0").strip() or "0"
+        caminho_pfx = (data.get("caminho_pfx") or "").strip()
+        senha_pfx = (data.get("senha_pfx") or "").strip()
+        max_paginas = data.get("max_paginas")
+
+        empresa = (
+            request.headers.get("X-Empresa")
+            or request.session.get("empresa_id")
+            or data.get("empresa")
+        )
+        filial = (
+            request.headers.get("X-Filial")
+            or request.session.get("filial_id")
+            or data.get("filial")
+        )
+
+        if not empresa or not filial:
+            return Response({"error": "empresa e filial são obrigatórios"}, status=400)
+
+        f = Filiais.objects.using(banco).filter(empr_empr=int(filial), empr_codi=int(empresa)).first()
+        if not f:
+            return Response({"error": "Filial não encontrada"}, status=404)
+
+        tomador_doc = ""
+        try:
+            tomador_doc = getattr(f, "empr_docu", "") or ""
+        except Exception:
+            tomador_doc = ""
+
+        if not senha_pfx:
+            try:
+                if f.empr_senh_cert_nfs:
+                    senha_pfx = decrypt_str(f.empr_senh_cert_nfs)
+                elif f.empr_senh_cert:
+                    senha_pfx = decrypt_str(f.empr_senh_cert)
+            except Exception:
+                senha_pfx = (f.empr_senh_cert_nfs or f.empr_senh_cert or senha_pfx or "").strip()
+
+        if not caminho_pfx:
+            caminho_pfx = (f.empr_cert_nfs or f.empr_cert or "").strip()
+
+        tmp_pfx_path = None
+        try:
+            if getattr(f, "empr_cert_digi", None):
+                try:
+                    raw = f.empr_cert_digi
+                    if isinstance(raw, memoryview):
+                        raw = raw.tobytes()
+                    elif isinstance(raw, bytearray):
+                        raw = bytes(raw)
+                    data_bytes = decrypt_bytes(raw)
+                    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".pfx")
+                    tmp.write(data_bytes)
+                    tmp.flush()
+                    tmp.close()
+                    tmp_pfx_path = tmp.name
+                    caminho_pfx = tmp_pfx_path
+                except Exception:
+                    pass
+
+            if not caminho_pfx or not os.path.isfile(caminho_pfx):
+                return Response({"error": "Certificado A1 (pfx) não encontrado"}, status=400)
+            if not senha_pfx:
+                return Response({"error": "Senha do certificado A1 é obrigatória"}, status=400)
+
+            documentos, ult_nsu, max_nsu, paginas = NfseDfeAdnService.sincronizar(
+                ultimo_nsu=ultimo_nsu,
+                caminho_pfx=caminho_pfx,
+                senha_pfx=senha_pfx,
+                max_paginas=max_paginas,
+            )
+
+            import_result = NfseTomadasService.importar_tomadas(
+                banco=banco,
+                empresa=int(empresa),
+                filial=int(filial),
+                documentos=documentos,
+                tomador_doc=tomador_doc,
+            )
+        except Exception as e:
+            logger.exception(f"Erro ao importar NFS-e tomadas (ADN): {e}")
+            return Response({"error": "Falha ao importar NFS-e tomadas."}, status=400)
+        finally:
+            try:
+                if tmp_pfx_path and os.path.exists(tmp_pfx_path):
+                    os.remove(tmp_pfx_path)
+            except Exception:
+                pass
+
+        parcial = bool(ult_nsu and max_nsu and ult_nsu != max_nsu)
+        resp = {
+            "mensagem": "Importação concluída",
+            "ultimo_nsu_informado": ultimo_nsu,
+            "novo_ultimo_nsu": ult_nsu,
+            "max_nsu": max_nsu,
+            "paginas": paginas,
+            "parcial": parcial,
+            "quantidade_documentos": len(documentos),
+            "criadas": import_result.get("criadas", 0),
+            "atualizadas": import_result.get("atualizadas", 0),
+            "nfse_ids": import_result.get("ids", []),
+        }
+        return Response(resp, status=200)
+
+
+class GerarContasPagarNfseView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, nfse_id=None, *args, **kwargs):
+        from .serializers import GerarContasPagarNfseSerializer
+        from .services.notas_destinadas_service import NfseTomadasService
+
+        banco = get_licenca_db_config(request)
+
+        serializer = GerarContasPagarNfseSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        empresa = request.headers.get("X-Empresa") or request.session.get("empresa_id")
+        filial = request.headers.get("X-Filial") or request.session.get("filial_id")
+        if not empresa or not filial:
+            return Response({"error": "empresa e filial são obrigatórios"}, status=400)
+
+        try:
+            result = NfseTomadasService.gerar_contas_pagar(
+                banco=banco,
+                nfse_id=int(nfse_id),
+                empresa=int(empresa),
+                filial=int(filial),
+                usuario_id=getattr(request.user, "usua_codi", 0),
+                data_base=data.get("data_base"),
+                parcelas=data.get("parcelas"),
+                intervalo_dias=data.get("intervalo_dias"),
+            )
+        except Exception as e:
+            return Response({"error": str(e)}, status=400)
+
+        return Response({"mensagem": "Contas a pagar geradas", **result}, status=200)

@@ -1,6 +1,12 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
-from .views import NotasDestinadasViewSet, ImportarNotasDestinadasView
+from .views import (
+    NotasDestinadasViewSet,
+    ImportarNotasDestinadasView,
+    ConsultarNfseDistribuicaoView,
+    ImportarNfseTomadasView,
+    GerarContasPagarNfseView,
+)
 
 router = DefaultRouter()
 router.register(r'destinadas', NotasDestinadasViewSet, basename='notas-destinadas')
@@ -40,6 +46,21 @@ urlpatterns = [
         'importar-notas-destinadas/',
         ImportarNotasDestinadasView.as_view(),
         name='importar-notas-destinadas'
+    ),
+    path(
+        'nfse/distribuicao/',
+        ConsultarNfseDistribuicaoView.as_view(),
+        name='nfse-distribuicao'
+    ),
+    path(
+        'nfse/tomadas/importar/',
+        ImportarNfseTomadasView.as_view(),
+        name='nfse-tomadas-importar'
+    ),
+    path(
+        'nfse/tomadas/<int:nfse_id>/contas-a-pagar/',
+        GerarContasPagarNfseView.as_view(),
+        name='nfse-tomadas-contas-a-pagar'
     ),
     path(
         'produtos/buscar/',

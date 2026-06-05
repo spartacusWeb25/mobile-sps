@@ -65,6 +65,57 @@ class NotasManuaisListView(NotasDestinadasListView):
         
         return qs.order_by('-data_emissao', '-numero_nota_fiscal')
 
+
+class NfseTomadasListView(ListView):
+    template_name = 'NotasDestinadas/nfse_tomadas_lista.html'
+    context_object_name = 'nfse_list'
+    paginate_by = 20
+
+    def dispatch(self, request, *args, **kwargs):
+        self.slug = kwargs.get('slug') or get_licenca_slug()
+        self.db_alias = get_licenca_db_config(request)
+        self.empresa_id = request.session.get('empresa_id') or request.headers.get('X-Empresa')
+        self.filial_id = request.session.get('filial_id') or request.headers.get('X-Filial')
+        try:
+            if self.empresa_id:
+                self.empresa_id = int(self.empresa_id)
+            if self.filial_id:
+                self.filial_id = int(self.filial_id)
+        except (ValueError, TypeError):
+            self.empresa_id = None
+            self.filial_id = None
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_queryset(self):
+        from nfse.models import Nfse
+
+        if self.empresa_id is None or self.filial_id is None:
+            return Nfse.objects.using(self.db_alias).none()
+
+        qs = (
+            Nfse.objects.using(self.db_alias)
+            .filter(
+                nfse_empr=int(self.empresa_id),
+                nfse_fili=int(self.filial_id),
+                nfse_statu='tomada',
+            )
+            .order_by('-nfse_id')
+        )
+        return qs
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        cnpj = None
+        try:
+            if self.empresa_id and self.filial_id:
+                filial = Filiais.objects.using(self.db_alias).filter(empr_empr=int(self.filial_id), empr_codi=int(self.empresa_id)).first()
+                if filial:
+                    cnpj = getattr(filial, 'empr_docu', None)
+        except Exception:
+            cnpj = None
+        ctx['tomador_cnpj'] = cnpj or ''
+        return ctx
+
 class NotaManualDetailView(DetailView):
     model = NotaFiscalEntrada
     template_name = 'NotasDestinadas/nota_manual_detail.html'

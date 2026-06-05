@@ -1,39 +1,975 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block content %}
-<div class="container-fluid py-3">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h4 class="mb-0"><i class="bi bi-file-earmark-plus"></i> Emissão NFS-e</h4>
-    <a href="{% url 'nfse_web:list' slug=slug %}" class="btn btn-outline-secondary">Voltar</a>
-  </div>
+<link rel="stylesheet" href="{% static 'css/ui.css' %}">
+<link rel="stylesheet" href="{% static 'css/form.css' %}?v=20260313">
 
-  <form method="post">{% csrf_token %}
-    <div class="card mb-3"><div class="card-header">Dados principais</div><div class="card-body">
-      <div class="row g-2">
-        {% for field in form %}
-          <div class="col-md-3">
-            <label class="form-label">{{ field.label }}</label>
-            {{ field }}
-            {% if field.errors %}<small class="text-danger">{{ field.errors|striptags }}</small>{% endif %}
+<style>
+  :root {
+    --nf-bg: #171a1d;
+    --nf-surface: #212529;
+    --nf-surface2: #191e22;
+    --nf-border: rgba(0, 0, 0, 0.08);
+    --nf-border-strong: rgba(255, 255, 255, 0.14);
+    --nf-text: #e6edf3;
+    --nf-muted: #6f757e;
+    --nf-accent: #1652a7;
+    --nf-accent-dim: rgba(56, 139, 253, 0.15);
+    --nf-success: #3fb950;
+    --nf-warning: #d29922;
+    --nf-danger: #f85149;
+    --nf-input-h: 40px;
+    --nf-radius: 8px;
+  }
+
+  html[data-bs-theme="light"],
+  body.light {
+    --nf-bg: #e4e4e4;
+    --nf-surface: #ffffff;
+    --nf-surface2: #e1e2e2;
+    --nf-border: rgba(15, 23, 42, .08);
+    --nf-border-strong: rgba(15, 23, 42, .16);
+    --nf-text: #111827;
+    --nf-muted: #435268;
+    --nf-input-bg: #ffffff;
+  }
+
+  .nf-page-root {
+    width: 100%;
+    max-width: 100%;
+    padding: 35px;
+    margin: 0;
+  }
+
+  .nf-wrap {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-size: 13px;
+    color: var(--nf-text);
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - 56px);
+  }
+
+  .nf-topbar {
+    background: var(--nf-surface2);
+    border-bottom: 1px solid var(--nf-border);
+    border-radius: 10px 10px 6px 6px;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+
+  .nf-topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .nf-topbar-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--nf-text);
+  }
+
+  .nf-topbar-title i {
+    color: var(--nf-accent);
+    margin-right: 5px;
+    font-size: 20px;
+  }
+
+  .nf-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    border: 1px solid;
+    font-weight: 500;
+  }
+
+  .nf-chip-draft {
+    color: var(--nf-warning);
+    border-color: rgba(210, 153, 34, .3);
+    background: rgba(210, 153, 34, .08);
+  }
+
+  .nf-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 12px;
+    border-radius: var(--nf-radius);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid;
+    transition: opacity .15s, transform .1s;
+    line-height: 1.4;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .nf-btn:active {
+    transform: scale(.97);
+  }
+
+  .nf-btn-ghost {
+    background: transparent;
+    color: var(--nf-muted);
+    border-color: var(--nf-border-strong);
+  }
+
+  .nf-btn-ghost:hover {
+    color: var(--nf-text);
+    background: var(--nf-surface2);
+  }
+
+  .nf-btn-primary {
+    background: var(--nf-accent);
+    color: #fff;
+    border-color: transparent;
+  }
+
+  .nf-btn-primary:hover {
+    opacity: .88;
+  }
+
+  .nf-btn-success {
+    background: rgba(63, 185, 80, .12);
+    color: var(--nf-success);
+    border-color: rgba(63, 185, 80, .3);
+  }
+
+  .nf-btn-success:hover {
+    background: rgba(63, 185, 80, .2);
+  }
+
+  .nf-btn:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+  }
+
+  .nf-body {
+    padding: 10px 12px;
+    flex: 1;
+  }
+
+  .nf-panel {
+    background: var(--nf-surface);
+    border: 1px solid var(--nf-border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+
+  .nf-section-hdr {
+    padding: 5px 12px;
+    background: var(--nf-surface2);
+    border-bottom: 1px solid var(--nf-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-radius: 10px 10px 6px 6px;
+    margin-bottom: 4px;
+  }
+
+  .nf-section-hdr span {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .7px;
+    color: var(--nf-muted);
+  }
+
+  .nf-fields {
+    display: grid;
+    gap: 12px 16px;
+    padding: 14px 18px;
+  }
+
+  .nf-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    position: relative;
+  }
+
+  .nf-field label {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: var(--nf-muted);
+  }
+
+  .nf-field input,
+  .nf-field select,
+  .nf-field textarea {
+    background: var(--nf-surface2);
+    border: 1px solid var(--nf-border-strong);
+    border-radius: var(--nf-radius);
+    color: var(--nf-text);
+    font-size: 12px;
+    height: var(--nf-input-h);
+    padding: 0 8px;
+    width: 100%;
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+    font-size: 14px;
+    padding: 0 12px;
+  }
+
+  .nf-field input:focus,
+  .nf-field select:focus {
+    border-color: var(--nf-accent);
+    box-shadow: 0 0 0 3px rgba(56, 139, 253, .12);
+  }
+
+  .nf-field input[readonly] {
+    color: var(--nf-muted);
+    cursor: default;
+  }
+
+  .nf-field select option {
+    background: #1c2128;
+  }
+
+  .nf-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--nf-border);
+    padding: 0 12px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .nf-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nf-tab {
+    padding: 7px 12px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--nf-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: color .15s;
+  }
+
+  .nf-tab:hover {
+    color: var(--nf-text);
+  }
+
+  .nf-tab.active {
+    color: var(--nf-accent);
+    border-bottom-color: var(--nf-accent);
+  }
+
+  .nf-pane {
+    display: none;
+  }
+
+  .nf-pane.active {
+    display: block;
+  }
+
+  .nf-totals-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    padding: 7px 12px;
+    background: var(--nf-surface2);
+    border-top: 1px solid var(--nf-border);
+  }
+
+  .nf-total-item {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .nf-total-item .lbl {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: var(--nf-muted);
+  }
+
+  .nf-total-item .val {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--nf-text);
+  }
+
+  .nf-total-item.accent .val {
+    color: var(--nf-accent);
+  }
+
+  .nf-vsep {
+    width: 1px;
+    height: 24px;
+    background: var(--nf-border);
+  }
+
+  .nf-table-wrap {
+    overflow-x: auto;
+  }
+
+  .nf-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+  }
+
+  .nf-table th {
+    text-align: left;
+    padding: 5px 8px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: var(--nf-muted);
+    border-bottom: 1px solid var(--nf-border);
+    white-space: nowrap;
+  }
+
+  .nf-table th.r,
+  .nf-table td.r {
+    text-align: right;
+  }
+
+  .nf-table td {
+    padding: 5px 8px;
+    border-bottom: 1px solid var(--nf-border);
+    color: var(--nf-text);
+    vertical-align: middle;
+  }
+
+  .nf-table tbody tr:hover {
+    background: rgba(255, 255, 255, .02);
+  }
+
+  .nf-table tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  .nf-table .empty td {
+    text-align: center;
+    padding: 20px;
+    color: var(--nf-muted);
+    font-style: italic;
+  }
+
+  .nf-action-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--nf-surface2);
+    border-top: 1px solid var(--nf-border);
+    position: sticky;
+    bottom: 0;
+    z-index: 99;
+    flex-wrap: wrap;
+  }
+
+  .nf-action-bar .spacer {
+    flex: 1;
+    min-width: 10px;
+  }
+
+  .list-group {
+    z-index: 1000;
+    background: var(--nf-surface2) !important;
+    border: 1px solid var(--nf-border-strong) !important;
+    border-radius: var(--nf-radius);
+    max-height: 200px;
+    overflow-y: auto;
+  }
+
+  .list-group-item {
+    background: transparent !important;
+    color: var(--nf-text) !important;
+    border-color: var(--nf-border) !important;
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+
+  .list-group-item:hover {
+    background: var(--nf-accent-dim) !important;
+  }
+
+  .nf-ident-grid {
+    grid-template-columns: 140px 100px 120px 140px 140px 1fr;
+  }
+
+  @media (max-width: 960px) {
+    .nf-ident-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  @media (max-width: 600px) {
+    .nf-ident-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .nf-dest-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  @media (max-width: 600px) {
+    .nf-dest-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .nf-trib-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  @media (max-width: 960px) {
+    .nf-trib-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 600px) {
+    .nf-trib-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  input.form-control,
+  select.form-select {
+    background: var(--nf-surface2) !important;
+    border: 1px solid var(--nf-border-strong) !important;
+    border-radius: var(--nf-radius) !important;
+    color: var(--nf-text) !important;
+    font-size: 12px !important;
+    height: var(--nf-input-h) !important;
+  }
+
+  input.form-control:focus,
+  select.form-select:focus {
+    border-color: var(--nf-accent) !important;
+    box-shadow: 0 0 0 3px rgba(56, 139, 253, .12) !important;
+  }
+</style>
+
+<div class="nf-page-root">
+  <div class="nf-wrap">
+
+    <!-- Top Bar -->
+    <div class="nf-topbar">
+      <div class="nf-topbar-left">
+        <span class="nf-topbar-title"><i class="bi bi-file-earmark-plus"></i>Emissão de NFS-e</span>
+        <span class="nf-chip nf-chip-draft">● Rascunho</span>
+      </div>
+      <a class="nf-btn nf-btn-ghost" href="{% url 'nfse_web:list' slug=slug %}">← Voltar</a>
+    </div>
+
+    <div class="nf-body">
+      <form method="post" id="nfse-form">{% csrf_token %}
+
+        <div class="nf-panel">
+
+          <!-- Identificação -->
+          <div class="nf-section-hdr"><span>Identificação</span></div>
+          <div class="nf-fields nf-ident-grid">
+            <div class="nf-field">
+              <label>Município</label>
+              {{ form.municipio_codigo }}
+              {% if form.municipio_codigo.errors %}<small class="text-danger">{{ form.municipio_codigo.errors|striptags }}</small>{% endif %}
+            </div>
+            <div class="nf-field">
+              <label>Número RPS</label>
+              {{ form.rps_numero }}
+              {% if form.rps_numero.errors %}<small class="text-danger">{{ form.rps_numero.errors|striptags }}</small>{% endif %}
+            </div>
+            <div class="nf-field">
+              <label>Série RPS</label>
+              {{ form.rps_serie }}
+              {% if form.rps_serie.errors %}<small class="text-danger">{{ form.rps_serie.errors|striptags }}</small>{% endif %}
+            </div>
+            <div class="nf-field">
+              <label>Data Emissão</label>
+              <input type="date" name="data_emissao" id="data_emissao" value="{% now 'Y-m-d' %}" />
+              {% if form.data_emissao.errors %}<small class="text-danger">{{ form.data_emissao.errors|striptags }}</small>{% endif %}
+            </div>
+            <div class="nf-field">
+              <label>Data Competência</label>
+              <input type="date" name="data_competencia" id="data_competencia" value="{% now 'Y-m-d' %}" />
+              {% if form.data_competencia.errors %}<small class="text-danger">{{ form.data_competencia.errors|striptags }}</small>{% endif %}
+            </div>
           </div>
-        {% endfor %}
-      </div>
-    </div></div>
 
-    <div class="card mb-3"><div class="card-header">Itens do serviço</div><div class="card-body">
-      {{ item_formset.management_form }}
-      {% for item_form in item_formset %}
-      <div class="row g-2 border-bottom pb-2 mb-2">
-        {% for field in item_form.visible_fields %}
-        <div class="col-md-2">
-          <label class="form-label">{{ field.label }}</label>
-          {{ field }}
-        </div>
-        {% endfor %}
-      </div>
-      {% endfor %}
-    </div></div>
+          <!-- Prestador -->
+          <div class="nf-section-hdr"><span>Prestador</span></div>
+          <div class="nf-fields nf-dest-grid">
+            <div class="nf-field">
+              <label>Documento Prestador</label>
+              {{ form.prestador_documento }}
+              {% if form.prestador_documento.errors %}<small class="text-danger">{{ form.prestador_documento.errors|striptags }}</small>{% endif %}
+            </div>
+            <div class="nf-field">
+              <label>Nome Prestador</label>
+              {{ form.prestador_nome }}
+              {% if form.prestador_nome.errors %}<small class="text-danger">{{ form.prestador_nome.errors|striptags }}</small>{% endif %}
+            </div>
+          </div>
 
-    <button type="submit" class="btn btn-primary"><i class="bi bi-send"></i> Emitir NFS-e</button>
-  </form>
-</div>
+          <!-- Tomador -->
+          <div class="nf-section-hdr"><span>Tomador</span></div>
+          <div class="nf-fields nf-dest-grid">
+            <div class="nf-field">
+              <label>Cliente</label>
+              <input type="text" id="tomador-autocomplete" placeholder="Digite nome / CNPJ / CPF e selecione" />
+              <input type="hidden" name="tomador_id" id="tomador-id" />
+              <span style="font-size:11px;color:var(--nf-muted);padding-top:4px;">Dados inferidos automaticamente após
+                seleção</span>
+            </div>
+            <div class="nf-field">
+              <label>&nbsp;</label>
+              <span style="font-size:11px;color:var(--nf-muted);padding-top:4px;">Busca limitada a 20 resultados</span>
+            </div>
+            <div class="nf-field">
+              <label>Documento Tomador</label>
+              {{ form.tomador_documento }}
+              {% if form.tomador_documento.errors %}<small class="text-danger">{{ form.tomador_documento.errors|striptags }}</small>{% endif %}
+            </div>
+            <div class="nf-field">
+              <label>Nome Tomador</label>
+              {{ form.tomador_nome }}
+              {% if form.tomador_nome.errors %}<small class="text-danger">{{ form.tomador_nome.errors|striptags }}</small>{% endif %}
+            </div>
+            <div class="nf-field">
+              <label>Email</label>
+              {{ form.tomador_email }}
+              {% if form.tomador_email.errors %}<small class="text-danger">{{ form.tomador_email.errors|striptags }}</small>{% endif %}
+            </div>
+            <div class="nf-field">
+              <label>Telefone</label>
+              {{ form.tomador_telefone }}
+              {% if form.tomador_telefone.errors %}<small class="text-danger">{{ form.tomador_telefone.errors|striptags }}</small>{% endif %}
+            </div>
+            <div class="nf-field">
+              <label>Endereço</label>
+              {{ form.tomador_endereco }}
+              {% if form.tomador_endereco.errors %}<small class="text-danger">{{ form.tomador_endereco.errors|striptags }}</small>{% endif %}
+            </div>
+            <div class="nf-field">
+              <label>Número</label>
+              {{ form.tomador_numero }}
+              {% if form.tomador_numero.errors %}<small class="text-danger">{{ form.tomador_numero.errors|striptags }}</small>{% endif %}
+            </div>
+            <div class="nf-field">
+              <label>Bairro</label>
+              {{ form.tomador_bairro }}
+              {% if form.tomador_bairro.errors %}<small class="text-danger">{{ form.tomador_bairro.errors|striptags }}</small>{% endif %}
+            </div>
+            <div class="nf-field">
+              <label>CEP</label>
+              {{ form.tomador_cep }}
+              {% if form.tomador_cep.errors %}<small class="text-danger">{{ form.tomador_cep.errors|striptags }}</small>{% endif %}
+            </div>
+            <div class="nf-field">
+              <label>Cidade</label>
+              {{ form.tomador_cidade }}
+              {% if form.tomador_cidade.errors %}<small class="text-danger">{{ form.tomador_cidade.errors|striptags }}</small>{% endif %}
+            </div>
+            <div class="nf-field">
+              <label>UF</label>
+              {{ form.tomador_uf }}
+              {% if form.tomador_uf.errors %}<small class="text-danger">{{ form.tomador_uf.errors|striptags }}</small>{% endif %}
+            </div>
+            <div class="nf-field">
+              <label>IE</label>
+              {{ form.tomador_ie }}
+              {% if form.tomador_ie.errors %}<small class="text-danger">{{ form.tomador_ie.errors|striptags }}</small>{% endif %}
+            </div>
+            <div class="nf-field">
+              <label>IM</label>
+              {{ form.tomador_im }}
+              {% if form.tomador_im.errors %}<small class="text-danger">{{ form.tomador_im.errors|striptags }}</small>{% endif %}
+
+            </div>
+          </div>
+
+          <!-- Tabs -->
+          <div class="nf-tabs" id="nf-tabs">
+            <div class="nf-tab active" data-tab="servico">Serviço</div>
+            <div class="nf-tab" data-tab="itens">Itens</div>
+            <div class="nf-tab" data-tab="tributos">Tributos</div>
+            <div class="nf-tab" data-tab="totais">Totais</div>
+          </div>
+
+          <!-- Pane: Serviço -->
+          <div class="nf-pane active" id="pane-servico">
+            <div class="nf-fields nf-dest-grid">
+              <div class="nf-field">
+                <label>Buscar Serviço</label>
+                {{ form.servico_autocomplete }}
+                <input type="hidden" name="servico_id" id="servico-id" />
+              </div>
+              <div class="nf-field">
+                <label>&nbsp;</label>
+                <span style="font-size:11px;color:var(--nf-muted);padding-top:4px;">Selecione um serviço para preencher
+                  automaticamente</span>
+              </div>
+            </div>
+            <div class="nf-fields nf-dest-grid">
+              <div class="nf-field">
+                <label>Código Serviço</label>
+                {{ form.servico_codigo }}
+                {% if form.servico_codigo.errors %}<small class="text-danger">{{ form.servico_codigo.errors|striptags }}</small>{% endif %}
+              </div>
+              <div class="nf-field">
+                <label>CNAE</label>
+                {{ form.cnae_codigo }}
+                {% if form.cnae_codigo.errors %}<small class="text-danger">{{ form.cnae_codigo.errors|striptags }}</small>{% endif %}
+              </div>
+            </div>
+            <div class="nf-fields">
+              <div class="nf-field">
+                <label>Descrição Serviço</label>
+                {{ form.servico_descricao }}
+                {% if form.servico_descricao.errors %}<small class="text-danger">{{form.servico_descricao.errors|striptags }}</small>{% endif %}
+              </div>
+            </div>
+            <div class="nf-fields nf-trib-grid">
+              <div class="nf-field">
+                <label>Código LC 116</label>
+                {{ form.lc116_codigo }}
+              </div>
+              <div class="nf-field">
+                <label>Natureza Operação</label>
+                {{ form.natureza_operacao }}
+              </div>
+              <div class="nf-field">
+                <label>IE Prestador</label>
+                {{ form.prestador_ie }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Pane: Itens -->
+          <div class="nf-pane" id="pane-itens">
+            <div class="nf-fields">
+              {{ item_formset.management_form }}
+            </div>
+            <div class="nf-table-wrap">
+              <table class="nf-table" id="items-table">
+                <thead>
+                  <tr>
+                    <th style="min-width:200px;">Descrição</th>
+                    <th class="r" style="width:80px;">Qtd</th>
+                    <th class="r" style="width:100px;">Unitário</th>
+                    <th class="r" style="width:90px;">Total</th>
+                    <th style="width:100px;">Cód. Serviço</th>
+                    <th style="width:80px;">CNAE</th>
+                    <th style="width:80px;">LC116</th>
+                    <th style="width:60px;"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for item_form in item_formset %}
+                  <tr class="item-row">
+                    <td>{{ item_form.descricao }}</td>
+                    <td class="r">{{ item_form.quantidade }}</td>
+                    <td class="r">{{ item_form.valor_unitario }}</td>
+                    <td class="r">{{ item_form.valor_total }}</td>
+                    <td>{{ item_form.servico_codigo }}</td>
+                    <td>{{ item_form.cnae_codigo }}</td>
+                    <td>{{ item_form.lc116_codigo }}</td>
+                    <td>{{ item_form.DELETE }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            <button type="button" class="nf-btn nf-btn-ghost" id="btn-add-item" style="margin-top:10px;">
+              <i class="bi bi-plus-lg"></i> Adicionar Item
+            </button>
+          </div>
+
+          <!-- Pane: Tributos -->
+          <div class="nf-pane" id="pane-tributos">
+            <div class="nf-fields nf-trib-grid">
+              <div class="nf-field">
+                <label>Valor Serviço</label>
+                {{ form.valor_servico }}
+              </div>
+              <div class="nf-field">
+                <label>Valor Dedução</label>
+                {{ form.valor_deducao }}
+              </div>
+              <div class="nf-field">
+                <label>Valor Desconto</label>
+                {{ form.valor_desconto }}
+              </div>
+              <div class="nf-field">
+                <label>Valor INSS</label>
+                {{ form.valor_inss }}
+              </div>
+              <div class="nf-field">
+                <label>Valor IRRF</label>
+                {{ form.valor_irrf }}
+              </div>
+              <div class="nf-field">
+                <label>Valor CSLL</label>
+                {{ form.valor_csll }}
+              </div>
+              <div class="nf-field">
+                <label>Valor COFINS</label>
+                {{ form.valor_cofins }}
+              </div>
+              <div class="nf-field">
+                <label>Valor PIS</label>
+                {{ form.valor_pis }}
+              </div>
+              <div class="nf-field">
+                <label>Valor ISS</label>
+                {{ form.valor_iss }}
+              </div>
+              <div class="nf-field">
+                <label>Alíquota ISS %</label>
+                {{ form.aliquota_iss }}
+              </div>
+            </div>
+            <div class="nf-fields nf-dest-grid">
+              <div class="nf-field">
+                <label>ISS Retido</label>
+                {{ form.iss_retido }}
+              </div>
+              <div class="nf-field">
+                <label>Valor Líquido</label>
+                {{ form.valor_liquido }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Pane: Totais -->
+          <div class="nf-pane" id="pane-totais">
+            <div class="nf-totals-bar">
+              <div class="nf-total-item">
+                <span class="lbl">Valor Serviço</span>
+                <span class="val" id="disp-valor-servico">R$ 0,00</span>
+              </div>
+              <div class="nf-vsep"></div>
+              <div class="nf-total-item">
+                <span class="lbl">Deduções</span>
+                <span class="val" id="disp-valor-deducao">R$ 0,00</span>
+              </div>
+              <div class="nf-vsep"></div>
+              <div class="nf-total-item">
+                <span class="lbl">Descontos</span>
+                <span class="val" id="disp-valor-desconto">R$ 0,00</span>
+              </div>
+              <div class="nf-vsep"></div>
+              <div class="nf-total-item">
+                <span class="lbl">ISS</span>
+                <span class="val" id="disp-valor-iss">R$ 0,00</span>
+              </div>
+              <div class="nf-vsep"></div>
+              <div class="nf-total-item accent">
+                <span class="lbl">Valor Líquido</span>
+                <span class="val" id="disp-valor-liquido">R$ 0,00</span>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /nf-panel -->
+      </form>
+    </div><!-- /nf-body -->
+
+    <!-- Action Bar -->
+    <div class="nf-action-bar">
+      <a class="nf-btn nf-btn-ghost" href="{% url 'nfse_web:list' slug=slug %}">← Voltar</a>
+      <div class="spacer"></div>
+      <button class="nf-btn nf-btn-primary" type="submit" form="nfse-form">
+        <i class="bi bi-send"></i> Emitir NFS-e
+      </button>
+    </div>
+
+  </div><!-- /nf-wrap -->
+</div><!-- /nf-page-root -->
+
+<script>
+  (() => {
+    /* Tab switching */
+    const tabs = document.querySelectorAll('.nf-tab');
+    const panes = document.querySelectorAll('.nf-pane');
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        panes.forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        const pane = document.getElementById('pane-' + tab.dataset.tab);
+        if (pane) pane.classList.add('active');
+      });
+    });
+ 
+    const slug = localStorage.getItem('slug');
+    const empresa = localStorage.getItem('empresa_id') || '1';
+    const filial = localStorage.getItem('filial_id') || '1';
+    const authFetch = async (url, opts = {}) => {
+      const token = localStorage.getItem('access');
+      const h = { 'Content-Type': 'application/json', 'X-Empresa': empresa, 'X-Filial': filial };
+      if (token) h['Authorization'] = `Bearer ${token}`;
+      return fetch(url, { ...opts, headers: { ...h, ...(opts.headers || {}) } });
+    };
+ 
+    /* Tomador autocomplete */
+    const tomadorInput = document.getElementById('tomador-autocomplete');
+    if (tomadorInput) {
+      let timer = null;
+      const list = document.createElement('div');
+      list.className = 'list-group position-absolute w-100';
+      tomadorInput.parentElement.appendChild(list);
+ 
+      const render = items => {
+        console.log('Autocomplete items received:', items);
+        list.innerHTML = '';
+        items.forEach(it => {
+          const a = document.createElement('a');
+          a.href = '#'; a.className = 'list-group-item list-group-item-action';
+          a.textContent = it.label;
+          a.addEventListener('click', e => {
+            e.preventDefault();
+            console.log('Selected item:', it);
+            document.getElementById('tomador-id').value = it.value;
+            document.getElementById('id_tomador_documento').value = it.enti_cnpj || it.enti_cpf || '';
+            document.getElementById('id_tomador_nome').value = it.enti_nome || '';
+            document.getElementById('id_tomador_email').value = it.enti_email || '';
+            document.getElementById('id_tomador_telefone').value = it.enti_fone || '';
+            document.getElementById('id_tomador_endereco').value = it.enti_ende || '';
+            document.getElementById('id_tomador_numero').value = it.enti_nume || '';
+            document.getElementById('id_tomador_bairro').value = it.enti_bair || '';
+            document.getElementById('id_tomador_cep').value = it.enti_cepe || '';
+            document.getElementById('id_tomador_cidade').value = it.enti_cida || '';
+            document.getElementById('id_tomador_uf').value = it.enti_esta || '';
+            document.getElementById('id_tomador_ie').value = it.enti_ie || '';
+            document.getElementById('id_tomador_im').value = it.enti_im || '';
+            tomadorInput.value = it.enti_nome || '';
+            list.innerHTML = '';
+          });
+          list.appendChild(a);
+        });
+      };
+ 
+      tomadorInput.addEventListener('input', () => {
+        const q = tomadorInput.value.trim();
+        clearTimeout(timer);
+        timer = setTimeout(async () => {
+          if (!q) { list.innerHTML = ''; return; }
+          // ✅ URL CORRETA - /web/<slug>/notas-de-servico/entidades-autocomplete/
+          const r = await authFetch(`/web/${slug}/notas-de-servico/entidades-autocomplete/?q=${encodeURIComponent(q)}`);
+          const d = await r.json();
+          render(Array.isArray(d) ? d : []);
+        }, 250);
+      });
+    }
+ 
+    /* Service autocomplete */
+    const servicoInput = document.getElementById('servico-autocomplete');
+    if (servicoInput) {
+      let timer = null;
+      const list = document.createElement('div');
+      list.className = 'list-group position-absolute w-100';
+      servicoInput.parentElement.appendChild(list);
+ 
+      const render = items => {
+        list.innerHTML = '';
+        items.forEach(it => {
+          const a = document.createElement('a');
+          a.href = '#'; a.className = 'list-group-item list-group-item-action';
+          a.textContent = it.label;
+          a.addEventListener('click', e => {
+            e.preventDefault();
+            console.log('Selected service:', it);
+            document.getElementById('servico-codigo').value = it.codigo_servico || it.value;
+            document.getElementById('id_servico_descricao').value = it.descricao_servico || '';
+            document.getElementById('id_cnae_codigo').value = it.cnae || '';
+            document.getElementById('id_aliquota_iss').value = it.iss_aliquota || '0';
+            document.getElementById('servico-id').value = it.value;
+            list.innerHTML = '';
+ 
+            // Calculate ISS if aliquota is set
+            if (it.iss_aliquota > 0) {
+              const valorServico = parseFloat(document.getElementById('id_valor_servico').value) || 0;
+              const valorIss = (valorServico * (it.iss_aliquota / 100)).toFixed(2);
+              document.getElementById('id_valor_iss').value = valorIss;
+              updateTotals();
+            }
+          });
+          list.appendChild(a);
+        });
+      };
+ 
+      servicoInput.addEventListener('input', () => {
+        const q = servicoInput.value.trim();
+        clearTimeout(timer);
+        timer = setTimeout(async () => {
+          if (!q) { list.innerHTML = ''; return; }
+          // ✅ URL CORRIGIDA - /web/<slug>/notas-de-servico/servicos-autocomplete/
+          // ANTES: /api/${slug}/nfse/autocomplete-servicos/
+          // DEPOIS: /web/${slug}/notas-de-servico/servicos-autocomplete/
+          const r = await authFetch(`/web/${slug}/notas-de-servico/servicos-autocomplete/?q=${encodeURIComponent(q)}`);
+          const d = await r.json();
+          render(Array.isArray(d) ? d : []);
+        }, 250);
+      });
+    }
+ 
+    /* Update totals display */
+    const updateTotals = () => {
+      const valorServicoEl = document.getElementById('id_valor_servico');
+      const valorDeducaoEl = document.getElementById('id_valor_deducao');
+      const valorDescontoEl = document.getElementById('id_valor_desconto');
+      const valorIssEl = document.getElementById('id_valor_iss');
+      const valorLiquidoEl = document.getElementById('id_valor_liquido');
+ 
+      const valorServico = valorServicoEl ? parseFloat(valorServicoEl.value) || 0 : 0;
+      const valorDeducao = valorDeducaoEl ? parseFloat(valorDeducaoEl.value) || 0 : 0;
+      const valorDesconto = valorDescontoEl ? parseFloat(valorDescontoEl.value) || 0 : 0;
+      const valorIss = valorIssEl ? parseFloat(valorIssEl.value) || 0 : 0;
+      const valorLiquido = valorLiquidoEl ? parseFloat(valorLiquidoEl.value) || 0 : 0;
+ 
+      const dispValorServico = document.getElementById('disp-valor-servico');
+      const dispValorDeducao = document.getElementById('disp-valor-deducao');
+      const dispValorDesconto = document.getElementById('disp-valor-desconto');
+      const dispValorIss = document.getElementById('disp-valor-iss');
+      const dispValorLiquido = document.getElementById('disp-valor-liquido');
+ 
+      if (dispValorServico) dispValorServico.textContent = `R$ ${valorServico.toFixed(2)}`;
+      if (dispValorDeducao) dispValorDeducao.textContent = `R$ ${valorDeducao.toFixed(2)}`;
+      if (dispValorDesconto) dispValorDesconto.textContent = `R$ ${valorDesconto.toFixed(2)}`;
+      if (dispValorIss) dispValorIss.textContent = `R$ ${valorIss.toFixed(2)}`;
+      if (dispValorLiquido) dispValorLiquido.textContent = `R$ ${valorLiquido.toFixed(2)}`;
+    };
+ 
+    // Listen for changes in tax fields
+    ['id_valor_servico', 'id_valor_deducao', 'id_valor_desconto', 'id_valor_iss', 'id_valor_liquido'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('change', updateTotals);
+    });
+ 
+    // Initial update
+    updateTotals();
+  })();
+</script>
 {% endblock %}

@@ -88,26 +88,33 @@ def autocomplete_ncms(request, slug=None):
 
 def autocomplete_servicos(request, slug=None):
     banco = get_licenca_db_config(request) or 'default'
-    term = (request.GET.get('term') or request.GET.get('q') or '').strip().lower()
-    import json, os
-    here = os.path.dirname(os.path.abspath(__file__))
-    data_path = os.path.join(here, '..', '..', 'data', 'servicos_cnaes.json')
-    try:
-        with open(os.path.normpath(data_path), 'r', encoding='utf-8') as f:
-            payload = json.load(f)
-            choices = payload.get('servicos', [])
-    except Exception:
-        choices = [
-            {'value': '01.01.01', 'label': '01.01.01 - Análise de sistemas'},
-            {'value': '01.01.02', 'label': '01.01.02 - Desenvolvimento de sistemas'},
-            {'value': '01.02.01', 'label': '01.02.01 - Programação'},
-            {'value': '01.03.01', 'label': '01.03.01 - Processamento de dados'},
-        ]
+    term = (request.GET.get('term') or request.GET.get('q') or '').strip()
+    empresa_id = request.session.get('empresa_id')
+    
+    from Produtos.models import Produtos
+    
+    qs = Produtos.objects.using(banco).filter(prod_e_serv=True)
+    
+    if empresa_id:
+        qs = qs.filter(prod_empr=str(empresa_id))
+    
     if term:
-        filtered = [c for c in choices if term in c.get('label','').lower() or term in c.get('value','').lower()]
-    else:
-        filtered = choices
-    return JsonResponse({'results': filtered})
+        qs = qs.filter(
+            Q(prod_desc_serv__icontains=term) |
+            Q(prod_codi__icontains=term) |
+            Q(prod_codi_serv__icontains=term)
+        )
+    
+    qs = qs.order_by('prod_codi')[:30]
+    
+    data = []
+    for servico in qs:
+        data.append({
+            'value': servico.prod_codi,
+            'label': f"{servico.prod_codi} - {servico.prod_desc_serv or ''}",
+        })
+    
+    return JsonResponse({'results': data})
 
 
 def ncm_fiscal_padrao(request, slug=None):

@@ -1,13 +1,13 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block content %}
-<div class="container-fluid py-3">
+<div class="container py-3">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <div>
       <h4 class="mb-0"><i class="bi bi-receipt-cutoff"></i> Painel NFS-e</h4>
       <small class="text-muted">Notas de Serviço (padrão visual de notas de saída)</small>
     </div>
-    <a class="btn btn-success" href="{% url 'nfse_web:criar' slug=slug %}">
+    <a class="btn btn-outline-success" href="{% url 'nfse_web:criar' slug=slug %}">
       <i class="bi bi-plus-circle"></i> Nova NFS-e
     </a>
   </div>

@@ -92,15 +92,34 @@ class NfseForm(forms.Form):
         required=False,
         widget=forms.TextInput(attrs={'class': 'form-control'})
     )
+    tomador_ie = forms.CharField(
+        label='IE',
+        max_length=20,
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
+    tomador_im = forms.CharField(
+        label='IM',
+        max_length=20,
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
 
     servico_codigo = forms.CharField(
         label='Código Serviço',
         max_length=30,
-        widget=forms.TextInput(attrs={'class': 'form-control'})
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'servico-codigo'})
     )
     servico_descricao = forms.CharField(
         label='Descrição Serviço',
-        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 4})
+        required=False,
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'id': 'servico-descricao'})
+    )
+    servico_autocomplete = forms.CharField(
+        label='Serviço',
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Digite para buscar serviço...', 'id': 'servico-autocomplete'})
     )
     prestador_ie = forms.CharField(
         label='IE (Inscrição Estadual)',

@@ -1,0 +1,279 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}NFS-e Tomadas{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/list.css' %}">
+<div class="container page-container">
+    <div class="page-header-custom">
+        <div class="container align-items-center">
+            <h2 class="page-title">
+                <i class="bi bi-receipt fs-4"></i> NFS-e Tomadas
+            </h2>
+            {% if tomador_cnpj %}
+            <div class="text-muted small">Tomador: {{ tomador_cnpj }}</div>
+            {% endif %}
+        </div>
+        <div class="page-actions">
+            <div class="container d-flex justify-content-end gap-2">
+                <button class="btn btn-outline-primary btn-sm" onclick="abrirSincronizacaoNfse()">Sincronizar
+                    NFS-e</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div id="nfse-alert" class="alert d-none" role="alert"></div>
+
+            <div class="table-responsive d-none d-md-block">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Número</th>
+                            <th>Prestador</th>
+                            <th>Valor</th>
+                            <th>Data</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for n in nfse_list %}
+                        <tr>
+                            <td>{{ n.nfse_nume }}</td>
+                            <td>{{ n.nfse_pres_nome }}</td>
+                            <td>{{ n.nfse_val_serv }}</td>
+                            <td>{{ n.nfse_data_emis }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-success"
+                                    onclick="abrirContasPagar('{{ n.nfse_id }}')">Gerar contas a pagar</button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5">Nenhuma NFS-e tomada encontrada.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% if is_paginated %}
+                <nav class="mt-3 mx-auto text-center justify-content-center">
+                    <ul class="pagination">
+                        {% if page_obj.has_previous %}
+                        <li class="page-item"><a class="page-link"
+                                href="?page={{ page_obj.previous_page_number }}">Anterior</a></li>
+                        {% endif %}
+                        <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
+                        {% if page_obj.has_next %}
+                        <li class="page-item"><a class="page-link"
+                                href="?page={{ page_obj.next_page_number }}">Próxima</a></li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            </div>
+
+            <div class="card-list d-md-none">
+                {% for n in nfse_list %}
+                <div class="card mb-2">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="fw-semibold">NFS-e {{ n.nfse_nume }}</div>
+                            <div class="text-muted small">{{ n.nfse_data_emis }}</div>
+                        </div>
+                        <div class="mt-2 small">
+                            <div><strong>Prestador:</strong> {{ n.nfse_pres_nome }}</div>
+                            <div><strong>Valor:</strong> {{ n.nfse_val_serv }}</div>
+                        </div>
+                        <div class="mt-3 d-flex gap-2">
+                            <button class="btn btn-sm btn-outline-success"
+                                onclick="abrirContasPagar('{{ n.nfse_id }}')">Contas a pagar</button>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="alert alert-info">Nenhuma NFS-e tomada encontrada.</div>
+                {% endfor %}
+                {% if is_paginated %}
+                <nav class="mt-2 mx-auto text-center justify-content-center">
+                    <ul class="pagination pagination-sm">
+                        {% if page_obj.has_previous %}
+                        <li class="page-item"><a class="page-link"
+                                href="?page={{ page_obj.previous_page_number }}">Anterior</a></li>
+                        {% endif %}
+                        <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
+                        {% if page_obj.has_next %}
+                        <li class="page-item"><a class="page-link"
+                                href="?page={{ page_obj.next_page_number }}">Próxima</a></li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="nfse-sync-modal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Sincronizar NFS-e (Distribuição DF-e)</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="nfse-sync-form">
+                    <div class="mb-2">
+                        <label>Último NSU</label>
+                        <input name="ultimo_nsu" class="form-control" value="0">
+                        <div class="form-text">O NSU é salvo no navegador (por usuário) após cada sincronização.</div>
+                    </div>
+                    <div class="mb-2">
+                        <label>Máximo de páginas</label>
+                        <input name="max_paginas" class="form-control" type="number" value="10" min="1">
+                    </div>
+                    <div class="mb-2">
+                        <label>Caminho .pfx (opcional)</label>
+                        <input name="caminho_pfx" class="form-control">
+                    </div>
+                    <div class="mb-2">
+                        <label>Senha .pfx (opcional)</label>
+                        <input name="senha_pfx" type="password" class="form-control">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                <button type="button" class="btn btn-primary" onclick="executarSincronizacaoNfse()">Sincronizar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="nfse-cp-modal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Gerar contas a pagar</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="nfse-cp-form">
+                    <input type="hidden" name="nfse_id">
+                    <div class="mb-2">
+                        <label>Data base (1ª parcela)</label>
+                        <input name="data_base" class="form-control" type="date">
+                    </div>
+                    <div class="mb-2">
+                        <label>Parcelas</label>
+                        <input name="parcelas" class="form-control" type="number" value="1" min="1">
+                    </div>
+                    <div class="mb-2">
+                        <label>Intervalo (dias)</label>
+                        <input name="intervalo_dias" class="form-control" type="number" value="30" min="0">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                <button type="button" class="btn btn-success" onclick="executarContasPagar()">Gerar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function _nfseAlert(tipo, texto) {
+        const el = document.getElementById('nfse-alert');
+        el.className = `alert alert-${tipo}`;
+        el.textContent = texto || '';
+        el.classList.remove('d-none');
+    }
+
+    function abrirSincronizacaoNfse() {
+        const form = document.getElementById('nfse-sync-form');
+        const nsu = localStorage.getItem('nfse_ultimo_nsu') || '0';
+        form.ultimo_nsu.value = nsu;
+        const modal = document.getElementById('nfse-sync-modal');
+        const modalEl = new bootstrap.Modal(modal);
+        modalEl.show();
+    }
+
+    async function executarSincronizacaoNfse() {
+        const slug = localStorage.getItem('slug');
+        const token = localStorage.getItem('access');
+        const form = document.getElementById('nfse-sync-form');
+        const url = `/api/${slug}/notasdestinadas/nfse/tomadas/importar/`;
+        try {
+            const body = {
+                ultimo_nsu: form.ultimo_nsu.value || '0',
+                max_paginas: parseInt(form.max_paginas.value || '10'),
+                caminho_pfx: form.caminho_pfx.value || '',
+                senha_pfx: form.senha_pfx.value || ''
+            };
+            const resp = await fetch(url, { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+            const data = await resp.json();
+            if (!resp.ok) {
+                _nfseAlert('danger', data.error || data.detail || 'Erro ao sincronizar NFS-e.');
+                return;
+            }
+            if (data.novo_ultimo_nsu) {
+                localStorage.setItem('nfse_ultimo_nsu', String(data.novo_ultimo_nsu));
+            }
+            const modal = document.getElementById('nfse-sync-modal');
+            const modalEl = bootstrap.Modal.getInstance(modal);
+            modalEl.hide();
+            _nfseAlert('success', `Sincronização concluída. Criadas: ${data.criadas || 0}. Atualizadas: ${data.atualizadas || 0}.`);
+            window.location.reload();
+        } catch (e) {
+            _nfseAlert('danger', 'Erro de comunicação com o servidor.');
+        }
+    }
+
+    function abrirContasPagar(nfseId) {
+        const form = document.getElementById('nfse-cp-form');
+        form.nfse_id.value = nfseId;
+        const hoje = new Date();
+        const yyyy = hoje.getFullYear();
+        const mm = String(hoje.getMonth() + 1).padStart(2, '0');
+        const dd = String(hoje.getDate()).padStart(2, '0');
+        form.data_base.value = `${yyyy}-${mm}-${dd}`;
+        form.parcelas.value = '1';
+        form.intervalo_dias.value = '30';
+        const modal = document.getElementById('nfse-cp-modal');
+        const modalEl = new bootstrap.Modal(modal);
+        modalEl.show();
+    }
+
+    async function executarContasPagar() {
+        const slug = localStorage.getItem('slug');
+        const token = localStorage.getItem('access');
+        const form = document.getElementById('nfse-cp-form');
+        const nfseId = form.nfse_id.value;
+        const url = `/api/${slug}/notasdestinadas/nfse/tomadas/${nfseId}/contas-a-pagar/`;
+        try {
+            const body = {
+                data_base: form.data_base.value || null,
+                parcelas: parseInt(form.parcelas.value || '1'),
+                intervalo_dias: parseInt(form.intervalo_dias.value || '30')
+            };
+            const resp = await fetch(url, { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+            const data = await resp.json();
+            if (!resp.ok) {
+                _nfseAlert('danger', data.error || data.detail || 'Erro ao gerar contas a pagar.');
+                return;
+            }
+            const modal = document.getElementById('nfse-cp-modal');
+            const modalEl = bootstrap.Modal.getInstance(modal);
+            modalEl.hide();
+            _nfseAlert('success', `Contas a pagar geradas. Títulos criados: ${data.titulos_criados || 0}.`);
+        } catch (e) {
+            _nfseAlert('danger', 'Erro de comunicação com o servidor.');
+        }
+    }
+
+    window.abrirSincronizacaoNfse = abrirSincronizacaoNfse;
+    window.executarSincronizacaoNfse = executarSincronizacaoNfse;
+    window.abrirContasPagar = abrirContasPagar;
+    window.executarContasPagar = executarContasPagar;
+</script>
+{% endblock %}

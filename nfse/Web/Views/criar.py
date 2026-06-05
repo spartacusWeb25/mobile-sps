@@ -3,6 +3,7 @@ from django.shortcuts import render, redirect
 from django.views import View
 
 from core.mixin import DBAndSlugMixin
+from core.utils import get_licenca_db_config
 from nfse.Web.forms import NfseForm, NfseItemFormSet
 from nfse.services.context import NfseContext
 from nfse.services.emissao_service import EmissaoNfseService
@@ -13,8 +14,27 @@ class NfseCreateView(DBAndSlugMixin, View):
     template_name = 'nfse/form.html'
 
     def get(self, request, *args, **kwargs):
-        form = NfseForm()
+        # Get company/filial data for prestador
+        banco = get_licenca_db_config(request) or "default"
+        empresa = request.session.get("empresa_id")
+        filial = request.session.get("filial_id")
+        
+        from Licencas.models import Filiais
+        filial_obj = Filiais.objects.using(banco).filter(
+            empr_empr=empresa, empr_codi=filial
+        ).first()
+        
+        initial_data = {}
+        if filial_obj:
+            initial_data['prestador_nome'] = getattr(filial_obj, 'empr_nome', '')
+            initial_data['prestador_documento'] = getattr(filial_obj, 'empr_cnpj', '') or getattr(filial_obj, 'empr_cpf', '')
+            initial_data['municipio_codigo'] = getattr(filial_obj, 'empr_muni_codi', '4119905')  # Default to Ponta Grossa
+            initial_data['rps_numero'] = '1'  # Default RPS number - should come from config
+            initial_data['rps_serie'] = 'NF'  # Default RPS series - should come from config
+        
+        form = NfseForm(initial=initial_data)
         item_formset = NfseItemFormSet(prefix='itens')
+        
         return render(request, self.template_name, {
             'form': form,
             'item_formset': item_formset,
@@ -50,6 +70,16 @@ class NfseCreateView(DBAndSlugMixin, View):
 
         data = form.cleaned_data
         data['itens'] = itens
+        
+        # Get servico_id from form if service was selected via autocomplete
+        servico_id = request.POST.get('servico_id')
+        if servico_id:
+            data['servico_id'] = servico_id
+        
+        # Get tomador_id from form if tomador was selected via autocomplete
+        tomador_id = request.POST.get('tomador_id')
+        if tomador_id:
+            data['tomador_id'] = tomador_id
 
         context = NfseContext.from_request(request, self.slug)
         try:
