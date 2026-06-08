@@ -3,6 +3,8 @@ from .utils_service import parse_decimal, arredondar
 from decimal import Decimal, ROUND_HALF_UP
 import math
 from collections import defaultdict
+from django.db.models import Sum
+from ..models import Itenspedidospisos, Pedidospisos
 
 def calcular_item(item, produto=None):
     metragem = parse_decimal(getattr(item, "item_m2", 0) or 0)
@@ -120,3 +122,21 @@ def calcular_total_geral(ambientes):
     """Soma todos os ambientes."""
     return sum(parse_decimal(amb["total_ambiente"]) for amb in ambientes)
 
+
+def recomputar_total_pedido(banco, pedido):
+    total = parse_decimal(
+        Itenspedidospisos.objects.using(banco).filter(
+        item_empr=pedido.pedi_empr,
+        item_fili=pedido.pedi_fili,
+        item_pedi=pedido.pedi_nume
+        ).aggregate(total=Sum("item_suto"))["total"] or 0
+    )
+
+    Pedidospisos.objects.using(banco).filter(
+        pedi_empr=pedido.pedi_empr,
+        pedi_fili=pedido.pedi_fili,
+        pedi_nume=pedido.pedi_nume,
+    ).update(pedi_tota=total)
+
+    pedido.pedi_tota = total
+    return total

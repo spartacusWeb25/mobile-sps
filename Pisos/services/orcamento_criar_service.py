@@ -92,6 +92,7 @@ class OrcamentoCriarService:
     def _criar_orcamento(self, *, banco, dados):
         ultimo = (
             Orcamentopisos.objects.using(banco)
+            .select_for_update()
             .filter(
                 orca_empr=dados["orca_empr"],
                 orca_fili=dados["orca_fili"],

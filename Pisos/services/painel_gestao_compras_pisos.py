@@ -205,7 +205,6 @@ class PainelPedidosService:
         }
     
     @staticmethod
-    @transaction.atomic
     def salvar_compras(banco, pedido_numero, empresa, filial, itens_atualizados):
         """
         Atualiza as quantidades compradas dos itens do pedido:
@@ -214,109 +213,123 @@ class PainelPedidosService:
         - Atualiza o status do pedido se todas as compras foram efetuadas
         """
         
-        import logging
-        logger = logging.getLogger(__name__)
-        
-        from django.utils.timezone import now
-        hoje = now().date()
-        
-        logger.info(f"[salvar_compras] Iniciando salvamento para pedido {pedido_numero}, empresa {empresa}, filial {filial}")
-        logger.info(f"[salvar_compras] Itens atualizados: {itens_atualizados}")
-        
-        # Buscar itens do pedido
-        itens_pedido = Itenspedidospisos.objects.using(banco).filter(
-            item_empr=empresa,
-            item_fili=filial,
-            item_pedi=pedido_numero
-        )
-        
-        logger.info(f"[salvar_compras] Itens do pedido encontrados: {itens_pedido.count()}")
-        
-        todas_compras_efetuadas = True
-        
-        for item_data in itens_atualizados:
-            nova_qtd_comprada = Decimal(str(item_data['quantidade_comprada']))
-            qtd_necessaria = Decimal(str(item_data['quantidade_necessaria']))
+        with transaction.atomic(using=banco):
+            import logging
+            logger = logging.getLogger(__name__)
 
-            # Usar item_nume se disponível, senão usar item_ambi + item_prod
-            if 'item_nume' in item_data and item_data['item_nume']:
-                item_nume = item_data['item_nume']
-                logger.info(f"[salvar_compras] Processando item {item_nume}: qtd_comprada={nova_qtd_comprada}, qtd_necessaria={qtd_necessaria}")
-                try:
-                    item = itens_pedido.get(item_nume=item_nume)
+            from django.utils.timezone import now
+            hoje = now().date()
+
+            logger.info(
+                f"[salvar_compras] Iniciando salvamento para pedido {pedido_numero}, empresa {empresa}, filial {filial}"
+            )
+            logger.info(f"[salvar_compras] Itens atualizados: {itens_atualizados}")
+
+            itens_pedido = Itenspedidospisos.objects.using(banco).filter(
+                item_empr=empresa,
+                item_fili=filial,
+                item_pedi=pedido_numero
+            )
+
+            logger.info(f"[salvar_compras] Itens do pedido encontrados: {itens_pedido.count()}")
+
+            todas_compras_efetuadas = True
+
+            for item_data in itens_atualizados:
+                nova_qtd_comprada = Decimal(str(item_data["quantidade_comprada"]))
+                qtd_necessaria = Decimal(str(item_data["quantidade_necessaria"]))
+
+                if item_data.get("item_nume"):
+                    item_nume = item_data["item_nume"]
+                    logger.info(
+                        f"[salvar_compras] Processando item {item_nume}: qtd_comprada={nova_qtd_comprada}, qtd_necessaria={qtd_necessaria}"
+                    )
+                    try:
+                        itens_pedido.get(item_nume=item_nume)
+                        update_data = {"item_quan_entr": nova_qtd_comprada}
+
+                        if nova_qtd_comprada > 0:
+                            update_data["item_comp_efet"] = hoje
+                            logger.info(f"[salvar_compras] Item {item_nume}: compra efetuada em {hoje}")
+                        else:
+                            update_data["item_comp_efet"] = None
+                            logger.info(f"[salvar_compras] Item {item_nume}: compra não efetuada (qtd=0)")
+
+                        if nova_qtd_comprada < qtd_necessaria:
+                            todas_compras_efetuadas = False
+                            logger.info(
+                                f"[salvar_compras] Item {item_nume}: compra incompleta ({nova_qtd_comprada} < {qtd_necessaria})"
+                            )
+                        else:
+                            logger.info(
+                                f"[salvar_compras] Item {item_nume}: compra completa ({nova_qtd_comprada} >= {qtd_necessaria})"
+                            )
+
+                        Itenspedidospisos.objects.using(banco).filter(
+                            item_empr=empresa,
+                            item_fili=filial,
+                            item_pedi=pedido_numero,
+                            item_nume=item_nume,
+                        ).update(**update_data)
+                        logger.info(f"[salvar_compras] Item {item_nume}: salvo com sucesso")
+                    except Itenspedidospisos.DoesNotExist:
+                        logger.error(f"[salvar_compras] Item {item_nume}: não encontrado no pedido")
+                        todas_compras_efetuadas = False
+                        continue
+                else:
+                    item_ambi = item_data.get("item_ambi")
+                    item_prod = item_data.get("item_prod")
+                    logger.info(
+                        f"[salvar_compras] Processando item por ambiente+produto: ambi={item_ambi}, prod={item_prod}, qtd_comprada={nova_qtd_comprada}"
+                    )
+
                     update_data = {"item_quan_entr": nova_qtd_comprada}
 
                     if nova_qtd_comprada > 0:
                         update_data["item_comp_efet"] = hoje
-                        logger.info(f"[salvar_compras] Item {item_nume}: compra efetuada em {hoje}")
+                        logger.info(f"[salvar_compras] Item ambi={item_ambi}, prod={item_prod}: compra efetuada em {hoje}")
                     else:
                         update_data["item_comp_efet"] = None
-                        logger.info(f"[salvar_compras] Item {item_nume}: compra não efetuada (qtd=0)")
+                        logger.info(f"[salvar_compras] Item ambi={item_ambi}, prod={item_prod}: compra não efetuada (qtd=0)")
 
-                    # Verificar se a compra foi totalmente efetuada
                     if nova_qtd_comprada < qtd_necessaria:
                         todas_compras_efetuadas = False
-                        logger.info(f"[salvar_compras] Item {item_nume}: compra incompleta ({nova_qtd_comprada} < {qtd_necessaria})")
+                        logger.info(
+                            f"[salvar_compras] Item ambi={item_ambi}, prod={item_prod}: compra incompleta ({nova_qtd_comprada} < {qtd_necessaria})"
+                        )
                     else:
-                        logger.info(f"[salvar_compras] Item {item_nume}: compra completa ({nova_qtd_comprada} >= {qtd_necessaria})")
+                        logger.info(
+                            f"[salvar_compras] Item ambi={item_ambi}, prod={item_prod}: compra completa ({nova_qtd_comprada} >= {qtd_necessaria})"
+                        )
 
-                    Itenspedidospisos.objects.using(banco).filter(
-                        item_empr=empresa,
-                        item_fili=filial,
-                        item_pedi=pedido_numero,
-                        item_nume=item_nume,
-                    ).update(**update_data)
-                    logger.info(f"[salvar_compras] Item {item_nume}: salvo com sucesso")
-                except Itenspedidospisos.DoesNotExist:
-                    logger.error(f"[salvar_compras] Item {item_nume}: não encontrado no pedido")
-                    todas_compras_efetuadas = False
-                    continue
+                    updated = itens_pedido.filter(item_ambi=item_ambi, item_prod=item_prod).update(**update_data)
+                    if updated == 0:
+                        logger.error(
+                            f"[salvar_compras] Item com ambi={item_ambi}, prod={item_prod}: não encontrado no pedido (0 linhas atualizadas)"
+                        )
+                        todas_compras_efetuadas = False
+                    else:
+                        logger.info(
+                            f"[salvar_compras] Item ambi={item_ambi}, prod={item_prod}: {updated} linha(s) atualizada(s) com sucesso"
+                        )
+
+            logger.info(f"[salvar_compras] Todas as compras efetuadas: {todas_compras_efetuadas}")
+
+            if todas_compras_efetuadas:
+                try:
+                    Pedidospisos.objects.using(banco).filter(
+                        pedi_empr=empresa,
+                        pedi_fili=filial,
+                        pedi_nume=pedido_numero,
+                    ).update(pedi_data_comp_work=hoje)
+                    logger.info(f"[salvar_compras] Pedido {pedido_numero}: data_compra_workflow atualizada para {hoje}")
+                except Pedidospisos.DoesNotExist:
+                    logger.error(f"[salvar_compras] Pedido {pedido_numero}: não encontrado")
+                    pass
             else:
-                item_ambi = item_data.get('item_ambi')
-                item_prod = item_data.get('item_prod')
-                logger.info(f"[salvar_compras] Processando item por ambiente+produto: ambi={item_ambi}, prod={item_prod}, qtd_comprada={nova_qtd_comprada}")
+                logger.info(
+                    f"[salvar_compras] Pedido {pedido_numero}: nem todas as compras foram efetuadas, não atualizando data_compra_workflow"
+                )
 
-                # Usar update() diretamente no queryset para evitar problemas com PK
-                update_data = {'item_quan_entr': nova_qtd_comprada}
-
-                # Se quantidade comprada > 0, marcar como compra efetuada
-                if nova_qtd_comprada > 0:
-                    update_data['item_comp_efet'] = hoje
-                    logger.info(f"[salvar_compras] Item ambi={item_ambi}, prod={item_prod}: compra efetuada em {hoje}")
-                else:
-                    update_data['item_comp_efet'] = None
-                    logger.info(f"[salvar_compras] Item ambi={item_ambi}, prod={item_prod}: compra não efetuada (qtd=0)")
-
-                # Verificar se a compra foi totalmente efetuada
-                if nova_qtd_comprada < qtd_necessaria:
-                    todas_compras_efetuadas = False
-                    logger.info(f"[salvar_compras] Item ambi={item_ambi}, prod={item_prod}: compra incompleta ({nova_qtd_comprada} < {qtd_necessaria})")
-                else:
-                    logger.info(f"[salvar_compras] Item ambi={item_ambi}, prod={item_prod}: compra completa ({nova_qtd_comprada} >= {qtd_necessaria})")
-
-                updated = itens_pedido.filter(item_ambi=item_ambi, item_prod=item_prod).update(**update_data)
-                if updated == 0:
-                    logger.error(f"[salvar_compras] Item com ambi={item_ambi}, prod={item_prod}: não encontrado no pedido (0 linhas atualizadas)")
-                    todas_compras_efetuadas = False
-                else:
-                    logger.info(f"[salvar_compras] Item ambi={item_ambi}, prod={item_prod}: {updated} linha(s) atualizada(s) com sucesso")
-        
-        # Atualizar status do pedido se todas as compras foram efetuadas
-        logger.info(f"[salvar_compras] Todas as compras efetuadas: {todas_compras_efetuadas}")
-        
-        if todas_compras_efetuadas:
-            try:
-                Pedidospisos.objects.using(banco).filter(
-                    pedi_empr=empresa,
-                    pedi_fili=filial,
-                    pedi_nume=pedido_numero,
-                ).update(pedi_data_comp_work=hoje)
-                logger.info(f"[salvar_compras] Pedido {pedido_numero}: data_compra_workflow atualizada para {hoje}")
-            except Pedidospisos.DoesNotExist:
-                logger.error(f"[salvar_compras] Pedido {pedido_numero}: não encontrado")
-                pass
-        else:
-            logger.info(f"[salvar_compras] Pedido {pedido_numero}: nem todas as compras foram efetuadas, não atualizando data_compra_workflow")
-        
-        logger.info(f"[salvar_compras] Salvamento concluído com sucesso para pedido {pedido_numero}")
-        return {'success': True, 'message': 'Compras salvas com sucesso'}
+            logger.info(f"[salvar_compras] Salvamento concluído com sucesso para pedido {pedido_numero}")
+            return {"success": True, "message": "Compras salvas com sucesso"}

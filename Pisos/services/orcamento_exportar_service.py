@@ -1,5 +1,6 @@
 from Pisos.models import Orcamentopisos, Pedidospisos, Itensorcapisos, Itenspedidospisos
 from Pisos.services.cliente_service import ClienteEnderecoService
+from Pisos.services.calculo_services import recomputar_total_pedido
 from django.db import transaction
 
 
@@ -38,7 +39,6 @@ class OrcamentoExportarPedidoService:
                 ).update(
                     pedi_clie=orcamento.orca_clie or None,
                     pedi_data=orcamento.orca_data,
-                    pedi_tota=orcamento.orca_tota,
                     pedi_obse=orcamento.orca_obse,
                     pedi_vend=orcamento.orca_vend or None,
                     pedi_desc=orcamento.orca_desc,
@@ -73,7 +73,7 @@ class OrcamentoExportarPedidoService:
                     pedi_nume=pedido_numero,
                     pedi_clie=orcamento.orca_clie or None,
                     pedi_data=orcamento.orca_data,
-                    pedi_tota=orcamento.orca_tota,
+                    pedi_tota=0,
                     pedi_obse=orcamento.orca_obse,
                     pedi_vend=orcamento.orca_vend or None,
                     pedi_desc=orcamento.orca_desc,
@@ -121,7 +121,7 @@ class OrcamentoExportarPedidoService:
                 item_empr=pedido.pedi_empr,
                 item_fili=pedido.pedi_fili,
                 item_pedi=pedido.pedi_nume,
-            ).delete()
+            )._raw_delete(using=banco)
 
             itens = Itensorcapisos.objects.using(banco).filter(
                 item_empr=empresa,
@@ -156,6 +156,7 @@ class OrcamentoExportarPedidoService:
                     item_queb=item.item_queb,
                 )
 
+            recomputar_total_pedido(banco, pedido)
             Orcamentopisos.objects.using(banco).filter(
                 orca_empr=empresa,
                 orca_fili=filial,

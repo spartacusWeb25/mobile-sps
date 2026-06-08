@@ -121,62 +121,55 @@ class PedidoEmitirNFeService:
     # Ponto de entrada
     # ------------------------------------------------------------------
 
-    @transaction.atomic
     def emitir(self, itens_emitir: list[dict] | None = None) -> dict:
         """
         itens_emitir = [{"item_nume": 1, "quantidade": 5}, ...]
         Retorna o dict de resultado de EmissaoNotaService.emitir_nota.
         """
-        itens_db = self._carregar_itens()
+        with transaction.atomic(using=self.banco):
+            itens_db = self._carregar_itens()
 
-        dtos = self._resolver_quantidades(itens_db, itens_emitir)
+            dtos = self._resolver_quantidades(itens_db, itens_emitir)
 
-        if not dtos:
-            raise ValidationError("Nenhum item com saldo disponível para emissão.")
+            if not dtos:
+                raise ValidationError("Nenhum item com saldo disponível para emissão.")
 
-        nota_data, itens_payload = self._montar_nota_data(dtos)
+            nota_data, itens_payload = self._montar_nota_data(dtos)
 
-        # 1) criar rascunho da nota usando NotaService
-        from Notas_Fiscais.services.nota_service import NotaService
-        from Notas_Fiscais.aplicacao.emissao_service import EmissaoService
+            from Notas_Fiscais.services.nota_service import NotaService
+            from Notas_Fiscais.aplicacao.emissao_service import EmissaoService
 
-        nota = None
-        try:
-            nota = NotaService.criar(
-                data=nota_data,
-                itens=itens_payload,
-                impostos_map=None,
-                transporte=None,
-                empresa=self.empresa,
-                filial=self.filial,
-                database=self.banco,
-            )
-        except Exception as e:
-            # Se o erro vier de campos que NotaService espera (ex: destinatario deve ser ID),
-            # adaptar data/itens para o formato que NotaService.criar espera.
-            raise ValidationError(f"Erro ao criar nota rascunho: {e}")
-
-        # 2) emitir usando o EmissaoService (mesmo fluxo da UI)
-        try:
-            emissor = EmissaoService(slug=self.banco, database=self.banco)
-            resposta = emissor.emitir(nota.id)
-        except Exception as e:
-            # Mantemos o rascunho salvo para auditoria e reemissão
-            raise ValidationError(f"Falha ao emitir NF-e: {e}")
-
-        status_sefaz = resposta.get("status")
-        if str(status_sefaz) in ("100", "204"):
-            # Só registra quantidades se autorizado
-            nota_numero = getattr(nota, "numero", None) if nota is not None else None
+            nota = None
             try:
-                nota_numero = int(nota_numero) if nota_numero not in (None, "") else None
-            except Exception:
-                pass
+                nota = NotaService.criar(
+                    data=nota_data,
+                    itens=itens_payload,
+                    impostos_map=None,
+                    transporte=None,
+                    empresa=self.empresa,
+                    filial=self.filial,
+                    database=self.banco,
+                )
+            except Exception as e:
+                raise ValidationError(f"Erro ao criar nota rascunho: {e}")
 
-            self._registrar_emissao(dtos, nota_numero=nota_numero, sefaz_resposta=resposta)
+            try:
+                emissor = EmissaoService(slug=self.banco, database=self.banco)
+                resposta = emissor.emitir(nota.id)
+            except Exception as e:
+                raise ValidationError(f"Falha ao emitir NF-e: {e}")
 
-        # Retornar no mesmo formato que a view espera (chave 'sefaz')
-        return {"sefaz": resposta}
+            status_sefaz = resposta.get("status")
+            if str(status_sefaz) in ("100", "204"):
+                nota_numero = getattr(nota, "numero", None) if nota is not None else None
+                try:
+                    nota_numero = int(nota_numero) if nota_numero not in (None, "") else None
+                except Exception:
+                    pass
+
+                self._registrar_emissao(dtos, nota_numero=nota_numero, sefaz_resposta=resposta)
+
+            return {"sefaz": resposta}
 
     def listar_itens_nfe(self) -> dict:
         itens_db = self._carregar_itens()

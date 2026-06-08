@@ -10,8 +10,9 @@ except Exception:
 from Pisos.models import Pedidospisos, Itenspedidospisos
 from Pisos.services.pedido_criar_service import PedidoCriarService
 from Pisos.services.cliente_service import ClienteEnderecoService
-from Pisos.services.utils_service import parse_decimal, arredondar
+from Pisos.services.utils_service import parse_decimal
 from Pisos.services.credito_troca_service import CreditoTrocaPisosService
+from Pisos.services.calculo_services import recomputar_total_pedido
 
 
 class PedidoAtualizarService:
@@ -62,19 +63,15 @@ class PedidoAtualizarService:
                 item_empr=chave_original_pedido[0],
                 item_fili=chave_original_pedido[1],
                 item_pedi=chave_original_pedido[2],
-            ).delete()
+            )._raw_delete(using=banco)
 
             # Recria itens (reutiliza lógica do criar)
-            total = PedidoCriarService()._criar_itens(
+            PedidoCriarService()._criar_itens(
                 banco=banco,
                 pedido=pedido,
                 itens=itens,
             )
-
-            desconto = parse_decimal(getattr(pedido, "pedi_desc", 0))
-            frete = parse_decimal(getattr(pedido, "pedi_fret", 0))
-
-            total_liquido_sem_credito = total - desconto + frete
+            total_itens = recomputar_total_pedido(banco, pedido)
 
             usar_credito = parametros.get("usar_credito")
             if usar_credito in (None, ""):
@@ -91,18 +88,17 @@ class PedidoAtualizarService:
                     empresa=pedido.pedi_empr,
                     filial=pedido.pedi_fili,
                     cliente_id=pedido.pedi_clie,
-                    total_liquido_sem_credito=total_liquido_sem_credito,
+                    total_liquido_sem_credito=total_itens,
                     valor_desejado=credito_desejado,
                     excluir_pedido=pedido.pedi_nume,
                 )
 
             pedido.pedi_cred = credito_aplicado
-            pedido.pedi_tota = arredondar(total_liquido_sem_credito - credito_aplicado)
 
             update_fields = [
                 f.name
                 for f in pedido._meta.fields
-                if f.name not in ("pedi_empr", "pedi_fili", "pedi_nume")
+                if f.name not in ("pedi_empr", "pedi_fili", "pedi_nume", "pedi_tota")
             ]
             update_data = {nome: getattr(pedido, nome) for nome in update_fields}
             updated = Pedidospisos.objects.using(banco).filter(
@@ -113,6 +109,7 @@ class PedidoAtualizarService:
             if updated == 0:
                 raise ValueError("Pedido não encontrado para atualização (empresa/filial/número).")
 
+            pedido.pedi_tota = recomputar_total_pedido(banco, pedido)
             PedidoCriarService.gerar_titulos_receber(banco=banco, pedido=pedido, parametros=parametros)
 
             return pedido

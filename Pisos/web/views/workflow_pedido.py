@@ -21,9 +21,21 @@ class PedidoWorkflowAjaxView(View):
 
     def post(self, request, slug, pk):
         banco = get_db_from_slug(slug)
+        empresa_id = (
+            request.session.get("empresa_id")
+            or request.session.get("empresa")
+            or request.session.get("empr_codi")
+        )
+        filial_id = (
+            request.session.get("filial_id")
+            or request.session.get("filial")
+            or request.session.get("fili_codi")
+        )
         pedido = get_object_or_404(
             Pedidospisos.objects.using(banco),
-            pk=pk,
+            pedi_empr=empresa_id,
+            pedi_fili=filial_id,
+            pedi_nume=pk,
         )
 
         try:

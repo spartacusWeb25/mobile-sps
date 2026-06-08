@@ -1,5 +1,5 @@
-from .utils_service import DadosEntidadesService, arredondar
-from .calculo_services import calcular_ambientes, calcular_total_geral
+from .utils_service import DadosEntidadesService
+from .calculo_services import recomputar_total_pedido
 from ..models import Itenspedidospisos
 
 class PedidoService:
@@ -22,8 +22,5 @@ class PedidoService:
             pedido.pedi_tota = 0
             return pedido
 
-        ambientes = calcular_ambientes(itens)
-        total_geral = calcular_total_geral(ambientes)
-
-        pedido.pedi_tota = arredondar(total_geral)
+        pedido.pedi_tota = recomputar_total_pedido(banco, pedido)
         return pedido

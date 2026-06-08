@@ -48,7 +48,7 @@ class OrcamentoAtualizarService:
                 item_empr=orcamento.orca_empr,
                 item_fili=orcamento.orca_fili,
                 item_orca=orcamento.orca_nume,
-            ).delete()
+            )._raw_delete(using=banco)
 
             total = OrcamentoCriarService()._criar_itens(
                 banco=banco,

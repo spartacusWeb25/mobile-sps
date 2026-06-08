@@ -245,14 +245,14 @@ class OrcamentopisosViewSet(BaseMultiDBModelViewSet, VendedorEntidadeMixin):
             **aggregates
         })
 
-    @transaction.atomic
     def create(self, request, *args, **kwargs):
         logger.info("[OrcamentopisosViewSet.create] Criando orçamento de pisos")
+        banco = self.get_banco()
 
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        orcamento = serializer.save()
+        with transaction.atomic(using=banco):
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            orcamento = serializer.save()
 
         response_serializer = self.get_serializer(orcamento)
         headers = self.get_success_headers(response_serializer.data)
@@ -527,14 +527,14 @@ class PedidospisosViewSet(BaseMultiDBModelViewSet, VendedorEntidadeMixin):
             # Retorna queryset vazio ao invés de crashar com 500
             return Pedidospisos.objects.none()
     
-    @transaction.atomic
     def create(self, request, *args, **kwargs):
         logger.info("[PedidospisosViewSet.create] Criando pedido de pisos")
+        banco = self.get_banco()
 
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        pedido = serializer.save()
+        with transaction.atomic(using=banco):
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            pedido = serializer.save()
 
         response_serializer = self.get_serializer(pedido)
         headers = self.get_success_headers(response_serializer.data)

@@ -7,6 +7,7 @@ from Pisos.models import Pedidospisos, Itenspedidospisos
 from Pisos.services.utils_service import parse_decimal, arredondar
 from Pisos.services.cliente_service import ClienteEnderecoService
 from Pisos.services.credito_troca_service import CreditoTrocaPisosService
+from Pisos.services.calculo_services import recomputar_total_pedido
 from Produtos.models import Produtos
 from contas_a_receber.models import Titulosreceber
 from contas_a_receber.services import criar_titulo_receber
@@ -24,15 +25,12 @@ class PedidoCriarService:
                 dados=dados,
             )
 
-            total = self._criar_itens(
+            self._criar_itens(
                 banco=banco,
                 pedido=pedido,
                 itens=itens,
             )
-
-            desconto = parse_decimal(getattr(pedido, "pedi_desc", 0))
-            frete = parse_decimal(getattr(pedido, "pedi_fret", 0))
-            total_liquido_sem_credito = total - desconto + frete
+            total_itens = recomputar_total_pedido(banco, pedido)
 
             usar_credito = parametros.get("usar_credito")
             if usar_credito in (None, ""):
@@ -49,19 +47,17 @@ class PedidoCriarService:
                     empresa=pedido.pedi_empr,
                     filial=pedido.pedi_fili,
                     cliente_id=pedido.pedi_clie,
-                    total_liquido_sem_credito=total_liquido_sem_credito,
+                    total_liquido_sem_credito=total_itens,
                     valor_desejado=credito_desejado,
                     excluir_pedido=pedido.pedi_nume,
                 )
 
             pedido.pedi_cred = credito_aplicado
-            pedido.pedi_tota = arredondar(total_liquido_sem_credito - credito_aplicado)
             Pedidospisos.objects.using(banco).filter(
                 pedi_empr=pedido.pedi_empr,
                 pedi_fili=pedido.pedi_fili,
                 pedi_nume=pedido.pedi_nume,
             ).update(
-                pedi_tota=pedido.pedi_tota,
                 pedi_cred=pedido.pedi_cred,
             )
 
@@ -197,6 +193,7 @@ class PedidoCriarService:
     def _criar_pedido(self, *, banco, dados):
         ultimo = (
             Pedidospisos.objects.using(banco)
+            .select_for_update()
             .filter(
                 pedi_empr=dados["pedi_empr"],
                 pedi_fili=dados["pedi_fili"],
@@ -246,7 +243,6 @@ class PedidoCriarService:
         return pedido
 
     def _criar_itens(self, *, banco, pedido, itens):
-        total = Decimal("0.00")
         campos_permitidos = {field.name for field in Itenspedidospisos._meta.fields}
 
         for idx, item in enumerate(itens, start=1):
@@ -287,9 +283,6 @@ class PedidoCriarService:
                 },
             )
 
-            total += subtotal
-
-        return total
 
     def _normalizar_item(self, item, *, banco, empresa):
         dados = dict(item)

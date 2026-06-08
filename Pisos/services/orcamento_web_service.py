@@ -16,9 +16,11 @@ class OrcamentoWebService:
         )
 
     @staticmethod
-    def atualizar(*, banco, orcamento_nume, dados, itens):
+    def atualizar(*, banco, empresa, filial, orcamento_nume, dados, itens):
         orcamento = Orcamentopisos.objects.using(banco).get(
-            orca_nume=orcamento_nume
+            orca_empr=empresa,
+            orca_fili=filial,
+            orca_nume=orcamento_nume,
         )
 
         return OrcamentoAtualizarService().executar(

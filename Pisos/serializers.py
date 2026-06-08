@@ -164,16 +164,10 @@ class OrcamentopisosSerializer(BancoContextMixin, serializers.ModelSerializer):
                 or getattr(getattr(request, "session", None), "get", lambda *_: None)("filial_id")
                 or request.headers.get("X-Filial")
             )
-        if empresa not in (None, ""):
-            try:
-                validated_data["orca_empr"] = int(empresa)
-            except Exception:
-                pass
-        if filial not in (None, ""):
-            try:
-                validated_data["orca_fili"] = int(filial)
-            except Exception:
-                pass
+        if empresa in (None, "") or filial in (None, ""):
+            raise ValidationError("Empresa e filial são obrigatórias no contexto para criar orçamento.")
+        validated_data["orca_empr"] = int(empresa)
+        validated_data["orca_fili"] = int(filial)
 
         itens_data = validated_data.pop("itens_input", None)
 
@@ -389,7 +383,7 @@ class PedidospisosSerializer(BancoContextMixin, serializers.ModelSerializer):
             item_empr=pedido.pedi_empr,
             item_fili=pedido.pedi_fili,
             item_pedi=pedido.pedi_nume,
-        ).delete()
+        )._raw_delete(using=banco)
 
         for idx, item_data in enumerate(itens_input, start=1):
             prod_id = item_data.get("item_prod")
@@ -449,16 +443,10 @@ class PedidospisosSerializer(BancoContextMixin, serializers.ModelSerializer):
                 or getattr(getattr(request, "session", None), "get", lambda *_: None)("filial_id")
                 or request.headers.get("X-Filial")
             )
-        if empresa not in (None, ""):
-            try:
-                validated_data["pedi_empr"] = int(empresa)
-            except Exception:
-                pass
-        if filial not in (None, ""):
-            try:
-                validated_data["pedi_fili"] = int(filial)
-            except Exception:
-                pass
+        if empresa in (None, "") or filial in (None, ""):
+            raise ValidationError("Empresa e filial são obrigatórias no contexto para criar pedido.")
+        validated_data["pedi_empr"] = int(empresa)
+        validated_data["pedi_fili"] = int(filial)
 
         itens_data = validated_data.pop("itens_input", None)
 
