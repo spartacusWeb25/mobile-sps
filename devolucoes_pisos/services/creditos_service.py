@@ -1,6 +1,8 @@
 from decimal import Decimal
 from django.db import transaction
 from django.utils import timezone
+from django.db.models import CharField
+from django.db.models.functions import Cast
 from Licencas.models import Empresas, Filiais
 from Entidades.models import Entidades
 from devolucoes_pisos.models import Creditotrocas
@@ -42,19 +44,40 @@ class CreditosService:
 
     @staticmethod
     def listar(*, banco, empresa, filial):
-        creditos = list(
+        rows = list(
             Creditotrocas.objects.using(banco)
             .filter(
                 cred_fina_empr=empresa,
                 cred_fina_fili=filial,
             )
+            .annotate(cred_fina_data_txt=Cast("cred_fina_data", output_field=CharField()))
+            .values(
+                "cred_id",
+                "cred_fina_clie",
+                "cred_fina_vend",
+                "cred_fina_data_txt",
+                "cred_fina_es",
+                "cred_fina_valo",
+                "cred_fina_obse",
+            )
             .order_by("-cred_fina_data", "-cred_id")
         )
 
         mapa_clientes = DadosService.mapa_clientes(banco=banco)
+        creditos = []
 
-        for credito in creditos:
+        for row in rows:
+            credito = type("CreditoRow", (), {})()
+            credito.cred_id = row.get("cred_id")
+            credito.pk = credito.cred_id
+            credito.cred_fina_clie = row.get("cred_fina_clie")
+            credito.cred_fina_vend = row.get("cred_fina_vend")
+            credito.cred_fina_es = row.get("cred_fina_es")
+            credito.cred_fina_valo = row.get("cred_fina_valo")
+            credito.cred_fina_obse = row.get("cred_fina_obse")
+            credito.cred_fina_data = row.get("cred_fina_data_txt")
             credito.cliente_nome = mapa_clientes.get(credito.cred_fina_clie)
+            creditos.append(credito)
 
         return creditos
 

@@ -3,7 +3,14 @@ from django.urls import path
 from devolucoes_pisos.Web.Views.createView import DevolucaoPisosCreateView
 from devolucoes_pisos.Web.Views.listView import DevolucoesPisosListView
 from devolucoes_pisos.Web.Views.updateView import DevolucaoPisosUpdateView
-from ..Web.Views.creditos import CreditosCreateView, CreditosListView, CreditosDetailView, CreditosTransferirView
+from ..Web.Views.creditos import (
+    CreditosCreateView,
+    CreditosListView,
+    CreditosDetailView,
+    CreditosTransferirView,
+    autocomplete_clientes,
+    autocomplete_vendedores,
+)
 
 
 
@@ -17,5 +24,6 @@ urlpatterns = [
     path("creditos/listar/", CreditosListView.as_view(), name="creditos_listar"),
     path("creditos/<int:pk>/detalhar/", CreditosDetailView.as_view(), name="creditos_detalhar"),
     path("creditos/<int:pk>/transferir/", CreditosTransferirView.as_view(), name="creditos_transferir"),
+    path("creditos/autocomplete/clientes/", autocomplete_clientes, name="creditos_autocomplete_clientes"),
+    path("creditos/autocomplete/vendedores/", autocomplete_vendedores, name="creditos_autocomplete_vendedores"),
 ]
-

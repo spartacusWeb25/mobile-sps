@@ -1,0 +1,198 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Novo Crédito{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/form.css' %}">
+{% endblock %}
+
+{% block content %}
+<style>
+  .autocomplete-box {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 20;
+    max-height: 260px;
+    overflow-y: auto;
+  }
+</style>
+<div class="container py-4">
+  <div class="card shadow-sm border-0">
+    <div class="card-header text-center py-3">
+      <h3 class="mb-0">
+        <i class="bi bi-credit-card me-2"></i>Novo Crédito
+      </h3>
+    </div>
+
+    <div class="card-body p-4">
+      {% if form.non_field_errors %}
+      <div class="alert alert-danger">
+        {{ form.non_field_errors }}
+      </div>
+      {% endif %}
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+
+        <div class="row g-3">
+          <div class="col-md-6 position-relative">
+            <label class="form-label" for="autocomplete-cliente">Cliente</label>
+            <input type="text" id="autocomplete-cliente" class="form-control"
+              placeholder="Buscar cliente por nome ou código" autocomplete="off">
+            <div id="cliente-autocomplete-box" class="list-group autocomplete-box d-none"></div>
+            {{ form.cred_fina_clie }}
+            {% if form.cred_fina_clie.errors %}
+            <div class="text-danger small mt-1">{{ form.cred_fina_clie.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+
+          <div class="col-md-6 position-relative">
+            <label class="form-label" for="autocomplete-vendedor">Vendedor</label>
+            <input type="text" id="autocomplete-vendedor" class="form-control"
+              placeholder="Buscar vendedor por nome ou código" autocomplete="off">
+            <div id="vendedor-autocomplete-box" class="list-group autocomplete-box d-none"></div>
+            {{ form.cred_fina_vend }}
+            {% if form.cred_fina_vend.errors %}
+            <div class="text-danger small mt-1">{{ form.cred_fina_vend.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label" for="{{ form.cred_fina_data.id_for_label }}">{{ form.cred_fina_data.label }}</label>
+            {{ form.cred_fina_data }}
+            {% if form.cred_fina_data.errors %}
+            <div class="text-danger small mt-1">{{ form.cred_fina_data.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label" for="{{ form.cred_fina_es.id_for_label }}">Tipo</label>
+            {{ form.cred_fina_es }}
+            {% if form.cred_fina_es.errors %}
+            <div class="text-danger small mt-1">{{ form.cred_fina_es.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label" for="{{ form.cred_fina_valo.id_for_label }}">Valor</label>
+            {{ form.cred_fina_valo }}
+            {% if form.cred_fina_valo.errors %}
+            <div class="text-danger small mt-1">{{ form.cred_fina_valo.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+
+          <div class="col-12">
+            <label class="form-label" for="{{ form.cred_fina_obse.id_for_label }}">Observação</label>
+            {{ form.cred_fina_obse }}
+            {% if form.cred_fina_obse.errors %}
+            <div class="text-danger small mt-1">{{ form.cred_fina_obse.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="mt-4 d-flex gap-2">
+          <button type="submit" class="btn btn-outline-primary">
+            <i class="bi bi-check-circle"></i> Salvar
+          </button>
+          <a href="{% url 'DevolucoesPisosWeb:creditos_listar' slug=slug %}" class="btn btn-outline-secondary">
+            Cancelar
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    function setupAutocomplete(inputId, hiddenId, boxId, url) {
+      const input = document.getElementById(inputId);
+      const hidden = document.getElementById(hiddenId);
+      const box = document.getElementById(boxId);
+      let timer = null;
+
+      if (!input || !hidden || !box) return;
+
+      function hideBox() {
+        box.classList.add('d-none');
+        box.innerHTML = '';
+      }
+
+      function renderResults(items) {
+        box.innerHTML = '';
+        if (!items.length) {
+          hideBox();
+          return;
+        }
+        items.forEach((item) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'list-group-item list-group-item-action';
+          btn.textContent = item.text;
+          btn.addEventListener('click', function () {
+            input.value = item.text;
+            hidden.value = item.id;
+            hideBox();
+          });
+          box.appendChild(btn);
+        });
+        box.classList.remove('d-none');
+      }
+
+      input.addEventListener('input', function () {
+        const term = input.value.trim();
+        hidden.value = '';
+        clearTimeout(timer);
+        if (term.length < 1) {
+          hideBox();
+          return;
+        }
+        timer = setTimeout(async function () {
+          try {
+            const resp = await fetch(`${url}?term=${encodeURIComponent(term)}`);
+            const data = await resp.json();
+            renderResults(data.results || []);
+          } catch (e) {
+            hideBox();
+          }
+        }, 200);
+      });
+
+      input.addEventListener('blur', function () {
+        setTimeout(hideBox, 150);
+      });
+
+      (async function prefillSelected() {
+        const selectedId = String(hidden.value || '').trim();
+        if (!selectedId) return;
+        try {
+          const resp = await fetch(`${url}?term=${encodeURIComponent(selectedId)}`);
+          const data = await resp.json();
+          const match = (data.results || []).find((item) => String(item.id) === selectedId);
+          if (match) {
+            input.value = match.text;
+          }
+        } catch (e) {
+        }
+      })();
+    }
+
+    setupAutocomplete(
+      'autocomplete-cliente',
+      'id_cred_fina_clie',
+      'cliente-autocomplete-box',
+      "{% url 'DevolucoesPisosWeb:creditos_autocomplete_clientes' slug=slug %}"
+    );
+
+    setupAutocomplete(
+      'autocomplete-vendedor',
+      'id_cred_fina_vend',
+      'vendedor-autocomplete-box',
+      "{% url 'DevolucoesPisosWeb:creditos_autocomplete_vendedores' slug=slug %}"
+    );
+  });
+</script>
+{% endblock %}

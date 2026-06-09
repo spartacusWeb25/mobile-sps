@@ -1,6 +1,6 @@
 from django import forms
 
-from devolucoes_pisos.models import Devolucoespedidopiso
+from devolucoes_pisos.models import Devolucoespedidopiso, Creditotrocas
 
 
 class DevolucaoPedidoPisoForm(forms.ModelForm):
@@ -21,6 +21,7 @@ class DevolucaoPedidoPisoForm(forms.ModelForm):
             "devo_data": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
             "devo_desc": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
         }
+        
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -29,3 +30,18 @@ class DevolucaoPedidoPisoForm(forms.ModelForm):
 
         if self.instance and getattr(self.instance, "pk", None):
             self.fields["devo_pedi"].disabled = True
+
+
+class CreditosForm(forms.ModelForm):
+    class Meta:
+        model = Creditotrocas
+        fields = "__all__"
+        widgets = {
+            "cred_fina_data": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+        }
+        labels = {
+            "cred_fina_data": "Data",
+            "cred_fina_valo": "Valor",
+            "cred_fina_obse": "Observação",
+            
+        }

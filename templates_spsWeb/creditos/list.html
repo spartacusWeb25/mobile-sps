@@ -38,7 +38,7 @@
           </div>
 
           <div class="small mt-2">
-            <i class="bi bi-calendar3 me-1"></i> {{ c.cred_fina_data|date:'d/m/Y' }}
+            <i class="bi bi-calendar3 me-1"></i> {{ c.cred_fina_data|default:'-' }}
           </div>
 
           <div class="small mt-1">
