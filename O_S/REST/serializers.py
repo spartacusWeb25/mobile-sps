@@ -79,6 +79,38 @@ class BancoModelSerializer(BancoContextMixin, serializers.ModelSerializer):
         instance.save(using=banco)
         return instance
 
+
+class SafeDateField(serializers.Field):
+    def __init__(self, safe_attr=None, **kwargs):
+        self.safe_attr = safe_attr
+        super().__init__(**kwargs)
+
+    def get_attribute(self, instance):
+        return instance
+
+    def to_representation(self, instance):
+        safe_attr = self.safe_attr or f"{self.field_name}_safe"
+        if hasattr(instance, safe_attr):
+            return getattr(instance, safe_attr)
+
+        try:
+            value = getattr(instance, self.field_name)
+        except Exception:
+            return "Data incorreta"
+
+        if value in [None, ""]:
+            return None
+
+        try:
+            return value.isoformat()
+        except Exception:
+            return str(value)
+
+    def to_internal_value(self, data):
+        if data in [None, ""]:
+            return None
+        return serializers.DateField().to_internal_value(data)
+
 class OsHoraSerializer(BancoModelSerializer):
     total_horas = serializers.SerializerMethodField()
     operador_nome = serializers.SerializerMethodField()
@@ -264,6 +296,10 @@ class OsSerializer(BancoModelSerializer):
     pecas = PecasOsSerializer(many=True, required=False)
     servicos = ServicosOsSerializer(many=True, required=False)
     horas = OsHoraSerializer(many=True, required=False)
+    os_data_aber = SafeDateField(required=False)
+    os_data_entr = SafeDateField(required=False, allow_null=True)
+    os_data_fech = SafeDateField(required=False, allow_null=True)
+    field_log_data = SafeDateField(required=False, allow_null=True, safe_attr='field_log_data_safe')
     
     cliente_nome = serializers.SerializerMethodField()
     operador_nome = serializers.SerializerMethodField()

@@ -268,7 +268,7 @@ class NfseForm(forms.Form):
 class NfseItemForm(forms.Form):
     descricao = forms.CharField(
         label='Descrição Item',
-        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 2})
+        widget=forms.TextInput(attrs={'class': 'form-control'})
     )
     quantidade = forms.DecimalField(
         label='Quantidade',

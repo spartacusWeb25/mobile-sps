@@ -158,6 +158,31 @@
     cursor: not-allowed;
   }
 
+  .nf-toast {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    z-index: 2000;
+    min-width: 240px;
+    max-width: 420px;
+    padding: 10px 12px;
+    border-radius: var(--nf-radius);
+    background: rgba(33, 110, 39, 0.95);
+    border: 1px solid var(--nf-border-strong);
+    color: var(--nf-text);
+    font-size: 12px;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity .15s ease, transform .15s ease;
+    pointer-events: none;
+  }
+
+  .nf-toast.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+
   .nf-body {
     padding: 10px 12px;
     flex: 1;
@@ -437,6 +462,22 @@
     }
   }
 
+  .nf-tomador-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+
+  @media (max-width: 1200px) {
+    .nf-tomador-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  @media (max-width: 600px) {
+    .nf-tomador-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
   .nf-trib-grid {
     grid-template-columns: repeat(3, 1fr);
   }
@@ -537,15 +578,21 @@
           <div class="nf-fields nf-dest-grid">
             <div class="nf-field">
               <label>Cliente</label>
-              <input type="text" id="tomador-autocomplete" placeholder="Digite nome / CNPJ / CPF e selecione" />
+              <input type="text" id="tomador-autocomplete" class="form-control" placeholder="Digite nome / CNPJ / CPF e selecione" />
               <input type="hidden" name="tomador_id" id="tomador-id" />
-              <span style="font-size:11px;color:var(--nf-muted);padding-top:4px;">Dados inferidos automaticamente após
+              <span style="font-size:11px;color:var(--nf-muted);padding-top:3px;">Dados inferidos automaticamente após
                 seleção</span>
             </div>
             <div class="nf-field">
               <label>&nbsp;</label>
-              <span style="font-size:11px;color:var(--nf-muted);padding-top:4px;">Busca limitada a 20 resultados</span>
+              <div style="display:flex;align-items:center;justify-content:space-between;height:var(--nf-input-h);">
+                <span style="font-size:11px;color:var(--nf-muted);">Busca limitada a 20 resultados</span>
+                <span style="font-size:11px;color:var(--nf-muted);">Cliente selecionado: <span id="tomador-selected-count">0</span></span>
+              </div>
             </div>
+          </div>
+
+          <div class="nf-fields nf-tomador-grid">
             <div class="nf-field">
               <label>Documento Tomador</label>
               {{ form.tomador_documento }}
@@ -611,8 +658,7 @@
 
           <!-- Tabs -->
           <div class="nf-tabs" id="nf-tabs">
-            <div class="nf-tab active" data-tab="servico">Serviço</div>
-            <div class="nf-tab" data-tab="itens">Itens</div>
+            <div class="nf-tab active" data-tab="servico">Serviço / Itens</div>
             <div class="nf-tab" data-tab="tributos">Tributos</div>
             <div class="nf-tab" data-tab="totais">Totais</div>
           </div>
@@ -627,8 +673,12 @@
               </div>
               <div class="nf-field">
                 <label>&nbsp;</label>
-                <span style="font-size:11px;color:var(--nf-muted);padding-top:4px;">Selecione um serviço para preencher
-                  automaticamente</span>
+                <div style="display:flex;gap:8px;align-items:center;justify-content:flex-end;height:var(--nf-input-h);">
+                  <span style="font-size:11px;color:var(--nf-muted);">Serviços adicionados: <span id="servicos-added-count">0</span></span>
+                  <button type="button" class="nf-btn nf-btn-ghost" id="btn-add-item">
+                    <i class="bi bi-plus-lg"></i> Adicionar Item
+                  </button>
+                </div>
               </div>
             </div>
             <div class="nf-fields nf-dest-grid">
@@ -643,12 +693,9 @@
                 {% if form.cnae_codigo.errors %}<small class="text-danger">{{ form.cnae_codigo.errors|striptags }}</small>{% endif %}
               </div>
             </div>
-            <div class="nf-fields">
-              <div class="nf-field">
-                <label>Descrição Serviço</label>
-                {{ form.servico_descricao }}
-                {% if form.servico_descricao.errors %}<small class="text-danger">{{form.servico_descricao.errors|striptags }}</small>{% endif %}
-              </div>
+            <div style="display:none;">
+              {{ form.servico_descricao }}
+              {% if form.servico_descricao.errors %}<small class="text-danger">{{form.servico_descricao.errors|striptags }}</small>{% endif %}
             </div>
             <div class="nf-fields nf-trib-grid">
               <div class="nf-field">
@@ -664,10 +711,7 @@
                 {{ form.prestador_ie }}
               </div>
             </div>
-          </div>
 
-          <!-- Pane: Itens -->
-          <div class="nf-pane" id="pane-itens">
             <div class="nf-fields">
               {{ item_formset.management_form }}
             </div>
@@ -675,13 +719,13 @@
               <table class="nf-table" id="items-table">
                 <thead>
                   <tr>
-                    <th style="min-width:200px;">Descrição</th>
-                    <th class="r" style="width:80px;">Qtd</th>
-                    <th class="r" style="width:100px;">Unitário</th>
-                    <th class="r" style="width:90px;">Total</th>
-                    <th style="width:100px;">Cód. Serviço</th>
-                    <th style="width:80px;">CNAE</th>
-                    <th style="width:80px;">LC116</th>
+                    <th style="min-width:160px;">Descrição</th>
+                    <th class="r" style="width:100px;">Qtd</th>
+                    <th class="r" style="width:140px;">Unitário</th>
+                    <th class="r" style="width:140px;">Total</th>
+                    <th style="width:140px;">Cód. Serviço</th>
+                    <th style="width:120px;">CNAE</th>
+                    <th style="width:120px;">LC116</th>
                     <th style="width:60px;"></th>
                   </tr>
                 </thead>
@@ -695,15 +739,17 @@
                     <td>{{ item_form.servico_codigo }}</td>
                     <td>{{ item_form.cnae_codigo }}</td>
                     <td>{{ item_form.lc116_codigo }}</td>
-                    <td>{{ item_form.DELETE }}</td>
+                    <td class="r">
+                      <span style="display:none;">{{ item_form.DELETE }}</span>
+                      <button type="button" class="nf-btn nf-btn-ghost btn-remove-item">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </td>
                   </tr>
                   {% endfor %}
                 </tbody>
               </table>
             </div>
-            <button type="button" class="nf-btn nf-btn-ghost" id="btn-add-item" style="margin-top:10px;">
-              <i class="bi bi-plus-lg"></i> Adicionar Item
-            </button>
           </div>
 
           <!-- Pane: Tributos -->
@@ -808,6 +854,8 @@
   </div><!-- /nf-wrap -->
 </div><!-- /nf-page-root -->
 
+<div class="nf-toast" id="nf-toast"></div>
+
 <script>
   (() => {
     /* Tab switching */
@@ -832,6 +880,29 @@
       if (token) h['Authorization'] = `Bearer ${token}`;
       return fetch(url, { ...opts, headers: { ...h, ...(opts.headers || {}) } });
     };
+
+    const parseNumber = (value) => {
+      if (value === null || value === undefined) return 0;
+      const normalized = String(value).replace(/\./g, '').replace(',', '.');
+      const n = parseFloat(normalized);
+      return Number.isFinite(n) ? n : 0;
+    };
+
+    const formatMoney = (value) => {
+      const n = Number.isFinite(value) ? value : 0;
+      return n.toFixed(2).replace('.', ',');
+    };
+
+    let valorIssManual = false;
+    let toastTimer = null;
+    const showToast = (text) => {
+      const el = document.getElementById('nf-toast');
+      if (!el) return;
+      el.textContent = text;
+      el.classList.add('show');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+    };
  
     /* Tomador autocomplete */
     const tomadorInput = document.getElementById('tomador-autocomplete');
@@ -841,6 +912,11 @@
       list.className = 'list-group position-absolute w-100';
       tomadorInput.parentElement.appendChild(list);
  
+      const setTomadorSelectedCount = (count) => {
+        const el = document.getElementById('tomador-selected-count');
+        if (el) el.textContent = String(count);
+      };
+
       const render = items => {
         console.log('Autocomplete items received:', items);
         list.innerHTML = '';
@@ -866,6 +942,8 @@
             document.getElementById('id_tomador_im').value = it.enti_im || '';
             tomadorInput.value = it.enti_nome || '';
             list.innerHTML = '';
+            setTomadorSelectedCount(1);
+            showToast(`Cliente selecionado: ${it.enti_nome || it.label || ''}`.trim());
           });
           list.appendChild(a);
         });
@@ -882,6 +960,8 @@
           render(Array.isArray(d) ? d : []);
         }, 250);
       });
+
+      setTomadorSelectedCount(0);
     }
  
     /* Service autocomplete */
@@ -891,7 +971,132 @@
       const list = document.createElement('div');
       list.className = 'list-group position-absolute w-100';
       servicoInput.parentElement.appendChild(list);
- 
+
+      const calcRowTotal = (row) => {
+        const qtdEl = row.querySelector('input[id$="-quantidade"]');
+        const unitEl = row.querySelector('input[id$="-valor_unitario"]');
+        const totalEl = row.querySelector('input[id$="-valor_total"]');
+        if (!qtdEl || !unitEl || !totalEl) return;
+        const total = parseNumber(qtdEl.value) * parseNumber(unitEl.value);
+        totalEl.value = total.toFixed(2);
+      };
+
+      const syncValorServicoFromItems = () => {
+        const rows = Array.from(document.querySelectorAll('#items-table tbody tr.item-row'));
+        const total = rows.reduce((acc, row) => {
+          const totalEl = row.querySelector('input[id$="-valor_total"]');
+          const deleteEl = row.querySelector('input[type="checkbox"][id$="-DELETE"]');
+          if (deleteEl && deleteEl.checked) return acc;
+          return acc + parseNumber(totalEl ? totalEl.value : 0);
+        }, 0);
+        const count = rows.reduce((acc, row) => {
+          const deleteEl = row.querySelector('input[type="checkbox"][id$="-DELETE"]');
+          if (deleteEl && deleteEl.checked) return acc;
+          return acc + 1;
+        }, 0);
+        const valorServicoEl = document.getElementById('id_valor_servico');
+        if (valorServicoEl) valorServicoEl.value = total.toFixed(2);
+        const countEl = document.getElementById('servicos-added-count');
+        if (countEl) countEl.textContent = String(count);
+        recalcTributos();
+      };
+
+      const wireRow = (row) => {
+        const qtdEl = row.querySelector('input[id$="-quantidade"]');
+        const unitEl = row.querySelector('input[id$="-valor_unitario"]');
+        const deleteEl = row.querySelector('input[type="checkbox"][id$="-DELETE"]');
+        const removeBtn = row.querySelector('.btn-remove-item');
+
+        const onChange = () => {
+          calcRowTotal(row);
+          syncValorServicoFromItems();
+        };
+
+        if (qtdEl) qtdEl.addEventListener('input', onChange);
+        if (unitEl) unitEl.addEventListener('input', onChange);
+        if (deleteEl) deleteEl.addEventListener('change', syncValorServicoFromItems);
+        if (removeBtn) {
+          removeBtn.addEventListener('click', () => {
+            if (deleteEl) deleteEl.checked = true;
+            row.style.display = 'none';
+            syncValorServicoFromItems();
+          });
+        }
+      };
+
+      const addItemRow = (prefill = {}) => {
+        const totalFormsEl = document.getElementById('id_itens-TOTAL_FORMS');
+        const tbody = document.querySelector('#items-table tbody');
+        const lastRow = tbody ? tbody.querySelector('tr.item-row:last-child') : null;
+        if (!totalFormsEl || !tbody || !lastRow) return null;
+
+        const newIndex = parseInt(totalFormsEl.value || '0', 10);
+        const clone = lastRow.cloneNode(true);
+
+        Array.from(clone.querySelectorAll('input, textarea, select, label')).forEach((el) => {
+          if (el.name) el.name = el.name.replace(/itens-(\d+)-/g, `itens-${newIndex}-`);
+          if (el.id) el.id = el.id.replace(/id_itens-(\d+)-/g, `id_itens-${newIndex}-`);
+          if (el.htmlFor) el.htmlFor = el.htmlFor.replace(/id_itens-(\d+)-/g, `id_itens-${newIndex}-`);
+        });
+
+        Array.from(clone.querySelectorAll('input, textarea')).forEach((el) => {
+          if (el.type === 'checkbox') {
+            el.checked = false;
+          } else {
+            el.value = '';
+          }
+        });
+
+        tbody.appendChild(clone);
+        totalFormsEl.value = String(newIndex + 1);
+
+        const setField = (suffix, value) => {
+          const el = clone.querySelector(`[name="itens-${newIndex}-${suffix}"]`);
+          if (el) el.value = value;
+        };
+
+        if (prefill.descricao) setField('descricao', prefill.descricao);
+        if (prefill.quantidade) setField('quantidade', prefill.quantidade);
+        if (prefill.valor_unitario) setField('valor_unitario', prefill.valor_unitario);
+        if (prefill.servico_codigo) setField('servico_codigo', prefill.servico_codigo);
+        if (prefill.cnae_codigo) setField('cnae_codigo', prefill.cnae_codigo);
+        if (prefill.lc116_codigo) setField('lc116_codigo', prefill.lc116_codigo);
+
+        wireRow(clone);
+        calcRowTotal(clone);
+        syncValorServicoFromItems();
+        return clone;
+      };
+
+      const fillServiceIntoItem = (it) => {
+        const serviceCode = it.codigo_servico || it.value || '';
+        const cnae = it.cnae || '';
+        const descricao = it.descricao_servico || '';
+
+        const rows = Array.from(document.querySelectorAll('#items-table tbody tr.item-row'));
+        const candidate = rows.find((row) => {
+          const descEl = row.querySelector('textarea[id$="-descricao"], input[id$="-descricao"]');
+          const deleteEl = row.querySelector('input[type="checkbox"][id$="-DELETE"]');
+          if (deleteEl && deleteEl.checked) return false;
+          return descEl && !String(descEl.value || '').trim();
+        });
+
+        const targetRow = candidate || addItemRow();
+        if (!targetRow) return;
+
+        const setBySuffix = (suffix, value) => {
+          const el = targetRow.querySelector(`[name$="-${suffix}"]`);
+          if (el) el.value = value;
+        };
+
+        setBySuffix('descricao', descricao);
+        setBySuffix('servico_codigo', serviceCode);
+        setBySuffix('cnae_codigo', cnae);
+        setBySuffix('lc116_codigo', serviceCode);
+        calcRowTotal(targetRow);
+        syncValorServicoFromItems();
+      };
+
       const render = items => {
         list.innerHTML = '';
         items.forEach(it => {
@@ -901,20 +1106,29 @@
           a.addEventListener('click', e => {
             e.preventDefault();
             console.log('Selected service:', it);
-            document.getElementById('servico-codigo').value = it.codigo_servico || it.value;
-            document.getElementById('id_servico_descricao').value = it.descricao_servico || '';
-            document.getElementById('id_cnae_codigo').value = it.cnae || '';
-            document.getElementById('id_aliquota_iss').value = it.iss_aliquota || '0';
-            document.getElementById('servico-id').value = it.value;
+            const setValue = (id, value) => {
+              const el = document.getElementById(id);
+              if (el) el.value = value;
+            };
+
+            setValue('servico-codigo', it.codigo_servico || it.value || '');
+            setValue('id_servico_codigo', it.codigo_servico || it.value || '');
+            setValue('servico-descricao', it.descricao_servico || '');
+            setValue('id_servico_descricao', it.descricao_servico || '');
+            setValue('id_cnae_codigo', it.cnae || '');
+            setValue('id_aliquota_iss', it.iss_aliquota || '0');
+            setValue('servico-id', it.value || '');
             list.innerHTML = '';
- 
-            // Calculate ISS if aliquota is set
-            if (it.iss_aliquota > 0) {
-              const valorServico = parseFloat(document.getElementById('id_valor_servico').value) || 0;
-              const valorIss = (valorServico * (it.iss_aliquota / 100)).toFixed(2);
-              document.getElementById('id_valor_iss').value = valorIss;
-              updateTotals();
-            }
+
+            fillServiceIntoItem(it);
+            servicoInput.value = '';
+            setValue('servico-codigo', '');
+            setValue('id_servico_codigo', '');
+            setValue('id_cnae_codigo', '');
+            servicoInput.focus();
+            valorIssManual = false;
+            recalcTributos();
+            showToast(`Serviço adicionado: ${it.label || it.descricao_servico || it.value || ''}`.trim());
           });
           list.appendChild(a);
         });
@@ -933,21 +1147,27 @@
           render(Array.isArray(d) ? d : []);
         }, 250);
       });
+
+      const btnAdd = document.getElementById('btn-add-item');
+      if (btnAdd) btnAdd.addEventListener('click', () => addItemRow());
+
+      Array.from(document.querySelectorAll('#items-table tbody tr.item-row')).forEach(wireRow);
+      syncValorServicoFromItems();
     }
  
     /* Update totals display */
-    const updateTotals = () => {
+    function updateTotals() {
       const valorServicoEl = document.getElementById('id_valor_servico');
       const valorDeducaoEl = document.getElementById('id_valor_deducao');
       const valorDescontoEl = document.getElementById('id_valor_desconto');
       const valorIssEl = document.getElementById('id_valor_iss');
       const valorLiquidoEl = document.getElementById('id_valor_liquido');
  
-      const valorServico = valorServicoEl ? parseFloat(valorServicoEl.value) || 0 : 0;
-      const valorDeducao = valorDeducaoEl ? parseFloat(valorDeducaoEl.value) || 0 : 0;
-      const valorDesconto = valorDescontoEl ? parseFloat(valorDescontoEl.value) || 0 : 0;
-      const valorIss = valorIssEl ? parseFloat(valorIssEl.value) || 0 : 0;
-      const valorLiquido = valorLiquidoEl ? parseFloat(valorLiquidoEl.value) || 0 : 0;
+      const valorServico = valorServicoEl ? parseNumber(valorServicoEl.value) : 0;
+      const valorDeducao = valorDeducaoEl ? parseNumber(valorDeducaoEl.value) : 0;
+      const valorDesconto = valorDescontoEl ? parseNumber(valorDescontoEl.value) : 0;
+      const valorIss = valorIssEl ? parseNumber(valorIssEl.value) : 0;
+      const valorLiquido = valorLiquidoEl ? parseNumber(valorLiquidoEl.value) : 0;
  
       const dispValorServico = document.getElementById('disp-valor-servico');
       const dispValorDeducao = document.getElementById('disp-valor-deducao');
@@ -955,21 +1175,85 @@
       const dispValorIss = document.getElementById('disp-valor-iss');
       const dispValorLiquido = document.getElementById('disp-valor-liquido');
  
-      if (dispValorServico) dispValorServico.textContent = `R$ ${valorServico.toFixed(2)}`;
-      if (dispValorDeducao) dispValorDeducao.textContent = `R$ ${valorDeducao.toFixed(2)}`;
-      if (dispValorDesconto) dispValorDesconto.textContent = `R$ ${valorDesconto.toFixed(2)}`;
-      if (dispValorIss) dispValorIss.textContent = `R$ ${valorIss.toFixed(2)}`;
-      if (dispValorLiquido) dispValorLiquido.textContent = `R$ ${valorLiquido.toFixed(2)}`;
-    };
+      if (dispValorServico) dispValorServico.textContent = `R$ ${formatMoney(valorServico)}`;
+      if (dispValorDeducao) dispValorDeducao.textContent = `R$ ${formatMoney(valorDeducao)}`;
+      if (dispValorDesconto) dispValorDesconto.textContent = `R$ ${formatMoney(valorDesconto)}`;
+      if (dispValorIss) dispValorIss.textContent = `R$ ${formatMoney(valorIss)}`;
+      if (dispValorLiquido) dispValorLiquido.textContent = `R$ ${formatMoney(valorLiquido)}`;
+    }
+
+    function recalcTributos() {
+      const valorServicoEl = document.getElementById('id_valor_servico');
+      const valorDeducaoEl = document.getElementById('id_valor_deducao');
+      const valorDescontoEl = document.getElementById('id_valor_desconto');
+      const valorInssEl = document.getElementById('id_valor_inss');
+      const valorIrrfEl = document.getElementById('id_valor_irrf');
+      const valorCsllEl = document.getElementById('id_valor_csll');
+      const valorCofinsEl = document.getElementById('id_valor_cofins');
+      const valorPisEl = document.getElementById('id_valor_pis');
+      const valorIssEl = document.getElementById('id_valor_iss');
+      const aliquotaIssEl = document.getElementById('id_aliquota_iss');
+      const valorLiquidoEl = document.getElementById('id_valor_liquido');
+
+      const valorServico = valorServicoEl ? parseNumber(valorServicoEl.value) : 0;
+      const valorDeducao = valorDeducaoEl ? parseNumber(valorDeducaoEl.value) : 0;
+      const valorDesconto = valorDescontoEl ? parseNumber(valorDescontoEl.value) : 0;
+      const valorInss = valorInssEl ? parseNumber(valorInssEl.value) : 0;
+      const valorIrrf = valorIrrfEl ? parseNumber(valorIrrfEl.value) : 0;
+      const valorCsll = valorCsllEl ? parseNumber(valorCsllEl.value) : 0;
+      const valorCofins = valorCofinsEl ? parseNumber(valorCofinsEl.value) : 0;
+      const valorPis = valorPisEl ? parseNumber(valorPisEl.value) : 0;
+      const aliquotaIss = aliquotaIssEl ? parseNumber(aliquotaIssEl.value) : 0;
+
+      let valorIss = valorIssEl ? parseNumber(valorIssEl.value) : 0;
+      if (!valorIssManual && aliquotaIss > 0) {
+        valorIss = valorServico * (aliquotaIss / 100);
+      }
+      if (valorIssEl) valorIssEl.value = valorIss.toFixed(2);
+
+      const valorLiquido = (
+        valorServico
+        - valorDeducao
+        - valorDesconto
+        - valorIss
+        - valorInss
+        - valorIrrf
+        - valorCsll
+        - valorCofins
+        - valorPis
+      );
+
+      if (valorLiquidoEl) valorLiquidoEl.value = valorLiquido.toFixed(2);
+      updateTotals();
+    }
  
     // Listen for changes in tax fields
-    ['id_valor_servico', 'id_valor_deducao', 'id_valor_desconto', 'id_valor_iss', 'id_valor_liquido'].forEach(id => {
+    [
+      'id_valor_servico',
+      'id_valor_deducao',
+      'id_valor_desconto',
+      'id_valor_inss',
+      'id_valor_irrf',
+      'id_valor_csll',
+      'id_valor_cofins',
+      'id_valor_pis',
+      'id_valor_iss',
+      'id_aliquota_iss',
+    ].forEach(id => {
       const el = document.getElementById(id);
-      if (el) el.addEventListener('change', updateTotals);
+      if (!el) return;
+      if (id === 'id_valor_iss') {
+        el.addEventListener('input', () => {
+          valorIssManual = true;
+          recalcTributos();
+        });
+      } else {
+        el.addEventListener('input', recalcTributos);
+      }
     });
  
     // Initial update
-    updateTotals();
+    recalcTributos();
   })();
 </script>
 {% endblock %}

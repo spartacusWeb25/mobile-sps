@@ -24,6 +24,7 @@ from .serializers import (
                             ServicosOsSerializer, OsHoraSerializer)
 from django.db import models
 from django.db.models import Prefetch
+from django.db.models.expressions import RawSQL
 from core.middleware import get_licenca_slug
 from core.registry import get_licenca_db_config
 from core.decorator import modulo_necessario, ModuloRequeridoMixin
@@ -88,6 +89,59 @@ class OsViewSet(BaseMultiDBModelViewSet):
     filterset_class = OsFilter
     ordering_fields = ['os_os']
     search_fields = ['os_prob_rela', 'os_obse']
+
+    def _safe_queryset(self, banco, empresa=None, filial=None):
+        qs = Os.objects.using(banco).all()
+        if empresa is not None and filial is not None:
+            qs = qs.filter(os_empr=empresa, os_fili=filial)
+
+        return qs.defer(
+            'os_data_aber',
+            'os_data_entr',
+            'os_data_fech',
+            'field_log_data',
+        ).annotate(
+            os_data_aber_safe=RawSQL(
+                """
+                CASE
+                    WHEN os_data_aber IS NULL THEN NULL
+                    WHEN EXTRACT(YEAR FROM os_data_aber) BETWEEN 1900 AND 2100 THEN to_char(os_data_aber, 'YYYY-MM-DD')
+                    ELSE 'Data incorreta'
+                END
+                """,
+                [],
+            ),
+            os_data_entr_safe=RawSQL(
+                """
+                CASE
+                    WHEN os_data_entr IS NULL THEN NULL
+                    WHEN EXTRACT(YEAR FROM os_data_entr) BETWEEN 1900 AND 2100 THEN to_char(os_data_entr, 'YYYY-MM-DD')
+                    ELSE 'Data incorreta'
+                END
+                """,
+                [],
+            ),
+            os_data_fech_safe=RawSQL(
+                """
+                CASE
+                    WHEN os_data_fech IS NULL THEN NULL
+                    WHEN EXTRACT(YEAR FROM os_data_fech) BETWEEN 1900 AND 2100 THEN to_char(os_data_fech, 'YYYY-MM-DD')
+                    ELSE 'Data incorreta'
+                END
+                """,
+                [],
+            ),
+            field_log_data_safe=RawSQL(
+                """
+                CASE
+                    WHEN _log_data IS NULL THEN NULL
+                    WHEN EXTRACT(YEAR FROM _log_data) BETWEEN 1900 AND 2100 THEN to_char(_log_data, 'YYYY-MM-DD')
+                    ELSE 'Data incorreta'
+                END
+                """,
+                [],
+            ),
+        )
    
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -106,7 +160,7 @@ class OsViewSet(BaseMultiDBModelViewSet):
             self.request.query_params.get('filial_id') or 
             self.request.query_params.get('fili')
         )
-        qs = Os.objects.using(banco).filter(os_empr=empresa, os_fili=filial)
+        qs = self._safe_queryset(banco, empresa=empresa, filial=filial)
 
         return qs.order_by('-os_os')
     
@@ -131,7 +185,8 @@ class OsViewSet(BaseMultiDBModelViewSet):
         
         if is_uuid:
             logger.info(f"Buscando OS por UUID/Auto={pk} no banco {banco}")
-            qs = Os.objects.using(banco).filter(os_auto=pk)
+            qs = self._safe_queryset(banco)
+            qs = qs.filter(os_auto=pk)
             if empresa and filial:
                 qs = qs.filter(os_empr=empresa, os_fili=filial)
             
@@ -148,9 +203,9 @@ class OsViewSet(BaseMultiDBModelViewSet):
             # Se não passar empresa/filial, tenta buscar só por PK (comportamento antigo), 
             # mas corre risco de MultipleObjectsReturned
             if not empresa or not filial:
-                obj = Os.objects.using(banco).get(pk=pk)
+                obj = self._safe_queryset(banco).get(pk=pk)
             else:
-                obj = Os.objects.using(banco).get(
+                obj = self._safe_queryset(banco).get(
                     pk=pk,
                     os_empr=empresa, 
                     os_fili=filial

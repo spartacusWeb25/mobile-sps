@@ -27,7 +27,7 @@ class NfseCreateView(DBAndSlugMixin, View):
         initial_data = {}
         if filial_obj:
             initial_data['prestador_nome'] = getattr(filial_obj, 'empr_nome', '')
-            initial_data['prestador_documento'] = getattr(filial_obj, 'empr_cnpj', '') or getattr(filial_obj, 'empr_cpf', '')
+            initial_data['prestador_documento'] = getattr(filial_obj, 'empr_docu', '') or getattr(filial_obj, 'empr_cpf', '')
             initial_data['municipio_codigo'] = getattr(filial_obj, 'empr_muni_codi', '4119905')  # Default to Ponta Grossa
             initial_data['rps_numero'] = '1'  # Default RPS number - should come from config
             initial_data['rps_serie'] = 'NF'  # Default RPS series - should come from config
