@@ -37,6 +37,7 @@ class PedidopisosListView(VendedorEntidadeMixin, ListView):
                 "pedi_vend",
                 "pedi_data",
                 "pedi_tota",
+                "pedi_desc",
                 "pedi_stat",
             )
             .order_by("-pedi_nume")
@@ -148,6 +149,10 @@ class PedidopisosListView(VendedorEntidadeMixin, ListView):
             p.vendedor_nome = nomes.get(p.pedi_vend, "")
             p.status_desc = status_obj.stat_desc if status_obj else "Sem status"
             p.status_cor = status_obj.stat_cor if status_obj else "#6c757d"
+            total = p.pedi_tota or Decimal("0")
+            desc = p.pedi_desc or Decimal("0")
+            p.pedi_bruto = total
+            p.pedi_liqu = total - desc
 
         return rows
 
@@ -162,6 +167,11 @@ class PedidopisosListView(VendedorEntidadeMixin, ListView):
             .filter(pedi_data__gte=data_min)
         )
         qs = self.filter_por_vendedor(qs, "pedi_vend")
+        pedi_tota_total = qs.aggregate(pedi_tota=Sum("pedi_tota")).get("pedi_tota") or 0
+        pedi_desc = qs.aggregate(pedi_desc=Sum("pedi_desc")).get("pedi_desc") or 0
+        pedi_liqu = pedi_tota_total - pedi_desc
+        pedi_bruto = pedi_tota_total
+        pedi_tota = self.request.GET.get("pedi_tota")
 
         numero = self.request.GET.get("pedi_nume")
         cliente_nome = self.request.GET.get("cliente_nome")
@@ -335,6 +345,7 @@ class ExportarPedidosView(View):
                 "pedi_vend",
                 "pedi_data",
                 "pedi_tota",
+                "pedi_desc",
                 "pedi_stat",
             )
             .order_by("-pedi_nume")
@@ -419,8 +430,12 @@ class ExportarPedidosView(View):
 
         # Calculate totals
         total_pedidos = len(rows)
-        total_valor = sum((p.pedi_tota or 0) for p in rows)
-        total_faturado = sum((p.pedi_tota or 0) for p in rows if p.pedi_stat == 6)  # Status 6 = concluído/faturado
+        total_bruto = sum((p.pedi_tota or 0) for p in rows)
+        total_liquido = sum(((p.pedi_tota or 0) - (p.pedi_desc or 0)) for p in rows)
+        total_faturado_bruto = sum((p.pedi_tota or 0) for p in rows if p.pedi_stat == 6)  # Status 6 = concluído/faturado
+        total_faturado_liquido = sum(
+            ((p.pedi_tota or 0) - (p.pedi_desc or 0)) for p in rows if p.pedi_stat == 6
+        )
 
         # Create Excel response
         response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
@@ -436,7 +451,8 @@ class ExportarPedidosView(View):
             'Cliente',
             'Vendedor',
             'Status',
-            'Total'
+            'Total Líquido',
+            'Total Bruto',
         ]
         ws.append(headers)
 
@@ -460,6 +476,7 @@ class ExportarPedidosView(View):
                 nomes.get(p.pedi_clie, ""),
                 nomes.get(p.pedi_vend, ""),
                 status_desc,
+                float((p.pedi_tota or 0) - (p.pedi_desc or 0)),
                 float(p.pedi_tota or 0),
             ])
 
@@ -471,7 +488,8 @@ class ExportarPedidosView(View):
             "",
             "",
             f"Pedidos: {total_pedidos}",
-            float(total_valor),
+            float(total_liquido),
+            float(total_bruto),
         ])
         ws.append([
             "",
@@ -479,7 +497,8 @@ class ExportarPedidosView(View):
             "",
             "",
             f"Faturados: {sum(1 for p in rows if p.pedi_stat == 6)}",
-            float(total_faturado),
+            float(total_faturado_liquido),
+            float(total_faturado_bruto),
         ])
 
         # Format totals row

@@ -150,7 +150,7 @@
     <button class="btn btn-warning"
             data-bs-toggle="modal"
             data-bs-target="#modalPainelPedidos">
-        Painel Pedidos
+        <i class="bi bi-grid fs-5 me-2" style="color: #ffffff;"></i> Painel Pedidos
     </button>
   </div>
 
@@ -261,7 +261,8 @@
             <th><i class="bi bi-person me-1"></i>Cliente</th>
             <th><i class="bi bi-person me-1"></i>Vendedor</th>
             <th><i class="bi bi-calendar3 me-1"></i>Data</th>
-            <th><i class="bi bi-cash-stack me-1"></i>Total</th>
+            <th><i class="bi bi-cash-stack me-1"></i>Total Bruto</th>
+            <th><i class="bi bi-cash-stack me-1"></i>Total Liquido</th>
             <th><i class="bi bi-lock-fill me-1"></i>Status</th>
             <th class="pe-4"></th>
           </tr>
@@ -273,7 +274,8 @@
             <td>{{ p.cliente_nome }}</td>
             <td>{{ p.vendedor_nome }}</td>
             <td>{{ p.pedi_data }}</td>
-            <td class="fw-semibold">{{ p.pedi_tota|brl }}</td>
+            <td class="fw-semibold">{{ p.pedi_bruto|brl }}</td>
+            <td class="fw-semibold">{{ p.pedi_liqu|brl }}</td>
             <td>
               <span class="badge px-3 py-2" style="background-color: {{ p.status_cor|default:'#6c757d' }};">
                 {{ p.status_desc|default:'Sem status' }}
@@ -292,7 +294,7 @@
           </tr>
           {% empty %}
           <tr>
-            <td colspan="7" class="text-center py-5 text-muted">
+            <td colspan="8" class="text-center py-5 text-muted">
               <i class="bi bi-inbox fs-2 d-block mb-2"></i>
               Nenhum pedido encontrado.
             </td>
