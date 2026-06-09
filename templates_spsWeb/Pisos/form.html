@@ -564,7 +564,7 @@
                 <i class="bi bi-grid-3x3 me-1"></i>Itens do Pedido
                 <span id="kohler-badge" class="kohler-badge d-none">Kohler</span>
               </div>
-              <button type="button" id="btn-add-item" class="btn btn-sm btn-outline-primary">
+              <button type="button" id="btn-add-item" class="btn btn-sm btn-outline-primary" data-action="add-item">
                 <i class="bi bi-plus-lg"></i> Adicionar Item
               </button>
             </div>
@@ -749,6 +749,10 @@
                 <span>Total Geral</span>
                 <span id="total-geral" style="font-size:16px">R$ 0,00</span>
               </div>
+              <button type="button" id="btn-add-item-bottom" class="btn btn-sm btn-outline-primary"
+                data-action="add-item">
+                <i class="bi bi-plus-lg"></i> Adicionar Item
+              </button>
             </div>
           </div>
         </div>
@@ -1406,76 +1410,90 @@
     }
 
     function setupAddItem() {
-      var btn = document.getElementById('btn-add-item');
-      if (!btn) return;
-      btn.addEventListener('click', function () {
-        var totalInput = document.getElementById('id_itens-TOTAL_FORMS');
-        if (!totalInput) return;
-        var index = parseInt(totalInput.value, 10);
-        totalInput.value = index + 1;
-        var tbody = document.getElementById('itens-tbody');
-        var prefix = 'itens-' + index;
-        var tr = document.createElement('tr');
-        tr.dataset.index = index;
-        tr.innerHTML =
-          '<td style="min-width:55px;max-width:55px">' +
-          '<input name="' + prefix + '-item_nome_ambi" class="form-control form-control-sm" placeholder="Ambiente" style="width:100%">' +
-          '<input type="hidden" name="' + prefix + '-item_ambi" id="id_itens-' + index + '-item_ambi" value="' + (index + 1) + '">' +
-          '</td>' +
-          '<td style="min-width:60px;max-width:60px">' +
-          '<input type="number" step="0.0001" id="caix-' + index + '" name="' + prefix + '-item_caix" class="form-control form-control-sm item-caix" placeholder="0">' +
-          '</td>' +
-          '<td style="min-width:65px;max-width:65px">' +
-          '<input type="number" step="0.01" id="m2-' + index + '" class="form-control form-control-sm item-m2" data-index="' + index + '" placeholder="0,00">' +
-          '<input type="hidden" name="' + prefix + '-item_m2" id="id_itens-' + index + '-item_m2" value="">' +
-          '<div class="calc-spinner" id="spin-' + index + '"></div>' +
-          '</td>' +
-          '<td style="min-width:65px;max-width:65px">' +
-          '<input type="number" step="0.01" id="kg-' + index + '" class="form-control form-control-sm item-kg calc-field" data-index="' + index + '" placeholder="0,00" readonly tabindex="-1" style="width:100%">' +
-          '<input type="hidden" name="' + prefix + '-item_kg" id="id_itens-' + index + '-item_kg" value="">' +
-          '</td>' +
-          '<td class="position-relative" style="min-width:80px;max-width:80px">' +
-          '<input id="produto_busca_' + index + '" class="form-control form-control-sm" placeholder="Buscar produto" data-index="' + index + '" style="width:100%">' +
-          '<input type="hidden" name="' + prefix + '-item_prod" id="id_itens-' + index + '-item_prod" value="">' +
-          '</td>' +
-          '<td>' +
-          '<input name="' + prefix + '-item_prod_nome" id="id_itens-' + index + '-item_prod_nome" class="form-control form-control-sm" placeholder="—">' +
-          '</td>' +
-          '<td>' +
-          '<input type="number" step="0.0001" id="quan-' + index + '" name="' + prefix + '-item_quan" class="form-control form-control-sm item-quan">' +
-          '</td>' +
-          '<td style="min-width:45px;max-width:45px">' +
-          '<input type="number" step="0.01" id="unit-' + index + '" class="form-control form-control-sm item-unit" data-index="' + index + '" placeholder="0,00">' +
-          '<input type="hidden" name="' + prefix + '-item_unit" id="id_itens-' + index + '-item_unit" value="">' +
-          '</td>' +
-          '<td style="min-width:45px;max-width:45px">' +
-          '<input type="number" step="0.01" name="' + prefix + '-item_desc" class="form-control form-control-sm" placeholder="0" style="width:100%">' +
-          '</td>' +
-          '<td style="min-width:45px;max-width:45px">' +
-          '<input type="number" step="0.01" id="queb-' + index + '" class="form-control form-control-sm item-queb" data-index="' + index + '" placeholder="0" style="width:100%">' +
-          '<input type="hidden" name="' + prefix + '-item_queb" id="id_itens-' + index + '-item_queb" value="">' +
-          '</td>' +
-          '<td style="min-width:75px;max-width:75px">' +
-          '<input type="text" id="suto-' + index + '" class="form-control form-control-sm calc-field" readonly tabindex="-1" style="width:100%">' +
-          '</td>' +
-          '<td style="min-width:55px;max-width:55px">' +
-          '<input name="' + prefix + '-item_obse" class="form-control form-control-sm" placeholder="Obs" style="width:100%">' +
-          '</td>' +
-          '<td style="min-width:36px;max-width:36px">' +
-          '<input type="hidden" name="' + prefix + '-DELETE" id="id_itens-' + index + '-DELETE" value="">' +
-          '<button type="button" class="btn btn-sm btn-outline-danger btn-remove-item"><i class="bi bi-trash"></i></button>' +
-          '</td>';
-        tbody.appendChild(tr);
-        bindCalcInputs(index);
-        setupAutocomplete('produto_busca_' + index, 'id_itens-' + index + '-item_prod', URL_AUTO_PRODUTOS, function (selected) {
-          var nomeInput = document.getElementById('id_itens-' + index + '-item_prod_nome');
-          if (nomeInput) nomeInput.value = selected.label || selected.text || '';
-          if (kohlerModeActive) {
-            calcularItemKohler(index);
-          } else {
-            calcularItem(index);
-          }
-        }, true);
+      var btns = document.querySelectorAll('[data-action="add-item"]');
+      if (!btns || !btns.length) return;
+      btns.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var totalInput = document.getElementById('id_itens-TOTAL_FORMS');
+          if (!totalInput) return;
+          var index = parseInt(totalInput.value, 10);
+          totalInput.value = index + 1;
+          var tbody = document.getElementById('itens-tbody');
+          var prefix = 'itens-' + index;
+          var tr = document.createElement('tr');
+          tr.dataset.index = index;
+          tr.innerHTML =
+            '<td style="min-width:55px;max-width:55px">' +
+            '<input name="' + prefix + '-item_nome_ambi" class="form-control form-control-sm" placeholder="Ambiente" style="width:100%">' +
+            '<input type="hidden" name="' + prefix + '-item_ambi" id="id_itens-' + index + '-item_ambi" value="' + (index + 1) + '">' +
+            '</td>' +
+            '<td style="min-width:60px;max-width:60px">' +
+            '<input type="number" step="0.0001" id="caix-' + index + '" name="' + prefix + '-item_caix" class="form-control form-control-sm item-caix" placeholder="0">' +
+            '</td>' +
+            '<td style="min-width:65px;max-width:65px">' +
+            '<input type="number" step="0.01" id="m2-' + index + '" class="form-control form-control-sm item-m2" data-index="' + index + '" placeholder="0,00">' +
+            '<input type="hidden" name="' + prefix + '-item_m2" id="id_itens-' + index + '-item_m2" value="">' +
+            '<div class="calc-spinner" id="spin-' + index + '"></div>' +
+            '</td>' +
+            '<td style="min-width:65px;max-width:65px">' +
+            '<input type="number" step="0.01" id="kg-' + index + '" class="form-control form-control-sm item-kg calc-field" data-index="' + index + '" placeholder="0,00" readonly tabindex="-1" style="width:100%">' +
+            '<input type="hidden" name="' + prefix + '-item_kg" id="id_itens-' + index + '-item_kg" value="">' +
+            '</td>' +
+            '<td class="position-relative" style="min-width:80px;max-width:80px">' +
+            '<input id="produto_busca_' + index + '" class="form-control form-control-sm" placeholder="Buscar produto" data-index="' + index + '" style="width:100%">' +
+            '<input type="hidden" name="' + prefix + '-item_prod" id="id_itens-' + index + '-item_prod" value="">' +
+            '</td>' +
+            '<td>' +
+            '<input name="' + prefix + '-item_prod_nome" id="id_itens-' + index + '-item_prod_nome" class="form-control form-control-sm" placeholder="—">' +
+            '</td>' +
+            '<td>' +
+            '<input type="number" step="0.0001" id="quan-' + index + '" name="' + prefix + '-item_quan" class="form-control form-control-sm item-quan">' +
+            '</td>' +
+            '<td style="min-width:45px;max-width:45px">' +
+            '<input type="number" step="0.01" id="unit-' + index + '" class="form-control form-control-sm item-unit" data-index="' + index + '" placeholder="0,00">' +
+            '<input type="hidden" name="' + prefix + '-item_unit" id="id_itens-' + index + '-item_unit" value="">' +
+            '</td>' +
+            '<td style="min-width:45px;max-width:45px">' +
+            '<input type="number" step="0.01" name="' + prefix + '-item_desc" class="form-control form-control-sm" placeholder="0" style="width:100%">' +
+            '</td>' +
+            '<td style="min-width:45px;max-width:45px">' +
+            '<input type="number" step="0.01" id="queb-' + index + '" class="form-control form-control-sm item-queb" data-index="' + index + '" placeholder="0" style="width:100%">' +
+            '<input type="hidden" name="' + prefix + '-item_queb" id="id_itens-' + index + '-item_queb" value="">' +
+            '</td>' +
+            '<td style="min-width:75px;max-width:75px">' +
+            '<input type="text" id="suto-' + index + '" class="form-control form-control-sm calc-field" readonly tabindex="-1" style="width:100%">' +
+            '</td>' +
+            '<td style="min-width:55px;max-width:55px">' +
+            '<input name="' + prefix + '-item_obse" class="form-control form-control-sm" placeholder="Obs" style="width:100%">' +
+            '</td>' +
+            '<td style="min-width:36px;max-width:36px">' +
+            '<input type="hidden" name="' + prefix + '-DELETE" id="id_itens-' + index + '-DELETE" value="">' +
+            '<button type="button" class="btn btn-sm btn-outline-danger btn-remove-item"><i class="bi bi-trash"></i></button>' +
+            '</td>';
+          tbody.appendChild(tr);
+          bindCalcInputs(index);
+          setupAutocomplete('produto_busca_' + index, 'id_itens-' + index + '-item_prod', URL_AUTO_PRODUTOS, function (selected) {
+            var nomeInput = document.getElementById('id_itens-' + index + '-item_prod_nome');
+            if (nomeInput) nomeInput.value = selected.label || selected.text || '';
+            if (kohlerModeActive) {
+              calcularItemKohler(index);
+            } else {
+              calcularItem(index);
+            }
+          }, true);
+          requestAnimationFrame(function () {
+            var wrap = document.querySelector('.itens-table-wrap');
+            if (wrap) {
+              try {
+                wrap.scrollTo({ top: wrap.scrollHeight, behavior: 'smooth' });
+              } catch (e) {
+                wrap.scrollTop = wrap.scrollHeight;
+              }
+            }
+            var prodBusca = document.getElementById('produto_busca_' + index);
+            if (prodBusca) prodBusca.focus();
+          });
+        });
       });
     }
 

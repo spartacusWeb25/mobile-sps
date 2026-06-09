@@ -556,7 +556,7 @@
                 <i class="bi bi-grid-3x3 me-1"></i>Itens do Orçamento
                 <span id="kohler-badge" class="kohler-badge d-none">Kohler</span>
               </div>
-              <button type="button" id="btn-add-item" class="btn btn-sm btn-outline-primary">
+              <button type="button" id="btn-add-item" class="btn btn-sm btn-outline-primary" data-action="add-item">
                 <i class="bi bi-plus-lg"></i> Adicionar Item
               </button>
             </div>
@@ -746,6 +746,9 @@
                 <span>Total Geral</span>
                 <span id="total-geral" style="font-size:16px">R$ 0,00</span>
               </div>
+              <button type="button" id="btn-add-item-bottom" class="btn btn-sm btn-outline-primary" data-action="add-item">
+                <i class="bi bi-plus-lg"></i> Adicionar Item
+              </button>
             </div>
           </div>
         </div>
@@ -1274,9 +1277,10 @@
     }
 
     function setupAddItem() {
-      var btn = document.getElementById('btn-add-item');
-      if (!btn) return;
-      btn.addEventListener('click', function () {
+      var btns = document.querySelectorAll('[data-action="add-item"]');
+      if (!btns || !btns.length) return;
+      btns.forEach(function (btn) {
+        btn.addEventListener('click', function () {
         var totalInput = document.getElementById('id_itens-TOTAL_FORMS');
         if (!totalInput) return;
         var index = parseInt(totalInput.value, 10);
@@ -1352,6 +1356,19 @@
           },
           true
         );
+        requestAnimationFrame(function () {
+          var wrap = document.querySelector('.itens-table-wrap');
+          if (wrap) {
+            try {
+              wrap.scrollTo({ top: wrap.scrollHeight, behavior: 'smooth' });
+            } catch (e) {
+              wrap.scrollTop = wrap.scrollHeight;
+            }
+          }
+          var prodBusca = document.getElementById('produto_busca_' + index);
+          if (prodBusca) prodBusca.focus();
+        });
+        });
       });
     }
 
