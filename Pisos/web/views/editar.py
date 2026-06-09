@@ -241,14 +241,25 @@ def editar_pedido_pisos(request, slug, pk):
         .values_list("item_prod", flat=True)
     )
     itens_prod_ids = [str(p).strip() for p in itens_prod_ids if p]
+    itens_prod_ids_nume = []
+    for p in itens_prod_ids:
+        if p.isdigit():
+            try:
+                itens_prod_ids_nume.append(int(p))
+            except Exception:
+                pass
     kohler_inicial = False
     if itens_prod_ids:
         from django.db.models import Q
-        produtos = Produtos.objects.using(banco).filter(
-            prod_empr=str(pedido.pedi_empr),
-        ).filter(
-            Q(prod_codi__in=list(set(itens_prod_ids))) | Q(prod_codi_nume__in=list(set(itens_prod_ids)))
-        ).values_list("prod_codi", "prod_codi_nume", "prod_marc_id")
+        filtro = Q(prod_codi__in=list(set(itens_prod_ids)))
+        if itens_prod_ids_nume:
+            filtro = filtro | Q(prod_codi_nume__in=list(set(itens_prod_ids_nume)))
+        produtos = (
+            Produtos.objects.using(banco)
+            .filter(prod_empr=str(pedido.pedi_empr))
+            .filter(filtro)
+            .values_list("prod_codi", "prod_codi_nume", "prod_marc_id")
+        )
 
         marca_por_prod = {}
         for codi, codi_nume, marc_id in produtos:
