@@ -7,6 +7,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Relatório de Contas a Pagar</title>
     <style>
+        @page {
+            margin: 10mm;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -15,26 +19,26 @@
 
         body {
             font-family: Arial, sans-serif;
-            font-size: 12px;
-            padding: 20px;
+            font-size: 11px;
+            padding: 12px;
             color: #333;
         }
 
         .header {
             text-align: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
+            margin-bottom: 14px;
+            padding-bottom: 10px;
             border-bottom: 2px solid #333;
         }
 
         .header img {
-            max-height: 80px;
-            margin-bottom: 10px;
+            max-height: 65px;
+            margin-bottom: 8px;
         }
 
         .header h1 {
-            font-size: 18px;
-            margin-bottom: 5px;
+            font-size: 16px;
+            margin-bottom: 4px;
         }
 
         .header p {
@@ -44,8 +48,8 @@
         }
 
         .company-info {
-            margin-bottom: 15px;
-            padding: 10px;
+            margin-bottom: 12px;
+            padding: 8px;
             background-color: #f5f5f5;
             border-radius: 4px;
         }
@@ -62,10 +66,10 @@
 
         th,
         td {
-            padding: 4px 6px;
+            padding: 3px 5px;
             text-align: left;
             border: 1px solid #ddd;
-            font-size: 11px;
+            font-size: 10px;
         }
 
         th {
@@ -81,10 +85,10 @@
         .grand-total {
             background-color: #d1e7dd;
             font-weight: bold;
-            font-size: 14px;
-            padding: 15px;
+            font-size: 12px;
+            padding: 10px;
             border-radius: 4px;
-            margin-top: 20px;
+            margin-top: 14px;
         }
 
         .grand-total .row {
@@ -94,7 +98,7 @@
         }
 
         .badge {
-            padding: 3px 8px;
+            padding: 2px 7px;
             border-radius: 3px;
             font-size: 10px;
             font-weight: bold;
@@ -123,6 +127,12 @@
         @media print {
             body {
                 padding: 0;
+            }
+
+            .company-info,
+            table,
+            .grand-total {
+                page-break-inside: avoid;
             }
         }
     </style>
