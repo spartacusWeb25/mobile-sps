@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load finance_tags %}
 {% block content %}
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/list.css' %}">
@@ -175,7 +176,7 @@
                 </td>
                 <td>{{ t.titu_titu }}</td>
                 <td>{{ t.cliente_nome }}</td>
-                <td>{{ t.titu_valo }}</td>
+                <td>{{ t.titu_valo|brl }}</td>
                 <td>{{ t.titu_parc }}</td>
                 <td>{{ t.titu_venc }}</td>
                 <td>{{ t.bapa_dpag }}</td>
@@ -201,7 +202,7 @@
                 <td>
                   {% for emp_id, emp_data in empresas_totals.items %}
                     {% if emp_id == empresa.grouper %}
-                      {{ emp_data.valor|floatformat:2 }}
+                      {{ emp_data.valor|brl }}
                     {% endif %}
                   {% endfor %}
                 </td>
@@ -224,7 +225,7 @@
           </h5>
         </div>
         <div class="col-md-6 text-end">
-          <span class="h4 mb-0">{{ total_sum|floatformat:2 }}</span>
+          <span class="h4 mb-0">{{ total_sum|brl }}</span>
           <small class="text-muted">({{ total_count }} títulos)</small>
         </div>
       </div>

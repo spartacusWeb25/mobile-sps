@@ -787,6 +787,54 @@
         }
       }
 
+      const normalizeDigits = (value) => (String(value || '').match(/\d+/g) || []).join('');
+
+      const classificacoesDatalist = document.getElementById('ibscbs-cclasstrib-opcoes');
+
+      async function loadIbscbsClassificacoes() {
+        if (!classificacoesDatalist) return;
+        const ncmEl = document.getElementById('autocomplete-ncm') || document.getElementById('id_prod_ncm') || document.querySelector('[name="prod_ncm"]');
+        const ncmRaw = (ncmEl?.value || '').trim();
+        const ncmDigits = normalizeDigits(ncmRaw);
+        const urlBase = String(apiUrl || '');
+        const base = urlBase.endsWith('/') ? urlBase : (urlBase + '/');
+        const url = base + 'ibscbs-classificacoes/?' + new URLSearchParams(
+          ncmDigits ? { ncm: ncmDigits } : {}
+        ).toString();
+
+        try {
+          const resp = await fetch(url, { headers: { 'Accept': 'application/json' } });
+          const data = await resp.json();
+          if (!resp.ok) return;
+          const opcoes = Array.isArray(data.opcoes) ? data.opcoes : [];
+          const fontes = Array.isArray(data.fontes) ? data.fontes : [];
+          classificacoesDatalist.innerHTML = '';
+          opcoes.forEach((o) => {
+            const v = String(o.value || '').trim();
+            if (!v) return;
+            const opt = document.createElement('option');
+            opt.value = v;
+            classificacoesDatalist.appendChild(opt);
+          });
+          const canAutofill = fontes.includes('NOTAS');
+          const first = canAutofill && opcoes.length ? String(opcoes[0].value || '').trim() : '';
+          if (first) {
+            if (fields.ibscbsClasse && !String(fields.ibscbsClasse.value || '').trim()) fields.ibscbsClasse.value = first;
+            if (fields.ibscbsClasseReg && !String(fields.ibscbsClasseReg.value || '').trim()) fields.ibscbsClasseReg.value = first;
+          }
+        } catch (e) {
+          return;
+        }
+      }
+
+      const ncmInputForClassificacoes = document.getElementById('autocomplete-ncm') || document.getElementById('id_prod_ncm') || document.querySelector('[name="prod_ncm"]');
+      if (ncmInputForClassificacoes) {
+        ncmInputForClassificacoes.addEventListener('change', loadIbscbsClassificacoes);
+        ncmInputForClassificacoes.addEventListener('blur', loadIbscbsClassificacoes);
+      }
+      fields.ibscbsClasse?.addEventListener('focus', loadIbscbsClassificacoes);
+      fields.ibscbsClasseReg?.addEventListener('focus', loadIbscbsClassificacoes);
+
       if (window.setupTextAutocomplete && cfopUrl) {
         window.setupTextAutocomplete({
           inputEl: fields.cfopDisplay,
@@ -884,6 +932,7 @@
 
       clearSpartacusForm();
       spartacusApp.dataset.codigo = readCodigo();
+      loadIbscbsClassificacoes();
       loadSpartacusRows();
     }
 

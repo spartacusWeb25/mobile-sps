@@ -548,7 +548,14 @@ class SefazAdapter:
                 print(f"DEBUG: Item {i} sem tag imposto.")
                 continue
 
-            def fmt(v): return "{:.2f}".format(float(v or 0))
+            def _f(v):
+                try:
+                    return float(v)
+                except Exception:
+                    return 0.0
+
+            def fmt2(v): return "{:.2f}".format(_f(v or 0))
+            def fmt4(v): return "{:.4f}".format(_f(v or 0))
 
             def sub(parent, tag, text=None):
                 if parent.tag.startswith('{'):
@@ -564,12 +571,16 @@ class SefazAdapter:
             ibscbs_data = dados.get('ibscbs') or {}
             beneficio_fiscal = str(dados.get('beneficio_fiscal') or '').strip() or None
             
-            valor_ibs = float((ibs_data or {}).get('valor') or 0)
-            valor_cbs = float((cbs_data or {}).get('valor') or 0)
-            base_ibs = float((ibs_data or {}).get('base') or 0)
-            base_cbs = float((cbs_data or {}).get('base') or 0)
-            aliq_ibs = float((ibs_data or {}).get('aliq') or 0)
-            aliq_cbs = float((cbs_data or {}).get('aliq') or 0)
+            valor_ibs = _f((ibs_data or {}).get('valor') or 0)
+            valor_cbs = _f((cbs_data or {}).get('valor') or 0)
+            base_ibs = _f((ibs_data or {}).get('base') or 0)
+            base_cbs = _f((cbs_data or {}).get('base') or 0)
+            aliq_ibs = _f((ibs_data or {}).get('aliq') or 0)
+            aliq_cbs = _f((cbs_data or {}).get('aliq') or 0)
+            if aliq_cbs < 0:
+                aliq_cbs = 0.0
+            if aliq_cbs > 100:
+                aliq_cbs = 100.0
 
             if valor_ibs <= 0 and valor_cbs <= 0:
                 if ibs_data:
@@ -601,46 +612,53 @@ class SefazAdapter:
             vbc = base_cbs or base_ibs
             if not vbc:
                 vprod = det.findtext('.//ns:prod/ns:vProd', namespaces=ns) or det.findtext('.//prod/vProd') or "0"
-                vbc = float(vprod or 0)
+                vbc = _f(vprod or 0)
             
             valor_ibs_mun = 0.0
             aliq_ibs_mun = 0.0
-            aliq_ibs_uf = float(aliq_ibs or 0)
+            aliq_ibs_uf_forcada = None
             if ano_emi in (2025, 2026):
-                if aliq_ibs_uf > 0:
-                    aliq_ibs_uf = 0.10
+                aliq_ibs_uf_forcada = 0.10
             elif ano_emi in (2027, 2028):
-                if aliq_ibs_uf > 0:
-                    aliq_ibs_uf = 0.05
+                aliq_ibs_uf_forcada = 0.05
 
-            valor_ibs_uf = float(valor_ibs or 0)
-            if aliq_ibs_uf != float(aliq_ibs or 0):
-                valor_ibs_uf = round(float(vbc or 0) * (aliq_ibs_uf / 100.0), 2)
+            aliq_ibs_uf = aliq_ibs_uf_forcada if aliq_ibs_uf_forcada is not None else float(aliq_ibs or 0)
+            valor_ibs_uf = round(float(vbc or 0) * (aliq_ibs_uf / 100.0), 2) if aliq_ibs_uf > 0 else 0.0
+            vibs = float(valor_ibs_uf or 0) + float(valor_ibs_mun or 0)
 
-            vibs = float(valor_ibs or 0) + float(valor_ibs_mun or 0)
+            if ano_emi in (2025, 2026):
+                if (aliq_cbs > 0) or (valor_cbs > 0):
+                    aliq_cbs = 0.90
+                    valor_cbs = round(float(vbc or 0) * (aliq_cbs / 100.0), 2)
 
             ibscbs = sub(imposto, "IBSCBS")
             cst_ibscbs = str(ibscbs_data.get('cst') or '').strip()
             cclasstrib = str(ibscbs_data.get('cClassTrib') or '').strip()
             sub(ibscbs, "CST", (cst_ibscbs or "000")[:3])
-            sub(ibscbs, "cClassTrib", (cclasstrib or "000001")[:6])
+            cclasstrib_digits = "".join(ch for ch in cclasstrib if ch.isdigit())
+            if not cclasstrib_digits:
+                cclasstrib_digits = "000001"
+            cclasstrib_digits = cclasstrib_digits.zfill(6)[:6]
+            if cclasstrib_digits == "000000":
+                cclasstrib_digits = "000001"
+            sub(ibscbs, "cClassTrib", cclasstrib_digits)
             gibscbs = sub(ibscbs, "gIBSCBS")
-            sub(gibscbs, "vBC", fmt(vbc))
+            sub(gibscbs, "vBC", fmt2(vbc))
             gibuf = sub(gibscbs, "gIBSUF")
-            sub(gibuf, "pIBSUF", fmt(aliq_ibs_uf))
-            sub(gibuf, "vIBSUF", fmt(valor_ibs_uf))
+            sub(gibuf, "pIBSUF", fmt4(aliq_ibs_uf))
+            sub(gibuf, "vIBSUF", fmt2(valor_ibs_uf))
             gibmun = sub(gibscbs, "gIBSMun")
-            sub(gibmun, "pIBSMun", fmt(aliq_ibs_mun))
-            sub(gibmun, "vIBSMun", fmt(valor_ibs_mun))
-            sub(gibscbs, "vIBS", fmt(float(valor_ibs_uf or 0) + float(valor_ibs_mun or 0)))
+            sub(gibmun, "pIBSMun", fmt4(aliq_ibs_mun))
+            sub(gibmun, "vIBSMun", fmt2(valor_ibs_mun))
+            sub(gibscbs, "vIBS", fmt2(_f(valor_ibs_uf or 0) + _f(valor_ibs_mun or 0)))
             gcbs = sub(gibscbs, "gCBS")
-            sub(gcbs, "pCBS", fmt(aliq_cbs))
-            sub(gcbs, "vCBS", fmt(valor_cbs))
+            sub(gcbs, "pCBS", fmt4(aliq_cbs))
+            sub(gcbs, "vCBS", fmt2(valor_cbs))
             
-            total_vbc += float(vbc or 0)
-            total_vcbs += float(valor_cbs or 0)
-            total_vibs_uf += float(valor_ibs_uf or 0)
-            total_vibs_mun += float(valor_ibs_mun or 0)
+            total_vbc += _f(vbc or 0)
+            total_vcbs += _f(valor_cbs or 0)
+            total_vibs_uf += _f(valor_ibs_uf or 0)
+            total_vibs_mun += _f(valor_ibs_mun or 0)
 
             print(f"DEBUG: Injetado IBS/CBS no item {i}")
         
@@ -654,26 +672,26 @@ class SefazAdapter:
         
         if total_vbc > 0 or total_vcbs > 0 or total_vibs_uf > 0 or total_vibs_mun > 0:
             tot = sub(total, "IBSCBSTot")
-            sub(tot, "vBCIBSCBS", fmt(total_vbc))
+            sub(tot, "vBCIBSCBS", fmt2(total_vbc))
             gibs = sub(tot, "gIBS")
             gibsuf = sub(gibs, "gIBSUF")
-            sub(gibsuf, "vDif", fmt(0))
-            sub(gibsuf, "vDevTrib", fmt(0))
-            sub(gibsuf, "vIBSUF", fmt(total_vibs_uf))
+            sub(gibsuf, "vDif", fmt2(0))
+            sub(gibsuf, "vDevTrib", fmt2(0))
+            sub(gibsuf, "vIBSUF", fmt2(total_vibs_uf))
             gibsmun = sub(gibs, "gIBSMun")
-            sub(gibsmun, "vDif", fmt(0))
-            sub(gibsmun, "vDevTrib", fmt(0))
-            sub(gibsmun, "vIBSMun", fmt(total_vibs_mun))
-            sub(gibs, "vIBS", fmt(total_vibs_uf + total_vibs_mun))
-            sub(gibs, "vCredPres", fmt(0))
-            sub(gibs, "vCredPresCondSus", fmt(0))
+            sub(gibsmun, "vDif", fmt2(0))
+            sub(gibsmun, "vDevTrib", fmt2(0))
+            sub(gibsmun, "vIBSMun", fmt2(total_vibs_mun))
+            sub(gibs, "vIBS", fmt2(total_vibs_uf + total_vibs_mun))
+            sub(gibs, "vCredPres", fmt2(0))
+            sub(gibs, "vCredPresCondSus", fmt2(0))
 
             gcbs = sub(tot, "gCBS")
-            sub(gcbs, "vDif", fmt(0))
-            sub(gcbs, "vDevTrib", fmt(0))
-            sub(gcbs, "vCBS", fmt(total_vcbs))
-            sub(gcbs, "vCredPres", fmt(0))
-            sub(gcbs, "vCredPresCondSus", fmt(0))
+            sub(gcbs, "vDif", fmt2(0))
+            sub(gcbs, "vDevTrib", fmt2(0))
+            sub(gcbs, "vCBS", fmt2(total_vcbs))
+            sub(gcbs, "vCredPres", fmt2(0))
+            sub(gcbs, "vCredPresCondSus", fmt2(0))
 
     def _injetar_responsavel_tecnico(self, nfe_elem, resp_dto):
         def sub(parent, tag, text=None):

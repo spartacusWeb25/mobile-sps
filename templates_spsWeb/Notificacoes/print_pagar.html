@@ -1,3 +1,4 @@
+{% load finance_tags %}
 <!DOCTYPE html>
 <html lang="pt-BR">
 
@@ -136,10 +137,7 @@
         <p>Período: {% if period == 'hoje' %}Hoje{% else %}Semana{% endif %} | Emitido em:{{ today|date:"d/m/Y" }}</p>
     </div>
 
-    <div class="company-info">
-        <p><strong>Empresa:</strong> {{ empresa_nome }} {% if empresa_fantasia %}({{ empresa_fantasia }}){% endif %}</p>
-        <p><strong>Filial:</strong> {{ filial_nome }} {% if filial_fantasia %}({{ filial_fantasia }}){% endif %}</p>
-    </div>
+
 
     {% regroup data by empresa_id as empresas_grouped %}
 
@@ -164,7 +162,6 @@
                 <th>Valor</th>
                 <th>Parcela</th>
                 <th>Vencimento</th>
-                <th>Data Pagamento</th>
                 <th>Estado</th>
             </tr>
         </thead>
@@ -173,10 +170,9 @@
             <tr>
                 <td>{{ item.titu_titu }}</td>
                 <td>{{ item.fornecedor_nome }}</td>
-                <td>{{ item.titu_valo }}</td>
+                <td>{{ item.titu_valo|brl }}</td>
                 <td>{{ item.titu_parc }}</td>
                 <td>{{ item.titu_venc }}</td>
-                <td>{{ item.bapa_dpag }}</td>
                 <td>
                     {% if item.titu_aber == 'T' %}
                     <span class="badge badge-success">Quitado</span>
@@ -195,7 +191,7 @@
                     {% if emp_id == empresa.grouper %}
                     {% for f_id, f_data in fil_map.items %}
                     {% if f_id == filial.grouper %}
-                    {{ f_data.valor|floatformat:2 }}
+                    {{ f_data.valor|brl }}
                     {% endif %}
                     {% endfor %}
                     {% endif %}
@@ -211,7 +207,7 @@
         <strong>Total {{ empresa.list.0.empresa_nome }}:</strong>
         {% for emp_id, emp_data in empresas_totals.items %}
         {% if emp_id == empresa.grouper %}
-        {{ emp_data.valor|floatformat:2 }} ({{ emp_data.count }} títulos)
+        {{ emp_data.valor|brl }} ({{ emp_data.count }} títulos)
         {% endif %}
         {% endfor %}
     </div>
@@ -221,7 +217,7 @@
     <div class="grand-total">
         <div class="row">
             <div><strong>Total Geral:</strong></div>
-            <div><strong>{{ total_sum|floatformat:2 }}</strong> ({{ total_count }} títulos)</div>
+            <div><strong>{{ total_sum|brl }}</strong> ({{ total_count }} títulos)</div>
         </div>
     </div>
 

@@ -455,7 +455,12 @@ class CalculoImpostosService:
             item.ibscbs_cst = str(ibscbs_cst).strip()
         ibscbs_cclasstrib = extras.get("ibscbs_cclasstrib")
         if ibscbs_cclasstrib not in (None, ""):
-            item.ibscbs_cclasstrib = str(ibscbs_cclasstrib).strip()
+            raw = str(ibscbs_cclasstrib).strip()
+            digits = "".join(ch for ch in raw if ch.isdigit())
+            if digits:
+                digits = digits.zfill(6)[:6]
+                if digits != "000000":
+                    item.ibscbs_cclasstrib = digits
 
         item.save(using=self.banco)
 

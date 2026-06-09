@@ -160,6 +160,7 @@
 
                     <th class="text-start">Desc</th>
                     <th class="text-start">NCM</th>
+                    <th class="text-start">Fiscal</th>
                     <th class="text-end">Caixas</th>
                     <th class="text-end">M²</th>
                     <th class="text-end">Qtd</th>
@@ -174,6 +175,13 @@
                     <td>{{ i.item_prod }}</td>
                     <td class="text-start">{{ i.item_prod_nome|default:i.item_prod|default:0 }}</td>
                     <td class="text-start">{{ i.item_prod_ncm|default:i.item_prod|default:0 }}</td>
+                    <td class="text-start">
+                        {% if i.fiscal_ok %}
+                            <span class="badge bg-success" title="{{ i.fiscal_detalhe|default:'Fiscal OK' }}">OK</span>
+                        {% else %}
+                            <span class="badge bg-warning text-dark" title="{{ i.fiscal_detalhe|default:'Sem fiscal' }}">Sem</span>
+                        {% endif %}
+                    </td>
                     <td class="text-end">{{ i.item_caix|default:0 }}</td>
                     <td class="text-end">{{ i.item_m2 }}</td>
                     <td class="text-end">{{ i.item_quan }}</td>
@@ -182,7 +190,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="9">Sem itens.</td>
+                    <td colspan="10">Sem itens.</td>
                 </tr>
                 {% endfor %}
             </tbody>

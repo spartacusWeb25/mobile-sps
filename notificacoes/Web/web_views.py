@@ -670,8 +670,8 @@ class ImprimirReceberView(DBAndSlugMixin, TemplateView):
         venc_ini = self.request.GET.get('vencimento_inicial') or self.request.GET.get('venc_ini')
         venc_fim = self.request.GET.get('vencimento_final') or self.request.GET.get('venc_fim')
         
-        empresa_id = int(filter_empresa_id) if filter_empresa_id else self.empresa_id
-        filial_id = int(filter_filial_id) if filter_filial_id else self.filial_id
+        empresa_id = int(filter_empresa_id) if filter_empresa_id else None
+        filial_id = int(filter_filial_id) if filter_filial_id else None
         
         print_data = prepare_receber_print_data(
             self.db_alias,

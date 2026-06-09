@@ -69,7 +69,18 @@
               {% for item in itens %}
               <tr>
                 <td><span class="tipo-pill">{{ item.item_tipo }}</span></td>
-                <td>{{ item.item_nome }}</td>
+                <td>
+                  <div style="display:flex; flex-direction:column; gap:4px;">
+                    <div>{{ item.item_nome }}</div>
+                    {% if item.item_codigo %}
+                      {% if item.fiscal_ok %}
+                        <span class="badge bg-success" title="{{ item.fiscal_detalhe|default:'Fiscal OK' }}">Fiscal OK</span>
+                      {% else %}
+                        <span class="badge bg-warning text-dark" title="{{ item.fiscal_detalhe|default:'Sem fiscal' }}">Sem Fiscal</span>
+                      {% endif %}
+                    {% endif %}
+                  </div>
+                </td>
                 <td style="text-align: right;">{{ item.item_qtd|qtd_br }}</td>
                 <td style="text-align: right;">{{ item.item_preco|brl }}</td>
                 <td style="text-align: right; font-weight: 500;">{{ item.item_subt|brl }}</td>

@@ -1,3 +1,4 @@
+{% load finance_tags %}
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -111,18 +112,26 @@
 </head>
 <body>
     <div class="header">
-        {% if filial_logo %}
-        <img src="data:image/png;base64,{{ filial_logo }}" alt="Logo da Filial">
+        {% if header_logo %}
+        <img src="data:image/png;base64,{{ header_logo }}" alt="Logo da Filial">
         {% endif %}
         <h1>Relatório de Contas a Receber {% if status == 'quitado' %}(Recebidas){% endif %}</h1>
-        <p>Período: {% if period == 'hoje' %}Hoje{% else %}Semana{% endif %} | Emitido em: {{ today|date:"d/m/Y H:i" }}</p>
+        <p>Período: {% if period == 'hoje' %}Hoje{% else %}Semana{% endif %} | Emitido em: {% now "d/m/Y H:i" %}</p>
     </div>
     
+    {% regroup data by empresa_id as empresas_grouped %}
+
+    {% for empresa in empresas_grouped %}
     <div class="company-info">
-        <p><strong>Empresa:</strong> {{ empresa_nome }} {% if empresa_fantasia %}({{ empresa_fantasia }}){% endif %}</p>
-        <p><strong>Filial:</strong> {{ filial_nome }} {% if filial_fantasia %}({{ filial_fantasia }}){% endif %}</p>
+        <p><strong>Empresa:</strong> {{ empresa.list.0.empresa_nome }}</p>
     </div>
-    
+
+    {% regroup empresa.list by filial_id as filiais_grouped %}
+    {% for filial in filiais_grouped %}
+    <div style="margin-top:8px; margin-bottom:4px;">
+        <strong>Filial:</strong> {{ filial.list.0.filial_nome }} {% if filial.list.0.filial_fantasia %}({{ filial.list.0.filial_fantasia }}){% endif %}
+    </div>
+
     <table>
         <thead>
             <tr>
@@ -136,11 +145,11 @@
             </tr>
         </thead>
         <tbody>
-            {% for item in data %}
+            {% for item in filial.list %}
             <tr>
                 <td>{{ item.titu_titu }}</td>
                 <td>{{ item.cliente_nome }}</td>
-                <td>{{ item.titu_valo }}</td>
+                <td>{{ item.titu_valo|brl }}</td>
                 <td>{{ item.titu_parc }}</td>
                 <td>{{ item.titu_venc }}</td>
                 <td>{{ item.bapa_dpag }}</td>
@@ -156,16 +165,39 @@
         </tbody>
         <tfoot>
             <tr class="total-row">
-                <td colspan="2" style="text-align: right;"><strong>Total:</strong></td>
-                <td colspan="5"><strong>{{ total_sum|floatformat:2 }}</strong></td>
+                <td colspan="2" class="text-end">Total Filial:</td>
+                <td>
+                    {% for emp_id, fil_map in filial_totals.items %}
+                    {% if emp_id == empresa.grouper %}
+                    {% for f_id, f_data in fil_map.items %}
+                    {% if f_id == filial.grouper %}
+                    {{ f_data.valor|brl }}
+                    {% endif %}
+                    {% endfor %}
+                    {% endif %}
+                    {% endfor %}
+                </td>
+                <td colspan="4">Títulos: {{ filial.list|length }}</td>
             </tr>
         </tfoot>
     </table>
-    
+    {% endfor %}
+
+    <div style="margin-top:6px;">
+        <strong>Total {{ empresa.list.0.empresa_nome }}:</strong>
+        {% for emp_id, emp_data in empresas_totals.items %}
+        {% if emp_id == empresa.grouper %}
+        {{ emp_data.valor|brl }} ({{ emp_data.count }} títulos)
+        {% endif %}
+        {% endfor %}
+    </div>
+
+    {% endfor %}
+
     <div class="grand-total">
         <div class="row">
             <div><strong>Total Geral:</strong></div>
-            <div><strong>{{ total_sum|floatformat:2 }}</strong> ({{ total_count }} títulos)</div>
+            <div><strong>{{ total_sum|brl }}</strong> ({{ total_count }} títulos)</div>
         </div>
     </div>
     

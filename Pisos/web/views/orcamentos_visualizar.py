@@ -8,6 +8,7 @@ from core.mixins.vendedor_mixin import VendedorEntidadeMixin
 from Pisos.models import Itensorcapisos, Orcamentopisos
 from Produtos.models import Produtos
 from Entidades.models import Entidades
+from CFOP.services.fiscal_status_service import obter_status_fiscal_produtos
 
 
 def visualizar_orcamento_pisos(request, slug, pk):
@@ -121,6 +122,20 @@ def visualizar_orcamento_pisos(request, slug, pk):
         for p in produtos
     }
 
+    status_map = {}
+    try:
+        status_map = obter_status_fiscal_produtos(
+            banco=banco,
+            empresa=int(orcamento.orca_empr),
+            filial=int(orcamento.orca_fili),
+            produtos_codigos=[i.item_prod for i in itens],
+            cliente_id=int(orcamento.orca_clie) if str(getattr(orcamento, "orca_clie", "") or "").strip().isdigit() else None,
+            tipo_entidade=getattr(cliente_obj, "enti_tipo_enti", None) if cliente_obj else None,
+            uf_destino=getattr(cliente_obj, "enti_esta", None) if cliente_obj else None,
+        )
+    except Exception:
+        status_map = {}
+
     for item in itens:
         produto = mapa_produtos.get(item.item_prod)
 
@@ -128,6 +143,9 @@ def visualizar_orcamento_pisos(request, slug, pk):
         item.item_prod_ncm = getattr(produto, 'prod_ncm', '')
         item.item_prod_nome = getattr(produto, 'prod_nome', '')
         item.item_caix = item.item_caix or 0
+        st = status_map.get(str(getattr(item, "item_prod", "") or "").strip(), {}) if status_map else {}
+        item.fiscal_ok = bool(st.get("ok"))
+        item.fiscal_detalhe = st.get("detalhe")
 
     return render(
         request,

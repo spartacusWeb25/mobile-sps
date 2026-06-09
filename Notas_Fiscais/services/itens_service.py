@@ -1,6 +1,6 @@
 # notas_fiscais/services/itens_service.py
 
-from django.db import transaction
+from django.db import transaction, connections
 from django.core.exceptions import ValidationError
 
 from ..models import NotaItem, NotaItemImposto
@@ -10,6 +10,51 @@ from core.utils import calcular_total_item_com_desconto
 
 
 class ItensService:
+    _columns_cache = {}
+
+    @staticmethod
+    def _get_table_columns(db_alias: str, table_name: str) -> set:
+        cache_key = (db_alias or "default", table_name)
+        cached = ItensService._columns_cache.get(cache_key)
+        if cached is not None:
+            return cached
+        cols = set()
+        try:
+            with connections[db_alias].cursor() as cursor:
+                cursor.execute(
+                    "SELECT column_name FROM information_schema.columns WHERE table_name = %s",
+                    [table_name],
+                )
+                cols = {r[0] for r in cursor.fetchall()}
+        except Exception:
+            cols = set()
+        ItensService._columns_cache[cache_key] = cols
+        return cols
+
+    @staticmethod
+    def _ensure_nf_nota_item_schema(db_alias: str) -> None:
+        try:
+            if connections[db_alias].vendor != "postgresql":
+                return
+        except Exception:
+            return
+
+        cols = ItensService._get_table_columns(db_alias, "nf_nota_item")
+        missing = {"beneficio_fiscal", "ibscbs_cst", "ibscbs_cclasstrib"} - set(cols or [])
+        if not missing:
+            return
+
+        try:
+            with connections[db_alias].cursor() as cursor:
+                if "beneficio_fiscal" in missing:
+                    cursor.execute("ALTER TABLE nf_nota_item ADD COLUMN IF NOT EXISTS beneficio_fiscal varchar(10) NULL;")
+                if "ibscbs_cst" in missing:
+                    cursor.execute("ALTER TABLE nf_nota_item ADD COLUMN IF NOT EXISTS ibscbs_cst varchar(3) NULL;")
+                if "ibscbs_cclasstrib" in missing:
+                    cursor.execute("ALTER TABLE nf_nota_item ADD COLUMN IF NOT EXISTS ibscbs_cclasstrib varchar(6) NULL;")
+            ItensService._columns_cache.pop((db_alias or "default", "nf_nota_item"), None)
+        except Exception:
+            return
 
     @staticmethod
     def inserir_itens(nota, itens, impostos_map=None):
@@ -23,6 +68,7 @@ class ItensService:
 
         db_alias = getattr(getattr(nota, "_state", None), "db", None) or "default"
         empresa_id = getattr(nota, "empresa", None)
+        ItensService._ensure_nf_nota_item_schema(db_alias)
 
         from CFOP.services.services import MotorFiscal, get_empresa_uf_origem
         from CFOP.models import CFOP, NcmFiscalPadrao
@@ -82,6 +128,14 @@ class ItensService:
             model_fields.discard("nota")
             model_fields.discard("id")
             clean_data = {k: v for k, v in item_data.items() if k in model_fields}
+            table_cols = ItensService._get_table_columns(db_alias, "nf_nota_item")
+            if table_cols:
+                allowed_field_names = {
+                    f.name for f in NotaItem._meta.fields
+                    if f.name not in ("id",) and getattr(f, "column", None) in table_cols
+                }
+                allowed_field_names.discard("nota")
+                clean_data = {k: v for k, v in clean_data.items() if k in allowed_field_names}
 
             produto_obj = item_data.get("produto")
             if isinstance(produto_obj, Produtos):

@@ -8,6 +8,7 @@ from core.mixins.vendedor_mixin import VendedorEntidadeMixin
 from Pisos.models import Pedidospisos, Itenspedidospisos
 from Produtos.models import Produtos
 from Entidades.models import Entidades
+from CFOP.services.fiscal_status_service import obter_status_fiscal_produtos
 
 
 def visualizar_pedido_pisos(request, slug, pk):
@@ -104,16 +105,31 @@ def visualizar_pedido_pisos(request, slug, pk):
     produtos = Produtos.objects.using(banco).filter(
         prod_codi__in=[i.item_prod for i in itens]
     )
-    cliente_nome = get_object_or_404(
+    cliente_obj = get_object_or_404(
         Entidades.objects.using(banco),
         enti_empr=pedido.pedi_empr,
         enti_clie=pedido.pedi_clie,
-    ).enti_nome
+    )
+    cliente_nome = cliente_obj.enti_nome
 
     mapa_produtos = {
         p.prod_codi: p
         for p in produtos
     }
+
+    status_map = {}
+    try:
+        status_map = obter_status_fiscal_produtos(
+            banco=banco,
+            empresa=int(pedido.pedi_empr),
+            filial=int(pedido.pedi_fili),
+            produtos_codigos=[i.item_prod for i in itens],
+            cliente_id=int(pedido.pedi_clie) if str(getattr(pedido, "pedi_clie", "") or "").strip().isdigit() else None,
+            tipo_entidade=getattr(cliente_obj, "enti_tipo_enti", None),
+            uf_destino=getattr(cliente_obj, "enti_esta", None),
+        )
+    except Exception:
+        status_map = {}
 
     for item in itens:
         produto = mapa_produtos.get(item.item_prod)
@@ -125,6 +141,9 @@ def visualizar_pedido_pisos(request, slug, pk):
         item.item_m2 = item.item_m2 or 0
         item.item_prod_nome = getattr(produto, 'prod_nome', '')
         item.item_nome_ambi = (getattr(item, "item_nome_ambi", "") or "").strip()
+        st = status_map.get(str(getattr(item, "item_prod", "") or "").strip(), {}) if status_map else {}
+        item.fiscal_ok = bool(st.get("ok"))
+        item.fiscal_detalhe = st.get("detalhe")
 
     return render(
         request,

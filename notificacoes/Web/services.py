@@ -221,6 +221,22 @@ def prepare_pagar_print_data(db_alias, empresa_id, filial_id, period='hoje', sta
         filial_group[row_filial_id]['valor'] += val_float
         filial_group[row_filial_id]['count'] += 1
 
+    def _sort_key(row):
+        try:
+            emp = int(row.get('empresa_id') or 0)
+        except Exception:
+            emp = 0
+        try:
+            fil = int(row.get('filial_id') or 0)
+        except Exception:
+            fil = 0
+        nome = str(row.get('fornecedor_nome') or '').casefold()
+        venc = str(row.get('titu_venc') or '')
+        titu = str(row.get('titu_titu') or '')
+        return (emp, fil, nome, venc, titu)
+
+    data.sort(key=_sort_key)
+
 
     return {
         'empresa_nome': getattr(empresa_info, 'empr_nome', '') if empresa_info else '',
@@ -265,17 +281,16 @@ def prepare_receber_print_data(db_alias, empresa_id, filial_id, period='hoje', s
         venc_fim = None
     usar_intervalo = bool(venc_ini or venc_fim)
     
-    # Get empresa and filial info
-    empresa_info = Empresas.objects.using(db_alias).filter(empr_codi=empresa_id).first()
-    filial_info = Filiais.objects.using(db_alias).filter(
-        empr_empr=empresa_id,
-        empr_codi=filial_id
-    ).first()
+    empresa_info = Empresas.objects.using(db_alias).filter(empr_codi=empresa_id).first() if empresa_id else None
+    filial_info = (
+        Filiais.objects.using(db_alias).filter(empr_empr=empresa_id, empr_codi=filial_id).first()
+        if (empresa_id and filial_id)
+        else None
+    )
     
-    # Get clients
     clientes = dict(
         Entidades.objects.using(db_alias)
-        .filter(enti_empr=empresa_id)
+        .all()
         .values_list('enti_clie', 'enti_nome')
     )
     
@@ -284,10 +299,11 @@ def prepare_receber_print_data(db_alias, empresa_id, filial_id, period='hoje', s
         w_start, w_end = _week_range(today)
         d_start, d_end = _day_bounds(today)
         w_end_inclusive = w_end + timedelta(days=1)
-        qs = Baretitulos.objects.using(db_alias).filter(
-            bare_empr=empresa_id,
-            bare_fili=filial_id
-        )
+        qs = Baretitulos.objects.using(db_alias).all()
+        if empresa_id:
+            qs = qs.filter(bare_empr=empresa_id)
+        if filial_id:
+            qs = qs.filter(bare_fili=filial_id)
         if usar_intervalo:
             if venc_ini:
                 qs = qs.filter(bare_venc__gte=venc_ini)
@@ -301,10 +317,11 @@ def prepare_receber_print_data(db_alias, empresa_id, filial_id, period='hoje', s
                 qs = qs.filter(bare_dpag__gte=d_start, bare_dpag__lt=d_end)
             qs = qs.order_by('bare_empr', 'bare_fili', 'bare_dpag', 'bare_titu')
     else:
-        qs = Titulosreceber.objects.using(db_alias).filter(
-            titu_empr=empresa_id,
-            titu_fili=filial_id
-        )
+        qs = Titulosreceber.objects.using(db_alias).all()
+        if empresa_id:
+            qs = qs.filter(titu_empr=empresa_id)
+        if filial_id:
+            qs = qs.filter(titu_fili=filial_id)
         qs = qs.filter(
             (Q(titu_emis__isnull=True) | Q(titu_emis__gte=date(1900,1,1))),
             (Q(titu_venc__isnull=True) | Q(titu_venc__gte=date(1900,1,1))),
@@ -327,9 +344,12 @@ def prepare_receber_print_data(db_alias, empresa_id, filial_id, period='hoje', s
             qs = qs.filter(titu_aber='T')
         qs = qs.order_by('titu_empr', 'titu_fili', 'titu_clie', 'titu_venc', 'titu_titu')
     
-    # Prepare data
+    import re
     data = []
     total_sum = 0
+    logo_cache = {}
+    empresas_totals = {}
+    filial_totals = {}
     for o in qs:
         clie = getattr(o, 'titu_clie', '') or getattr(o, 'bare_clie', '')
         valo = getattr(o, 'titu_valo', '') or getattr(o, 'bare_valo', '') or getattr(o, 'bare_valo_pago', '')
@@ -337,12 +357,43 @@ def prepare_receber_print_data(db_alias, empresa_id, filial_id, period='hoje', s
         venc = getattr(o, 'titu_venc', '') or getattr(o, 'bare_venc', '')
         dpag = getattr(o, 'bare_dpag', '')
         aber = 'T' if status == 'quitado' else getattr(o, 'titu_aber', '')
+        row_empresa_id = getattr(o, 'titu_empr', '') or getattr(o, 'bare_empr', '')
+        row_filial_id = getattr(o, 'titu_fili', '') or getattr(o, 'bare_fili', '')
+        row_empresa_info = None
+        row_filial_info = None
+        try:
+            if row_empresa_id:
+                row_empresa_info = Empresas.objects.using(db_alias).filter(empr_codi=row_empresa_id).first()
+            if row_filial_id and row_empresa_info:
+                row_filial_info = Filiais.objects.using(db_alias).filter(empr_empr=row_empresa_id, empr_codi=row_filial_id).first()
+        except Exception:
+            pass
+        empresa_raw = getattr(row_empresa_info, 'empr_nome', '') if row_empresa_info else ''
+        m = re.search(r"\bltda\b", empresa_raw, flags=re.IGNORECASE)
+        empresa_display = empresa_raw[:m.end()].strip() if m else empresa_raw
+        filial_display = (getattr(row_filial_info, 'empr_fant', '') or getattr(row_filial_info, 'empr_nome', '')) if row_filial_info else ''
         
         if valo:
             try:
                 total_sum += float(valo)
             except (ValueError, TypeError):
                 pass
+        try:
+            val_float = float(valo) if valo else 0.0
+        except Exception:
+            val_float = 0.0
+        
+        filial_logo = None
+        try:
+            if row_empresa_id and row_filial_id:
+                logo_key = f"{row_empresa_id}_{row_filial_id}"
+                if logo_key not in logo_cache:
+                    logo_cache[logo_key] = get_filial_logo(db_alias, row_empresa_id, row_filial_id)
+                filial_logo = logo_cache.get(logo_key)
+                if not empresa_id and not filial_id and filial_logo and not logo_cache.get('header'):
+                    logo_cache['header'] = filial_logo
+        except Exception:
+            filial_logo = None
         
         data.append({
             'titu_titu': getattr(o, 'titu_titu', '') or getattr(o, 'bare_titu', ''),
@@ -353,15 +404,51 @@ def prepare_receber_print_data(db_alias, empresa_id, filial_id, period='hoje', s
             'titu_venc': venc,
             'bapa_dpag': dpag,
             'titu_aber': aber,
+            'empresa_id': row_empresa_id,
+            'empresa_nome': empresa_display,
+            'filial_id': row_filial_id,
+            'filial_nome': filial_display,
+            'filial_fantasia': getattr(row_filial_info, 'empr_fant', '') if row_filial_info else '',
+            'filial_logo': filial_logo,
         })
+        
+        if row_empresa_id not in empresas_totals:
+            empresas_totals[row_empresa_id] = {'nome': empresa_display, 'valor': 0.0, 'count': 0}
+        empresas_totals[row_empresa_id]['valor'] += val_float
+        empresas_totals[row_empresa_id]['count'] += 1
+        
+        filial_group = filial_totals.setdefault(row_empresa_id, {})
+        if row_filial_id not in filial_group:
+            filial_group[row_filial_id] = {'nome': filial_display, 'valor': 0.0, 'count': 0}
+        filial_group[row_filial_id]['valor'] += val_float
+        filial_group[row_filial_id]['count'] += 1
+
+    def _sort_key(row):
+        try:
+            emp = int(row.get('empresa_id') or 0)
+        except Exception:
+            emp = 0
+        try:
+            fil = int(row.get('filial_id') or 0)
+        except Exception:
+            fil = 0
+        nome = str(row.get('cliente_nome') or '').casefold()
+        venc = str(row.get('titu_venc') or '')
+        titu = str(row.get('titu_titu') or '')
+        return (emp, fil, nome, venc, titu)
+
+    data.sort(key=_sort_key)
     
     return {
         'empresa_nome': getattr(empresa_info, 'empr_nome', '') if empresa_info else '',
         'empresa_fantasia': getattr(empresa_info, 'empr_fant', '') if empresa_info else '',
         'filial_nome': getattr(filial_info, 'empr_nome', '') if filial_info else '',
         'filial_fantasia': getattr(filial_info, 'empr_fant', '') if filial_info else '',
-        'filial_logo': get_filial_logo(db_alias, empresa_id, filial_id),
+        'filial_logo': get_filial_logo(db_alias, empresa_id, filial_id) if (empresa_id and filial_id) else None,
+        'header_logo': (logo_cache.get('header') if logo_cache else None),
         'data': data,
+        'empresas_totals': empresas_totals,
+        'filial_totals': filial_totals,
         'total_sum': total_sum,
         'total_count': len(data),
         'period': period,

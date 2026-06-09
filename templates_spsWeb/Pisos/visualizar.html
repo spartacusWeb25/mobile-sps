@@ -173,6 +173,7 @@
                   class="prod-link">Produto</a></th>
               <th class="text-start">Nome Produto</th>
               <th class="text-start">NCM</th>
+              <th class="text-start">Fiscal</th>
               <th class="text-end">Qtd</th>
               <th class="text-end">Unit</th>
               <th class="text-end">Total</th>
@@ -185,13 +186,20 @@
               <td>{{ i.item_prod }}</td>
               <td>{{ i.item_prod_nome }}</td>
               <td>{{ i.item_prod_ncm }}</td>
+              <td>
+                {% if i.fiscal_ok %}
+                  <span class="badge bg-success" title="{{ i.fiscal_detalhe|default:'Fiscal OK' }}">OK</span>
+                {% else %}
+                  <span class="badge bg-warning text-dark" title="{{ i.fiscal_detalhe|default:'Sem fiscal' }}">Sem</span>
+                {% endif %}
+              </td>
               <td class="text-end">{{ i.item_quan }}</td>
               <td class="text-end">{{ i.item_unit }}</td>
               <td class="text-end">{{ i.item_suto }}</td>
             </tr>
             {% empty %}
             <tr>
-              <td colspan="7">Sem itens</td>
+              <td colspan="8">Sem itens</td>
             </tr>
             {% endfor %}
           </tbody>

@@ -12,8 +12,10 @@
     </h2>
     <div class="page-actions">
       <div class="btn-group" role="group" aria-label="Ações do pedido">
-        <a class="btn btn-outline-secondary" href="{% url 'PedidosWeb:pedidos_listar' slug=slug %}" aria-label="Voltar para a lista de pedidos">Voltar</a>
-        <a class="btn btn-outline-primary" href="{% url 'PedidosWeb:pedido_impressao' slug=slug pk=object.pk %}" aria-label="Abrir página de impressão do pedido">Imprimir</a>
+        <a class="btn btn-outline-secondary" href="{% url 'PedidosWeb:pedidos_listar' slug=slug %}"
+          aria-label="Voltar para a lista de pedidos">Voltar</a>
+        <a class="btn btn-outline-primary" href="{% url 'PedidosWeb:pedido_impressao' slug=slug pk=object.pk %}"
+          aria-label="Abrir página de impressão do pedido">Imprimir</a>
       </div>
     </div>
   </div>
@@ -39,13 +41,13 @@
               <div class="text-muted">Status</div>
               <div>
                 {% if object.pedi_stat == 'A' %}
-                  <span class="badge bg-warning text-dark">Aberto</span>
+                <span class="badge bg-warning text-dark">Aberto</span>
                 {% elif object.pedi_stat == 'F' %}
-                  <span class="badge bg-success">Faturado</span>
+                <span class="badge bg-success">Faturado</span>
                 {% elif object.pedi_stat == 'C' %}
-                  <span class="badge bg-secondary">Cancelado</span>
+                <span class="badge bg-secondary">Cancelado</span>
                 {% else %}
-                  <span class="badge bg-light text-dark">{{ object.pedi_stat }}</span>
+                <span class="badge bg-light text-dark">{{ object.pedi_stat }}</span>
                 {% endif %}
               </div>
             </div>
@@ -76,10 +78,12 @@
           <h5 class="card-title mb-3">Itens do Pedido</h5>
           <div class="table-responsive">
             <table class="table table-sm table-hover align-middle" aria-describedby="caption-itens">
-              <caption id="caption-itens">Lista de itens do pedido, com produto, quantidade, preço unitário e total.</caption>
-              <thead class="table-light">
+              <caption id="caption-itens">Lista de itens do pedido, com produto, quantidade, preço unitário e total.
+              </caption>
+              <thead class="table-responsive">
                 <tr>
                   <th scope="col">Produto</th>
+                  <th scope="col">Fiscal</th>
                   <th scope="col" class="text-end">Quantidade</th>
                   <th scope="col" class="text-end">Preço Unitário</th>
                   <th scope="col" class="text-end">Total</th>
@@ -91,9 +95,9 @@
                   <td>
                     <div class="d-flex align-items-center gap-2">
                       {% if item.has_foto %}
-                        <img src="{% url 'produto_foto_web' slug=slug prod_codi=item.prod_codigo %}"
-                             alt="Foto do produto {{ item.prod_nome }}"
-                             width="40" height="40" class="rounded" onerror="this.style.display='none';" />
+                      <img src="{% url 'produto_foto_web' slug=slug prod_codi=item.prod_codigo %}"
+                        alt="Foto do produto {{ item.prod_nome }}" width="40" height="40" class="rounded"
+                        onerror="this.style.display='none';" />
                       {% endif %}
                       <div>
                         <div class="fw-semibold">{{ item.prod_nome }}</div>
@@ -101,13 +105,21 @@
                       </div>
                     </div>
                   </td>
+                  <td>
+                    {% if item.fiscal_ok %}
+                    <span class="badge bg-success" title="{{ item.fiscal_detalhe|default:'Fiscal OK' }}">OK</span>
+                    {% else %}
+                    <span class="badge bg-warning text-dark"
+                      title="{{ item.fiscal_detalhe|default:'Sem fiscal' }}">Sem</span>
+                    {% endif %}
+                  </td>
                   <td class="text-end">{{ item.iped_quan }}</td>
                   <td class="text-end">R$ {{ item.iped_unit }}</td>
                   <td class="text-end">R$ {{ item.iped_tota|default:0 }}</td>
                 </tr>
                 {% empty %}
                 <tr>
-                  <td colspan="4" class="text-center text-muted">Nenhum item cadastrado para este pedido.</td>
+                  <td colspan="5" class="text-center text-muted">Nenhum item cadastrado para este pedido.</td>
                 </tr>
                 {% endfor %}
               </tbody>
@@ -126,10 +138,10 @@
 </div>
 <script>
   // Microinterações acessíveis: atalhos e foco
-  (function(){
+  (function () {
     const backBtn = document.querySelector('a.btn.btn-outline-secondary[aria-label]');
     const printBtn = document.querySelector('a.btn.btn-outline-primary[aria-label]');
-    document.addEventListener('keydown', function(e){
+    document.addEventListener('keydown', function (e) {
       if (e.altKey || e.ctrlKey || e.metaKey) return;
       if (e.key.toLowerCase() === 'b' && backBtn) { backBtn.focus(); backBtn.click(); }
       if (e.key.toLowerCase() === 'p') { window.print(); }

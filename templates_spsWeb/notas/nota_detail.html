@@ -15,6 +15,9 @@
           aria-hidden="true"></span> <i class="bi bi-upload"></i> Emitir</button>
       {% endif %}
       {% if nota.status == 100 %}
+      <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalEnviarEmail">
+        <i class="bi bi-envelope"></i> Enviar e-mail
+      </button>
       <button class="btn btn-outline-danger" id="btn-cancelar"><span
           class="spinner-border spinner-border-sm me-1 d-none" aria-hidden="true"></span> Cancelar</button>
       {% endif %}
@@ -138,7 +141,66 @@
     </div>
   </div>
 
+  <div class="modal fade" id="modalEnviarEmail" tabindex="-1" aria-labelledby="modalEnviarEmailLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <form method="post" action="/web/{{ slug }}/notas-fiscais/{{ nota.id }}/enviar-email/">
+          {% csrf_token %}
+          <div class="modal-header">
+            <h5 class="modal-title" id="modalEnviarEmailLabel">Enviar NF-e por e-mail</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label" for="id_emails_envio">Destinatários</label>
+                <input type="text" class="form-control" id="id_emails_envio" name="emails"
+                  value="{{ destinatario_email }}" placeholder="email@dominio.com; outro@dominio.com" required>
+              </div>
+              <div class="col-12">
+                <label class="form-label" for="id_assunto_envio">Assunto</label>
+                <input type="text" class="form-control" id="id_assunto_envio" name="assunto"
+                  value="NF-e {{ nota.modelo }}-{{ nota.serie }} Nº {{ nota.numero }}">
+              </div>
+              <div class="col-12">
+                <label class="form-label" for="id_mensagem_envio">Mensagem</label>
+                <textarea class="form-control" id="id_mensagem_envio" name="mensagem" rows="4">Segue em anexo a NF-e {{ nota.modelo }}-{{ nota.serie }} Nº {{ nota.numero }}.</textarea>
+              </div>
+              <div class="col-12">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" value="on" id="id_anexar_pdf" name="anexar_pdf" checked>
+                  <label class="form-check-label" for="id_anexar_pdf">Anexar DANFE (PDF/HTML)</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" value="on" id="id_anexar_xml" name="anexar_xml" checked>
+                  <label class="form-check-label" for="id_anexar_xml">Anexar XML</label>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-outline-primary"><i class="bi bi-send"></i> Enviar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <a class="btn btn-outline-secondary" href="/web/{{ slug }}/notas-fiscais/">Voltar</a>
+  <script>
+    (() => {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('enviar_email') === '1') {
+          const el = document.getElementById('modalEnviarEmail');
+          if (el && window.bootstrap && bootstrap.Modal) {
+            new bootstrap.Modal(el).show();
+          }
+        }
+      } catch (e) { }
+    })();
+  </script>
   <script>
     (() => {
       const slug = localStorage.getItem('slug');

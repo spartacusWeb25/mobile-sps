@@ -101,7 +101,7 @@ class TributoSpartacusAdapter:
         uf = getattr(self.origem, "trib_ibs_paliqefetuf", None)
         mun = getattr(self.origem, "trib_ibs_paliqefetmun", None)
         if uf is None and mun is None:
-            return None
+            return self._to_decimal(getattr(self.origem, "trib_ibs_pibsuf", None))
         return (self._to_decimal(uf) or Decimal("0")) + (self._to_decimal(mun) or Decimal("0"))
 
     @property
@@ -134,11 +134,21 @@ class TributoSpartacusAdapter:
 
     @property
     def ibscbs_cclasstrib(self):
-        return (
+        v = (
             getattr(self.origem, "trib_ibscbs_cclasstribreg", None)
             or getattr(self.origem, "trib_ibscbs_cclasstrib", None)
             or None
         )
+        if v in (None, ""):
+            return None
+        raw = str(v).strip()
+        digits = "".join(ch for ch in raw if ch.isdigit())
+        if not digits:
+            return None
+        digits = digits.zfill(6)[:6]
+        if digits == "000000":
+            return None
+        return digits
 
 
 class TributoService:

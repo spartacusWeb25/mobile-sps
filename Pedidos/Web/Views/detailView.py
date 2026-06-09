@@ -38,13 +38,14 @@ class PedidoDetailView(DetailView):
         try:
             from Entidades.models import Entidades
             from Produtos.models import Produtos
+            from CFOP.services.fiscal_status_service import obter_status_fiscal_produtos
             banco = get_licenca_db_config(self.request) or 'default'
             pedido = context.get('object')
 
             if pedido:
                 cliente = Entidades.objects.using(banco).filter(
                     enti_clie=pedido.pedi_forn
-                ).values('enti_nome').first()
+                ).values('enti_nome', 'enti_tipo_enti', 'enti_esta').first()
                 vendedor = Entidades.objects.using(banco).filter(
                     enti_clie=pedido.pedi_vend
                 ).values('enti_nome').first()
@@ -70,9 +71,20 @@ class PedidoDetailView(DetailView):
                 produtos = Produtos.objects.using(banco).filter(prod_codi__in=codigos)
                 prod_map = {p.prod_codi: {'nome': p.prod_nome, 'has_foto': bool(p.prod_foto)} for p in produtos}
 
+                status_map = obter_status_fiscal_produtos(
+                    banco=banco,
+                    empresa=int(pedido.pedi_empr),
+                    filial=int(pedido.pedi_fili),
+                    produtos_codigos=codigos,
+                    cliente_id=int(pedido.pedi_forn) if str(getattr(pedido, "pedi_forn", "") or "").strip().isdigit() else None,
+                    tipo_entidade=(cliente.get("enti_tipo_enti") if cliente else None),
+                    uf_destino=(cliente.get("enti_esta") if cliente else None),
+                )
+
                 itens_detalhados = []
                 for i in itens_qs:
                     meta = prod_map.get(i.iped_prod, {})
+                    st = status_map.get(str(i.iped_prod or "").strip(), {}) if status_map else {}
                     itens_detalhados.append({
                         'prod_codigo': i.iped_prod,
                         'prod_nome': meta.get('nome') or i.iped_prod,
@@ -81,6 +93,9 @@ class PedidoDetailView(DetailView):
                         'iped_unit': i.iped_unit,
                         'iped_tota': i.iped_tota,
                         'iped_item': getattr(i, 'iped_item', None),
+                        'fiscal_ok': bool(st.get("ok")),
+                        'fiscal_fonte': st.get("fonte"),
+                        'fiscal_detalhe': st.get("detalhe"),
                     })
                 context['itens_detalhados'] = itens_detalhados
         except Exception as e:

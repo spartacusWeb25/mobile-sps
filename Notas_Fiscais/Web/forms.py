@@ -167,3 +167,29 @@ class EnviarXmlContabilidadeForm(forms.Form):
         widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "email@dominio.com; outro@dominio.com"}),
         required=True,
     )
+
+
+class EnviarNotaEmailForm(forms.Form):
+    emails = forms.CharField(
+        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "email@dominio.com; outro@dominio.com"}),
+        required=True,
+    )
+    assunto = forms.CharField(widget=forms.TextInput(attrs={"class": "form-control"}), required=False)
+    mensagem = forms.CharField(
+        widget=forms.Textarea(attrs={"class": "form-control", "rows": 4}),
+        required=False,
+    )
+    anexar_pdf = forms.BooleanField(required=False, initial=True)
+    anexar_xml = forms.BooleanField(required=False, initial=True)
+
+    def clean_emails(self):
+        raw = (self.cleaned_data.get("emails") or "").strip()
+        emails = [e.strip() for e in raw.replace(",", ";").split(";") if e.strip()]
+        if not emails:
+            raise forms.ValidationError("Informe ao menos um e-mail de destino.")
+        for e in emails:
+            try:
+                forms.EmailField().clean(e)
+            except forms.ValidationError:
+                raise forms.ValidationError(f"E-mail inválido: {e}")
+        return "; ".join(emails)

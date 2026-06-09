@@ -55,6 +55,7 @@ class NotaDetailView(DetailView):
         ctx["total_nota"] = total_produtos + total_tributos
         ctx["emitente"] = emitente
         ctx["destinatario"] = destinatario
+        ctx["destinatario_email"] = str(getattr(destinatario, "enti_emai", "") or "").strip()
         ctx["slug"] = self.kwargs.get("slug")
         ctx["nota_referencia"] = nota_referencia
         return ctx

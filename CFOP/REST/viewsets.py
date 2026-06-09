@@ -227,3 +227,116 @@ class TributoSpartacusViewSet(viewsets.ViewSet):
         service = self.get_service()
         rows = service.clonar(**serializer.validated_data)
         return Response(TributoSpartacusSerializer(rows, many=True).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=["get"], url_path="ibscbs-classificacoes")
+    def ibscbs_classificacoes(self, request, *args, **kwargs):
+        banco = self.get_banco()
+        empresa_id = self.get_empresa_id()
+        filial_id = self.get_filial_id()
+        ncm_raw = str(request.query_params.get("ncm") or "").strip()
+        ncm_digits = "".join(ch for ch in ncm_raw if ch.isdigit())
+
+        try:
+            from Produtos.models import Produtos
+        except Exception:
+            return Response(
+                {"detail": "Produtos não disponível para consulta por NCM."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        from ..models_tributos import Tributos
+
+        def normalize_cclasstrib(v: str) -> str | None:
+            s = str(v or "").strip()
+            if not s:
+                return None
+            digits = "".join(ch for ch in s if ch.isdigit())
+            if not digits:
+                return None
+            return digits.zfill(6)[:6]
+
+        from collections import Counter
+
+        counter = Counter()
+        fontes = []
+
+        try:
+            from Notas_Fiscais.models import NotaItem
+
+            nota_qs = NotaItem.objects.using(banco).select_related("nota").filter(nota__status=100)
+
+            ncm8 = ncm_digits[:8] if len(ncm_digits) >= 8 else ""
+            ncm4 = ncm_digits[:4] if len(ncm_digits) >= 4 else ""
+
+            if ncm8:
+                nota_qs = nota_qs.filter(ncm=ncm8)
+            elif ncm4:
+                nota_qs = nota_qs.filter(ncm__startswith=ncm4)
+
+            for v in nota_qs.values_list("ibscbs_cclasstrib", flat=True):
+                code = normalize_cclasstrib(v)
+                if code and code != "000000":
+                    counter[code] += 10
+
+            if counter:
+                fontes.append("NOTAS")
+        except Exception:
+            pass
+
+        trib_qs = Tributos.objects.using(banco).all()
+        if empresa_id not in (None, ""):
+            try:
+                trib_qs = trib_qs.filter(trib_empr=int(empresa_id))
+            except Exception:
+                pass
+        if filial_id not in (None, ""):
+            try:
+                trib_qs = trib_qs.filter(trib_fili=int(filial_id))
+            except Exception:
+                pass
+
+        if ncm_digits:
+            prefix8 = ncm_digits[:8]
+            prefix4 = ncm_digits[:4] if len(ncm_digits) >= 4 else ""
+
+            prod_qs = Produtos.objects.using(banco).all()
+            if empresa_id not in (None, ""):
+                try:
+                    prod_qs = prod_qs.filter(prod_empr=str(int(empresa_id)))
+                except Exception:
+                    pass
+
+            prod_codes = list(
+                prod_qs.filter(prod_ncm__startswith=prefix8).values_list("prod_codi", flat=True)[:2000]
+            )
+            if not prod_codes and prefix4:
+                prod_codes = list(
+                    prod_qs.filter(prod_ncm__startswith=prefix4).values_list("prod_codi", flat=True)[:2000]
+                )
+
+            if prod_codes:
+                trib_qs = trib_qs.filter(trib_codi__in=prod_codes)
+
+        for r in trib_qs.values_list("trib_ibscbs_cclasstrib", "trib_ibscbs_cclasstribreg"):
+            c1 = normalize_cclasstrib(r[0])
+            c2 = normalize_cclasstrib(r[1])
+            if c1 and c1 != "000000":
+                counter[c1] += 1
+            if c2 and c2 != "000000":
+                counter[c2] += 1
+
+        if not fontes:
+            fontes.append("TRIBUTOS")
+
+        opcoes = [
+            {"value": code, "count": int(count)}
+            for code, count in counter.most_common(200)
+        ]
+        return Response(
+            {
+                "ncm": ncm_raw or None,
+                "ncm_digits": ncm_digits or None,
+                "fontes": fontes,
+                "opcoes": opcoes,
+            }
+        )

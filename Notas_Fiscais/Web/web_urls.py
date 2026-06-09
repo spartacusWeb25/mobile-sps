@@ -4,6 +4,7 @@ from .Views.nota.nota_list import NotaListView
 from .Views.nota.nota_detail import NotaDetailView
 from .Views.nota.nota_emissao import NotaEmissaoView
 from .Views.nota.nota_update import NotaUpdateView
+from .Views.nota.nota_enviar_email import NotaEnviarEmailView
 from .Views.nota.autocomplete import (
     entidades_autocomplete,
     produtos_autocomplete,
@@ -18,6 +19,7 @@ urlpatterns = [
     path('', NotaListView.as_view(), name='notas_list_web'),
     path('<int:pk>/', NotaDetailView.as_view(), name='nota_detail_web'),
     path('<int:pk>/editar/', NotaUpdateView.as_view(), name='nota_update_web'),
+    path('<int:pk>/enviar-email/', NotaEnviarEmailView.as_view(), name='nota_enviar_email_web'),
     path('emissao/', NotaEmissaoView.as_view(), name='nota_emissao_web'),
     path('enviar-contabilidade/', EnviarXmlContabilidadeView.as_view(), name='notas_enviar_contabilidade_web'),
     path('entidades-autocomplete/', entidades_autocomplete, name='entidades_autocomplete_web'),

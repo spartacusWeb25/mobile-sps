@@ -31,11 +31,12 @@ class OsDetailView(DetailView):
 
         try:
             from Entidades.models import Entidades
+            from CFOP.services.fiscal_status_service import obter_status_fiscal_produtos
 
             cliente = (
                 Entidades.objects.using(banco)
                 .filter(enti_empr=empresa_id, enti_clie=os_obj.os_clie)
-                .values('enti_nome')
+                .values('enti_nome', 'enti_tipo_enti', 'enti_esta')
                 .first()
             )
             vendedor = (
@@ -47,7 +48,7 @@ class OsDetailView(DetailView):
             context['cliente_nome'] = cliente.get('enti_nome') if cliente else 'N/A'
             context['vendedor_nome'] = vendedor.get('enti_nome') if vendedor else 'N/A'
         except Exception:
-            pass
+            cliente = None
 
         pecas = list(
             PecasOs.objects.using(banco)
@@ -90,17 +91,35 @@ class OsDetailView(DetailView):
             except Exception:
                 prod_map = {}
 
+        status_map = {}
+        try:
+            status_map = obter_status_fiscal_produtos(
+                banco=banco,
+                empresa=int(os_obj.os_empr),
+                filial=int(os_obj.os_fili),
+                produtos_codigos=codigos,
+                cliente_id=int(os_obj.os_clie) if str(getattr(os_obj, "os_clie", "") or "").strip().isdigit() else None,
+                tipo_entidade=(cliente.get("enti_tipo_enti") if cliente else None),
+                uf_destino=(cliente.get("enti_esta") if cliente else None),
+            )
+        except Exception:
+            status_map = {}
+
         itens = []
         subtotal = Decimal('0.00')
         for p in pecas:
+            codigo = getattr(p, 'peca_prod', None)
             nome = prod_map.get(getattr(p, 'peca_prod', None)) or getattr(p, 'peca_prod', None)
+            st = status_map.get(str(codigo or "").strip(), {}) if status_map else {}
             itens.append({
                 'item_tipo': 'Peça',
-                'item_codigo': getattr(p, 'peca_prod', None),
+                'item_codigo': codigo,
                 'item_nome': nome,
                 'item_qtd': getattr(p, 'peca_quan', None),
                 'item_preco': getattr(p, 'peca_unit', None),
                 'item_subt': getattr(p, 'peca_tota', None),
+                'fiscal_ok': bool(st.get("ok")),
+                'fiscal_detalhe': st.get("detalhe"),
             })
             try:
                 subtotal += (p.peca_tota or Decimal('0.00'))
@@ -108,14 +127,18 @@ class OsDetailView(DetailView):
                 pass
 
         for s in servicos:
+            codigo = getattr(s, 'serv_prod', None)
             nome = prod_map.get(getattr(s, 'serv_prod', None)) or getattr(s, 'serv_prod', None)
+            st = status_map.get(str(codigo or "").strip(), {}) if status_map else {}
             itens.append({
                 'item_tipo': 'Serviço',
-                'item_codigo': getattr(s, 'serv_prod', None),
+                'item_codigo': codigo,
                 'item_nome': nome,
                 'item_qtd': getattr(s, 'serv_quan', None),
                 'item_preco': getattr(s, 'serv_unit', None),
                 'item_subt': getattr(s, 'serv_tota', None),
+                'fiscal_ok': bool(st.get("ok")),
+                'fiscal_detalhe': st.get("detalhe"),
             })
             try:
                 subtotal += (s.serv_tota or Decimal('0.00'))
