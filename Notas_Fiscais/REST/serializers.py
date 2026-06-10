@@ -2,7 +2,7 @@
 
 from rest_framework import serializers
 from ..models import (
-    Nota, NotaItem, NotaItemImposto,
+    Nota, NotaItem, NotaItemImposto, NotaFatura, NotaDuplicata,
     Transporte
 )
 from Entidades.models import Entidades
@@ -82,6 +82,20 @@ class TransporteSerializer(serializers.ModelSerializer):
         return row.get("enti_nome") if row else None
 
 
+class NotaDuplicataSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NotaDuplicata
+        fields = "__all__"
+
+
+class NotaFaturaSerializer(serializers.ModelSerializer):
+    duplicatas = NotaDuplicataSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = NotaFatura
+        fields = "__all__"
+
+
 # ============================================================
 # NOTA – LEITURA
 # ============================================================
@@ -89,6 +103,8 @@ class TransporteSerializer(serializers.ModelSerializer):
 class NotaDetailSerializer(serializers.ModelSerializer):
     itens = NotaItemSerializer(many=True, read_only=True)
     transporte = TransporteSerializer(read_only=True)
+    fatura = serializers.SerializerMethodField()
+    duplicatas = serializers.SerializerMethodField()
     emitente = serializers.SerializerMethodField()
     destinatario = serializers.SerializerMethodField()
 
@@ -120,22 +136,47 @@ class NotaDetailSerializer(serializers.ModelSerializer):
         )
         return data
 
+    def get_fatura(self, obj):
+        try:
+            fatura = getattr(obj, "fatura", None)
+            if not fatura:
+                return None
+            return NotaFaturaSerializer(fatura).data
+        except Exception:
+            return None
+
+    def get_duplicatas(self, obj):
+        try:
+            qs = obj.duplicatas.all()
+            return NotaDuplicataSerializer(qs, many=True).data
+        except Exception:
+            return []
+
 
 # ============================================================
 # NOTA – ESCRITA (API)
 # ============================================================
 
 class NotaItemCreateSerializer(serializers.Serializer):
-    produto = serializers.IntegerField()
+    produto = serializers.CharField()
     quantidade = serializers.DecimalField(max_digits=15, decimal_places=4)
     unitario = serializers.DecimalField(max_digits=15, decimal_places=4)
     desconto = serializers.DecimalField(max_digits=15, decimal_places=4, required=False, default=0)
+    valor_frete = serializers.DecimalField(max_digits=15, decimal_places=2, required=False, allow_null=True)
+    valor_seguro = serializers.DecimalField(max_digits=15, decimal_places=2, required=False, allow_null=True)
+    valor_outras_despesas = serializers.DecimalField(max_digits=15, decimal_places=2, required=False, allow_null=True)
     cfop = serializers.CharField(required=False, allow_blank=True, default="")
     ncm = serializers.CharField(required=False, allow_blank=True, default="")
     cest = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     cst_icms = serializers.CharField(required=False, allow_blank=True, default="")
     cst_pis = serializers.CharField(required=False, allow_blank=True, default="")
     cst_cofins = serializers.CharField(required=False, allow_blank=True, default="")
+    cst_ibs = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    cst_cbs = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    numero_pedido = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    numero_item_pedido = serializers.IntegerField(required=False, allow_null=True)
+    informacoes_adicionais = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    valor_total_tributos = serializers.DecimalField(max_digits=15, decimal_places=2, required=False, allow_null=True)
 
 
 class NotaItemImpostoCreateSerializer(serializers.Serializer):
@@ -152,6 +193,25 @@ class NotaItemImpostoCreateSerializer(serializers.Serializer):
     cbs_base = serializers.DecimalField(max_digits=15, decimal_places=2, required=False, allow_null=True)
     cbs_aliquota = serializers.DecimalField(max_digits=5, decimal_places=2, required=False, allow_null=True)
     cbs_valor = serializers.DecimalField(max_digits=15, decimal_places=2, required=False, allow_null=True)
+    icms_uf_dest_base = serializers.DecimalField(max_digits=15, decimal_places=2, required=False, allow_null=True)
+    icms_uf_dest_aliquota = serializers.DecimalField(max_digits=5, decimal_places=2, required=False, allow_null=True)
+    icms_uf_dest_valor = serializers.DecimalField(max_digits=15, decimal_places=2, required=False, allow_null=True)
+    icms_uf_dest_fcp_valor = serializers.DecimalField(max_digits=15, decimal_places=2, required=False, allow_null=True)
+    icms_uf_dest_partilha = serializers.DecimalField(max_digits=5, decimal_places=2, required=False, allow_null=True)
+
+
+class NotaFaturaCreateSerializer(serializers.Serializer):
+    numero = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    valor_original = serializers.DecimalField(max_digits=15, decimal_places=2, required=False, allow_null=True)
+    valor_desconto = serializers.DecimalField(max_digits=15, decimal_places=2, required=False, allow_null=True)
+    valor_liquido = serializers.DecimalField(max_digits=15, decimal_places=2, required=False, allow_null=True)
+
+
+class NotaDuplicataCreateSerializer(serializers.Serializer):
+    ordem = serializers.IntegerField(required=False, allow_null=True)
+    numero = serializers.CharField()
+    data_vencimento = serializers.DateField(required=False, allow_null=True)
+    valor = serializers.DecimalField(max_digits=15, decimal_places=2, required=False, allow_null=True)
 
 
 class TransporteCreateSerializer(serializers.Serializer):
@@ -165,6 +225,8 @@ class NotaCreateUpdateSerializer(serializers.Serializer):
     modelo = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     serie = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     numero = serializers.IntegerField(required=False, allow_null=True)
+    pedido_origem = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    chave_referenciada = serializers.CharField(required=False, allow_blank=True, allow_null=True)
 
     data_emissao = serializers.DateField(required=False)
     data_saida = serializers.DateField(required=False, allow_null=True)
@@ -172,14 +234,36 @@ class NotaCreateUpdateSerializer(serializers.Serializer):
     tipo_operacao = serializers.IntegerField()
     finalidade = serializers.IntegerField(required=False)
     ambiente = serializers.IntegerField(required=False)
+    informacoes_adicionais = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    valor_total_tributos = serializers.DecimalField(max_digits=15, decimal_places=2, required=False, allow_null=True)
+    icms_uf_dest_valor_total = serializers.DecimalField(max_digits=15, decimal_places=2, required=False, allow_null=True)
 
     destinatario = serializers.IntegerField()  # enti_clie
 
     itens = NotaItemCreateSerializer(many=True)
     impostos = NotaItemImpostoCreateSerializer(many=True, required=False)
     transporte = TransporteCreateSerializer(required=False)
+    fatura = NotaFaturaCreateSerializer(required=False)
+    duplicatas = NotaDuplicataCreateSerializer(many=True, required=False)
 
     def validate(self, attrs):
+        itens = list(attrs.get("itens") or [])
+        impostos = list(attrs.get("impostos") or [])
+
+        itens_filtrados = []
+        impostos_filtrados = []
+        for idx, item in enumerate(itens):
+            produto = str(item.get("produto") or "").strip()
+            if not produto or produto == "0":
+                continue
+            itens_filtrados.append(item)
+            if idx < len(impostos):
+                impostos_filtrados.append(impostos[idx])
+
+        attrs["itens"] = itens_filtrados
+        if impostos:
+            attrs["impostos"] = impostos_filtrados
+
         itens = attrs.get("itens") or []
         impostos = attrs.get("impostos") or []
 

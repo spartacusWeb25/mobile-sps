@@ -1,4 +1,74 @@
 <div class="tab-pane fade" id="tab-financeiro" role="tabpanel" aria-labelledby="tab-financeiro-btn">
+  <div class="card shadow-sm mb-3">
+    <div class="card-body">
+      <h5 class="card-title mb-3">Cobrança da NF-e</h5>
+      <div class="row g-3 mb-3">
+        <div class="col-md-3">{{ fatura_form.numero.label_tag }} {{ fatura_form.numero }}</div>
+        <div class="col-md-3">{{ fatura_form.valor_original.label_tag }} {{ fatura_form.valor_original }}</div>
+        <div class="col-md-3">{{ fatura_form.valor_desconto.label_tag }} {{ fatura_form.valor_desconto }}</div>
+        <div class="col-md-3">{{ fatura_form.valor_liquido.label_tag }} {{ fatura_form.valor_liquido }}</div>
+      </div>
+
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="mb-0">Duplicatas</h6>
+        <button type="button" class="btn btn-sm btn-outline-primary" id="btn-add-duplicata">
+          <i class="bi bi-plus"></i> Adicionar Duplicata
+        </button>
+      </div>
+
+      {{ duplicatas_formset.management_form }}
+      <div class="table-responsive">
+        <table class="table table-sm align-middle" id="duplicatas-table">
+          <thead>
+            <tr>
+              <th>Ordem</th>
+              <th>Número</th>
+              <th>Vencimento</th>
+              <th>Valor</th>
+              <th style="width: 96px;"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for d in duplicatas_formset %}
+            <tr>
+              <td>
+                <div class="d-none">{{ d.id }}</div>
+                {{ d.ordem }}
+              </td>
+              <td>{{ d.numero }}</td>
+              <td>{{ d.data_vencimento }}</td>
+              <td>{{ d.valor }}</td>
+              <td>
+                <div class="d-none">{{ d.DELETE }}</div>
+                <button type="button" class="btn btn-sm btn-outline-danger btn-remove-duplicata">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+            {% with df=duplicatas_formset.empty_form %}
+            <tr id="duplicatas-empty-row" class="d-none">
+              <td>
+                <div class="d-none">{{ df.id }}</div>
+                {{ df.ordem }}
+              </td>
+              <td>{{ df.numero }}</td>
+              <td>{{ df.data_vencimento }}</td>
+              <td>{{ df.valor }}</td>
+              <td>
+                <div class="d-none">{{ df.DELETE }}</div>
+                <button type="button" class="btn btn-sm btn-outline-danger btn-remove-duplicata">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </td>
+            </tr>
+            {% endwith %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
   <div id="financeiro-nota" class="card shadow-sm">
     <div class="card-body">
       <h5 class="card-title mb-3">Financeiro</h5>
@@ -111,9 +181,14 @@
     }
     const parseNumber = (v) => {
       if (v == null) return 0
-      const s = String(v).trim()
+      if (typeof v === 'number') return Number.isFinite(v) ? v : 0
+      let s = String(v).trim()
       if (!s) return 0
-      const n = Number(s.replace(',', '.'))
+      if (s.includes(',')) {
+        // formato pt-BR: "111.173,93" -> remove pontos de milhar e troca vírgula por ponto
+        s = s.replace(/\./g, '').replace(',', '.')
+      }
+      const n = Number(s)
       return Number.isFinite(n) ? n : 0
     }
     const getNotaId = () => {
@@ -204,6 +279,9 @@
             const d = parseNumber(it.desconto) || 0
             return acc + (q * u - d)
           }, 0)
+          const somaFrete = itens.reduce((acc, it) => acc + (parseNumber(it.valor_frete) || 0), 0)
+          const somaSeguro = itens.reduce((acc, it) => acc + (parseNumber(it.valor_seguro) || 0), 0)
+          const somaOutras = itens.reduce((acc, it) => acc + (parseNumber(it.valor_outras_despesas) || 0), 0)
           let totIcms = 0, totSt = 0, totIpi = 0, totPis = 0, totCofins = 0, totCbs = 0, totIbs = 0, totFcp = 0
           itens.forEach(it => {
             const imp = it.impostos || {}
@@ -218,18 +296,44 @@
           })
           const somaImpostos = totIcms + totSt + totIpi + totPis + totCofins + totCbs + totIbs + totFcp
           const somaDescontos = itens.reduce((acc, it) => acc + (parseNumber(it.desconto) || 0), 0)
-          const totalNota = somaProdutos + somaImpostos
-          return { somaProdutos, somaDescontos, somaImpostos, totalNota }
+          const totalNota = somaProdutos + somaImpostos + somaFrete + somaSeguro + somaOutras
+          return { somaProdutos, somaDescontos, somaImpostos, somaFrete, somaSeguro, somaOutras, totalNota }
         } catch (e) {
           return null
         }
       }
 
+      const getTotaisFromFormRows = () => {
+        const rows = Array.from(document.querySelectorAll('#itens-formset-body tr') || []).filter((tr) => {
+          if (tr.id) return false
+          if (tr.style.display === 'none') return false
+          const del = tr.querySelector('[name$="-DELETE"]')
+          return !(del && del.checked)
+        })
+        if (!rows.length) return null
+        const somaProdutos = rows.reduce((acc, tr) => acc + parseNumber(tr.querySelector('[name$="-total"]')?.value || 0), 0)
+        const somaDescontos = rows.reduce((acc, tr) => acc + parseNumber(tr.querySelector('[name$="-desconto"]')?.value || 0), 0)
+        const somaImpostos = rows.reduce((acc, tr) => acc + parseNumber(tr.querySelector('[name$="-valor_total_tributos"]')?.value || 0), 0)
+        const somaFrete = rows.reduce((acc, tr) => acc + parseNumber(tr.querySelector('[name$="-valor_frete"]')?.value || 0), 0)
+        const somaSeguro = rows.reduce((acc, tr) => acc + parseNumber(tr.querySelector('[name$="-valor_seguro"]')?.value || 0), 0)
+        const somaOutras = rows.reduce((acc, tr) => acc + parseNumber(tr.querySelector('[name$="-valor_outras_despesas"]')?.value || 0), 0)
+        const totalNota = somaProdutos + somaImpostos + somaFrete + somaSeguro + somaOutras
+        return { somaProdutos, somaDescontos, somaImpostos, somaFrete, somaSeguro, somaOutras, totalNota }
+      }
+
       const syncResumo = () => {
-        const sub = parseNumber(document.getElementById('total')?.value || 0)
-        const des = parseNumber(document.getElementById('total-desconto')?.value || 0)
-        const trib = parseNumber(document.getElementById('total-tributos')?.value || 0)
+        const totaisForm = getTotaisFromFormRows()
+        // usa || (e não ??) para que 0 também caia no fallback dos campos de totais
+        const sub = (totaisForm?.somaProdutos || 0) || parseNumber(document.getElementById('total')?.value || 0)
+        const des = (totaisForm?.somaDescontos || 0) || parseNumber(document.getElementById('total-desconto')?.value || 0)
+        const trib = (totaisForm?.somaImpostos || 0) || parseNumber(document.getElementById('total-tributos')?.value || 0)
+        const frete = totaisForm?.somaFrete || 0
+        const seguro = totaisForm?.somaSeguro || 0
+        const outras = totaisForm?.somaOutras || 0
         let tot = parseNumber(document.getElementById('total-nota')?.value || 0)
+        const totForm = sub + trib + frete + seguro + outras
+        if (totForm > tot) tot = totForm
+        if (!tot && (sub || trib)) tot = sub + trib
         if (!tot && (sub || trib)) tot = sub + trib
         if (resSub) resSub.textContent = fmtBRL(sub)
         if (resDesc) resDesc.textContent = fmtBRL(des)
@@ -327,10 +431,11 @@
         const parcelas = Math.max(Number(parcelasEl.value || 1), 1)
         const forma = (formaEl.value || '').trim()
         const entrada = Math.max(Number(entradaEl?.value || 0), 0)
-        let totalNota = parseNumber(document.getElementById('total-nota')?.value || 0)
+        const totaisForm = getTotaisFromFormRows()
+        let totalNota = totaisForm?.totalNota ?? parseNumber(document.getElementById('total-nota')?.value || 0)
         if (!totalNota) {
-          const sub = parseNumber(document.getElementById('total')?.value || 0)
-          const trib = parseNumber(document.getElementById('total-tributos')?.value || 0)
+          const sub = totaisForm?.somaProdutos ?? parseNumber(document.getElementById('total')?.value || 0)
+          const trib = totaisForm?.somaImpostos ?? parseNumber(document.getElementById('total-tributos')?.value || 0)
           totalNota = sub + trib
         }
         if (!totalNota) {
@@ -485,5 +590,43 @@
     }
 
     document.addEventListener('DOMContentLoaded', mount)
+  })()
+</script>
+
+<script>
+  (() => {
+    const totalForms = document.querySelector('#duplicatas-table [name$="-TOTAL_FORMS"]') || document.querySelector('[name$="-TOTAL_FORMS"][name^="duplicatas"]')
+    const emptyRow = document.getElementById('duplicatas-empty-row')
+    const tableBody = document.querySelector('#duplicatas-table tbody')
+    const btnAdd = document.getElementById('btn-add-duplicata')
+
+    const attachDuplicataBehavior = (row) => {
+      const delBtn = row.querySelector('.btn-remove-duplicata')
+      const delField = row.querySelector('[name$="-DELETE"]')
+      delBtn?.addEventListener('click', () => {
+        if (delField) {
+          delField.checked = true
+          row.style.display = 'none'
+        } else {
+          row.remove()
+        }
+      })
+    }
+
+    document.querySelectorAll('#duplicatas-table tbody tr').forEach((row) => {
+      if (row.id !== 'duplicatas-empty-row') attachDuplicataBehavior(row)
+    })
+
+    btnAdd?.addEventListener('click', () => {
+      if (!emptyRow || !tableBody || !totalForms) return
+      const idx = Number(totalForms.value || 0)
+      const clone = emptyRow.cloneNode(true)
+      clone.id = ''
+      clone.classList.remove('d-none')
+      clone.innerHTML = clone.innerHTML.replace(/__prefix__/g, String(idx))
+      tableBody.appendChild(clone)
+      totalForms.value = String(idx + 1)
+      attachDuplicataBehavior(clone)
+    })
   })()
 </script>

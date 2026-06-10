@@ -81,6 +81,9 @@ class Nota(models.Model):
 
     pedido_origem = models.CharField(max_length=20, blank=True, null=True, db_index=True, help_text="Número do Pedido de Venda de origem")
     chave_referenciada = models.CharField(max_length=44, blank=True, null=True, db_index=True, help_text="Chave (44 dígitos) da NF-e referenciada")
+    informacoes_adicionais = models.TextField(blank=True, null=True)
+    valor_total_tributos = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True, default=0)
+    icms_uf_dest_valor_total = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True, default=0)
 
     xml_assinado = models.TextField(blank=True, null=True)
     xml_autorizado = models.TextField(blank=True, null=True)
@@ -117,6 +120,10 @@ class NotaItem(models.Model):
     beneficio_fiscal = models.CharField(max_length=10, blank=True, null=True)
     ibscbs_cst = models.CharField(max_length=3, blank=True, null=True)
     ibscbs_cclasstrib = models.CharField(max_length=6, blank=True, null=True)
+    numero_pedido = models.CharField(max_length=20, blank=True, null=True, db_index=True)
+    numero_item_pedido = models.IntegerField(blank=True, null=True)
+    informacoes_adicionais = models.TextField(blank=True, null=True)
+    valor_total_tributos = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True, default=0)
 
     fonte_tributacao = models.CharField(max_length=20, null=True, blank=True)
 
@@ -206,6 +213,11 @@ class NotaItemImposto(models.Model):
     cbs_base = models.DecimalField(max_digits=15, decimal_places=2, null=True)
     cbs_aliquota = models.DecimalField(max_digits=5, decimal_places=2, null=True)
     cbs_valor = models.DecimalField(max_digits=15, decimal_places=2, null=True)
+    icms_uf_dest_base = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
+    icms_uf_dest_aliquota = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
+    icms_uf_dest_valor = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
+    icms_uf_dest_fcp_valor = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
+    icms_uf_dest_partilha = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
 
     class Meta:
         db_table = "nf_item_imposto"
@@ -213,6 +225,45 @@ class NotaItemImposto(models.Model):
         verbose_name_plural = "Impostos dos Itens (Domínio)"
         indexes = [
             models.Index(fields=["item"])
+        ]
+
+
+# ------------------------------------------------------------
+
+class NotaFatura(models.Model):
+    nota = models.OneToOneField(Nota, related_name="fatura", on_delete=models.CASCADE)
+    numero = models.CharField(max_length=60, blank=True, null=True)
+    valor_original = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
+    valor_desconto = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
+    valor_liquido = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
+
+    class Meta:
+        db_table = "nf_nota_fatura"
+        verbose_name = "Fatura da Nota Fiscal"
+        verbose_name_plural = "Faturas das Notas Fiscais"
+        indexes = [
+            models.Index(fields=["nota"])
+        ]
+
+
+# ------------------------------------------------------------
+
+class NotaDuplicata(models.Model):
+    nota = models.ForeignKey(Nota, related_name="duplicatas", on_delete=models.CASCADE)
+    fatura = models.ForeignKey(NotaFatura, related_name="duplicatas", on_delete=models.CASCADE, blank=True, null=True)
+    ordem = models.PositiveIntegerField(default=1)
+    numero = models.CharField(max_length=60)
+    data_vencimento = models.DateField(blank=True, null=True)
+    valor = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
+
+    class Meta:
+        db_table = "nf_nota_duplicata"
+        verbose_name = "Duplicata da Nota Fiscal"
+        verbose_name_plural = "Duplicatas das Notas Fiscais"
+        unique_together = ("nota", "numero")
+        indexes = [
+            models.Index(fields=["nota"]),
+            models.Index(fields=["fatura"]),
         ]
 
 

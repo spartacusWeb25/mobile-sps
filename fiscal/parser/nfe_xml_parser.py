@@ -40,13 +40,43 @@ def parse_nfe(xml_content: str) -> dict:
         "vNF": xpath_text(inf_node, "string(./nfe:total/nfe:ICMSTot/nfe:vNF)", nsmap=nsmap, default="").strip(),
         "vProd": xpath_text(inf_node, "string(./nfe:total/nfe:ICMSTot/nfe:vProd)", nsmap=nsmap, default="").strip(),
         "vDesc": xpath_text(inf_node, "string(./nfe:total/nfe:ICMSTot/nfe:vDesc)", nsmap=nsmap, default="").strip(),
+        "vTotTrib": xpath_text(inf_node, "string(./nfe:total/nfe:ICMSTot/nfe:vTotTrib)", nsmap=nsmap, default="").strip(),
+        "vICMSUFDest": xpath_text(inf_node, "string(./nfe:total/nfe:ICMSTot/nfe:vICMSUFDest)", nsmap=nsmap, default="").strip(),
+        "vFCPUFDest": xpath_text(inf_node, "string(./nfe:total/nfe:ICMSTot/nfe:vFCPUFDest)", nsmap=nsmap, default="").strip(),
     }
+
+    info_adic = {
+        "infCpl": xpath_text(inf_node, "string(./nfe:infAdic/nfe:infCpl)", nsmap=nsmap, default="").strip(),
+    }
+
+    cobr = {
+        "fat": {
+            "nFat": xpath_text(inf_node, "string(./nfe:cobr/nfe:fat/nfe:nFat)", nsmap=nsmap, default="").strip(),
+            "vOrig": xpath_text(inf_node, "string(./nfe:cobr/nfe:fat/nfe:vOrig)", nsmap=nsmap, default="").strip(),
+            "vDesc": xpath_text(inf_node, "string(./nfe:cobr/nfe:fat/nfe:vDesc)", nsmap=nsmap, default="").strip(),
+            "vLiq": xpath_text(inf_node, "string(./nfe:cobr/nfe:fat/nfe:vLiq)", nsmap=nsmap, default="").strip(),
+        },
+        "dup": [],
+    }
+    for dup in inf_node.xpath("./nfe:cobr/nfe:dup", namespaces=nsmap) if nsmap else inf_node.findall(".//dup"):
+        cobr["dup"].append(
+            {
+                "nDup": xpath_text(dup, "string(./nfe:nDup)", nsmap=nsmap, default="").strip(),
+                "dVenc": xpath_text(dup, "string(./nfe:dVenc)", nsmap=nsmap, default="").strip(),
+                "vDup": xpath_text(dup, "string(./nfe:vDup)", nsmap=nsmap, default="").strip(),
+            }
+        )
 
     itens = []
     for det in inf_node.xpath("./nfe:det", namespaces=nsmap) if nsmap else inf_node.findall(".//det"):
         prod = det.xpath("./nfe:prod", namespaces=nsmap)[0] if nsmap else det.find(".//prod")
         if prod is None:
             continue
+        imposto = det.xpath("./nfe:imposto", namespaces=nsmap)[0] if nsmap else det.find(".//imposto")
+        icms_uf_dest = None
+        if imposto is not None:
+            nodes = imposto.xpath("./nfe:ICMSUFDest", namespaces=nsmap) if nsmap else imposto.findall("./ICMSUFDest")
+            icms_uf_dest = nodes[0] if nodes else None
 
         itens.append(
             {
@@ -62,6 +92,15 @@ def parse_nfe(xml_content: str) -> dict:
                 "vUnCom": xpath_text(prod, "string(./nfe:vUnCom)", nsmap=nsmap, default="").strip(),
                 "vProd": xpath_text(prod, "string(./nfe:vProd)", nsmap=nsmap, default="").strip(),
                 "vDesc": xpath_text(prod, "string(./nfe:vDesc)", nsmap=nsmap, default="").strip(),
+                "xPed": xpath_text(prod, "string(./nfe:xPed)", nsmap=nsmap, default="").strip(),
+                "nItemPed": xpath_text(prod, "string(./nfe:nItemPed)", nsmap=nsmap, default="").strip(),
+                "infAdProd": xpath_text(det, "string(./nfe:infAdProd)", nsmap=nsmap, default="").strip(),
+                "vTotTrib": xpath_text(imposto, "string(./nfe:vTotTrib)", nsmap=nsmap, default="").strip(),
+                "vBCUFDest": xpath_text(icms_uf_dest, "string(./nfe:vBCUFDest)", nsmap=nsmap, default="").strip(),
+                "pICMSUFDest": xpath_text(icms_uf_dest, "string(./nfe:pICMSUFDest)", nsmap=nsmap, default="").strip(),
+                "vICMSUFDest": xpath_text(icms_uf_dest, "string(./nfe:vICMSUFDest)", nsmap=nsmap, default="").strip(),
+                "vFCPUFDest": xpath_text(icms_uf_dest, "string(./nfe:vFCPUFDest)", nsmap=nsmap, default="").strip(),
+                "pICMSInterPart": xpath_text(icms_uf_dest, "string(./nfe:pICMSInterPart)", nsmap=nsmap, default="").strip(),
             }
         )
 
@@ -72,6 +111,8 @@ def parse_nfe(xml_content: str) -> dict:
         "emitente": emit,
         "destinatario": dest,
         "total": total,
+        "info_adic": info_adic,
+        "cobr": cobr,
         "itens": itens,
     }
 

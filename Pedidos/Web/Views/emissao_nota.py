@@ -6,6 +6,7 @@ import logging
 
 from ...models import PedidoVenda
 from Notas_Fiscais.emissao.emissao_nota_service import EmissaoNotaService
+from Notas_Fiscais.services.cobranca_origem_service import CobrancaOrigemService
 
 
 class PedidoEmitirNFeView(View):
@@ -28,6 +29,26 @@ class PedidoEmitirNFeView(View):
             cliente = pedido.cliente
             if not cliente:
                 raise Exception("Cliente não encontrado no pedido.")
+
+            info_partes = [f"Pedido: {pedido.pedi_nume}"]
+            if getattr(cliente, "enti_ende", None):
+                endereco = f"{cliente.enti_ende}"
+                if getattr(cliente, "enti_nume", None):
+                    endereco += f" N.{cliente.enti_nume}"
+                info_partes.append(f"ENDERECO: {endereco}")
+            if getattr(cliente, "enti_cida", None) or getattr(cliente, "enti_esta", None):
+                info_partes.append(
+                    f"CIDADE: {(getattr(cliente, 'enti_cida', '') or '').strip()} - {(getattr(cliente, 'enti_esta', '') or '').strip()}"
+                )
+            if getattr(cliente, "enti_bair", None):
+                info_partes.append(f"BAIRRO: {cliente.enti_bair}")
+            if getattr(cliente, "enti_comp", None):
+                info_partes.append(f"COMPLEMENTO: {cliente.enti_comp}")
+            if getattr(pedido, "pedi_obse", None):
+                info_partes.append(str(getattr(pedido, "pedi_obse") or "").strip())
+            if getattr(cliente, "enti_clie", None):
+                info_partes.append(f"Cliente: {cliente.enti_clie}")
+            informacoes_nota = "| ".join([p for p in info_partes if str(p or "").strip()])
 
             # Itens
             itens = []
@@ -65,6 +86,9 @@ class PedidoEmitirNFeView(View):
                     "cst_icms": "000",
                     "cst_pis": "01",
                     "cst_cofins": "01",
+                    "numero_pedido": str(pedido.pedi_nume),
+                    "numero_item_pedido": int(getattr(item, "iped_item", 0) or 0),
+                    "informacoes_adicionais": f"Pedido: {pedido.pedi_nume} Item: {int(getattr(item, 'iped_item', 0) or 0)}",
                 })
 
             # Mapear forma de pagamento do pedido para tPag SEFAZ
@@ -92,10 +116,16 @@ class PedidoEmitirNFeView(View):
                 "tipo_operacao": 1,
                 "finalidade": 1,
                 "ambiente": 2,
+                "pedido_origem": str(pedido.pedi_nume),
+                "informacoes_adicionais": informacoes_nota,
                 "destinatario": cliente.enti_clie,
                 "itens": itens,
                 "tpag": tpag,
             }
+            nota_data = CobrancaOrigemService.aplicar_no_payload(
+                payload=nota_data,
+                cobranca=CobrancaOrigemService.from_pedido_venda(pedido=pedido, banco=banco),
+            )
 
             # 2) Emitir NF-e
             resultado = EmissaoNotaService.emitir_nota(

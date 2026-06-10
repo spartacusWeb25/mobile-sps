@@ -15,6 +15,9 @@ def get_db_from_slug(slug):
     
     if not slug:
         return "default"
+    # #region debug-point C:db-from-slug-enter
+    import json, urllib.request; exec("try:\n urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:7777/event', data=json.dumps({'sessionId':'nota-calc-duplicate','runId':'pre-fix','hypothesisId':'C','location':'core/utils.py:get_db_from_slug','msg':'[DEBUG] get_db_from_slug called','data':{'slug':str(slug)}}).encode(), headers={'Content-Type':'application/json'}), timeout=0.5).read()\nexcept: pass")
+    # #endregion
 
     licenca = next((lic for lic in get_licencas_map() if lic["slug"] == slug), None)
     if not licenca:

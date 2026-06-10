@@ -1,6 +1,6 @@
 # notas_fiscais/services/nota_service.py
 
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError, transaction, connections
 from django.db.models import Max, Sum
 import logging
 from decimal import Decimal, ROUND_HALF_UP
@@ -12,7 +12,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from Licencas.models import Filiais
 from Entidades.models import Entidades
-from ..models import Nota, NotaItem
+from ..models import Nota, NotaItem, NotaFatura, NotaDuplicata
 from ..handlers.nota_handler import NotaHandler
 from .itens_service import ItensService
 from .transporte_service import TransporteService
@@ -25,6 +25,117 @@ from Saidas_Estoque.models import SaidasEstoque
 
 
 class NotaService:
+    @staticmethod
+    def _ensure_nf_nota_schema(db_alias: str) -> None:
+        try:
+            if connections[db_alias].vendor != "postgresql":
+                return
+        except Exception:
+            return
+
+        try:
+            with connections[db_alias].cursor() as cursor:
+                cursor.execute(
+                    "SELECT column_name FROM information_schema.columns WHERE table_name = %s",
+                    ["nf_nota"],
+                )
+                cols = {r[0] for r in cursor.fetchall()}
+                if "informacoes_adicionais" not in cols:
+                    cursor.execute("ALTER TABLE nf_nota ADD COLUMN IF NOT EXISTS informacoes_adicionais text NULL;")
+                if "valor_total_tributos" not in cols:
+                    cursor.execute("ALTER TABLE nf_nota ADD COLUMN IF NOT EXISTS valor_total_tributos numeric(15,2) NULL DEFAULT 0;")
+                if "icms_uf_dest_valor_total" not in cols:
+                    cursor.execute("ALTER TABLE nf_nota ADD COLUMN IF NOT EXISTS icms_uf_dest_valor_total numeric(15,2) NULL DEFAULT 0;")
+        except Exception:
+            return
+
+    @staticmethod
+    def _ensure_nf_cobranca_schema(db_alias: str) -> None:
+        try:
+            if connections[db_alias].vendor != "postgresql":
+                return
+        except Exception:
+            return
+
+        try:
+            with connections[db_alias].cursor() as cursor:
+                cursor.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS nf_nota_fatura (
+                        id serial PRIMARY KEY,
+                        numero varchar(60) NULL,
+                        valor_original numeric(15,2) NULL,
+                        valor_desconto numeric(15,2) NULL,
+                        valor_liquido numeric(15,2) NULL,
+                        nota_id integer UNIQUE NOT NULL
+                    );
+                    """
+                )
+                cursor.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS nf_nota_duplicata (
+                        id serial PRIMARY KEY,
+                        ordem integer NOT NULL DEFAULT 1,
+                        numero varchar(60) NOT NULL,
+                        data_vencimento date NULL,
+                        valor numeric(15,2) NULL,
+                        nota_id integer NOT NULL,
+                        fatura_id integer NULL
+                    );
+                    """
+                )
+                cursor.execute("CREATE INDEX IF NOT EXISTS nf_nota_fat_nota_idx ON nf_nota_fatura (nota_id);")
+                cursor.execute("CREATE INDEX IF NOT EXISTS nf_nota_dup_nota_idx ON nf_nota_duplicata (nota_id);")
+                cursor.execute("CREATE INDEX IF NOT EXISTS nf_nota_dup_fatura_idx ON nf_nota_duplicata (fatura_id);")
+                cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS nf_nota_dup_nota_numero_uk ON nf_nota_duplicata (nota_id, numero);")
+        except Exception:
+            return
+
+    @staticmethod
+    def _salvar_cobranca(*, nota, fatura=None, duplicatas=None, database="default"):
+        NotaService._ensure_nf_cobranca_schema(database)
+        if fatura is None and duplicatas is None:
+            return
+
+        fatura_obj = None
+        if fatura is not None:
+            payload_fatura = {
+                "numero": (fatura.get("numero") or None) if isinstance(fatura, dict) else None,
+                "valor_original": (fatura.get("valor_original") if isinstance(fatura, dict) else None),
+                "valor_desconto": (fatura.get("valor_desconto") if isinstance(fatura, dict) else None),
+                "valor_liquido": (fatura.get("valor_liquido") if isinstance(fatura, dict) else None),
+            }
+            has_fatura = any(v not in (None, "") for v in payload_fatura.values())
+            if has_fatura:
+                fatura_obj, _ = NotaFatura.objects.using(database).update_or_create(
+                    nota=nota,
+                    defaults=payload_fatura,
+                )
+            else:
+                NotaFatura.objects.using(database).filter(nota=nota).delete()
+
+        try:
+            fatura_obj = fatura_obj or nota.fatura
+        except Exception:
+            fatura_obj = fatura_obj or None
+
+        if duplicatas is not None:
+            NotaDuplicata.objects.using(database).filter(nota=nota).delete()
+            for idx, dup in enumerate(duplicatas, start=1):
+                if not dup:
+                    continue
+                numero = str(dup.get("numero") or "").strip()
+                if not numero:
+                    continue
+                NotaDuplicata.objects.using(database).create(
+                    nota=nota,
+                    fatura=fatura_obj,
+                    ordem=int(dup.get("ordem") or idx),
+                    numero=numero,
+                    data_vencimento=dup.get("data_vencimento") or None,
+                    valor=dup.get("valor") or 0,
+                )
+
     @staticmethod
     def _to_qty(valor) -> Decimal:
         try:
@@ -216,8 +327,9 @@ class NotaService:
         rec.save(using=database)
 
     @staticmethod
-    def criar(data, itens, impostos_map, transporte, empresa, filial, database="default"):
+    def criar(data, itens, impostos_map, transporte, empresa, filial, database="default", fatura=None, duplicatas=None):
         with transaction.atomic(using=database):
+            NotaService._ensure_nf_nota_schema(database)
             dest_id = data.get("destinatario")
             try:
                 if isinstance(dest_id, Entidades):
@@ -347,6 +459,13 @@ class NotaService:
             if transporte:
                 TransporteService.definir(nota, transporte)
 
+            NotaService._salvar_cobranca(
+                nota=nota,
+                fatura=fatura,
+                duplicatas=duplicatas,
+                database=database,
+            )
+
             return nota
 
     @staticmethod
@@ -358,8 +477,9 @@ class NotaService:
         return int(max_num) + 1
 
     @staticmethod
-    def atualizar(nota, data, itens, impostos_map, transporte, database="default", usuario_id=None):
+    def atualizar(nota, data, itens, impostos_map, transporte, database="default", usuario_id=None, fatura=None, duplicatas=None):
         with transaction.atomic(using=database):
+            NotaService._ensure_nf_nota_schema(database)
             empresa = int(getattr(nota, "empresa", 0) or 0)
             filial = int(getattr(nota, "filial", 0) or 0)
             entidade_id = int(getattr(nota, "destinatario_id", 0) or 0)
@@ -493,6 +613,13 @@ class NotaService:
             if transporte:
                 TransporteService.definir(nota, transporte)
 
+            NotaService._salvar_cobranca(
+                nota=nota,
+                fatura=fatura,
+                duplicatas=duplicatas,
+                database=database,
+            )
+
             return nota
 
     @staticmethod
@@ -524,6 +651,10 @@ class NotaService:
             (item.total_item if item.total_item is not None else (item.quantidade * item.unitario - (item.desconto or 0)))
             for item in itens
         )
+
+        total_frete = sum((item.valor_frete or 0) for item in itens)
+        total_seguro = sum((item.valor_seguro or 0) for item in itens)
+        total_outras = sum((item.valor_outras_despesas or 0) for item in itens)
         
         total_tributos = sum(
             (getattr(getattr(item, "impostos", None), "icms_valor", None) or 0) +
@@ -536,10 +667,23 @@ class NotaService:
             (getattr(getattr(item, "impostos", None), "fcp_valor", None) or 0)
             for item in itens
         )
-        
-        nota.total = total_produtos + total_tributos
-        nota.save(using=db_alias, update_fields=["total"])
-        return nota
+
+        total_nota = total_produtos + total_tributos + total_frete + total_seguro + total_outras
+
+        try:
+            nota.valor_total_tributos = total_tributos
+            nota.save(using=db_alias, update_fields=["valor_total_tributos"])
+        except Exception:
+            pass
+
+        return {
+            "produtos": total_produtos,
+            "tributos": total_tributos,
+            "frete": total_frete,
+            "seguro": total_seguro,
+            "outras_despesas": total_outras,
+            "total": total_nota,
+        }
 
     @staticmethod
     @transaction.atomic

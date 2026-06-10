@@ -35,6 +35,9 @@ class NotaDetailView(DetailView):
         itens = list(getattr(nota, "itens", []).all())
         total_produtos = sum(((it.total or Decimal("0"))) for it in itens)
         total_descontos = sum(((it.desconto or Decimal("0"))) for it in itens)
+        total_frete = sum(((it.valor_frete or Decimal("0"))) for it in itens)
+        total_seguro = sum(((it.valor_seguro or Decimal("0"))) for it in itens)
+        total_outras = sum(((it.valor_outras_despesas or Decimal("0"))) for it in itens)
         total_tributos = Decimal("0")
         for it in itens:
             imp = getattr(it, "impostos", None)
@@ -52,7 +55,10 @@ class NotaDetailView(DetailView):
             )
         ctx["total_tributos"] = total_tributos
         ctx["total_descontos"] = total_descontos
-        ctx["total_nota"] = total_produtos + total_tributos
+        ctx["total_frete"] = total_frete
+        ctx["total_seguro"] = total_seguro
+        ctx["total_outras_despesas"] = total_outras
+        ctx["total_nota"] = total_produtos + total_tributos + total_frete + total_seguro + total_outras
         ctx["emitente"] = emitente
         ctx["destinatario"] = destinatario
         ctx["destinatario_email"] = str(getattr(destinatario, "enti_emai", "") or "").strip()

@@ -74,6 +74,7 @@
       <div><strong>Total da Nota:</strong> {{ total_nota|default:"0.00"|floatformat:2 }}</div>
       <div><strong>Total Tributos:</strong> {{ total_tributos|default:"0.00"|floatformat:2 }}</div>
       <div><strong>Total Descontos:</strong> {{ total_descontos|default:"0.00"|floatformat:2 }}</div>
+      <div><strong>Total Frete:</strong> {{ total_frete|default:"0.00"|floatformat:2 }}</div>
       <div><strong>Chave de Referência:</strong> {{ nota_referencia|default:"—" }}</div>
     </div>
   </div>
@@ -137,6 +138,29 @@
       <div><strong>Veículo:</strong> {{ nota.transporte.placa_veiculo|default:"" }} / {{ nota.transporte.uf_veiculo|default:"" }}</div>
       {% else %}
       <em>Sem informações de transporte.</em>
+      {% endif %}
+      <div><strong>Valor do Frete:</strong> {{ total_frete|default:"0.00"|floatformat:2 }}</div>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-header">Informações Adicionais</div>
+    <div class="card-body">
+      <div><strong>Observações da Nota:</strong> {{ nota.informacoes_adicionais|default:"—" }}</div>
+      {% with exibiu_item=False %}
+      {% for it in nota.itens.all %}
+      {% if it.informacoes_adicionais or it.numero_pedido or it.numero_item_pedido %}
+      <hr>
+      <div><strong>Item:</strong> {{ it.produto_display }}</div>
+      <div><strong>Pedido:</strong> {{ it.numero_pedido|default:"—" }} / <strong>Item Pedido:</strong> {{ it.numero_item_pedido|default:"—" }}</div>
+      <div><strong>Info Adicional:</strong> {{ it.informacoes_adicionais|default:"—" }}</div>
+      {% endif %}
+      {% empty %}
+      {% endfor %}
+      {% endwith %}
+      {% if not nota.informacoes_adicionais and not nota.itens.all %}
+      <hr>
+      <div>Sem informações adicionais cadastradas.</div>
       {% endif %}
     </div>
   </div>
@@ -213,10 +237,8 @@
         return fetch(url, { ...options, headers: { ...headers, ...(options.headers || {}) } });
       };
 
-      const nid = {{ nota.id }
-    };
-    };
-    const btnEmit = document.getElementById('btn-emitir');
+      const nid = {{ nota.id }};
+      const btnEmit = document.getElementById('btn-emitir');
     const btnCanc = document.getElementById('btn-cancelar');
     if (btnEmit) {
       btnEmit.addEventListener('click', async () => {

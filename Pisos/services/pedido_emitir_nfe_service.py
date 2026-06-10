@@ -39,6 +39,7 @@ from django.db import transaction
 from Pisos.models import Pedidospisos, Itenspedidospisos
 from Pisos.services.utils_service import parse_decimal
 from Notas_Fiscais.emissao.emissao_nota_service import EmissaoNotaService
+from Notas_Fiscais.services.cobranca_origem_service import CobrancaOrigemService
 
 logger = logging.getLogger(__name__)
 
@@ -338,6 +339,28 @@ class PedidoEmitirNFeService:
         itens_payload = []
         missing_ncms = []
 
+        info_partes = [f"Pedido: {pedido.pedi_nume}"]
+        if getattr(pedido, "pedi_ende", None):
+            endereco = f"{pedido.pedi_ende}"
+            if getattr(pedido, "pedi_nume_ende", None):
+                endereco += f" N.{pedido.pedi_nume_ende}"
+            info_partes.append(f"ENDERECO: {endereco}")
+        if getattr(pedido, "pedi_cida", None) or getattr(pedido, "pedi_esta", None):
+            info_partes.append(
+                f"CIDADE: {(getattr(pedido, 'pedi_cida', '') or '').strip()} - {(getattr(pedido, 'pedi_esta', '') or '').strip()}"
+            )
+        if getattr(pedido, "pedi_bair", None):
+            info_partes.append(f"BAIRRO: {pedido.pedi_bair}")
+        if getattr(pedido, "pedi_comp", None):
+            info_partes.append(f"COMPLEMENTO: {pedido.pedi_comp}")
+        if getattr(pedido, "pedi_obse_roma", None):
+            info_partes.append(str(getattr(pedido, "pedi_obse_roma") or "").strip())
+        if getattr(pedido, "pedi_obse", None):
+            info_partes.append(str(getattr(pedido, "pedi_obse") or "").strip())
+        if getattr(cliente, "enti_clie", None):
+            info_partes.append(f"Cliente: {cliente.enti_clie}")
+        informacoes_nota = "| ".join([p for p in info_partes if str(p or "").strip()])
+
         for dto in dtos:
             item = dto.item_obj
             # Usa o produto pré-carregado em _carregar_itens — sem nova query ao banco
@@ -417,6 +440,9 @@ class PedidoEmitirNFeService:
                 "aliq_cbs": _to_float(aliq_cbs),
                 "cst_ibs": str(cst_ibs) if cst_ibs is not None else None,
                 "aliq_ibs": _to_float(aliq_ibs),
+                "numero_pedido": str(pedido.pedi_nume),
+                "numero_item_pedido": int(getattr(item, "item_nume", 0) or 0),
+                "informacoes_adicionais": f"Pedido: {pedido.pedi_nume} Item: {int(getattr(item, 'item_nume', 0) or 0)}",
             })
 
         if missing_ncms:
@@ -471,11 +497,17 @@ class PedidoEmitirNFeService:
             "tipo_operacao": 1,
             "finalidade": 1,
             "ambiente": 2,
+            "pedido_origem": str(pedido.pedi_nume),
+            "informacoes_adicionais": informacoes_nota,
             "emitente": emitente_dict,
             "destinatario": cliente,  # passar a instância/ID do Entidades (NotaService aceita Entidades ou ID)
             "itens": itens_payload,
             #"tpag": 0,
         }
+        payload = CobrancaOrigemService.aplicar_no_payload(
+            payload=payload,
+            cobranca=CobrancaOrigemService.from_pedido_pisos(pedido=pedido, banco=self.banco),
+        )
 
         return payload, itens_payload
 

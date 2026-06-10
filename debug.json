@@ -1,6 +1,6 @@
 {
-  "debug_id": "0a73cdaf-6ddb-4baa-b847-fff7ec8c903e",
-  "timestamp_inicio": "2026-06-09T13:17:55.437203Z",
+  "debug_id": "d1e08ac7-0a66-46e6-a62e-9df0e60024ac",
+  "timestamp_inicio": "2026-06-10T17:55:38.443903Z",
   "ambiente": {
     "debug": true,
     "database_alias": "saveweb001"
@@ -9,10 +9,10 @@
     "versao": "Padrão"
   },
   "nota": {
-    "id": 145,
+    "id": 151,
     "modelo": "55",
     "serie": "001",
-    "numero": "38",
+    "numero": "44",
     "empresa": "1",
     "filial": "1",
     "destinatario_id": "5",
@@ -22,18 +22,98 @@
   },
   "itens": [
     {
-      "id": 206,
+      "id": 234,
+      "produto_id": "ARQLVT1.6",
+      "descricao_produto": "PISO VINILICO MAGNIFIQUE LOUISE 184X1220MM",
+      "ncm_produto": "3918****",
+      "cfop_inicial": "5102",
+      "quantidade": "101.0000",
+      "unitario": "73.9300",
+      "desconto": "0.0000",
+      "logs": [
+        {
+          "id": "22f4f37f-9c6e-4096-8571-2f694fa09d32",
+          "timestamp": "2026-06-10T17:55:38.581698Z",
+          "tipo": "antes_calculo_item",
+          "mensagem": "Início do cálculo de impostos para o item.",
+          "dados": {
+            "uf_origem": "PR",
+            "uf_destino": "PR",
+            "regime": "1",
+            "tipo_operacao": "VENDA"
+          }
+        }
+      ],
+      "fonte_tributacao": "SPARTACUS",
+      "cfop_resolvido": "5102",
+      "cfop_flags": {
+        "exig_icms": false,
+        "exig_ipi": false,
+        "exig_pis_cofins": false,
+        "exig_cbs": false,
+        "exig_ibs": false,
+        "gera_st": false
+      },
+      "ncm_resolvido": "3918****",
+      "bases": {
+        "raiz": "7466.93",
+        "icms": "0.00",
+        "st": null
+      },
+      "aliquotas": {
+        "ipi": null,
+        "icms": "0.00",
+        "st": null,
+        "pis": "0.00",
+        "cofins": "0.00",
+        "cbs": null,
+        "ibs": null
+      },
+      "valores_calculados": {
+        "ipi": null,
+        "icms": "0.00",
+        "st": null,
+        "pis": "0",
+        "cofins": "0",
+        "cbs": null,
+        "ibs": null
+      },
+      "extras": {
+        "mva_st": null,
+        "beneficio_fiscal": null,
+        "ibscbs_cst": null,
+        "ibscbs_cclasstrib": null
+      },
+      "csts": {
+        "ipi": null,
+        "icms": "102",
+        "st": null,
+        "pis": "49",
+        "cofins": "49",
+        "cbs": null,
+        "ibs": null
+      },
+      "condicionais_aplicadas": {
+        "icms_habilitado_cfop": false,
+        "ipi_habilitado_cfop": false,
+        "pis_cofins_habilitado_cfop": false,
+        "cbs_habilitado_cfop": false,
+        "ibs_habilitado_cfop": false
+      }
+    },
+    {
+      "id": 233,
       "produto_id": "2",
       "descricao_produto": "PORCELANATO",
       "ncm_produto": "4016****",
       "cfop_inicial": "5102",
-      "quantidade": "75.0000",
+      "quantidade": "501.0000",
       "unitario": "207.0000",
       "desconto": "0.0000",
       "logs": [
         {
-          "id": "5d7f944a-37bc-43ec-9bdd-9a12b9d5ca44",
-          "timestamp": "2026-06-09T13:17:55.532030Z",
+          "id": "6966c0ae-09fd-4088-b31b-28ecb537ee1c",
+          "timestamp": "2026-06-10T17:55:38.924840Z",
           "tipo": "antes_calculo_item",
           "mensagem": "Início do cálculo de impostos para o item.",
           "dados": {
@@ -56,7 +136,7 @@
       },
       "ncm_resolvido": "4016****",
       "bases": {
-        "raiz": "15525.00",
+        "raiz": "103707.00",
         "icms": "0.00",
         "st": null
       },
@@ -75,88 +155,8 @@
         "st": null,
         "pis": "0",
         "cofins": "0",
-        "cbs": "31.05",
-        "ibs": "108.68"
-      },
-      "extras": {
-        "mva_st": null,
-        "beneficio_fiscal": null,
-        "ibscbs_cst": "000",
-        "ibscbs_cclasstrib": null
-      },
-      "csts": {
-        "ipi": null,
-        "icms": "102",
-        "st": null,
-        "pis": "49",
-        "cofins": "49",
-        "cbs": "000",
-        "ibs": "000"
-      },
-      "condicionais_aplicadas": {
-        "icms_habilitado_cfop": false,
-        "ipi_habilitado_cfop": false,
-        "pis_cofins_habilitado_cfop": false,
-        "cbs_habilitado_cfop": false,
-        "ibs_habilitado_cfop": false
-      }
-    },
-    {
-      "id": 205,
-      "produto_id": "43",
-      "descricao_produto": "PISO LAMINADO",
-      "ncm_produto": "4016****",
-      "cfop_inicial": "5102",
-      "quantidade": "52.0000",
-      "unitario": "102.3500",
-      "desconto": "0.0000",
-      "logs": [
-        {
-          "id": "993e4c42-586b-4402-950b-24e8fb1515e8",
-          "timestamp": "2026-06-09T13:17:56.026871Z",
-          "tipo": "antes_calculo_item",
-          "mensagem": "Início do cálculo de impostos para o item.",
-          "dados": {
-            "uf_origem": "PR",
-            "uf_destino": "PR",
-            "regime": "1",
-            "tipo_operacao": "VENDA"
-          }
-        }
-      ],
-      "fonte_tributacao": "SPARTACUS",
-      "cfop_resolvido": "5102",
-      "cfop_flags": {
-        "exig_icms": false,
-        "exig_ipi": false,
-        "exig_pis_cofins": false,
-        "exig_cbs": false,
-        "exig_ibs": false,
-        "gera_st": false
-      },
-      "ncm_resolvido": "4016****",
-      "bases": {
-        "raiz": "5322.20",
-        "icms": "0.00",
-        "st": null
-      },
-      "aliquotas": {
-        "ipi": null,
-        "icms": "0.00",
-        "st": null,
-        "pis": "0.00",
-        "cofins": "0.00",
-        "cbs": "0.90",
-        "ibs": "0"
-      },
-      "valores_calculados": {
-        "ipi": null,
-        "icms": "0.00",
-        "st": null,
-        "pis": "0",
-        "cofins": "0",
-        "cbs": "47.90",
-        "ibs": "0"
+        "cbs": "207.41",
+        "ibs": "725.95"
       },
       "extras": {
         "mva_st": null,
@@ -184,8 +184,8 @@
   ],
   "logs": [
     {
-      "id": "3fd3ef4f-5dbd-4ebb-8865-68bb466c2247",
-      "timestamp": "2026-06-09T13:17:55.508297Z",
+      "id": "7c01219e-464e-4afd-b288-10653a3df7d5",
+      "timestamp": "2026-06-10T17:55:38.558552Z",
       "tipo": "contexto_nota",
       "mensagem": "Contexto fiscal inicial da nota.",
       "dados": {
@@ -193,5 +193,5 @@
       }
     }
   ],
-  "timestamp_fim": "2026-06-09T13:17:56.409260Z"
+  "timestamp_fim": "2026-06-10T17:55:39.270894Z"
 }

@@ -48,6 +48,30 @@ class NotaViewSet(viewsets.ModelViewSet):
             return NotaCreateUpdateSerializer
         return NotaDetailSerializer
 
+    def _normalizar_payload_escrita(self, data):
+        payload = dict(data or {})
+        itens = list(payload.get("itens") or [])
+        impostos = list(payload.get("impostos") or [])
+
+        itens_filtrados = []
+        impostos_filtrados = []
+        for idx, item in enumerate(itens):
+            if not isinstance(item, dict):
+                continue
+            produto = str(item.get("produto") or "").strip()
+            if not produto or produto == "0":
+                continue
+            novo_item = dict(item)
+            novo_item["produto"] = produto
+            itens_filtrados.append(novo_item)
+            if idx < len(impostos) and isinstance(impostos[idx], dict):
+                impostos_filtrados.append(dict(impostos[idx]))
+
+        payload["itens"] = itens_filtrados
+        if "impostos" in payload:
+            payload["impostos"] = impostos_filtrados
+        return payload
+
     def get_queryset(self):
         banco = get_licenca_db_config(self.request) or "default"
         empresa = (
@@ -71,7 +95,9 @@ class NotaViewSet(viewsets.ModelViewSet):
             qs = qs.filter(empresa=empresa)
         if filial:
             qs = qs.filter(filial=filial)
-        
+        # #region debug-point A:queryset-scope
+        import json, urllib.request; urllib.request.urlopen(urllib.request.Request("http://127.0.0.1:7777/event", data=json.dumps({"sessionId":"nota-calc-duplicate","runId":"pre-fix","hypothesisId":"A","location":"Notas_Fiscais/REST/viewsets.py:get_queryset","msg":"[DEBUG] NotaViewSet.get_queryset scope resolved","data":{"banco":str(banco),"empresa":str(empresa or ""),"filial":str(filial or ""),"action":str(getattr(self, "action", "")),"method":str(getattr(getattr(self, "request", None), "method", ""))}}).encode(), headers={"Content-Type":"application/json"}), timeout=0.5).read()
+        # #endregion
 
         return qs
 
@@ -189,13 +215,16 @@ class NotaViewSet(viewsets.ModelViewSet):
         empresa = request.session.get("empresa_id") or request.headers.get("X-Empresa")
         filial = request.session.get("filial_id") or request.headers.get("X-Filial")
 
-        serializer = self.get_serializer(data=request.data)
+        payload = self._normalizar_payload_escrita(request.data)
+        serializer = self.get_serializer(data=payload)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
         itens = data.pop("itens")
         impostos = data.pop("impostos", [])
         transporte = data.pop("transporte", None)
+        fatura = data.pop("fatura", None)
+        duplicatas = data.pop("duplicatas", None)
 
         impostos_map = {idx: imp for idx, imp in enumerate(impostos)} if impostos else None
 
@@ -207,6 +236,8 @@ class NotaViewSet(viewsets.ModelViewSet):
             empresa=empresa,
             filial=filial,
             database=banco,
+            fatura=fatura,
+            duplicatas=duplicatas,
         )
 
         debug_data = CalculoImpostosService(banco).aplicar_impostos(nota, return_debug=True)
@@ -223,15 +254,25 @@ class NotaViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         banco = get_licenca_db_config(request) or "default"
         partial = kwargs.pop("partial", False)
+        empresa = request.query_params.get("empresa") or request.session.get("empresa_id") or request.headers.get("X-Empresa")
+        filial = request.query_params.get("filial") or request.session.get("filial_id") or request.headers.get("X-Filial")
+        pk = kwargs.get(self.lookup_field, kwargs.get("pk"))
+        qs_debug = self.get_queryset().filter(pk=pk)
+        # #region debug-point B:update-candidates
+        import json, urllib.request; urllib.request.urlopen(urllib.request.Request("http://127.0.0.1:7777/event", data=json.dumps({"sessionId":"nota-calc-duplicate","runId":"pre-fix","hypothesisId":"B","location":"Notas_Fiscais/REST/viewsets.py:update","msg":"[DEBUG] NotaViewSet.update candidates before get_object","data":{"banco":str(banco),"empresa":str(empresa or ""),"filial":str(filial or ""),"pk":str(pk or ""),"partial":bool(partial),"count":int(qs_debug.count()),"ids":[str(v) for v in qs_debug.values_list("id", flat=True)[:10]],"numeros":[str(v) for v in qs_debug.values_list("numero", flat=True)[:10]]}}).encode(), headers={"Content-Type":"application/json"}), timeout=0.5).read()
+        # #endregion
 
         nota = self.get_object()
-        serializer = self.get_serializer(data=request.data, partial=partial)
+        payload = self._normalizar_payload_escrita(request.data)
+        serializer = self.get_serializer(data=payload, partial=partial)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
         itens = data.pop("itens")
         impostos = data.pop("impostos", [])
         transporte = data.pop("transporte", None)
+        fatura = data.pop("fatura", None)
+        duplicatas = data.pop("duplicatas", None)
 
         impostos_map = {idx: imp for idx, imp in enumerate(impostos)} if impostos else None
 
@@ -243,7 +284,12 @@ class NotaViewSet(viewsets.ModelViewSet):
             transporte=transporte,
             database=banco,
             usuario_id=getattr(getattr(request, "user", None), "id", None),
+            fatura=fatura,
+            duplicatas=duplicatas,
         )
+        # #region debug-point E:update-result
+        import json, urllib.request; urllib.request.urlopen(urllib.request.Request("http://127.0.0.1:7777/event", data=json.dumps({"sessionId":"nota-calc-duplicate","runId":"pre-fix","hypothesisId":"E","location":"Notas_Fiscais/REST/viewsets.py:update","msg":"[DEBUG] NotaViewSet.update persisted nota","data":{"nota_id":str(getattr(nota, "id", "")),"empresa":str(getattr(nota, "empresa", "")),"filial":str(getattr(nota, "filial", "")),"numero":str(getattr(nota, "numero", "")),"serie":str(getattr(nota, "serie", ""))}}).encode(), headers={"Content-Type":"application/json"}), timeout=0.5).read()
+        # #endregion
 
         debug_data = CalculoImpostosService(banco).aplicar_impostos(nota, return_debug=True)
         out = NotaDetailSerializer(nota, context=self.get_serializer_context())

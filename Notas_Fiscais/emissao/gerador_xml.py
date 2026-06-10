@@ -34,7 +34,9 @@ class GeradorXML:
         self._dest(inf, dto["destinatario"])
         self._det(inf, dto["itens"])
         self._total(inf, dto)
+        self._cobr(inf, dto)
         self._pag(inf, dto)
+        self._inf_adic(inf, dto)
         self._resp_tecnico(inf, dto)
 
         xml = etree.tostring(
@@ -176,6 +178,13 @@ class GeradorXML:
             etree.SubElement(prod, "qCom").text = f"{quantidade:.4f}"
             etree.SubElement(prod, "vUnCom").text = f"{unit:.10f}"
             etree.SubElement(prod, "vProd").text = f"{vprod:.2f}"
+
+            xped = str(item.get("numero_pedido") or "").strip()
+            if xped:
+                etree.SubElement(prod, "xPed").text = xped
+            nitemped = item.get("numero_item_pedido")
+            if nitemped not in (None, ""):
+                etree.SubElement(prod, "nItemPed").text = str(nitemped)
             
             # Frete, Seguro e Outras Despesas no Item
             vfrete = self._f(item.get("valor_frete"))
@@ -202,6 +211,12 @@ class GeradorXML:
             self._cofins(imposto, item)
             self._ibs(imposto, item)
             self._cbs(imposto, item)
+
+            etree.SubElement(imposto, "vTotTrib").text = f"{self._f(item.get('valor_total_tributos')):.2f}"
+
+            inf_ad_prod = str(item.get("informacoes_adicionais") or "").strip()
+            if inf_ad_prod:
+                etree.SubElement(det, "infAdProd").text = inf_ad_prod
 
     def _icms(self, parent, item):
         icms = etree.SubElement(parent, "ICMS")
@@ -278,6 +293,22 @@ class GeradorXML:
                     etree.SubElement(group, "vBCST").text = f2(vbc_st)
                     etree.SubElement(group, "pICMSST").text = f2(item.get("aliq_icms_st"))
                     etree.SubElement(group, "vICMSST").text = f2(item.get("valor_icms_st"))
+
+        vbc_uf_dest = self._f(item.get("base_icms_uf_dest"))
+        picms_uf_dest = self._f(item.get("aliq_icms_uf_dest"))
+        vicms_uf_dest = self._f(item.get("valor_icms_uf_dest"))
+        vfcp_uf_dest = self._f(item.get("valor_fcp_uf_dest"))
+        ppart = self._f(item.get("partilha_icms_uf_dest"))
+        if any(v > 0 for v in (vbc_uf_dest, picms_uf_dest, vicms_uf_dest, vfcp_uf_dest, ppart)):
+            icms_uf_dest = etree.SubElement(parent, "ICMSUFDest")
+            etree.SubElement(icms_uf_dest, "vBCUFDest").text = f2(vbc_uf_dest)
+            etree.SubElement(icms_uf_dest, "pFCPUFDest").text = "0.00"
+            etree.SubElement(icms_uf_dest, "pICMSUFDest").text = f2(item.get("aliq_icms_uf_dest"))
+            etree.SubElement(icms_uf_dest, "pICMSInter").text = f2(item.get("aliq_icms"))
+            etree.SubElement(icms_uf_dest, "pICMSInterPart").text = f2(item.get("partilha_icms_uf_dest"))
+            etree.SubElement(icms_uf_dest, "vFCPUFDest").text = f2(item.get("valor_fcp_uf_dest"))
+            etree.SubElement(icms_uf_dest, "vICMSUFDest").text = f2(item.get("valor_icms_uf_dest"))
+            etree.SubElement(icms_uf_dest, "vICMSUFRemet").text = "0.00"
 
     def _ipi(self, parent, item):
         cst = item.get("cst_ipi")
@@ -381,6 +412,10 @@ class GeradorXML:
         vpis = sum(self._f(i.get("valor_pis")) for i in dto["itens"])
         vcofins = sum(self._f(i.get("valor_cofins")) for i in dto["itens"])
         vfcp = sum(self._f(i.get("valor_fcp")) for i in dto["itens"])
+        vfcp_uf_dest = sum(self._f(i.get("valor_fcp_uf_dest")) for i in dto["itens"])
+        vicms_uf_dest = self._f(dto.get("icms_uf_dest_valor_total"))
+        if vicms_uf_dest <= 0:
+            vicms_uf_dest = sum(self._f(i.get("valor_icms_uf_dest")) for i in dto["itens"])
         
         vibs = sum(self._f(i.get("valor_ibs")) for i in dto["itens"])
         vcbs = sum(self._f(i.get("valor_cbs")) for i in dto["itens"])
@@ -401,8 +436,8 @@ class GeradorXML:
         etree.SubElement(icms, "vBC").text = f2(vbc_icms)
         etree.SubElement(icms, "vICMS").text = f2(vicms)
         etree.SubElement(icms, "vICMSDeson").text = zero()
-        etree.SubElement(icms, "vFCPUFDest").text = zero()
-        etree.SubElement(icms, "vICMSUFDest").text = zero()
+        etree.SubElement(icms, "vFCPUFDest").text = f2(vfcp_uf_dest)
+        etree.SubElement(icms, "vICMSUFDest").text = f2(vicms_uf_dest)
         etree.SubElement(icms, "vICMSUFRemet").text = zero()
         etree.SubElement(icms, "vFCP").text = f2(vfcp)
         etree.SubElement(icms, "vBCST").text = f2(vbc_st)
@@ -420,7 +455,34 @@ class GeradorXML:
         etree.SubElement(icms, "vCOFINS").text = f2(vcofins)
         etree.SubElement(icms, "vOutro").text = f2(voutro)
         etree.SubElement(icms, "vNF").text = f2(vnf)
-        etree.SubElement(icms, "vTotTrib").text = zero()
+        vtottrib = self._f(dto.get("valor_total_tributos"))
+        if vtottrib <= 0:
+            vtottrib = sum(self._f(i.get("valor_total_tributos")) for i in dto["itens"])
+        etree.SubElement(icms, "vTotTrib").text = f2(vtottrib)
+
+    def _cobr(self, root, dto):
+        fatura = dto.get("fatura") or {}
+        duplicatas = dto.get("duplicatas") or []
+        if not fatura and not duplicatas:
+            return
+
+        cobr = etree.SubElement(root, "cobr")
+        if fatura:
+            fat = etree.SubElement(cobr, "fat")
+            numero = str(fatura.get("numero") or "").strip()
+            if numero:
+                etree.SubElement(fat, "nFat").text = numero
+            etree.SubElement(fat, "vOrig").text = f"{self._f(fatura.get('valor_original')):.2f}"
+            etree.SubElement(fat, "vDesc").text = f"{self._f(fatura.get('valor_desconto')):.2f}"
+            etree.SubElement(fat, "vLiq").text = f"{self._f(fatura.get('valor_liquido')):.2f}"
+
+        for dup_item in duplicatas:
+            dup = etree.SubElement(cobr, "dup")
+            etree.SubElement(dup, "nDup").text = str(dup_item.get("numero") or "").strip()
+            data_venc = str(dup_item.get("data_vencimento") or "").strip()
+            if data_venc:
+                etree.SubElement(dup, "dVenc").text = data_venc[:10]
+            etree.SubElement(dup, "vDup").text = f"{self._f(dup_item.get('valor')):.2f}"
 
     # ----------------------------------------------------------------------
     # pagamentos
@@ -449,6 +511,13 @@ class GeradorXML:
         vnf = vprod - vdesc + vipi + vst + vfrete + vseg + voutro + vibs + vcbs
         
         etree.SubElement(det, "vPag").text = f"{vnf:.2f}"
+
+    def _inf_adic(self, root, dto):
+        info = str(dto.get("informacoes_adicionais") or "").strip()
+        if not info:
+            return
+        inf_adic = etree.SubElement(root, "infAdic")
+        etree.SubElement(inf_adic, "infCpl").text = info
 
     # ----------------------------------------------------------------------
     # responsável técnico

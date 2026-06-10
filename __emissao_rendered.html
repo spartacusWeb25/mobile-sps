@@ -1,0 +1,3678 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPS WEB</title>
+    <link rel="icon" type="image/png" href="/static/logo.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Fauna+One&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <style>
+        /* Cor primária da marca */
+        :root {
+            --bs-primary: #2a62ff;
+        }
+
+        [data-bs-theme="dark"] {
+            --bs-primary: #2a62ff;
+        }
+
+        /* Compensa a navbar fixa no topo */
+        body {
+            padding-top: 4.5rem;
+        }
+
+        @media (min-width: 992px) {
+            body {
+                padding-top: 5rem;
+            }
+        }
+
+        /* Layout minimal sem navbar/footer */
+        body.login-minimal {
+            padding-top: 0 !important;
+        }
+    </style>
+    <script>
+        window.SLUG = (typeof SLUG !== 'undefined' && SLUG) ? SLUG : ("saveweb001") || (localStorage.getItem('slug') || '');
+        // Tema claro/escuro usando data-bs-theme
+        (function () {
+            const root = document.documentElement;
+            const saved = localStorage.getItem('sps_theme') || 'dark';
+            const applyThemeAttr = (theme) => { root.setAttribute('data-bs-theme', theme); };
+            applyThemeAttr(saved);
+            window.addEventListener('DOMContentLoaded', () => {
+                const navbar = document.getElementById('main-navbar');
+                const offcanvas = document.getElementById('offcanvasDarkNavbar');
+                const applyChildren = (theme) => {
+                    if (navbar) navbar.setAttribute('data-bs-theme', theme);
+                    if (offcanvas) offcanvas.setAttribute('data-bs-theme', theme);
+                };
+                applyChildren(saved);
+                const btn = document.getElementById('theme-toggle');
+                if (!btn) return;
+                const setIcon = () => {
+                    const dark = (root.getAttribute('data-bs-theme') === 'dark');
+                    btn.classList.toggle('btn-outline-light', dark);
+                    btn.classList.toggle('btn-outline-dark', !dark);
+                    btn.innerHTML = dark ? '<i class="bi bi-sun"></i>' : '<i class="bi bi-moon"></i>';
+                };
+                setIcon();
+                btn.addEventListener('click', () => {
+                    const next = root.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark';
+                    localStorage.setItem('sps_theme', next);
+                    applyThemeAttr(next);
+                    applyChildren(next);
+                    setIcon();
+                });
+            });
+        })();
+    </script>
+    
+    
+</head>
+
+<body class="">
+    
+<style>
+    /* Rodapé fixo do offcanvas */
+    .offcanvas {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        background: var(--bs-body-bg);
+        color: var(--bs-body-color);
+    }
+
+    .offcanvas-body {
+        padding: 0;
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .offcanvas-content {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        min-height: 0;
+    }
+
+    .navbar-brand,
+    .offcanvas-title {
+        font-size: 1.2rem;
+        font-family: 'Fauna', serif;
+        font-weight: bold;
+        color: var(--bs-body-color);
+    }
+
+    :root {
+        --sps-radius: 24px;
+    }
+
+    .offcanvas.offcanvas-end {
+        border-top-left-radius: var(--sps-radius);
+        border-bottom-left-radius: var(--sps-radius);
+        overflow: hidden;
+        box-shadow: var(--bs-box-shadow-lg);
+        border: 1px solid var(--bs-border-color);
+    }
+
+    #main-navbar {
+        border-bottom-left-radius: var(--sps-radius);
+        border-bottom-right-radius: var(--sps-radius);
+        box-shadow: var(--bs-box-shadow-sm);
+        border-bottom: 1px solid var(--bs-border-color);
+    }
+
+    .navbar-toggler {
+        border-radius: 10px;
+        border-color: var(--bs-border-color);
+    }
+
+    .offcanvas .nav-link {
+        border-radius: 8px;
+        padding: .5rem .75rem;
+        transition: background-color .15s ease, color .15s ease;
+    }
+
+    .offcanvas .nav-link:hover {
+        background-color: var(--bs-secondary-bg);
+        color: var(--bs-body-color);
+    }
+
+    .offcanvas-footer {
+        border-top: 1px solid var(--bs-border-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: nowrap;
+    }
+
+    .offcanvas-footer a.btn,
+    .offcanvas-footer button.btn {
+        margin-bottom: 0 !important;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        white-space: nowrap;
+    }
+
+    .offcanvas-footer a.btn,
+    .offcanvas-footer #logout-jwt {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    .offcanvas-footer #theme-toggle {
+        flex: 0 0 auto;
+        width: 44px;
+    }
+
+    .offcanvas-backdrop.show {
+        backdrop-filter: blur(2px);
+    }
+
+    body.offcanvas-open #mascot-container,
+    body.offcanvas-open #assistant-bubble,
+    body.offcanvas-open #abrirKronos {
+        display: none !important;
+    }
+
+    @media (max-width: 576px) {
+        .offcanvas.offcanvas-end {
+            width: min(74vw, 280px);
+        }
+
+        #main-navbar .container-fluid {
+            padding-left: .5rem;
+            padding-right: .5rem;
+        }
+
+        .navbar-brand,
+        .offcanvas-title {
+            font-size: 1rem;
+        }
+
+        #main-navbar img {
+            height: 22px !important;
+            margin-right: 8px !important;
+        }
+
+        .navbar-toggler {
+            padding: .25rem .5rem;
+        }
+
+        .navbar-toggler .bi {
+            font-size: 1.5rem !important;
+        }
+
+        .offcanvas .nav-link {
+            padding: .4rem .6rem;
+            font-size: .95rem;
+        }
+
+        .offcanvas .nav-link .bi {
+            font-size: 1.2rem !important;
+        }
+
+        .offcanvas-footer {
+            padding-top: 10px !important;
+            padding-bottom: 10px !important;
+        }
+
+        .offcanvas-footer .btn {
+            padding: 6px 10px;
+            font-size: 12px;
+        }
+
+        .offcanvas-footer #theme-toggle {
+            width: 40px;
+        }
+
+        #theme-toggle {
+            padding-left: 10px;
+            padding-right: 10px;
+        }
+    }
+</style>
+<header class="bg-body">
+    <nav class="navbar fixed-top bg-body" id="main-navbar">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/web/login/" data-slug-route="/web/{slug}/home/">SPS WEB</a>
+            <img src="/static/logo.png" style="height:32px; margin-right: 35Px;" />
+            <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas"
+                data-bs-target="#offcanvasDarkNavbar" aria-controls="offcanvasDarkNavbar" aria-label="Abrir menu">
+                <i class="bi bi-list fs-2"></i>
+            </button>
+            <div class="offcanvas offcanvas-end bg-body" tabindex="-1" id="offcanvasDarkNavbar"
+                aria-labelledby="offcanvasDarkNavbarLabel">
+                <div class="offcanvas-header">
+                    <h5 class="offcanvas-title" id="offcanvasDarkNavbarLabel"><img src="/static/logo.png"
+                            style="height:24px" margin-right="50px" margin-left="10px" />SPS WEB</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Fechar"></button>
+                </div>
+                <div class="offcanvas-body">
+                    <div class="px-3 pt-2">
+                        <div id="login-warning" class="alert alert-warning d-none">Necessário Estar Logado</div>
+                        <ul class="navbar-nav justify-content-end flex-grow-1 pe-3">
+                            <li class="nav-item">
+                                <a class="nav-link" aria-current="page" href="/web/login/"
+                                    data-slug-route="/web/{slug}/home/">
+                                    <i class="bi bi-house fs-3"></i> Home
+                                </a>
+                            </li>
+
+                            <li class="nav-item">
+    <a class="nav-link collapsed" data-bs-toggle="collapse" href="#" role="button" data-bs-target="#collapseCadastros"
+        aria-expanded="false" aria-controls="collapseCadastros">
+        <i class="bi bi-clipboard-data fs-4"></i> Cadastros
+    </a>
+    <div class="collapse" id="collapseCadastros">
+        <ul class="list-unstyled ps-5">
+
+            <li class="nav-item" data-modulo="Entidades">
+                <div class="d-flex align-items-center">
+                    <a class="nav-link flex-grow-1" href="/web/login/" data-slug-route="/web/{slug}/entidades/">
+                        <i class="bi bi-person-gear"></i> Entidades
+                    </a>
+                    <a href="https://youtu.be/Rx3e6SG4Gvc" target="_blank" class="text-decoration-none ms-2"
+                        title="Ver tutorial no YouTube" onclick="event.stopPropagation();">
+                        <i class="bi bi-youtube" style="font-size: 1.2rem; color: #ff2f2f;"></i>
+                    </a>
+                </div>
+            </li>
+
+            
+
+
+            <li class="nav-item">
+                <div class="d-flex align-items-center">
+                    <a class="nav-link flex-grow-1" href="/web/login/" data-slug-route="/web/{slug}/entidades/relatorio/">
+                        <i class="bi bi-bar-chart-fill"></i> Relatório de Entidades
+                    </a>
+                </div>
+            </li>
+
+            
+
+            <li class="nav-item">
+                <div class="d-flex align-items-center">
+                    <a class="nav-link collapsed flex-grow-1" data-bs-toggle="collapse" href="#" role="button" data-modulo="CentrodeCustos"
+                        data-bs-target="#collapseCentros" aria-expanded="false" aria-controls="collapseCentros">
+                        <i class="bi bi-diagram-3"></i> Centros de Custo
+                    </a>
+                    <a href="https://www.youtube.com/watch?v=J8QIllYI3BY&feature=youtu.be" target="_blank"
+                        class="text-decoration-none ms-2" title="Ver tutorial no YouTube"
+                        onclick="event.stopPropagation();">
+                        <i class="bi bi-youtube" style="font-size: 1.2rem; color: #ff2f2f;"></i>
+                    </a>
+                </div>
+                <div class="collapse" id="collapseCentros">
+                    <ul class="list-unstyled ps-4">
+                        <li><a class="nav-link" href="/web/login/" data-slug-route="/web/{slug}/centrosdecustos/">Listagem de Centros de Custo</a></li>
+                       
+                    </ul>
+                </div>
+            </li>
+
+            
+
+        </ul>
+    </div>
+</li>
+
+
+                            <li class="nav-item">
+    <a class="nav-link collapsed" data-bs-toggle="collapse" data-modulo-requerido="compras/entradas" href="#"
+        role="button" data-bs-target="#collapseCompras" aria-expanded="false" aria-controls="collapseCompras">
+        <i class="bi bi-box-arrow-in-down fs-4"></i> Compras/Entradas
+    </a>
+    <div class="collapse" id="collapseCompras">
+        <ul class="list-unstyled ps-5">
+            <li class="nav-item">
+                <a class="nav-link" href="/web/login/" data-slug-route="/web/{slug}/notas-destinadas/">
+                    <i class="bi bi-journal-arrow-down"></i> Notas Destinadas
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/web/login/" data-slug-route="/web/{slug}/notas-destinadas/nfse/tomadas/">
+                    <i class="bi bi-receipt"></i> NFS-e Tomadas
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/web/login/" data-slug-route="/web/{slug}/notas-destinadas/manuais/lista/">
+                    <i class="bi bi-pencil-square"></i> Entrada Manual
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/web/login/" data-slug-route="/web/{slug}/fiscal/entradas-xml/">
+                    <i class="bi bi-file-earmark-code"></i> Entradas via XML
+                </a>
+            </li>
+            <li class="nav-item" data-modulo="Entradas_Estoque">
+                <a class="nav-link" href="/web/login/" data-slug-route="/web/{slug}/entradas/">
+                    <i class="bi bi-box-arrow-in-down"></i> Entradas de Estoque
+                </a>
+            </li>
+        </ul>
+    </div>
+</li>
+
+
+                            <li class="nav-item">
+    <a class="nav-link collapsed" data-bs-toggle="collapse" href="#" role="button" data-bs-target="#collapseEstoque"
+        aria-expanded="false" aria-controls="collapseEstoque">
+        <i class="bi bi-boxes fs-4"></i> Estoque
+    </a>
+    <div class="collapse" id="collapseEstoque">
+        <ul class="list-unstyled ps-5">
+            <li class="nav-item" data-modulo="Produtos">
+                <a class="nav-link collapsed" data-bs-toggle="collapse" href="#" role="button"
+                    data-bs-target="#collapseProdutos" aria-expanded="false" aria-controls="collapseProdutos">
+                    <i class="bi bi-box-seam"></i> Produtos
+                </a>
+                <div class="collapse" id="collapseProdutos">
+                    <ul class="list-unstyled ps-4">
+                        <li>
+                            <div class="d-flex align-items-center">
+                                <a class="nav-link flex-grow-1" href="/web/login/"
+                                    data-slug-route="/web/{slug}/produtos/">Cadastro de Produtos</a>
+                                <a href="https://youtu.be/VTbrLbGDgjA" target="_blank" class="text-decoration-none ms-2"
+                                    title="Ver tutorial no YouTube" onclick="event.stopPropagation();">
+                                    <i class="bi bi-youtube" style="font-size: 1.2rem; color: #ff2f2f;"></i>
+                                </a>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="d-flex align-items-center">
+                                <a class="nav-link flex-grow-1" href="/web/login/"
+                                    data-slug-route="/web/{slug}/produtos/servicos/">Cadastro de Serviços</a>
+                            </div>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link collapsed" data-bs-toggle="collapse" href="#" role="button"
+                                data-bs-target="#collapseFormulacao" aria-expanded="false"
+                                aria-controls="collapseFormulacao">
+                                Formulação
+                            </a>
+                            <div class="collapse" id="collapseFormulacao">
+                                <ul class="list-unstyled ps-4">
+                                    <li>
+                                        <a class="nav-link" href="/web/login/"
+                                            data-slug-route="/web/{slug}/formulacao/formulas/">
+                                            Fórmulas
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="nav-link" href="/web/login/"
+                                            data-slug-route="/web/{slug}/formulacao/ordens/">
+                                            Ordem de Produção
+                                        </a>
+                                    </li>
+
+                                </ul>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="d-flex align-items-center">
+                                <a class="nav-link flex-grow-1" href="/web/login/"
+                                    data-slug-route="/web/{slug}/entradas/">Entrada de Estoque</a>
+                                <a href="https://www.youtube.com/watch?v=VIDEO_ENTRADA" target="_blank"
+                                    class="text-decoration-none ms-2" title="Ver tutorial no YouTube"
+                                    onclick="event.stopPropagation();">
+                                    <i class="bi bi-youtube" style="font-size: 1.2rem; color: #ff2f2f;"></i>
+                                </a>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="d-flex align-items-center">
+                                <a class="nav-link flex-grow-1" href="/web/login/"
+                                    data-slug-route="/web/{slug}/saidas/">Saída de Estoque</a>
+                                <a href="https://www.youtube.com/watch?v=VIDEO_SAIDA" target="_blank"
+                                    class="text-decoration-none ms-2" title="Ver tutorial no YouTube"
+                                    onclick="event.stopPropagation();">
+                                    <i class="bi bi-youtube" style="font-size: 1.2rem; color: #ff2f2f;"></i>
+                                </a>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="d-flex align-items-center">
+                                <a class="nav-link flex-grow-1" href="/web/login/"
+                                    data-slug-route="/web/{slug}/produtos/subgrupos/">Subgrupos</a>
+                                <a href="https://youtu.be/mnrIf2wL0dc" target="_blank" class="text-decoration-none ms-2"
+                                    title="Ver tutorial no YouTube" onclick="event.stopPropagation();">
+                                    <i class="bi bi-youtube" style="font-size: 1.2rem; color: #ff2f2f;"></i>
+                                </a>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="d-flex align-items-center">
+                                <a class="nav-link flex-grow-1" href="/web/login/"
+                                    data-slug-route="/web/{slug}/produtos/familias/">Famílias</a>
+                                <a href="https://youtu.be/mnrIf2wL0dc" target="_blank" class="text-decoration-none ms-2"
+                                    title="Ver tutorial no YouTube" onclick="event.stopPropagation();">
+                                    <i class="bi bi-youtube" style="font-size: 1.2rem; color: #ff2f2f;"></i>
+                                </a>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="d-flex align-items-center">
+                                <a class="nav-link flex-grow-1" href="/web/login/"
+                                    data-slug-route="/web/{slug}/produtos/grupos/">Grupos</a>
+                                <a href="https://youtu.be/mnrIf2wL0dc" target="_blank" class="text-decoration-none ms-2"
+                                    title="Ver tutorial no YouTube" onclick="event.stopPropagation();">
+                                    <i class="bi bi-youtube" style="font-size: 1.2rem; color: #ff2f2f;"></i>
+                                </a>
+                            </div>
+                        </li>
+
+                        <li>
+                            <div class="d-flex align-items-center">
+                                <a class="nav-link flex-grow-1" href="/web/login/"
+                                    data-slug-route="/web/{slug}/produtos/marcas/">Marcas</a>
+                                <a href="https://youtu.be/mnrIf2wL0dc" target="_blank" class="text-decoration-none ms-2"
+                                    title="Ver tutorial no YouTube" onclick="event.stopPropagation();">
+                                    <i class="bi bi-youtube" style="font-size: 1.2rem; color: #ff2f2f;"></i>
+                                </a>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="d-flex align-items-center">
+                                <a class="nav-link flex-grow-1" href="/web/login/"
+                                    data-slug-route="/web/{slug}/produtos/unidades/">Unidades de Medida</a>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="d-flex align-items-center">
+                                <a class="nav-link flex-grow-1" href="/web/login/"
+                                    data-slug-route="/web/{slug}/produtos/ncm/">NCMs</a>
+                                <a href="https://www.youtube.com/watch?v=VIDEO_NCM" target="_blank"
+                                    class="text-decoration-none ms-2" title="Ver tutorial no YouTube"
+                                    onclick="event.stopPropagation();">
+                                    <i class="bi bi-youtube" style="font-size: 1.2rem; color: #ff2f2f;"></i>
+                                </a>
+                            </div>
+                        </li>
+
+                        <li>
+                            <div class="d-flex align-items-center">
+                                <a class="nav-link flex-grow-1" href="/web/login/"
+                                    data-slug-route="/web/{slug}/produtos/ncm-fiscal-padrao/">Alíquotas Padrão</a>
+                                <a href="https://www.youtube.com/watch?v=VIDEO_ALIQUOTA" target="_blank"
+                                    class="text-decoration-none ms-2" title="Ver tutorial no YouTube"
+                                    onclick="event.stopPropagation();">
+                                    <i class="bi bi-youtube" style="font-size: 1.2rem; color: #ff2f2f;"></i>
+                                </a>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="d-flex align-items-center">
+                                <a class="nav-link flex-grow-1" href="/web/login/"
+                                    data-slug-route="/web/{slug}/produtos/saldos/">Saldos Estoque</a>
+                                <a href="https://www.youtube.com/watch?v=VIDEO_SALDO" target="_blank"
+                                    class="text-decoration-none ms-2" title="Ver tutorial no YouTube"
+                                    onclick="event.stopPropagation();">
+                                    <i class="bi bi-youtube" style="font-size: 1.2rem; color: #ff2f2f;"></i>
+                                </a>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="d-flex align-items-center">
+                                <a class="nav-link flex-grow-1" href="/web/login/"
+                                    data-slug-route="/web/{slug}/produtos/etiquetas/">Impressão de Etiquetas</a>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="d-flex align-items-center">
+                                <a class="nav-link flex-grow-1" href="/web/login/"
+                                    data-slug-route="/web/{slug}/produtos/precos-massa/">Reajuste de Preços em Massa</a>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="d-flex align-items-center">
+                                <a class="nav-link flex-grow-1" href="/web/login/"
+                                    data-slug-route="/web/{slug}/produtos/produtos-massa/">Atualização de Produtos em
+                                    Massa</a>
+                            </div>
+                        </li>
+
+                </div>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/web/login/" data-slug-route="/web/{slug}/coleta-estoque/">
+                    <i class="bi bi-upc-scan"></i> Coletor de Estoque
+                </a>
+            </li>
+        </ul>
+    </div>
+</li>
+
+
+                            <li class="nav-item">
+    <a class="nav-link collapsed" data-bs-toggle="collapse" href="#" role="button" data-bs-target="#collapseTransportes"
+        aria-expanded="false" data-modulo-requerido="transportes" aria-controls="collapseTransportes">
+        <i class="bi bi-truck fs-3"></i> Transportes
+    </a>
+    <div class="collapse" id="collapseTransportes">
+        <ul class="list-unstyled ps-5">
+            <li class="nav-item">
+                <a class="nav-link" href="/web/login/" data-slug-route="/web/{slug}/transportes/veiculos/">Veículos</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/web/login/" data-slug-route="/web/{slug}/transportes/ctes/">CT-e / MDFe</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link collapsed" data-bs-toggle="collapse" href="#" role="button"
+                    data-bs-target="#collapseManutencoesFrotas" aria-expanded="false"
+                    aria-controls="collapseManutencoesFrotas">
+                    Manutenções Frotas
+                </a>
+                <div class="collapse" id="collapseManutencoesFrotas">
+                    <ul class="list-unstyled ps-4">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/web/login/"
+                                data-slug-route="/web/{slug}/transportes/bombas/">Bombas</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/web/login/"
+                                data-slug-route="/web/{slug}/transportes/abastecimentos/">Abastecimentos</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/web/login/"
+                                data-slug-route="/web/{slug}/transportes/bombas_saldos/">Movimentação Combustível</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/web/login/"
+                                data-slug-route="/web/{slug}/transportes/lancamento_custos/">Movimentação Custos</a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+        </ul>
+    </div>
+</li>
+
+
+                            <!-- Seção: Financeira -->
+<li class="nav-item">
+    <a class="nav-link collapsed" data-bs-toggle="collapse" href="#" role="button" data-bs-target="#collapseFinanceira"
+        aria-expanded="false" data-modulo-requerido="financeiro" data-modulo-requerido="financeiro"
+        aria-controls="collapseFinanceira">
+        <i class="bi bi-cash-stack fs-4"></i> Financeiro
+    </a>
+    <div class="collapse" id="collapseFinanceira">
+        <ul class="list-unstyled ps-5">
+            <!-- Mantém módulo Financeiro e seus subitens -->
+            <li class="nav-item" data-modulo="Financeiro">
+                <a class="nav-link collapsed" data-bs-toggle="collapse" href="#" role="button"
+                    data-bs-target="#collapseFinanceiro" aria-expanded="false" aria-controls="collapseFinanceiro">
+                    <i class="bi bi-cash"></i> Módulos Financeiros
+                </a>
+                <div class="collapse" id="collapseFinanceiro">
+                    <ul class="list-unstyled ps-4">
+                        <li class="nav-item">
+                            <a class="nav-link collapsed" data-bs-toggle="collapse" href="#" role="button"
+                                data-bs-target="#collapseContasAPagar" aria-expanded="false"
+                                aria-controls="collapseContasAPagar">
+                                <i class="bi bi-wallet2"></i> Contas a Pagar
+                            </a>
+                            <div class="collapse" id="collapseContasAPagar">
+                                <ul class="list-unstyled ps-4">
+                                    <li>
+                                        <div class="d-flex align-items-center">
+                                            <a class="nav-link" href="/web/login/"
+                                                data-slug-route="/web/{slug}/contas-a-pagar/">Contas a Pagar</a>
+                                            <a href="https://youtu.be/kIlkckjQQrE" target="_blank"
+                                                class="text-decoration-none ms-2" title="Ver tutorial no YouTube"
+                                                onclick="event.stopPropagation();">
+                                                <i class="bi bi-youtube" style="font-size: 1.2rem; color: #ff2f2f;"></i>
+                                            </a>
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <a class="nav-link" href="/web/login/"
+                                            data-slug-route="/web/{slug}/contas-a-pagar/parcelas/">Parcelas a Pagar</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link collapsed" data-bs-toggle="collapse" href="#" role="button"
+                                data-bs-target="#collapseContasAReceber" aria-expanded="false"
+                                aria-controls="collapseContasAReceber">
+                                <i class="bi bi-cash-coin"></i> Contas a Receber
+                            </a>
+                            <div class="collapse" id="collapseContasAReceber">
+                                <ul class="list-unstyled ps-4">
+                                    <li>
+                                        <div class="d-flex align-items-center">
+                                            <a class="nav-link" href="/web/login/"
+                                                data-slug-route="/web/{slug}/contas-a-receber/">Contas a Receber</a>
+                                            <a href="https://youtu.be/8wEa9xLbYks" target="_blank"
+                                                class="text-decoration-none ms-2" title="Ver tutorial no YouTube"
+                                                onclick="event.stopPropagation();">
+                                                <i class="bi bi-youtube" style="font-size: 1.2rem; color: #ff2f2f;"></i>
+                                            </a>
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <a class="nav-link" href="/web/login/"
+                                            data-slug-route="/web/{slug}/contas-a-receber/parcelas/">Parcelas a
+                                            Receber</a>
+                                    </li>
+                                    <li>
+                                        <a class="nav-link" href="/web/login/"
+                                            data-slug-route="/web/{slug}/boletos/online/">Registros Online</a>
+                                    </li>
+                                    <li>
+                                        <a class="nav-link" href="/web/login/"
+                                            data-slug-route="/web/{slug}/boletos/bancos/configuracao/">Bancos Caixa</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link collapsed" data-bs-toggle="collapse" href="#" role="button"
+                                data-bs-target="#collapseRelatoriosFinanceiros" aria-expanded="false"
+                                aria-controls="collapseRelatoriosFinanceiros">
+                                <i class="bi bi-graph-up"></i> Relatórios Financeiros
+                            </a>
+                            <div class="collapse" id="collapseRelatoriosFinanceiros">
+                                <ul class="list-unstyled ps-4">
+                                    <li>
+                                        <a class="nav-link" href="/web/login/"
+                                            data-slug-route="/web/{slug}/orcamento/dashboard/">Planejamento
+                                            Financeiro</a>
+                                    </li>
+                                    <li>
+                                        <a class="nav-link" href="/web/login/"
+                                            data-slug-route="/web/{slug}/lancamentos-bancarios/dashboard/">Resumo de
+                                            Lançamentos Bancários</a>
+                                    </li>
+                                    <li>
+                                        <a class="nav-link" href="/web/login/"
+                                            data-slug-route="/web/{slug}/fluxo-de-caixa/">Fluxo de Caixa(Caixa)</a>
+                                    </li>
+                                    <li>
+                                        <a class="nav-link" href="/web/login/"
+                                            data-slug-route="/web/{slug}/fluxo-de-caixa/fluxo-competencia/">Fluxo de
+                                            Caixa(Competência)</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link collapsed" data-bs-toggle="collapse" href="#" role="button"
+                                data-bs-target="#collapseCaixa" aria-expanded="false" aria-controls="collapseCaixa">
+                                <i class="bi bi-cash-stack"></i> Caixa
+                            </a>
+                            <div class="collapse" id="collapseCaixa">
+                                <ul class="list-unstyled ps-4">
+                                    <li class="nav-item" data-modulo="CaixaDiario">
+                                        <div class="d-flex align-items-center">
+                                            <a class="nav-link" href="/web/login/"
+                                                data-slug-route="/web/{slug}/caixa-diario/geral">
+                                                <i class="bi bi-cash-coin"></i> Caixa Diário
+                                            </a>
+                                            <a href="https://youtu.be/c2bv-Jf0g6I" target="_blank"
+                                                class="text-decoration-none ms-2" title="Ver tutorial no YouTube"
+                                                onclick="event.stopPropagation();">
+                                                <i class="bi bi-youtube" style="font-size: 1.2rem; color: #ff2f2f;"></i>
+                                            </a>
+                                        </div>
+                                    </li>
+                                    <li class="nav-item" data-modulo="CaixaDiario">
+                                        <a class="nav-link" href="/web/login/"
+                                            data-slug-route="/web/{slug}/caixa-diario/venda/">
+                                            <i class="bi bi-cash-stack"></i>
+                                            <span>Caixa - movimentações</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </li>
+
+                        <li>
+                            <a class="nav-link" href="/web/login/"
+                                data-modulo="adiantamentos"
+                                data-slug-route="/web/{slug}/adiantamentos/"><i class="bi bi-currency-dollar"></i> Adiantamentos</a>
+                        </li>
+                        <li>
+                            <a class="nav-link" href="/web/login/"
+                                data-modulo="Renegociacao"
+                                data-slug-route="/web/{slug}/renegociacao/renegociacoes/"><i class="bi bi-credit-card-2-front"></i> Renegociações</a>
+                        </li>
+                      
+                        <li>
+                            <a class="nav-link" href="/web/login/"
+                                data-slug-route="/web/{slug}/fluxo-de-caixa/baixas-em-massa/"><i class="bi bi-credit-card"></i> Baixa em Massa</a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+        </ul>
+    </div>
+</li>
+
+                            <li class="nav-item">
+        <a class="nav-link collapsed" data-bs-toggle="collapse" href="#" role="button" data-bs-target="#collapseVendas"
+                data-modulo-requerido="Pedidos" data-modulo="Pedidos" data-modulo-requerido="pedidos"
+                aria-expanded="false" aria-controls="collapseVendas">
+                <i class="bi bi-bag-check fs-4"></i> Vendas/Saídas
+        </a>
+        <div class="collapse" id="collapseVendas">
+                <ul class="list-unstyled ps-5">
+                        <li class="nav-item" data-modulo="Pedidos"><a class="nav-link" href="/web/login/"
+                                        data-slug-route="/web/{slug}/pedidos/">Pedidos</a></li>
+                        <li class="nav-item" data-modulo="Trocas/Devoluções"><a class="nav-link" href="/web/login/"
+                                        data-slug-route="/web/{slug}/trocas-devolucoes/">Trocas/Devoluções</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/web/login/"
+                                        data-modulo="O_S"
+                                        data-slug-route="/web/{slug}/os/">Ordens de Serviço</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/web/login/"
+                                        data-slug-route="/web/{slug}/notas-fiscais/">Notas Fiscais</a></li>
+
+
+                        <li class="nav-item">
+                                <a class="nav-link collapsed" data-bs-toggle="collapse" href="#" role="button" data-bs-target="#collapseNotasServico"
+                                                aria-expanded="false" aria-controls="collapseNotasServico">Notas de Serviço</a>
+                                <div class="collapse" id="collapseNotasServico">
+                                        <ul class="list-unstyled ps-4">
+                                                <li class="nav-item"><a class="nav-link" href="/web/login/"
+                                                                data-slug-route="/web/{slug}/notas-de-servico/nfse/">Emissão NFS-e</a></li>
+                                        </ul>
+                                </div>
+                        </li>
+
+                        <li class="nav-item" data-modulo="Orcamentos"><a class="nav-link" href="/web/login/"
+                                        data-slug-route="/web/{slug}/orcamentos/">Orçamentos</a></li>
+                        <li class="nav-item" data-modulo="Pisos"><a class="nav-link" href="/web/login/"
+                                        data-slug-route="/web/{slug}/pisos/pedidos-pisos/">Pedidos Pisos</a></li>
+                        <li class="nav-item" data-modulo="comissoes"><a class="nav-link" href="/web/login/"
+                                        data-slug-route="/web/{slug}/comissoes/">Comissões</a></li>
+
+                </ul>
+        </div>
+</li>
+
+                            <li class="nav-item" data-modulo="Pisos">
+  <a class="nav-link collapsed" data-bs-toggle="collapse" href="#" data-bs-target="#collapsePisos" aria-expanded="false"
+    aria-controls="collapsePisos">
+    <i class="bi bi-grid-3x3-gap fs-4"></i> Pisos
+  </a>
+  <div class="collapse" id="collapsePisos">
+    <ul class="list-unstyled ps-5">
+      <li class="nav-item"><a class="nav-link" href="/web/login/"
+          data-slug-route="/web/{slug}/pisos/pedidos-pisos/">Pedidos Pisos</a></li>
+      <li class="nav-item"><a class="nav-link" href="/web/login/"
+          data-slug-route="/web/{slug}/pisos/orcamentos-pisos/">Orçamentos Pisos</a></li>
+      <li class="nav-item"><a class="nav-link" href="/web/login/"
+          data-slug-route="/web/{slug}/pisos/status-pisos/">Status Pisos</a></li>
+      <li class="nav-item"><a class="nav-link" href="/web/login/"
+          data-slug-route="/web/{slug}/devolucoes-pisos/">Trocas/Devoluções</a></li>
+      <li class="nav-item"><a class="nav-link" href="/web/login/"
+          data-slug-route="/web/{slug}/pisos/comissoes-vendedores/">Comisssoes Vendedores</a></li>
+      <li class="nav-item"><a class="nav-link" href="/web/login/"
+                    data-slug-route="/web/{slug}/controle-de-visitas/dashboard-pisos/">Dashboard Pedidos Pisos</a></li>
+      <li class="nav-item">
+        <a class="nav-link" href="/web/login/" data-slug-route="/web/{slug}/devolucoes-pisos/creditos/listar/">
+          Créditos
+        </a>
+      </li>
+    </ul>
+  </div>
+</li>
+
+                            <li class="nav-item">
+    <a class="nav-link collapsed" data-bs-toggle="collapse" href="#" role="button" data-bs-target="#collapseVisitas"
+        data-modulo-requerido="controledevisitas" aria-expanded="false" aria-controls="collapseVisitas">
+        <i class="bi bi-geo-alt fs-4"></i> Controle de Visitas
+    </a>
+    <div class="collapse" id="collapseVisitas">
+        <ul class="list-unstyled ps-5">
+            <li class="nav-item"><a class="nav-link" href="/web/login/"
+                    data-slug-route="/web/{slug}/controle-de-visitas/">Lista de Controles (CRM)</a></li>
+            <li class="nav-item"><a class="nav-link" href="/web/login/"
+                    data-slug-route="/web/{slug}/controle-de-visitas/dashboard/">Dashboard de Visitas</a></li>
+            <li class="nav-item"><a class="nav-link" href="/web/login/"
+                    data-slug-route="/web/{slug}/controle-de-visitas/dashboard-pisos/">Dashboard Pedidos Pisos</a></li>
+            <li class="nav-item"><a class="nav-link" href="/web/login/"
+                    data-slug-route="/web/{slug}/controle-de-visitas/dashboard-orcamentos-pisos/">Dashboard Orcamentos Pisos</a></li>
+            <li class="nav-item"><a class="nav-link" href="/web/login/"
+                    data-slug-route="/web/{slug}/controle-de-visitas/etapas/">Etapas de Visita</a></li>
+            <li class="nav-item"><a class="nav-link" href="/web/login/"
+                    data-slug-route="/web/{slug}/controle-de-visitas/clientes-sem-movimento/">Clientes sem movimento (Gatilho)</a></li>
+        </ul>
+    </div>
+</li>
+
+                            <li class="nav-item">
+    <a class="nav-link collapsed" data-modulos-any="pedidos,dre,gerencial,os,financeiro" data-bs-toggle="collapse"
+        href="#" role="button" data-bs-target="#collapseMetricas" aria-expanded="false"
+        aria-controls="collapseMetricas">
+        <i class="bi bi-patch-check"></i> Métricas
+    </a>
+    <div class="collapse" id="collapseMetricas">
+        <ul class="list-unstyled ps-5">
+            <li><a class="nav-link" href="/web/login/" data-slug-route="/web/{slug}/pedidos/dashboard/">Pedidos</a></li>
+            <li><a class="nav-link" href="/web/login/" data-slug-route="/web/{slug}/dre/dashboard/">DRE</a></li>
+            <li><a class="nav-link" href="/web/login/"
+                    data-slug-route="/web/{slug}/gerencial/estoque/movimentacao/">Extrato de Movimentação</a></li>
+            <li><a class="nav-link" href="/web/login/" data-slug-route="/web/{slug}/os/dashboard/">Ordens de Serviço</a>
+            </li>
+            <li><a class="nav-link" href="/web/login/" data-slug-route="/web/{slug}/fluxo-de-caixa/">Financeiro</a></li>
+            <li><a class="nav-link" href="/web/login/"
+                    data-slug-route="/web/{slug}/pedidos/dashboard/ebitda/">EBITDA</a></li>
+        </ul>
+    </div>
+</li>
+
+                            <li class="nav-item" data-modulo="O_S">
+    <a class="nav-link collapsed" data-bs-toggle="collapse" href="#" role="button" data-bs-target="#collapseO_S"
+        aria-expanded="false" data-modulo-requerido="O_S" aria-controls="collapseO_S">
+        <i class="bi bi-wrench-adjustable fs-4"></i> Ordens de Serviço
+    </a>
+    <div class="collapse" id="collapseO_S">
+    <ul class="list-unstyled ps-5">
+        <li class="nav-item">
+        <a class="nav-link" href="/web/login/" data-slug-route="/web/{slug}/os/">
+            <i class="bi bi-wrench-adjustable fs-4"></i> Ordens de Serviço
+        </a>
+        </li>
+        <li class="nav-item">
+        <a class="nav-link" href="/web/login/" data-slug-route="/web/{slug}/osexterna/">
+            <i class="bi bi-truck fs-4"></i> O.S. Externa
+        </a>
+        </li>
+    </div>
+</li>
+
+                            <li class="nav-item">
+    <a class="nav-link collapsed" data-bs-toggle="collapse" href="#agricolaMenu" role="button" aria-expanded="false"
+        aria-controls="agricolaMenu" data-modulo="agricola">
+        <i class="bi bi-flower1"></i> Agrícola
+    </a>
+    <div class="collapse" id="agricolaMenu" data-modulo-requerido="agricola">
+        <ul class="list-unstyled ps-5">
+            <li><a class="nav-link" href="#" data-slug-route="/web/{slug}/agricola/fazendas/"><i class="bi bi-house-door"></i> Fazendas</a></li>
+            <li><a class="nav-link" href="#" data-slug-route="/web/{slug}/agricola/talhoes/"><i class="bi bi-grid-3x3"></i> Talhões</a></li>
+            <li><a class="nav-link" href="#" data-slug-route="/web/{slug}/agricola/produtos-agro/"><i class="bi bi-box-seam"></i> Produtos</a></li>
+            <li><a class="nav-link" href="#" data-slug-route="/web/{slug}/agricola/categorias-produtos/"><i class="bi bi-tags"></i> Categorias de Produtos</a></li>
+            <li><a class="nav-link" href="#" data-slug-route="/web/{slug}/agricola/estoque-fazenda/"><i class="bi bi-boxes"></i> Estoque</a></li>
+            <li><a class="nav-link" href="#" data-slug-route="/web/{slug}/agricola/movimentacoes-estoque/"><i class="bi bi-arrow-left-right"></i> Movimentações</a></li>
+            <li><a class="nav-link" href="#" data-slug-route="/web/{slug}/agricola/aplicacao-insumos/"><i class="bi bi-droplet"></i> Aplicações</a></li>
+            <li><a class="nav-link" href="#" data-slug-route="/web/{slug}/agricola/animais/"><i class="bi bi-github"></i> Animais</a></li>
+            <li><a class="nav-link" href="#" data-slug-route="/web/{slug}/agricola/eventos-animais/"><i class="bi bi-calendar-event"></i> Eventos</a></li>
+            <li><a class="nav-link" href="#" data-slug-route="/web/{slug}/agricola/parametros/"><i class="bi bi-sliders"></i> Parâmetros</a></li>
+            
+            <li><hr class="dropdown-divider"></li>
+            
+            <li class="nav-item">
+                <a class="nav-link collapsed" data-bs-toggle="collapse" href="#agricolaRelatorios" role="button" aria-expanded="false" aria-controls="agricolaRelatorios">
+                    <i class="bi bi-file-earmark-text"></i> Relatórios
+                </a>
+                <div class="collapse" id="agricolaRelatorios">
+                    <ul class="list-unstyled ps-3">
+                        <li><a class="nav-link" href="#" data-slug-route="/web/{slug}/agricola/relatorios/produtos-por-lote/"><i class="bi bi-list-check"></i> Produtos/Lote</a></li>
+                        <li><a class="nav-link" href="#" data-slug-route="/web/{slug}/agricola/relatorios/produtos-sem-lote/"><i class="bi bi-exclamation-circle"></i> Produtos s/ Lote</a></li>
+                        <li><a class="nav-link" href="#" data-slug-route="/web/{slug}/agricola/relatorios/extrato-movimentacao/"><i class="bi bi-journal-text"></i> Extrato Mov.</a></li>
+                    </ul>
+                </div>
+            </li>
+        </ul>
+    </div>
+</li>
+
+
+                            <li class="nav-item" data-modulo="TrocasDevoluções">
+    <a class="nav-link" href="/web/login/" data-slug-route="/web/{slug}/fiscal/devolucoes/">
+        <i class="bi bi-arrow-counterclockwise fs-4"></i> Devoluções
+    </a>
+</li>
+
+                            <!-- Seção: Patrimônio -->
+<li class="nav-item">
+    <a class="nav-link collapsed" data-bs-toggle="collapse" href="#" role="button" data-bs-target="#collapsePatrimonio"
+        aria-expanded="false" data-modulo-requerido="Bens" aria-controls="collapsePatrimonio">
+        <i class="bi bi-building-gear fs-4"></i> Patrimônio
+    </a>
+    <div class="collapse" id="collapsePatrimonio">
+        <ul class="list-unstyled ps-5">
+            <li class="nav-item">
+                <a class="nav-link" href="/web/login/" data-slug-route="/web/{slug}/bens/">
+                    <i class="bi bi-box-seam"></i> Bens
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/web/login/" data-slug-route="/web/{slug}/bens/grupos/">
+                    <i class="bi bi-collection"></i> Grupos de Bens
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/web/login/" data-slug-route="/web/{slug}/bens/motivos/">
+                    <i class="bi bi-tag"></i> Motivos de Movimentação
+                </a>
+            </li>
+        </ul>
+    </div>
+</li>
+                            <li class="nav-item" data-modulo="Processos">
+    <a class="nav-link collapsed" data-bs-toggle="collapse" href="#" role="button" data-bs-target="#collapseProcessos"
+        aria-expanded="false" aria-controls="collapseProcessos">
+        <i class="fas fa-helmet-safety"></i> Processos
+    </a>
+    <div class="collapse" id="collapseProcessos">
+        <ul class="list-unstyled ps-5">
+            <li class="nav-item">
+                <a class="nav-link" href="/web/login/" data-slug-route="/web/{slug}/processos/">
+                    <i class="bi bi-list-ul"></i> Listagem de Processos
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/web/login/" data-slug-route="/web/{slug}/processos/templates/">
+                    <i class="bi bi-tablet-landscape-fill"></i> Templates de Processos
+                </a>
+            </li>
+
+        </ul>
+    </div>
+</li>
+                            <li class="nav-item">
+  <a class="nav-link" href="/web/login/" data-slug-route="/web/{slug}/notificacoes/">
+    <i class="bi bi-bell fs-4"></i> Notificações
+  </a>
+</li>
+                            <li class="nav-item">
+  <a class="nav-link" href="{web/saveweb001/central-de-ajuda/" data-slug-route="/web/{slug}/central-de-ajuda/">
+    <i class="bi bi-bell fs-4"></i> Central de Ajuda
+  </a>
+</li>
+                            <li class="nav-item" data-modulo="ordemproducao">
+    <a class="nav-link collapsed" data-bs-toggle="collapse" href="#" role="button"
+        data-bs-target="#collapseOrdemProducao" aria-expanded="false" aria-controls="collapseOrdemProducao"
+        data-modulo-requerido="ordemproducao">
+        <i class="fas fa-diamond fs-5"></i> Ordem de Produção
+    </a>
+    <div class="collapse" id="collapseOrdemProducao">
+        <ul class="list-unstyled ps-4">
+            <li class="nav-item">
+                <a class="nav-link" href="/web/login/" data-slug-route="/web/{slug}/ordem-producao-joias/">
+                    <i class="bi bi-list-ul"></i> Listagem de Ordem de Produção
+                </a>
+            </li>
+
+        </ul>
+    </div>
+</li>
+                            <li class="nav-item">
+    <a class="nav-link collapsed" data-bs-toggle="collapse" href="#" role="button" data-bs-target="#collapseUtilitarios"
+        aria-expanded="false" aria-controls="collapseUtilitarios">
+        <i class="bi bi-tools fs-4"></i> Utilitários
+    </a>
+    <div class="collapse" id="collapseUtilitarios">
+        <ul class="list-unstyled ps-5">
+            <li class="nav-item">
+                <div class="d-flex align-items-center">
+                    <a class="nav-link flex-grow-1" href="/web/login/" data-slug-route="/web/{slug}/auditoria/">
+                        <i class="bi bi-shield-lock"></i> Auditoria
+                    </a>
+                </div>
+            </li>
+            <li class="nav-item">
+                <div class="d-flex align-items-center">
+                    <a class="nav-link flex-grow-1" href="/web/login/" data-slug-route="/web/{slug}/sped/">
+                        <i class="bi bi-file-earmark-text"></i> SPED
+                    </a>
+                </div>
+            </li>
+            <li class="nav-item">
+                <div class="d-flex align-items-center">
+                    <a class="nav-link flex-grow-1" href="/web/login/"
+                        data-slug-route="/web/{slug}/notas-fiscais/enviar-contabilidade/">
+                        <i class="bi bi-send"></i> Enviar XML Contabilidade
+                    </a>
+                </div>
+            </li>
+            <li class="nav-item">
+                <div class="d-flex align-items-center">
+                    <a class="nav-link flex-grow-1" href="/web/login/"
+                        data-slug-route="/web/{slug}/produtos/utilitarios/zerar-estoque/">
+                        <i class="bi bi-trash3"></i> Zerar Estoque
+                    </a>
+                </div>
+            </li>
+        </ul>
+    </div>
+</li>
+
+                            <li class="nav-item" data-modulo="obras">
+    <a class="nav-link collapsed" data-bs-toggle="collapse" href="#" role="button" data-bs-target="#collapseObras"
+        aria-expanded="false" aria-controls="collapseObras" data-modulo-requerido="obras">
+        <i class="fas fa-helmet-safety"></i> Obras
+    </a>
+    <div class="collapse" id="collapseObras">
+        <ul class="list-unstyled ps-5">
+            <li class="nav-item">
+                <a class="nav-link" href="/web/login/" data-slug-route="/web/{slug}/gestao-obras/obras/">
+                    <i class="bi bi-list-ul"></i> Listagem de Obras
+                </a>
+            </li>
+        
+        </ul>
+    </div>
+</li>
+                            <li class="nav-item" data-modulo="planogerencial">
+    <a class="nav-link collapsed" data-bs-toggle="collapse" href="#" role="button"
+        data-bs-target="#collapsePlanogerencial" aria-expanded="false" data-modulo-requerido="planogerencial"
+        aria-controls="collapsePlanogerencial">
+        <i class="bi bi-arrow-counterclockwise fs-5"></i> Planos Gerenciais
+    </a>
+    <div class="collapse" id="collapsePlanogerencial">
+        <ul class="list-unstyled ps-5">
+            <li class="nav-item">
+                <a class="nav-link collapsed" href="/web/login/" data-slug-route="/web/{slug}/planogerencial/planos/">
+                    <i class="bi bi-arrow-counterclockwise fs-4"></i> Planos Gerenciais
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link collapsed" href="/web/login/"
+                    data-slug-route="/web/{slug}/planogerencial/planos/mascara/">
+                    <i class="bi bi-sliders fs-4"></i> Máscara do Plano Gerencial
+                </a>
+            </li>
+        </ul>
+    </div>
+</li>
+                            <li class="nav-item">
+    <a class="nav-link collapsed" data-bs-toggle="collapse" href="#marketplaceMenu" role="button" aria-expanded="false"
+        aria-controls="marketplaceMenu">
+        <i class="bi bi-flower1"></i> Marketplace
+    </a>
+    <div class="collapse" id="marketplaceMenu">
+        <ul class="list-unstyled ps-5">
+            <li><a class="nav-link" href="#" data-slug-route="/web/{slug}/marketplace/produtos-integraveis/"><i
+                        class="bi bi-house-door"></i> Integráveis ML</a></li>
+
+            <li>
+                <hr class="dropdown-divider">
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link collapsed" data-bs-toggle="collapse" href="#agricolaRelatorios" role="button"
+                    aria-expanded="false" aria-controls="agricolaRelatorios">
+                    <i class="bi bi-file-earmark-text"></i> Relatórios
+                </a>
+            </li>
+            <li>
+                <a class="nav-link" href="#" data-slug-route="/web/{slug}/marketplace/configuracoes/">
+                    <i class="bi bi-sliders"></i> Configurações Marketplaces
+                </a>
+            </li>
+        </ul>
+    </div>
+</li>
+
+                        </ul>
+                    </div>
+                </div>
+                <div class="offcanvas-footer bg-body px-3 py-2 d-flex w-100">
+
+                    <a href="/web/selecionar-empresa/" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-building"></i>
+                        <span class="d-inline d-sm-none">Trocar</span>
+                        <span class="d-none d-sm-inline">Trocar Empr/Fili</span>
+                    </a>
+                    <button id="logout-jwt" class="btn btn-sm btn-outline-danger" type="button">
+                        <i class="bi bi-box-arrow-right"></i> Sair
+                    </button>
+                    <button id="theme-toggle" type="button" class="btn btn-sm btn-outline-dark" title="Alternar tema">
+                        <i class="bi bi-moon"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+</header>
+
+<script>
+    // Controla visibilidade do menu conforme módulos liberados para empresa/filial
+    (() => {
+        const offcanvasEl = document.getElementById('offcanvasDarkNavbar');
+        if (offcanvasEl) {
+            offcanvasEl.addEventListener('show.bs.offcanvas', () => document.body.classList.add('offcanvas-open'));
+            offcanvasEl.addEventListener('hidden.bs.offcanvas', () => document.body.classList.remove('offcanvas-open'));
+        }
+
+        const access = localStorage.getItem('access');
+        const slug = localStorage.getItem('slug');
+        const empresaId = localStorage.getItem('empresa_id');
+        const filialId = localStorage.getItem('filial_id');
+
+        const $warning = document.getElementById('login-warning');
+        const showWarning = (msg) => {
+            if ($warning) {
+                $warning.textContent = msg || 'Necessário Estar Logado';
+                $warning.classList.remove('d-none');
+            }
+        };
+
+        if (!access || !slug) {
+            showWarning('Necessário Estar Logado');
+            return;
+        }
+
+        // Helper de autenticação com auto-refresh (SimpleJWT)
+        const authFetch = async (url, options = {}) => {
+            const empresa = localStorage.getItem('empresa_id') || '1';
+            const filial = localStorage.getItem('filial_id') || '1';
+            const makeHeaders = (token) => ({
+                'Authorization': token ? `Bearer ${token}` : '',
+                'Content-Type': 'application/json',
+                'X-Empresa': empresa,
+                'X-Filial': filial,
+            });
+            const token = localStorage.getItem('access');
+            let resp = await fetch(url, { ...options, headers: { ...makeHeaders(token), ...(options.headers || {}) } });
+            if (resp.status !== 401) return resp;
+
+            // Tentar refresh
+            const refresh = localStorage.getItem('refresh');
+            if (!refresh) return resp; // sem refresh, devolve 401
+            try {
+                const refreshResp = await fetch(`/api/${slug}/auth/token/refresh/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ refresh })
+                });
+                if (!refreshResp.ok) return resp;
+                const data = await refreshResp.json();
+                const newAccess = data?.access;
+                if (!newAccess) return resp;
+                localStorage.setItem('access', newAccess);
+                // Refaz a requisição original com novo token
+                resp = await fetch(url, { ...options, headers: { ...makeHeaders(newAccess), ...(options.headers || {}) } });
+                return resp;
+            } catch (e) {
+                console.error('Falha no refresh token:', e);
+                return resp;
+            }
+        };
+
+        // Carrega módulos liberados (por nome) e esconde itens não permitidos
+        const aplicarModulos = (modulosLiberados) => {
+            // Normalizar para comparação case-insensitive
+            const allowSet = new Set(modulosLiberados.map(m => String(m).toLowerCase()));
+            // Aliases globais para nomes de módulos (comparação flexível)
+            const aliases = {
+                'dashboard': ['dashboard', 'dashboards', 'métricas', 'dash'],
+                'o_s': ['o_s', 'ordens de serviço', 'os'],
+                'parametros_admin': ['parametros_admin', 'parametrizações', 'parametros'],
+                // Aliases comuns para módulo de pedidos/vendas
+                'pedidos': ['pedidos', 'pedido', 'pedido venda', 'pedido_venda', 'pv', 'vendas', 'Pedidos', 'listacasamento', 'pedidosvenda', 'métricas'],
+                // Aliases para orçamentos
+                'orcamentos': ['orcamentos', 'orçamentos', 'orcamento', 'orçamento', 'budget'],
+                // Aliases para Compras/Entradas
+                'compras/entradas': ['compras/entradas', 'compras/entrada', 'compras/entradas dashboard', 'compras/entradas_dashboard'],
+                // Aliases para Entradas de Estoque
+                'entradas_estoque': ['entradas_estoque', 'entradas', 'entradas de estoque'],
+                // Aliases para Compras
+                'compras': ['compras', 'compra', 'compras dashboard', 'compras_dashboard'],
+                // Aliases para Finanças
+                'financas': ['financas', 'financeiro', 'financeiro dashboard', 'financeiro_dashboard'],
+                // Aliases para Patrimônio
+                'patrimonio': ['patrimonio', 'patrimônio', 'bens', 'Bens', 'ativo imobilizado', 'ativo_imobilizado'],
+                'centrosdecustos': ['centrosdecustos', 'centrodecustos', 'centros de custos', 'centro de custos', 'cc'],
+                // Aliases para Entidades
+                'entidades': ['entidades', 'entidade', 'cadastro entidades'],
+                // Aliases para Transportes
+                'transportes': ['transportes', 'transportadora', 'transportadora dashboard', 'transportadora_dashboard'],
+                // Aliases para Visitas
+                'controledevisitas': ['controledevisitas', 'visitas', 'visita', 'visitas dashboard', 'visitas_dashboard', 'controle_de_visitas', 'controle de visitas', 'ControleDeVisitas'],
+                // Aliases para Obras/Gestão de Obras
+                'gestao-obras': ['gestao-obras', 'gestaoobras', 'obras', 'obra', 'gestaoObras', 'GestaoObras', 'gestao_obras'],
+                'obras': ['obras', 'gestao-obras', 'gestaoobras', 'obra']
+            };
+            const normalize = (s) => String(s || '').toLowerCase().trim();
+            const tokenMatch = (value) => {
+                const n = normalize(value);
+                if (!n) return false;
+                if (allowSet.has(n)) return true;
+                const tokens = n.split(/[\s/_-]+/).filter(Boolean);
+                if (tokens.some(t => allowSet.has(t))) return true;
+                return tokens.some(t => (
+                    Object.entries(aliases).some(([key, vals]) => {
+                        const setHasKey = allowSet.has(key);
+                        const setHasAnyAlias = vals.some(v => allowSet.has(v));
+                        const isAliasName = (t === key) || vals.includes(t);
+                        return isAliasName && (setHasKey || setHasAnyAlias);
+                    })
+                ));
+            };
+            const tokenMatchStrict = (value) => {
+                const n = normalize(value);
+                if (!n) return false;
+                if (allowSet.has(n)) return true;
+                const tokens = n.split(/[\s/_-]+/).filter(Boolean);
+                // Sem promoção via aliases: apenas presença direta de tokens
+                return tokens.some(t => allowSet.has(t));
+            };
+            document.querySelectorAll('[data-modulo]')?.forEach(el => {
+                const nome = el.getAttribute('data-modulo');
+                if (!tokenMatch(nome)) {
+                    el.style.display = 'none';
+                }
+            });
+
+            // Ocultar itens que requerem módulo específico (menus colapsáveis)
+            document.querySelectorAll('[data-modulo-requerido]')?.forEach(el => {
+                const req = el.getAttribute('data-modulo-requerido');
+                if (!tokenMatch(req)) {
+                    const li = el.closest('li.nav-item') || el;
+                    if (li) li.style.display = 'none';
+                    const target = el.getAttribute('data-bs-target');
+                    if (target) {
+                        const collapse = document.querySelector(target);
+                        if (collapse) collapse.remove();
+                    }
+                }
+            });
+
+            // Exibir itens que aceitam qualquer entre múltiplos módulos
+            document.querySelectorAll('[data-modulos-any]')?.forEach(el => {
+                const raw = el.getAttribute('data-modulos-any') || '';
+                const list = raw.split(',').map(s => String(s).trim()).filter(Boolean);
+                const ok = list.some(t => tokenMatch(t));
+                if (!ok) {
+                    const li = el.closest('li.nav-item') || el;
+                    if (li) li.style.display = 'none';
+                    const target = el.getAttribute('data-bs-target');
+                    if (target) {
+                        const collapse = document.querySelector(target);
+                        if (collapse) collapse.remove();
+                    }
+                }
+            });
+        };
+
+        const loadModulos = async () => {
+            try {
+                // Preferimos endpoint que retorna nomes: detail=False action em viewset
+                const params = new URLSearchParams({ empresa_id: empresaId || '1', filial_id: filialId || '1' });
+                const resp = await authFetch(`/api/${slug}/parametros-admin/permissoes-modulos/modulos_empresa_filial/?${params.toString()}`);
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                const data = await resp.json();
+                const nomes = data?.modulos_liberados || [];
+                // Se não houver permissões configuradas, usar módulos globais ativos
+                if (!Array.isArray(nomes) || nomes.length === 0) {
+                    const respGlobais = await authFetch(`/api/${slug}/parametros-admin/permissoes-modulos/modulos_disponiveis/`);
+                    if (!respGlobais.ok) throw new Error(`Globais HTTP ${respGlobais.status}`);
+                    const globais = await respGlobais.json();
+                    const nomesAtivos = (globais?.modulos || []).filter(m => m.modu_ativ).map(m => m.modu_nome);
+                    aplicarModulos(nomesAtivos);
+                } else {
+                    aplicarModulos(nomes);
+                }
+            } catch (err) {
+                console.error('Falha ao carregar módulos liberados:', err);
+                // Fallback: tentar endpoint por códigos e buscar nomes globais para mapear
+                try {
+                    const params = new URLSearchParams({ empr: empresaId || '1', fili: filialId || '1' });
+                    const [respCodes, respGlobais] = await Promise.all([
+                        authFetch(`/api/${slug}/parametros-admin/modulos_liberados/?${params.toString()}`),
+                        authFetch(`/api/${slug}/parametros-admin/permissoes-modulos/modulos_disponiveis/`)
+                    ]);
+                    if (!respCodes.ok || !respGlobais.ok) throw new Error('Fallback endpoints indisponíveis');
+                    const codData = await respCodes.json();
+                    const globais = await respGlobais.json();
+                    const liberadosCodigos = new Set((codData?.modulos_liberados || []).map(c => Number(c)));
+                    const nomesLiberados = (globais?.modulos || []).
+                        filter(m => liberadosCodigos.has(Number(m.modu_codi))).
+                        map(m => m.modu_nome);
+                    // Se ainda vazio, cair para todos módulos ativos
+                    const finalNames = (Array.isArray(nomesLiberados) && nomesLiberados.length > 0)
+                        ? nomesLiberados
+                        : (globais?.modulos || []).filter(m => m.modu_ativ).map(m => m.modu_nome);
+                    aplicarModulos(finalNames);
+                } catch (err2) {
+                    console.error('Fallback falhou:', err2);
+                    showWarning('Erro ao validar módulos');
+                }
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', loadModulos);
+
+        // Ajusta links com base no slug armazenado
+        document.addEventListener('DOMContentLoaded', () => {
+            const slug = localStorage.getItem('slug');
+            const links = document.querySelectorAll('[data-slug-route]');
+            links.forEach(el => {
+                const pattern = el.getAttribute('data-slug-route');
+                if (!pattern) return;
+                if (slug) {
+                    el.setAttribute('href', pattern.replace('{slug}', slug));
+                } else {
+                    // Sem slug, mantém fallback para login web
+                    el.setAttribute('href', '/web/login/');
+                }
+            });
+            // Itens por role são controlados no template via request.user
+        });
+
+        // Ordena alfabeticamente os itens de lista dentro dos menus colapsáveis
+        const normalizeText = (el) => (el.textContent || '').replace(/\s+/g, ' ').trim();
+        const sortCollapsedLists = () => {
+            document.querySelectorAll('.collapse ul')?.forEach(ul => {
+                const items = Array.from(ul.querySelectorAll(':scope > li'));
+                items.sort((a, b) => normalizeText(a).localeCompare(normalizeText(b), 'pt-BR', { sensitivity: 'base' }));
+                items.forEach(li => ul.appendChild(li));
+            });
+        };
+
+
+
+        // Aplica a ordenação após o carregamento inicial
+        document.addEventListener('DOMContentLoaded', sortCollapsedLists);
+
+        // Ordena alfabeticamente o menu principal (itens de primeiro nível)
+        const getItemLabel = (li) => {
+            const a = li.querySelector(':scope > a.nav-link');
+            return normalizeText(a || li);
+        };
+        const sortMainMenu = () => {
+            const ul = document.querySelector('ul.navbar-nav');
+            if (!ul) return;
+            const items = Array.from(ul.querySelectorAll(':scope > li.nav-item'));
+            const homeItems = items.filter(li => /^(home)$/i.test(getItemLabel(li)));
+            const otherItems = items.filter(li => !/^(home)$/i.test(getItemLabel(li)));
+            otherItems.sort((a, b) => getItemLabel(a).localeCompare(getItemLabel(b), 'pt-BR', { sensitivity: 'base' }));
+            [...homeItems, ...otherItems].forEach(li => ul.appendChild(li));
+        };
+        document.addEventListener('DOMContentLoaded', sortMainMenu);
+
+        // Logout handler
+        const btnLogout = document.getElementById('logout-jwt');
+        if (btnLogout) {
+            btnLogout.addEventListener('click', () => {
+                localStorage.removeItem('access');
+                localStorage.removeItem('refresh');
+                localStorage.removeItem('slug');
+                localStorage.removeItem('empresa_id');
+                localStorage.removeItem('filial_id');
+                window.location.href = '/web/login/';
+            });
+        }
+    })();
+</script>
+    
+<link rel="stylesheet" href="/static/css/ui.css">
+<link rel="stylesheet" href="/static/css/form.css?v=20260313">
+
+<style>
+  :root {
+    --nf-bg: #171a1d;
+    --nf-surface: #212529;
+    --nf-surface2: #191e22;
+    --nf-border: rgba(0, 0, 0, 0.08);
+    --nf-border-strong: rgba(255, 255, 255, 0.14);
+    --nf-text: #e6edf3;
+    --nf-muted: #6f757e;
+    --nf-accent: #1652a7;
+    --nf-accent-dim: rgba(56, 139, 253, 0.15);
+    --nf-success: #3fb950;
+    --nf-warning: #d29922;
+    --nf-danger: #f85149;
+    --nf-input-h: 40px;
+    --nf-radius: 8px;
+  }
+
+
+  html[data-bs-theme="light"],
+  body.light {
+    --nf-bg: #e4e4e4;
+    --nf-surface: #ffffff;
+    --nf-surface2: #e1e2e2; 
+    --nf-border: rgba(15,23,42,.08);
+    --nf-border-strong: rgba(15,23,42,.16);
+    --nf-text: #111827;
+    --nf-muted: #435268;
+    --nf-input-bg: #ffffff;
+  }
+  /* ── Reset container do base ── */
+  .nf-page-root {
+    width: 100%;
+    max-width: 100%;
+    padding: 35px;
+    margin: 0;
+  }
+
+  .nf-wrap {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-size: 13px;
+    color: var(--nf-text);
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - 56px); /* desconta navbar do base */
+  }
+
+  /* ── Top bar ── */
+  .nf-topbar {
+    background: var(--nf-surface2);
+    border-bottom: 1px solid var(--nf-border);
+    border-radius: 10px 10px 6px 6px;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 8px;
+    text-align: center;
+  }
+
+  .nf-topbar-left { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .nf-topbar-title { font-size: 14px; font-weight: 600; color: var(--nf-text); text-align: center; }
+  .nf-topbar-title i { color: var(--nf-accent); margin-right: 5px; font-size: 20px; }
+
+  .nf-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11px; padding: 2px 8px; border-radius: 20px;
+    border: 1px solid; font-weight: 500;
+  }
+  .nf-chip-draft {
+    color: var(--nf-warning);
+    border-color: rgba(210,153,34,.3);
+    background: rgba(210,153,34,.08);
+  }
+
+  /* ── Buttons ── */
+  .nf-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 12px; border-radius: var(--nf-radius);
+    font-size: 12px; font-weight: 500; cursor: pointer;
+    border: 1px solid; transition: opacity .15s, transform .1s;
+    line-height: 1.4; text-decoration: none; white-space: nowrap;
+  }
+  .nf-btn:active { transform: scale(.97); }
+  .nf-btn-ghost  { background:transparent; color:var(--nf-muted); border-color:var(--nf-border-strong); }
+  .nf-btn-ghost:hover { color:var(--nf-text); background:var(--nf-surface2); }
+  .nf-btn-primary { background:var(--nf-accent); color:#fff; border-color:transparent; }
+  .nf-btn-primary:hover { opacity:.88; }
+  .nf-btn-success { background:rgba(63,185,80,.12); color:var(--nf-success); border-color:rgba(63,185,80,.3); }
+  .nf-btn-success:hover { background:rgba(63,185,80,.2); }
+  .nf-btn-warning { background:rgba(210,153,34,.12); color:var(--nf-warning); border-color:rgba(210,153,34,.3); }
+  .nf-btn-warning:hover { background:rgba(210,153,34,.2); }
+  .nf-btn-danger  { background:rgba(248,81,73,.1); color:var(--nf-danger); border-color:rgba(248,81,73,.25); }
+  .nf-btn-danger:hover  { background:rgba(248,81,73,.18); }
+  .nf-btn-sm { padding:2px 8px; font-size:11px; }
+  .nf-btn:disabled { opacity:.5; cursor:not-allowed; }
+
+  /* ── Body ── */
+  .nf-body { padding: 10px 12px; flex: 1; }
+
+  /* ── Panel ── */
+  .nf-panel {
+    background: var(--nf-surface);
+    border: 1px solid var(--nf-border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+
+  /* ── Section header ── */
+  .nf-section-hdr {
+    padding: 5px 12px;
+    background: var(--nf-surface2);
+    border-bottom: 1px solid var(--nf-border);
+    display: flex; align-items: center; justify-content: space-between;
+    border-radius: 10px 10px 6px 6px;
+    margin-bottom: 4px;
+  }
+  .nf-section-hdr span {
+    font-size: 12px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .7px; color: var(--nf-muted);
+  }
+
+  /* ── Field grid ── */
+  .nf-fields { display: grid; gap: 12px 16px; padding: 14px 18px;margin-bottom: 10px; }
+  .nf-field { display: flex; flex-direction: column; gap: 4px; position: relative; }
+  .nf-field label {
+    font-size: 12px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .5px; color: var(--nf-muted);
+  }
+  .nf-field input,
+  .nf-field select,
+  .nf-field textarea {
+    background: var(--nf-surface2);
+    border: 1px solid var(--nf-border-strong);
+    border-radius: var(--nf-radius);
+    color: var(--nf-text); font-size: 12px;
+    height: var(--nf-input-h); padding: 0 8px;
+    width: 100%; outline: none;
+    transition: border-color .15s, box-shadow .15s;
+    font-size: 14px;
+    padding: 0 12px;
+  }
+  .nf-field input:focus, .nf-field select:focus {
+    border-color: var(--nf-accent);
+    box-shadow: 0 0 0 3px rgba(56,139,253,.12);
+  }
+  .nf-field input[readonly] { color: var(--nf-muted); cursor: default; }
+  .nf-field input.nf-highlight {
+    border-color: rgba(210,153,34,.5);
+    color: var(--nf-warning);
+    background: rgba(210,153,34,.06);
+  }
+  .nf-field select option { background: #1c2128; }
+  .nf-field .nf-hint { font-size: 10px; color: var(--nf-muted); margin-top: 1px; }
+
+  /* ── Identificação — responsivo ── */
+  .nf-ident-grid {
+    grid-template-columns: 90px 80px 110px 140px 140px minmax(180px,1fr) minmax(150px,1fr);
+  }
+  @media (max-width: 1280px) {
+    .nf-ident-grid {
+      grid-template-columns: 80px 70px 100px repeat(2, minmax(120px,1fr)) repeat(2, minmax(140px,1fr));
+    }
+  }
+  @media (max-width: 960px) {
+    .nf-ident-grid { grid-template-columns: repeat(4, 1fr); }
+  }
+  @media (max-width: 600px) {
+    .nf-ident-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* ── Destinatário ── */
+  .nf-dest-grid {
+    grid-template-columns: minmax(260px,2fr) minmax(160px,1fr);
+  }
+  @media (max-width: 600px) { .nf-dest-grid { grid-template-columns: 1fr; } }
+
+  /* ── Transporte ── */
+  .nf-transp-grid {
+    grid-template-columns: 130px minmax(180px,1.5fr) 90px 70px 120px;
+  }
+  @media (max-width: 1200px) { .nf-transp-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+  @media (max-width: 960px) { .nf-transp-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 480px) { .nf-transp-grid { grid-template-columns: 1fr; } }
+
+  /* ── Tabs ── */
+  .nf-tabs {
+    display: flex; border-bottom: 1px solid var(--nf-border);
+    padding: 0 12px; overflow-x: auto; scrollbar-width: none;
+  }
+  .nf-tabs::-webkit-scrollbar { display: none; }
+  .nf-tab {
+    padding: 7px 12px; font-size: 11px; font-weight: 500;
+    color: var(--nf-muted); cursor: pointer; white-space: nowrap;
+    border-bottom: 2px solid transparent; margin-bottom: -1px;
+    transition: color .15s;
+  }
+  .nf-tab:hover { color: var(--nf-text); }
+  .nf-tab.active { color: var(--nf-accent); border-bottom-color: var(--nf-accent); }
+
+  .nf-pane { display: none; }
+  .nf-pane.active { display: block; }
+
+  /* ── Totals bar ── */
+  .nf-totals-bar {
+    display: flex; align-items: center;
+    flex-wrap: wrap; gap: 6px 12px;
+    padding: 7px 12px;
+    background: var(--nf-surface2);
+    border-top: 1px solid var(--nf-border);
+  }
+  .nf-total-item { display: flex; flex-direction: column; }
+  .nf-total-item .lbl { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--nf-muted); }
+  .nf-total-item .val { font-size:12px; font-weight:600; color:var(--nf-text); }
+  .nf-total-item.accent .val { color: var(--nf-accent); }
+  .nf-vsep { width:1px; height:24px; background:var(--nf-border); }
+
+  /* ── Items table ── */
+  .nf-table-wrap { overflow-x: auto; }
+  .nf-table { width:100%; border-collapse:collapse; font-size:11px; }
+  .nf-table th {
+    text-align:left; padding:5px 8px; font-size:10px; font-weight:600;
+    text-transform:uppercase; letter-spacing:.5px; color:var(--nf-muted);
+    border-bottom:1px solid var(--nf-border); white-space:nowrap;
+  }
+  .nf-table th.r, .nf-table td.r { text-align:right; }
+  .nf-table td {
+    padding:5px 8px; border-bottom:1px solid var(--nf-border);
+    color:var(--nf-text); vertical-align:middle;
+  }
+  .nf-table tbody tr:hover { background:rgba(255,255,255,.02); }
+  .nf-table tbody tr:last-child td { border-bottom:none; }
+  .nf-table .empty td { text-align:center; padding:20px; color:var(--nf-muted); font-style:italic; }
+  .nf-badge {
+    display:inline-block; padding:1px 6px; border-radius:4px;
+    font-size:10px; font-weight:500;
+    background:var(--nf-surface2); border:1px solid var(--nf-border-strong); color:var(--nf-muted);
+  }
+
+  /* ── Add item row ── */
+  .nf-add-row {
+    display: grid;
+    grid-template-columns: minmax(160px, 2.3fr) 64px 46px 40px 76px 64px 64px 64px 64px 92px;
+    gap: 5px 6px; padding: 7px 12px;
+    background: rgba(255,255,255,.01);
+    border-bottom: 1px solid var(--nf-border);
+    align-items: end;
+  }
+  .nf-add-row .nf-field:last-child button {
+    width: 100%;
+  }
+  @media (max-width: 960px) {
+    .nf-add-row {
+      grid-template-columns: minmax(140px, 2fr) repeat(3, 56px) repeat(5, 60px) 88px;
+      gap: 4px 5px;
+    }
+  }
+  @media (max-width: 640px) {
+    .nf-add-row {
+      grid-template-columns: 1fr 1fr;
+    }
+    .nf-add-row > *:first-child { grid-column: 1 / -1; }
+    .nf-add-row > *:last-child  { grid-column: 1 / -1; }
+  }
+
+  /* ── Action bar ── */
+  .nf-action-bar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px;
+    background: var(--nf-surface2);
+    border-top: 1px solid var(--nf-border);
+    position: sticky; bottom: 0; z-index: 99;
+    flex-wrap: wrap;
+  }
+  .nf-action-bar .spacer { flex: 1; min-width: 10px; }
+
+  /* ── Autocomplete ── */
+  .list-group {
+    z-index:1000; background:var(--nf-surface2) !important;
+    border:1px solid var(--nf-border-strong) !important;
+    border-radius:var(--nf-radius); max-height:200px; overflow-y:auto;
+  }
+  .list-group-item {
+    background:transparent !important; color:var(--nf-text) !important;
+    border-color:var(--nf-border) !important; font-size:12px; padding:6px 10px;
+  }
+  .list-group-item:hover { background:var(--nf-accent-dim) !important; }
+
+  /* ── CFOP & Tributos ── */
+  .nf-tributos { padding: 8px 12px; }
+  .nf-tributos-grid { display:grid; gap:5px 8px; }
+  .g2 { grid-template-columns:repeat(2,1fr); }
+  .g3 { grid-template-columns:repeat(3,1fr); }
+  .g4 { grid-template-columns:repeat(4,1fr); }
+  .g5 { grid-template-columns:repeat(5,1fr); }
+  .g6 { grid-template-columns:repeat(6,1fr); }
+  .g7 { grid-template-columns:repeat(7,1fr); }
+  @media (max-width:960px) {
+    .g5,.g6,.g7 { grid-template-columns:repeat(4,1fr); }
+  }
+  @media (max-width:600px) {
+    .g3,.g4,.g5,.g6,.g7 { grid-template-columns:repeat(2,1fr); }
+    .g2 { grid-template-columns:1fr; }
+  }
+  .nf-divider { height:1px; background:var(--nf-border); margin:8px 0; }
+
+  /* ── Financeiro ── */
+  .nf-financ-header {
+    display:grid; grid-template-columns:1fr 1fr 1fr;
+    gap:6px; padding:10px 12px;
+    background:var(--nf-surface2); border-bottom:1px solid var(--nf-border);
+  }
+  @media (max-width:480px) { .nf-financ-header { grid-template-columns:1fr 1fr; } }
+
+  .nf-financ-stat { display:flex; flex-direction:column; }
+  .nf-financ-stat .lbl { font-size:10px; text-transform:uppercase; letter-spacing:.5px; color:var(--nf-muted); font-weight:600; }
+  .nf-financ-stat .val { font-size:15px; font-weight:600; color:var(--nf-text); }
+  .nf-financ-stat.accent .val { color:var(--nf-accent); }
+
+  .spinner-border-sm { width:12px; height:12px; border-width:2px; }
+
+  input.form-control, select.form-select {
+    background:var(--nf-surface2) !important;
+    border:1px solid var(--nf-border-strong) !important;
+    border-radius:var(--nf-radius) !important;
+    color:var(--nf-text) !important; font-size:12px !important;
+    height:var(--nf-input-h) !important;
+  }
+  input.form-control:focus, select.form-select:focus {
+    border-color:var(--nf-accent) !important;
+    box-shadow:0 0 0 3px rgba(56,139,253,.12) !important;
+  }
+</style>
+
+
+<div class="nf-page-root">
+<div class="nf-wrap">
+
+  <!-- Top Bar -->
+  <div class="nf-topbar">
+    <div class="nf-topbar-left">
+      <span class="nf-topbar-title"><i class="bi bi-upload"></i>Emissão de Nota Fiscal</span>
+      <span class="nf-chip nf-chip-draft">● Rascunho</span>
+    </div>
+    <a class="nf-btn nf-btn-ghost" href="/web/saveweb001/notas-fiscais/">← Voltar</a>
+  </div>
+
+  <div class="nf-body">
+    <form id="emit-form">
+
+      <div class="nf-panel">
+
+        <!-- Identificação -->
+        <div class="nf-section-hdr"><span>Identificação</span></div>
+        <div class="nf-fields nf-ident-grid">
+          <div class="nf-field">
+            <label>Modelo</label>
+            <select name="modelo">
+              <option value="55">NF-e</option>
+              <option value="65">NFC-e</option>
+            </select>
+          </div>
+          <div class="nf-field">
+            <label>Série</label>
+            
+            <select name="serie">
+              
+              <option value="001" selected>001</option>
+              
+              <option value="005" >005</option>
+              
+              <option value="005" >005</option>
+              
+            </select>
+            
+          </div>
+          <div class="nf-field">
+            <label>Número</label>
+            <input type="number" name="numero" class="nf-highlight" placeholder="Automático" />
+          </div>
+          <div class="nf-field">
+            <label>Data de Emissão</label>
+            <input type="date" name="data_emissao" value="2026-06-10" />
+          </div>
+          <div class="nf-field">
+            <label>Data de Saída</label>
+            <input type="date" name="data_saida" value="2026-06-10" />
+          </div>
+          <div class="nf-field">
+            <label>Natureza da Operação</label>
+            <select name="natureza_operacao">
+              
+              <option value="Venda de mercadoria" selected>Venda de mercadoria</option>
+              
+              <option value="Venda de produção do estabelecimento" >Venda de produção do estabelecimento</option>
+              
+              <option value="Devolução de venda" >Devolução de venda</option>
+              
+              <option value="Remessa" >Remessa</option>
+              
+            </select>
+          </div>
+          <div class="nf-field">
+            <label>Tipo de Documento</label>
+            <select name="tipo_documento">
+              
+              <option value="1" selected>Normal</option>
+              
+              <option value="2" >Complementar</option>
+              
+              <option value="3" >Ajuste</option>
+              
+              <option value="4" >Devolução</option>
+              
+            </select>
+          </div>
+        </div>
+
+        <!-- Destinatário -->
+        <div class="nf-section-hdr"><span>Destinatário</span></div>
+        <div class="nf-fields nf-dest-grid">
+          <div class="nf-field">
+            <label>Cliente</label>
+            <input type="text" id="cli-autocomplete" placeholder="Digite nome / CNPJ / CPF e selecione" />
+            <input type="hidden" name="destinatario" id="destinatario-id" />
+            <span class="nf-hint">Busca limitada a 20 resultados</span>
+          </div>
+          <div class="nf-field" style="justify-content:flex-end;">
+            <label>&nbsp;</label>
+            <span style="font-size:11px;color:var(--nf-muted);padding-top:4px;">Dados inferidos automaticamente após seleção</span>
+          </div>
+        </div>
+
+        <!-- Transporte -->
+        <div class="nf-section-hdr"><span>Transporte</span></div>
+        <div class="nf-fields nf-transp-grid">
+          <div class="nf-field">
+            <label>Modalidade</label>
+            <select name="transporte_modalidade" id="transporte-modalidade">
+              
+              <option value="0" >Emitente</option>
+              
+              <option value="1" >Destinatário</option>
+              
+              <option value="2" >Terceiros</option>
+              
+              <option value="9" selected>Sem Frete</option>
+              
+            </select>
+          </div>
+          <div class="nf-field">
+            <label>Transportadora</label>
+            <input type="text" name="transportadora" id="transportadora" />
+            <input type="hidden" id="transportadora-id" />
+          </div>
+          <div class="nf-field">
+            <label>Placa</label>
+            <input type="text" name="placa_veiculo" id="placa-veiculo" />
+          </div>
+          <div class="nf-field">
+            <label>UF</label>
+            <input type="text" name="uf_veiculo" id="uf-veiculo" />
+          </div>
+          <div class="nf-field">
+            <label>Valor do Frete</label>
+            <input type="number" step="0.01" min="0" name="transporte_valor_frete" id="transporte-valor-frete" value="0.00" />
+     
+          </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="nf-tabs" id="nf-tabs">
+          <div class="nf-tab active" data-tab="itens">Produtos / Itens</div>
+          <div class="nf-tab" data-tab="cfop">CFOP &amp; Tributos</div>
+          <div class="nf-tab" data-tab="totais">Totais</div>
+          <div class="nf-tab" data-tab="financeiro" id="tab-financeiro-btn-new">Financeiro</div>
+        </div>
+
+        <!-- ─── PANE: Itens ─── -->
+        <div class="nf-pane active" id="pane-itens">
+          <div class="nf-add-row">
+            <div class="nf-field">
+              <label>Produto</label>
+              <input type="text" id="prod-autocomplete" placeholder="Digite descrição / ref / código" />
+              <input type="hidden" id="produto-codigo" />
+            </div>
+            <div class="nf-field">
+              <label>NCM</label>
+              <input type="text" name="item_ncm" id="item-ncm" value="00000000" />
+            </div>
+            <div class="nf-field">
+              <label>Unid.</label>
+              <input type="text" name="item_unidade" id="item-unidade" value="UN" />
+            </div>
+            <div class="nf-field">
+              <label>Qtd</label>
+              <input type="number" step="0.0001" name="item_quantidade" id="item-quantidade" value="1" />
+            </div>
+            <div class="nf-field">
+              <span class="nf-hint">(Tab. Preços)</span>
+              <label>Unitário</label>
+              <input type="number" step="0.01" name="item_unitario" id="item-unitario" value="0" />
+            </div>
+            <div class="nf-field">
+              <label>Desc. R$</label>
+              <input type="number" step="0.01" name="item_desconto" id="item-desconto" value="0" />
+            </div>
+            <div class="nf-field">
+              <label>Frete</label>
+              <input type="number" step="0.01" name="item_frete" id="item-frete" value="0" />
+            </div>
+            <div class="nf-field">
+              <label>Seguro</label>
+              <input type="number" step="0.01" name="item_seguro" id="item-seguro" value="0" />
+            </div>
+            <div class="nf-field">
+              <label>Outras</label>
+              <input type="number" step="0.01" name="item_outras" id="item-outras" value="0" />
+            </div>
+            <div class="nf-field">
+              <label>&nbsp;</label>
+              <button type="button" class="nf-btn nf-btn-primary nf-btn-sm" id="btn-add-item">
+                <i class="bi bi-plus-lg"></i> Adicionar
+              </button>
+            </div>
+          </div>
+
+          <div class="nf-table-wrap">
+            <table class="nf-table" id="items-table">
+              <thead>
+                <tr>
+                  <th style="min-width:200px;">Produto</th>
+                  <th class="r" style="width:76px;">Qtd</th>
+                  <th class="r" style="width:86px;">Unitário</th>
+                  <th class="r" style="width:74px;">Desc.</th>
+                  <th style="width:60px;">CFOP</th>
+                  <th style="width:86px;">NCM</th>
+                  <th class="r" style="width:90px;">Total</th>
+                  <th style="width:74px;">Fonte</th>
+                  <th style="width:66px;"></th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+
+          <div class="nf-totals-bar">
+            <div class="nf-total-item">
+              <span class="lbl">Total Produtos</span>
+              <span class="val" id="total-produtos-bar-disp">R$ 0,00</span>
+              <input type="hidden" id="total-produtos-bar" />
+            </div>
+            <div class="nf-vsep"></div>
+            <div class="nf-total-item">
+              <span class="lbl">Desconto</span>
+              <span class="val" id="total-descontos-bar-disp">R$ 0,00</span>
+              <input type="hidden" id="total-descontos-bar" />
+            </div>
+            <div class="nf-vsep"></div>
+            <div class="nf-total-item">
+              <span class="lbl">Tributos</span>
+              <span class="val" id="total-tributos-bar-disp">R$ 0,00</span>
+            </div>
+            <div class="nf-vsep"></div>
+            <div class="nf-total-item accent">
+              <span class="lbl">Total Nota</span>
+              <span class="val" id="total-nota-bar-disp">R$ 0,00</span>
+            </div>
+            <div style="flex:1;"></div>
+            <div class="nf-total-item"><span class="lbl">ICMS</span><span class="val" id="tribbar-icms">0,00</span></div>
+            <div class="nf-total-item"><span class="lbl">IPI</span><span class="val" id="tribbar-ipi">0,00</span></div>
+            <div class="nf-total-item"><span class="lbl">PIS</span><span class="val" id="tribbar-pis">0,00</span></div>
+            <div class="nf-total-item"><span class="lbl">COFINS</span><span class="val" id="tribbar-cofins">0,00</span></div>
+            <div class="nf-total-item"><span class="lbl">IBS</span><span class="val" id="tribbar-ibs">0,00</span></div>
+            <div class="nf-total-item"><span class="lbl">CBS</span><span class="val" id="tribbar-cbs">0,00</span></div>
+            <input type="hidden" id="total" name="total" />
+            <input type="hidden" id="total-desconto" name="total_desconto" />
+            <input type="hidden" id="total-tributos" />
+            <input type="hidden" id="total-nota" />
+            <input type="hidden" id="total-icms" />
+            <input type="hidden" id="total-icms-st" />
+            <input type="hidden" id="total-ipi" />
+            <input type="hidden" id="total-pis" />
+            <input type="hidden" id="total-cofins" />
+            <input type="hidden" id="total-cbs" />
+            <input type="hidden" id="total-ibs" />
+          </div>
+        </div>
+
+        <!-- ─── PANE: CFOP & Tributos ─── -->
+        <div class="nf-pane" id="pane-cfop">
+          <div class="nf-tributos">
+            <div class="nf-tributos-grid g2" style="margin-bottom:8px;">
+              <div class="nf-field">
+                <label>Pesquisar CFOP</label>
+                <input type="text" id="cfop-autocomplete" placeholder="Digite CFOP ou descrição" />
+              </div>
+              <div class="nf-field">
+                <label>CFOP do Item</label>
+                <input type="text" name="item_cfop" id="item-cfop" />
+              </div>
+            </div>
+            <div class="nf-divider"></div>
+            <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--nf-muted);margin-bottom:6px;">CSTs</div>
+            <div class="nf-tributos-grid g5" style="margin-bottom:8px;">
+              <div class="nf-field"><label>CST ICMS</label><input type="text" id="cst-icms" name="cst_icms" /></div>
+              <div class="nf-field"><label>CST PIS</label><input type="text" id="cst-pis" name="cst_pis" /></div>
+              <div class="nf-field"><label>CST COFINS</label><input type="text" id="cst-cofins" name="cst_cofins" /></div>
+              <div class="nf-field"><label>CST IBS</label><input type="text" id="cst-ibs" name="cst_ibs" /></div>
+              <div class="nf-field"><label>CST CBS</label><input type="text" id="cst-cbs" name="cst_cbs" /></div>
+            </div>
+            <div class="nf-divider"></div>
+            <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--nf-muted);margin-bottom:6px;">Alíquotas %</div>
+            <div class="nf-tributos-grid g6" style="margin-bottom:8px;">
+              <div class="nf-field"><label>ICMS %</label><input type="number" step="0.01" id="aliq-icms" name="icms_aliquota" /></div>
+              <div class="nf-field"><label>IPI %</label><input type="number" step="0.01" id="aliq-ipi" name="ipi_aliquota" /></div>
+              <div class="nf-field"><label>PIS %</label><input type="number" step="0.01" id="aliq-pis" name="pis_aliquota" /></div>
+              <div class="nf-field"><label>COFINS %</label><input type="number" step="0.01" id="aliq-cof" name="cofins_aliquota" /></div>
+              <div class="nf-field"><label>IBS %</label><input type="number" step="0.01" id="aliq-ibs" name="ibs_aliquota" /></div>
+              <div class="nf-field"><label>CBS %</label><input type="number" step="0.01" id="aliq-cbs" name="cbs_aliquota" /></div>
+            </div>
+            <div class="nf-divider"></div>
+            <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--nf-muted);margin-bottom:6px;">Valores calculados R$</div>
+            <div class="nf-tributos-grid g7">
+              <div class="nf-field"><label>ICMS</label><input type="text" id="cfop-total-icms" readonly /></div>
+              <div class="nf-field"><label>ICMS ST</label><input type="text" id="cfop-total-icms-st" readonly /></div>
+              <div class="nf-field"><label>IPI</label><input type="text" id="cfop-total-ipi" readonly /></div>
+              <div class="nf-field"><label>PIS</label><input type="text" id="cfop-total-pis" readonly /></div>
+              <div class="nf-field"><label>COFINS</label><input type="text" id="cfop-total-cofins" readonly /></div>
+              <div class="nf-field"><label>CBS</label><input type="text" id="cfop-total-cbs" readonly /></div>
+              <div class="nf-field"><label>IBS</label><input type="text" id="cfop-total-ibs" readonly /></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ─── PANE: Totais ─── -->
+        <div class="nf-pane" id="pane-totais">
+          <div class="nf-tributos">
+            <div class="nf-tributos-grid g4" style="margin-bottom:8px;">
+              <div class="nf-field"><label>Total Produtos</label><input type="text" id="tot-prod-disp" readonly /></div>
+              <div class="nf-field"><label>Desconto</label><input type="text" id="tot-desc-disp" readonly /></div>
+              <div class="nf-field"><label>Tributos</label><input type="text" id="tot-trib-disp" readonly /></div>
+              <div class="nf-field"><label>Total Nota</label><input type="text" id="tot-nota-disp" style="color:var(--nf-accent);font-weight:600;" readonly /></div>
+            </div>
+            <div class="nf-divider"></div>
+            <div class="nf-tributos-grid g7">
+              <div class="nf-field"><label>ICMS</label><input type="text" id="tot-icms-disp" readonly /></div>
+              <div class="nf-field"><label>ICMS ST</label><input type="text" id="tot-st-disp" readonly /></div>
+              <div class="nf-field"><label>IPI</label><input type="text" id="tot-ipi-disp" readonly /></div>
+              <div class="nf-field"><label>PIS</label><input type="text" id="tot-pis-disp" readonly /></div>
+              <div class="nf-field"><label>COFINS</label><input type="text" id="tot-cofins-disp" readonly /></div>
+              <div class="nf-field"><label>CBS</label><input type="text" id="tot-cbs-disp" readonly /></div>
+              <div class="nf-field"><label>IBS</label><input type="text" id="tot-ibs-disp" readonly /></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ─── PANE: Financeiro ─── -->
+        <div class="nf-pane" id="pane-financeiro">
+          <div class="tab-pane fade" id="tab-financeiro" role="tabpanel" aria-labelledby="tab-financeiro-btn">
+  <div class="card shadow-sm mb-3">
+    <div class="card-body">
+      <h5 class="card-title mb-3">Cobrança da NF-e</h5>
+      <div class="row g-3 mb-3">
+        <div class="col-md-3"> </div>
+        <div class="col-md-3"> </div>
+        <div class="col-md-3"> </div>
+        <div class="col-md-3"> </div>
+      </div>
+
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="mb-0">Duplicatas</h6>
+        <button type="button" class="btn btn-sm btn-outline-primary" id="btn-add-duplicata">
+          <i class="bi bi-plus"></i> Adicionar Duplicata
+        </button>
+      </div>
+
+      
+      <div class="table-responsive">
+        <table class="table table-sm align-middle" id="duplicatas-table">
+          <thead>
+            <tr>
+              <th>Ordem</th>
+              <th>Número</th>
+              <th>Vencimento</th>
+              <th>Valor</th>
+              <th style="width: 96px;"></th>
+            </tr>
+          </thead>
+          <tbody>
+            
+            
+            <tr id="duplicatas-empty-row" class="d-none">
+              <td>
+                <div class="d-none"></div>
+                
+              </td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td>
+                <div class="d-none"></div>
+                <button type="button" class="btn btn-sm btn-outline-danger btn-remove-duplicata">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </td>
+            </tr>
+            
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="financeiro-nota" class="card shadow-sm">
+    <div class="card-body">
+      <h5 class="card-title mb-3">Financeiro</h5>
+      <div class="row g-3 mb-3">
+        <div class="col-md-4">
+          <div class="form-label">Subtotal</div>
+          <div id="fin-resumo-subtotal" class="fw-semibold">R$ 0,00</div>
+        </div>
+        <div class="col-md-4">
+          <div class="form-label">Desconto</div>
+          <div id="fin-resumo-desconto" class="fw-semibold">R$ 0,00</div>
+        </div>
+        <div class="col-md-4">
+          <div class="form-label">Total</div>
+          <div id="fin-resumo-total" class="fw-bold">R$ 0,00</div>
+        </div>
+      </div>
+      <div class="row g-3 align-items-end mb-2">
+        <div class="col-md-3">
+          <label class="form-label">Entrada (R$)</label>
+          <input type="number" min="0" step="0.01" class="form-control" id="fin-entrada" placeholder="0,00">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Restante</label>
+          <div id="fin-resumo-restante" class="fw-bold">R$ 0,00</div>
+        </div>
+      </div>
+      <div class="row g-3 align-items-end mb-3">
+        <div class="col-md-3">
+          <label class="form-label">Parcelas</label>
+          <input type="number" min="1" value="1" class="form-control" id="fin-parcelas">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Data base</label>
+          <input type="date" class="form-control" id="fin-data-base">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Forma do Recebimento</label>
+          <select class="form-select" id="fin-forma">
+            <option value="" selected>Selecione...</option>
+            <option value="00">00 - DUPLICATA</option>
+            <option value="01">01 - CHEQUE</option>
+            <option value="02">02 - PROMISSÓRIA</option>
+            <option value="03">03 - RECIBO</option>
+            <option value="50">50 - CHEQUE PRÉ</option>
+            <option value="51">51 - CARTAO DE CRÉDITO</option>
+            <option value="52">52 - CARTAO DE DÉBITO</option>
+            <option value="53">53 - BOLETO BANCÁRIO</option>
+            <option value="54">54 - DINHEIRO</option>
+            <option value="55">55 - DEPÓSITO EM CONTA</option>
+            <option value="56">56 - VENDA À VISTA</option>
+            <option value="60">60 - PIX</option>
+          </select>
+        </div>
+        <div class="col-md-3 d-flex gap-2 flex-wrap">
+          <button type="button" class="btn btn-outline-success" id="fin-btn-gerar">Gerar Títulos</button>
+          <button type="button" class="btn btn-outline-primary" id="fin-btn-consultar">Consultar</button>
+          <button type="button" class="btn btn-outline-danger" id="fin-btn-remover">Remover</button>
+          <button type="button" class="btn btn-warning d-none" id="fin-btn-atualizar">Atualizar</button>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle">
+          <thead class="table-responsive">
+            <tr>
+              <th>Parcela</th>
+              <th class="text-end">Valor</th>
+              <th>Vencimento</th>
+              <th>Forma do Recebimento</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="fin-titulos-body"></tbody>
+          <tfoot>
+            <tr class="table-dark">
+              <td colspan="3" class="text-end fw-bold">Total</td>
+              <td colspan="2" class="text-end" id="fin-total"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  ; (() => {
+    const byId = (id) => document.getElementById(id)
+    const getSlug = () => {
+      try {
+        const p = location.pathname.split('/')
+        return p.length > 2 ? p[2] : localStorage.getItem('slug') || ''
+      } catch (e) {
+        return localStorage.getItem('slug') || ''
+      }
+    }
+    const getCSRF = () => {
+      const m = document.cookie.match(/csrftoken=([^;]+)/)
+      return m ? m[1] : ''
+    }
+    const authFetch = async (url, options = {}) => {
+      const token = localStorage.getItem('access')
+      const headers = Object.assign({}, options.headers || {})
+      if (token) headers['Authorization'] = `Bearer ${token}`
+      return fetch(url, Object.assign({}, options, { headers }))
+    }
+    const fmtBRL = (v) => {
+      const n = Number(v || 0)
+      return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+    }
+    const parseNumber = (v) => {
+      if (v == null) return 0
+      const s = String(v).trim()
+      if (!s) return 0
+      const n = Number(s.replace(',', '.'))
+      return Number.isFinite(n) ? n : 0
+    }
+    const getNotaId = () => {
+      const m = window.location.pathname.match(/\/notas-fiscais\/(\d+)/)
+      return Number((m || [])[1] || 0)
+    }
+
+    const mount = () => {
+      const root = document.getElementById('financeiro-nota')
+      if (!root) return
+      const slug = getSlug()
+      const notaId = getNotaId()
+
+      const parcelasEl = byId('fin-parcelas')
+      const dataBaseEl = byId('fin-data-base')
+      const formaEl = byId('fin-forma')
+      const btnGerar = byId('fin-btn-gerar')
+      const btnConsultar = byId('fin-btn-consultar')
+      const btnRemover = byId('fin-btn-remover')
+      const btnAtualizar = byId('fin-btn-atualizar')
+      const edits = new Map()
+      const body = byId('fin-titulos-body')
+      const totalEl = byId('fin-total')
+      const resSub = byId('fin-resumo-subtotal')
+      const resDesc = byId('fin-resumo-desconto')
+      const resTot = byId('fin-resumo-total')
+      const resRest = byId('fin-resumo-restante')
+      const entradaEl = byId('fin-entrada')
+      const formaOpts = [
+        { v: '00', l: 'DUPLICATA' },
+        { v: '01', l: 'CHEQUE' },
+        { v: '02', l: 'PROMISSÓRIA' },
+        { v: '03', l: 'RECIBO' },
+        { v: '50', l: 'CHEQUE PRÉ' },
+        { v: '51', l: 'CARTÃO CRÉDITO' },
+        { v: '52', l: 'CARTÃO DÉBITO' },
+        { v: '53', l: 'BOLETO' },
+        { v: '54', l: 'DINHEIRO' },
+        { v: '55', l: 'DEPÓSITO' },
+        { v: '56', l: 'À VISTA' },
+        { v: '60', l: 'PIX' },
+      ]
+      const formaMap = new Map(formaOpts.map((o) => [o.v, o]))
+      const normalizeForma = (v) => {
+        const s = String(v || '').trim()
+        if (!s) return ''
+        const m = s.match(/^(\d{2})/)
+        return m ? m[1] : s
+      }
+      const formatForma = (v) => {
+        const code = normalizeForma(v)
+        const o = formaMap.get(code)
+        return o ? `${o.v} - ${o.l}` : String(v || '')
+      }
+      const statusMap = new Map([
+        ['A', 'A - Aberto'],
+        ['P', 'P - Pago parcialmente'],
+        ['T', 'T - Pago total'],
+        ['B', 'BAIXADO'],
+      ])
+      const formatStatus = (status, aberto) => {
+        const raw = String(status || aberto || '').trim()
+        if (!raw) return ''
+        const code = raw.length ? raw[0].toUpperCase() : ''
+        return statusMap.get(code) || raw
+      }
+
+      if (dataBaseEl && !dataBaseEl.value) {
+        const d = new Date()
+        const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
+          d.getDate()
+        ).padStart(2, '0')}`
+        dataBaseEl.value = iso
+      }
+
+      const fetchTotaisFromAPI = async () => {
+        if (!notaId) return null
+        try {
+          const resp = await authFetch(`/api/${slug}/notasfiscais/notas-fiscais/notas/${notaId}/`, { method: 'GET' })
+          if (!resp.ok) return null
+          const data = await resp.json()
+          const itens = Array.isArray(data?.itens) ? data.itens : []
+          const somaProdutos = itens.reduce((acc, it) => {
+            const total = parseNumber(it.total)
+            if (total) return acc + total
+            const q = parseNumber(it.quantidade) || 0
+            const u = parseNumber(it.unitario) || 0
+            const d = parseNumber(it.desconto) || 0
+            return acc + (q * u - d)
+          }, 0)
+          const somaFrete = itens.reduce((acc, it) => acc + (parseNumber(it.valor_frete) || 0), 0)
+          const somaSeguro = itens.reduce((acc, it) => acc + (parseNumber(it.valor_seguro) || 0), 0)
+          const somaOutras = itens.reduce((acc, it) => acc + (parseNumber(it.valor_outras_despesas) || 0), 0)
+          let totIcms = 0, totSt = 0, totIpi = 0, totPis = 0, totCofins = 0, totCbs = 0, totIbs = 0, totFcp = 0
+          itens.forEach(it => {
+            const imp = it.impostos || {}
+            totIcms += parseNumber(imp.icms_valor) || 0
+            totSt += parseNumber(imp.icms_st_valor) || 0
+            totIpi += parseNumber(imp.ipi_valor) || 0
+            totPis += parseNumber(imp.pis_valor) || 0
+            totCofins += parseNumber(imp.cofins_valor) || 0
+            totCbs += parseNumber(imp.cbs_valor) || 0
+            totIbs += parseNumber(imp.ibs_valor) || 0
+            totFcp += parseNumber(imp.fcp_valor) || 0
+          })
+          const somaImpostos = totIcms + totSt + totIpi + totPis + totCofins + totCbs + totIbs + totFcp
+          const somaDescontos = itens.reduce((acc, it) => acc + (parseNumber(it.desconto) || 0), 0)
+          const totalNota = somaProdutos + somaImpostos + somaFrete + somaSeguro + somaOutras
+          return { somaProdutos, somaDescontos, somaImpostos, somaFrete, somaSeguro, somaOutras, totalNota }
+        } catch (e) {
+          return null
+        }
+      }
+
+      const getTotaisFromFormRows = () => {
+        const rows = Array.from(document.querySelectorAll('#itens-formset-body tr') || []).filter((tr) => {
+          if (tr.id) return false
+          if (tr.style.display === 'none') return false
+          const del = tr.querySelector('[name$="-DELETE"]')
+          return !(del && del.checked)
+        })
+        if (!rows.length) return null
+        const somaProdutos = rows.reduce((acc, tr) => acc + parseNumber(tr.querySelector('[name$="-total"]')?.value || 0), 0)
+        const somaDescontos = rows.reduce((acc, tr) => acc + parseNumber(tr.querySelector('[name$="-desconto"]')?.value || 0), 0)
+        const somaImpostos = rows.reduce((acc, tr) => acc + parseNumber(tr.querySelector('[name$="-valor_total_tributos"]')?.value || 0), 0)
+        const somaFrete = rows.reduce((acc, tr) => acc + parseNumber(tr.querySelector('[name$="-valor_frete"]')?.value || 0), 0)
+        const somaSeguro = rows.reduce((acc, tr) => acc + parseNumber(tr.querySelector('[name$="-valor_seguro"]')?.value || 0), 0)
+        const somaOutras = rows.reduce((acc, tr) => acc + parseNumber(tr.querySelector('[name$="-valor_outras_despesas"]')?.value || 0), 0)
+        const totalNota = somaProdutos + somaImpostos + somaFrete + somaSeguro + somaOutras
+        return { somaProdutos, somaDescontos, somaImpostos, somaFrete, somaSeguro, somaOutras, totalNota }
+      }
+
+      const syncResumo = () => {
+        const totaisForm = getTotaisFromFormRows()
+        const sub = totaisForm?.somaProdutos ?? parseNumber(document.getElementById('total')?.value || 0)
+        const des = totaisForm?.somaDescontos ?? parseNumber(document.getElementById('total-desconto')?.value || 0)
+        const trib = totaisForm?.somaImpostos ?? parseNumber(document.getElementById('total-tributos')?.value || 0)
+        let tot = parseNumber(document.getElementById('total-nota')?.value || 0)
+        if (totaisForm?.totalNota) tot = totaisForm.totalNota
+        if (!tot && (sub || trib)) tot = sub + trib
+        if (resSub) resSub.textContent = fmtBRL(sub)
+        if (resDesc) resDesc.textContent = fmtBRL(des)
+        if (resTot) resTot.textContent = fmtBRL(tot)
+        const entrada = parseNumber(entradaEl?.value || 0)
+        const restante = Math.max(tot - entrada, 0)
+        if (resRest) resRest.textContent = fmtBRL(restante)
+      }
+
+      const startAutoSync = () => {
+        syncResumo()
+        let tries = 0
+        const h = setInterval(() => {
+          tries += 1
+          syncResumo()
+          if (tries >= 15) clearInterval(h)
+        }, 300)
+      }
+      startAutoSync()
+        ;['total', 'total-desconto', 'total-tributos', 'total-nota'].forEach((id) => {
+          const el = document.getElementById(id)
+          el?.addEventListener('input', syncResumo)
+          el?.addEventListener('change', syncResumo)
+        })
+      entradaEl?.addEventListener('input', syncResumo)
+      entradaEl?.addEventListener('change', syncResumo)
+      document.getElementById('tab-financeiro-btn')?.addEventListener('shown.bs.tab', async () => {
+        startAutoSync()
+        const apiTotais = await fetchTotaisFromAPI()
+        if (apiTotais) {
+          const elTotal = document.getElementById('total')
+          const elDesc = document.getElementById('total-desconto')
+          const elTrib = document.getElementById('total-tributos')
+          const elNota = document.getElementById('total-nota')
+          if (elTotal && !parseNumber(elTotal.value)) elTotal.value = Number(apiTotais.somaProdutos).toFixed(2)
+          if (elDesc && !parseNumber(elDesc.value)) elDesc.value = Number(apiTotais.somaDescontos).toFixed(2)
+          if (elTrib && !parseNumber(elTrib.value)) elTrib.value = Number(apiTotais.somaImpostos).toFixed(2)
+          if (elNota && !parseNumber(elNota.value)) elNota.value = Number(apiTotais.totalNota).toFixed(2)
+          syncResumo()
+        }
+        await consultar({ silent: true })
+      })
+
+      const consultar = async ({ silent = false } = {}) => {
+        if (!notaId) {
+          if (!silent) alert('Salve a nota para consultar os títulos.')
+          return
+        }
+        const url = `/api/${slug}/notasfiscais/notas-fiscais/financeiro/${encodeURIComponent(notaId)}/`
+        const resp = await authFetch(url, { method: 'GET' })
+        if (!resp.ok) {
+          if (!silent) {
+            const txt = await resp.text()
+            alert(txt || 'Erro ao consultar títulos')
+          }
+          return
+        }
+        const data = await resp.json()
+        const titulos = data.titulos || []
+        body.innerHTML = ''
+        titulos.forEach((t) => {
+          const tr = document.createElement('tr')
+          const editBtn =
+            String(t.aberto || '').toUpperCase() === 'A'
+              ? `<button type="button" class="btn btn-sm btn-outline-secondary fin-edit" data-parcela="${t.parcela}"><i class="bi bi-pencil"></i></button>`
+              : ''
+          const formaCode = normalizeForma(t.forma_pagamento || '')
+          const statusTxt = formatStatus(t.status, t.aberto)
+          tr.innerHTML = `
+            <td>${t.parcela} ${editBtn}</td>
+            <td class="text-end">R$ ${Number(t.valor || 0).toFixed(2)}</td>
+            <td>${t.vencimento || ''}</td>
+            <td data-forma="${formaCode}">${formatForma(t.forma_pagamento || '')}</td>
+            <td>${statusTxt}</td>
+          `
+          tr.dataset.aberto = t.aberto || ''
+          tr.dataset.valor = t.valor || ''
+          tr.dataset.vencimento = t.vencimento || ''
+          tr.dataset.forma = formaCode
+          body.appendChild(tr)
+        })
+        const total = Number(data.total || 0)
+        totalEl.textContent = `R$ ${total.toFixed(2)}`
+        btnAtualizar?.classList.remove('d-none')
+        if (btnAtualizar) btnAtualizar.disabled = true
+        edits.clear()
+      }
+
+      const gerar = async () => {
+        if (!notaId) {
+          alert('Salve a nota para gerar os títulos.')
+          return
+        }
+        startAutoSync()
+        const parcelas = Math.max(Number(parcelasEl.value || 1), 1)
+        const forma = (formaEl.value || '').trim()
+        const entrada = Math.max(Number(entradaEl?.value || 0), 0)
+        const totaisForm = getTotaisFromFormRows()
+        let totalNota = totaisForm?.totalNota ?? parseNumber(document.getElementById('total-nota')?.value || 0)
+        if (!totalNota) {
+          const sub = totaisForm?.somaProdutos ?? parseNumber(document.getElementById('total')?.value || 0)
+          const trib = totaisForm?.somaImpostos ?? parseNumber(document.getElementById('total-tributos')?.value || 0)
+          totalNota = sub + trib
+        }
+        if (!totalNota) {
+          const apiTotais = await fetchTotaisFromAPI()
+          if (apiTotais) totalNota = apiTotais.totalNota
+        }
+        if (entrada > totalNota) {
+          alert('Entrada não pode ser maior que o total.')
+          return
+        }
+        const url = `/api/${slug}/notasfiscais/notas-fiscais/financeiro/${encodeURIComponent(
+          notaId
+        )}/gerar/`
+        const payload = {
+          nota_id: Number(notaId),
+          entrada: String(entrada),
+          forma_pagamento: forma,
+          parcelas: parcelas,
+          data_base: (dataBaseEl.value || '').trim(),
+        }
+        const resp = await authFetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRF(),
+          },
+          body: JSON.stringify(payload),
+        })
+        if (!resp.ok) {
+          let msg = 'Erro ao gerar títulos'
+          try {
+            const data = await resp.json()
+            msg = data?.detail || msg
+          } catch (e) {
+            const txt = await resp.text()
+            if (txt) msg = txt
+          }
+          alert(msg)
+          return
+        }
+        await consultar()
+      }
+
+      const remover = async () => {
+        if (!notaId) {
+          alert('Salve a nota para remover os títulos.')
+          return
+        }
+        const url = `/api/${slug}/notasfiscais/notas-fiscais/financeiro/${encodeURIComponent(
+          notaId
+        )}/remover/`
+        const resp = await authFetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRF(),
+          },
+          body: JSON.stringify({}),
+        })
+        if (!resp.ok) {
+          const txt = await resp.text()
+          alert(txt || 'Erro ao remover títulos')
+          return
+        }
+        body.innerHTML = ''
+        totalEl.textContent = ''
+      }
+
+      btnConsultar?.addEventListener('click', () => consultar())
+      btnGerar?.addEventListener('click', gerar)
+      btnRemover?.addEventListener('click', remover)
+
+      body.addEventListener('click', (e) => {
+        const btn = e.target.closest('.fin-edit')
+        if (!btn) return
+        const parcela = String(btn.dataset.parcela || '')
+        const tr = btn.closest('tr')
+        if (String(tr.dataset.aberto || '').toUpperCase() !== 'A') {
+          alert('Título não pode ser editado.')
+          return
+        }
+        const tdValor = tr.children[1]
+        const tdVenc = tr.children[2]
+        const tdForma = tr.children[3]
+        const valorAtual = Number(tr.dataset.valor || 0)
+        const vencAtual = tr.dataset.vencimento || tdVenc.textContent || ''
+        const formaAtual = tr.dataset.forma || tdForma.dataset.forma || tdForma.textContent || ''
+        const formaAtualCode = normalizeForma(formaAtual)
+        tdValor.innerHTML = `<input type="number" step="0.01" class="form-control form-control-sm text-end" value="${String(
+          valorAtual
+        )}">`
+        tdVenc.innerHTML = `<input type="date" class="form-control form-control-sm" value="${(
+          vencAtual || ''
+        ).slice(0, 10)}">`
+        tdForma.innerHTML = `<select class="form-select form-select-sm">${formaOpts
+          .map(
+            (o) =>
+              `<option value="${o.v}" ${o.v === formaAtualCode ? 'selected' : ''}>${o.v} - ${o.l}</option>`
+          )
+          .join('')}</select>`
+        btnAtualizar?.classList.remove('d-none')
+        const inputValor = tdValor.querySelector('input')
+        const inputVenc = tdVenc.querySelector('input')
+        const inputForma = tdForma.querySelector('select')
+        const storeEdit = () => {
+          const v = Number(inputValor.value || 0)
+          const d = inputVenc.value || vencAtual
+          const f = inputForma.value || formaAtualCode
+          edits.set(parcela, { valor: v, vencimento: d, forma_pagamento: f })
+          btnAtualizar?.classList.remove('d-none')
+          if (btnAtualizar) btnAtualizar.disabled = false
+        }
+        inputValor.addEventListener('change', storeEdit)
+        inputValor.addEventListener('input', storeEdit)
+        inputVenc.addEventListener('change', storeEdit)
+        inputForma.addEventListener('change', storeEdit)
+      })
+
+      btnAtualizar?.addEventListener('click', async () => {
+        if (!notaId) return
+        if (edits.size === 0) {
+          alert('Nenhuma alteração pendente')
+          return
+        }
+        for (const [parcela, ch] of edits.entries()) {
+          const url = `/api/${slug}/notasfiscais/notas-fiscais/financeiro/${encodeURIComponent(
+            notaId
+          )}/atualizar/`
+          const resp = await authFetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': getCSRF(),
+            },
+            body: JSON.stringify({
+              parcela,
+              valor: String(ch.valor),
+              vencimento: ch.vencimento,
+              forma_pagamento: ch.forma_pagamento,
+            }),
+          })
+          if (!resp.ok) {
+            const txt = await resp.text()
+            alert(txt || 'Falha ao atualizar título')
+            return
+          }
+        }
+        edits.clear()
+        btnAtualizar?.classList.add('d-none')
+        await consultar()
+      })
+    }
+
+    document.addEventListener('DOMContentLoaded', mount)
+  })()
+</script>
+
+<script>
+  (() => {
+    const totalForms = document.querySelector('#duplicatas-table [name$="-TOTAL_FORMS"]') || document.querySelector('[name$="-TOTAL_FORMS"][name^="duplicatas"]')
+    const emptyRow = document.getElementById('duplicatas-empty-row')
+    const tableBody = document.querySelector('#duplicatas-table tbody')
+    const btnAdd = document.getElementById('btn-add-duplicata')
+
+    const attachDuplicataBehavior = (row) => {
+      const delBtn = row.querySelector('.btn-remove-duplicata')
+      const delField = row.querySelector('[name$="-DELETE"]')
+      delBtn?.addEventListener('click', () => {
+        if (delField) {
+          delField.checked = true
+          row.style.display = 'none'
+        } else {
+          row.remove()
+        }
+      })
+    }
+
+    document.querySelectorAll('#duplicatas-table tbody tr').forEach((row) => {
+      if (row.id !== 'duplicatas-empty-row') attachDuplicataBehavior(row)
+    })
+
+    btnAdd?.addEventListener('click', () => {
+      if (!emptyRow || !tableBody || !totalForms) return
+      const idx = Number(totalForms.value || 0)
+      const clone = emptyRow.cloneNode(true)
+      clone.id = ''
+      clone.classList.remove('d-none')
+      clone.innerHTML = clone.innerHTML.replace(/__prefix__/g, String(idx))
+      tableBody.appendChild(clone)
+      totalForms.value = String(idx + 1)
+      attachDuplicataBehavior(clone)
+    })
+  })()
+</script>
+
+        </div>
+
+      </div><!-- /nf-panel -->
+    </form>
+  </div><!-- /nf-body -->
+
+  <!-- Action Bar -->
+  <div class="nf-action-bar">
+    <a class="nf-btn nf-btn-ghost" href="/web/saveweb001/notas-fiscais/">← Voltar</a>
+    <div class="spacer"></div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <span style="font-size:11px;color:var(--nf-muted);">Produtos</span>
+      <input type="text" id="total-produtos-bar-action" readonly
+        style="width:90px;background:var(--nf-surface2);border:1px solid var(--nf-border);border-radius:var(--nf-radius);color:var(--nf-text);font-size:11px;height:24px;padding:0 6px;text-align:right;">
+      <span style="font-size:11px;color:var(--nf-muted);">Desc.</span>
+      <input type="text" id="total-descontos-bar-action" readonly
+        style="width:74px;background:var(--nf-surface2);border:1px solid var(--nf-border);border-radius:var(--nf-radius);color:var(--nf-text);font-size:11px;height:24px;padding:0 6px;text-align:right;">
+    </div>
+    <button class="nf-btn nf-btn-warning" type="button" id="btn-calcular">
+      <span class="spinner-border spinner-border-sm d-none"></span>
+      <i class="bi bi-calculator"></i> Calcular Impostos
+    </button>
+    <button class="nf-btn nf-btn-primary" type="button" id="btn-salvar">
+      <span class="spinner-border spinner-border-sm me-1 d-none"></span>
+      <i class="bi bi-save"></i> Salvar
+    </button>
+    <button class="nf-btn nf-btn-success" type="submit" form="emit-form">
+      <span class="spinner-border spinner-border-sm me-1 d-none"></span>
+      <i class="bi bi-upload"></i> Transmitir
+    </button>
+  </div>
+
+</div><!-- /nf-wrap -->
+</div><!-- /nf-page-root -->
+
+<!-- Modal Cálculo Item -->
+<div class="modal fade" id="modal-item-calculo" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content" style="background:var(--nf-surface);border:1px solid var(--nf-border);color:var(--nf-text);">
+      <div class="modal-header" style="border-bottom:1px solid var(--nf-border);">
+        <h5 class="modal-title" style="font-size:14px;">Detalhes do cálculo do item</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body"><div id="modal-item-calculo-body"></div></div>
+      <div class="modal-footer" style="border-top:1px solid var(--nf-border);">
+        <button type="button" class="nf-btn nf-btn-ghost" data-bs-dismiss="modal">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (() => {
+    /* ── Tab switching ── */
+    const tabs = document.querySelectorAll('.nf-tab');
+    const panes = document.querySelectorAll('.nf-pane');
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        panes.forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        const pane = document.getElementById('pane-' + tab.dataset.tab);
+        if (pane) pane.classList.add('active');
+        if (tab.dataset.tab === 'totais') syncTotaisDisplayFields();
+      });
+    });
+
+    /* legacy shim */
+    if (!document.getElementById('tab-financeiro-btn')) {
+      const s = document.createElement('button');
+      s.id = 'tab-financeiro-btn'; s.style.display = 'none';
+      document.body.appendChild(s);
+    }
+
+    const slug = localStorage.getItem('slug');
+    const empresa = localStorage.getItem('empresa_id') || '1';
+    const filial  = localStorage.getItem('filial_id')  || '1';
+    const authFetch = async (url, opts = {}) => {
+      const token = localStorage.getItem('access');
+      const h = { 'Content-Type':'application/json', 'X-Empresa':empresa, 'X-Filial':filial };
+      if (token) h['Authorization'] = `Bearer ${token}`;
+      return fetch(url, { ...opts, headers: { ...h, ...(opts.headers||{}) } });
+    };
+
+    /* ── Autocomplete ── */
+    const mountAutocomplete = (input, source, onPick) => {
+      let timer = null;
+      const list = document.createElement('div');
+      list.className = 'list-group position-absolute w-100';
+      input.parentElement.appendChild(list);
+      const render = items => {
+        list.innerHTML = '';
+        items.forEach(it => {
+          const a = document.createElement('a');
+          a.href = '#'; a.className = 'list-group-item list-group-item-action';
+          a.textContent = it.label;
+          a.addEventListener('click', e => { e.preventDefault(); onPick(it); list.innerHTML = ''; });
+          list.appendChild(a);
+        });
+      };
+      input.addEventListener('input', () => {
+        const q = input.value.trim();
+        clearTimeout(timer);
+        timer = setTimeout(async () => {
+          if (!q) { list.innerHTML=''; return; }
+          const r = await authFetch(source(q));
+          const d = await r.json();
+          render(Array.isArray(d) ? d : []);
+        }, 250);
+      });
+    };
+
+    /* cliente */
+    const cliInput = document.getElementById('cli-autocomplete');
+    const destId   = document.getElementById('destinatario-id');
+    mountAutocomplete(cliInput, q=>`/web/${slug}/notas-fiscais/entidades-autocomplete/?q=${encodeURIComponent(q)}`, it=>{ cliInput.value=it.label; destId.value=it.value; });
+
+    /* produto */
+    const prodInput      = document.getElementById('prod-autocomplete');
+    const prodCodigoHidden = document.getElementById('produto-codigo');
+    const ncmInput       = document.getElementById('item-ncm');
+    const unInput        = document.getElementById('item-unidade');
+    const unitInput      = document.getElementById('item-unitario');
+    const itemCfop       = document.getElementById('item-cfop');
+    mountAutocomplete(prodInput, q=>`/web/${slug}/notas-fiscais/produtos-autocomplete/?q=${encodeURIComponent(q)}`, async it => {
+      prodInput.value=it.label; prodCodigoHidden.value=it.value;
+      try {
+        const dv = (document.getElementById('destinatario-id')?.value||'').trim();
+        const r  = await authFetch(`/web/${slug}/notas-fiscais/produto-detalhe/${it.value}/?destinatario=${encodeURIComponent(dv)}`);
+        const d  = await r.json();
+        ncmInput.value  = d?.prod_ncm   || ncmInput.value;
+        unInput.value   = d?.prod_unid  || unInput.value;
+        const p = d?.prod_preco_vista || d?.prod_preco_normal || 0;
+        if (Number(p)>0) unitInput.value = Number(p).toFixed(2);
+        if (itemCfop && !String(itemCfop.value||'').trim() && d?.cfop_sugerido) itemCfop.value=String(d.cfop_sugerido);
+        [['cst-icms','cst_icms_sugerido'],['cst-pis','cst_pis_sugerido'],['cst-cofins','cst_cofins_sugerido'],
+         ['cst-ibs','cst_ibs_sugerido'],['cst-cbs','cst_cbs_sugerido']].forEach(([id,key])=>{
+          const el=document.getElementById(id);
+          if(el && !String(el.value||'').trim() && d?.[key]!=null) el.value=String(d[key]);
+        });
+      } catch {}
+    });
+
+    /* CFOP */
+    const cfopInput = document.getElementById('cfop-autocomplete');
+    const aliqIcms=document.getElementById('aliq-icms'), aliqIpi=document.getElementById('aliq-ipi'),
+          aliqPis=document.getElementById('aliq-pis'),   aliqCof=document.getElementById('aliq-cof'),
+          aliqIbs=document.getElementById('aliq-ibs'),   aliqCbs=document.getElementById('aliq-cbs');
+    let cfopFlags = { icms:true, ipi:false, pis_cofins:true, cbs:false, ibs:false };
+    mountAutocomplete(cfopInput, q=>`/web/${slug}/notas-fiscais/cfop-autocomplete/?q=${encodeURIComponent(q)}`, cf=>{
+      document.getElementById('item-cfop').value    = cf.value;
+      document.getElementById('cst-icms').value     = cf.cst_icms||'';
+      document.getElementById('cst-pis').value      = cf.cst_pis||'';
+      document.getElementById('cst-cofins').value   = cf.cst_cofins||'';
+      document.getElementById('cst-ibs').value      = cf.cst_ibs||'';
+      document.getElementById('cst-cbs').value      = cf.cst_cbs||'';
+      aliqIcms.value=cf.icms_aliquota||''; aliqIpi.value=cf.ipi_aliquota||'';
+      aliqPis.value=cf.pis_aliquota||'';   aliqCof.value=cf.cofins_aliquota||'';
+      aliqIbs.value=cf.ibs_aliquota||'';   aliqCbs.value=cf.cbs_aliquota||'';
+      cfopFlags = { icms:Boolean(cf.exig_icms??true), ipi:Boolean(cf.exig_ipi??false),
+                    pis_cofins:Boolean(cf.exig_pis_cofins??true), cbs:Boolean(cf.exig_cbs??false), ibs:Boolean(cf.exig_ibs??false) };
+      calcTotais();
+    });
+
+    /* transportadora */
+    const transpInput    = document.getElementById('transportadora');
+    const transpIdHidden = document.getElementById('transportadora-id');
+    mountAutocomplete(transpInput, q=>`/web/${slug}/notas-fiscais/transportadoras-autocomplete/?q=${encodeURIComponent(q)}`, it=>{ transpInput.value=it.label; transpIdHidden.value=it.value; });
+
+    /* ── Items state ── */
+    const items = [];
+    let backendTotals = null, editIndex = -1, currentNotaId = null;
+    let syncingFreteTransporte = false;
+
+    const fmtR  = v => 'R$ '+Number(v||0).toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+    const fmt2  = v => Number(v||0).toFixed(2);
+    const setH  = (id,v) => { const e=document.getElementById(id); if(e) e.value=fmt2(v); };
+    const setD  = (id,v) => { const e=document.getElementById(id); if(e) e.value=fmt2(v); };
+    const setDR = (id,v) => { const e=document.getElementById(id); if(e) e.textContent=fmtR(v); };
+    const freteTransporteInput = document.getElementById('transporte-valor-frete');
+    const calcBaseItem = it => (Number(it?.quantidade || 0) * Number(it?.unitario || 0)) - Number(it?.desconto || 0);
+    const calcTributosItem = it => {
+      const explicit = Number(it?.valor_total_tributos || 0);
+      if (explicit > 0) return explicit;
+      const imp = it?.impostos || {};
+      const somado =
+        Number(imp.icms_valor || 0) +
+        Number(imp.icms_st_valor || 0) +
+        Number(imp.ipi_valor || 0) +
+        Number(imp.pis_valor || 0) +
+        Number(imp.cofins_valor || 0) +
+        Number(imp.cbs_valor || 0) +
+        Number(imp.ibs_valor || 0) +
+        Number(imp.fcp_valor || 0) +
+        Number(imp.icms_uf_dest_valor || 0) +
+        Number(imp.icms_uf_dest_fcp_valor || 0);
+      if (somado > 0) return somado;
+      const base = calcBaseItem(it);
+      let trib = 0;
+      trib += cfopFlags.icms ? base * Number(aliqIcms.value || 0) / 100 : 0;
+      trib += cfopFlags.ipi ? base * Number(aliqIpi.value || 0) / 100 : 0;
+      trib += cfopFlags.pis_cofins ? base * Number(aliqPis.value || 0) / 100 : 0;
+      trib += cfopFlags.pis_cofins ? base * Number(aliqCof.value || 0) / 100 : 0;
+      trib += cfopFlags.ibs ? base * Number(aliqIbs.value || 0) / 100 : 0;
+      trib += cfopFlags.cbs ? base * Number(aliqCbs.value || 0) / 100 : 0;
+      return trib;
+    };
+    const calcFinalItem = it => calcBaseItem(it) + calcTributosItem(it) + Number(it?.valor_frete || 0) + Number(it?.valor_seguro || 0) + Number(it?.valor_outras_despesas || 0);
+    const syncFreteTransporteField = () => {
+      if (!freteTransporteInput || syncingFreteTransporte) return;
+      const totalFrete = items.reduce((acc, it) => acc + Number(it?.valor_frete || 0), 0);
+      freteTransporteInput.value = fmt2(totalFrete);
+    };
+    const aplicarFreteTransporteNosItens = valor => {
+      const totalFrete = Number(valor || 0);
+      if (freteTransporteInput) freteTransporteInput.value = fmt2(totalFrete);
+      if (!items.length) return;
+      syncingFreteTransporte = true;
+      items.forEach((it, idx) => {
+        it.valor_frete = idx === 0 ? totalFrete : 0;
+      });
+      syncingFreteTransporte = false;
+      renderItems();
+    };
+
+    const syncTotaisDisplayFields = () => {
+      setD('tot-prod-disp',   document.getElementById('total')?.value||0);
+      setD('tot-desc-disp',   document.getElementById('total-desconto')?.value||0);
+      setD('tot-trib-disp',   document.getElementById('total-tributos')?.value||0);
+      setD('tot-nota-disp',   document.getElementById('total-nota')?.value||0);
+      setD('tot-icms-disp',   document.getElementById('total-icms')?.value||0);
+      setD('tot-st-disp',     document.getElementById('total-icms-st')?.value||0);
+      setD('tot-ipi-disp',    document.getElementById('total-ipi')?.value||0);
+      setD('tot-pis-disp',    document.getElementById('total-pis')?.value||0);
+      setD('tot-cofins-disp', document.getElementById('total-cofins')?.value||0);
+      setD('tot-cbs-disp',    document.getElementById('total-cbs')?.value||0);
+      setD('tot-ibs-disp',    document.getElementById('total-ibs')?.value||0);
+    };
+
+    const calcTotais = () => {
+      const sum  = items.reduce((a,it)=>a+calcBaseItem(it),0);
+      const desc = items.reduce((a,it)=>a+Number(it.desconto||0),0);
+      setH('total',sum); setH('total-desconto',desc);
+      const ab1=document.getElementById('total-produtos-bar-action');
+      const ab2=document.getElementById('total-descontos-bar-action');
+      if(ab1) ab1.value=fmt2(sum); if(ab2) ab2.value=fmt2(desc);
+      let vIcms,vIpi,vPis,vCof,vIbs,vCbs,vSt=0;
+      if (backendTotals) {
+        ({icms:vIcms,ipi:vIpi,pis:vPis,cofins:vCof,ibs:vIbs,cbs:vCbs}=backendTotals); vSt=backendTotals.st||0;
+      } else {
+        vIcms = items.reduce((a, it) => a + (cfopFlags.icms ? calcBaseItem(it) * Number(aliqIcms.value || 0) / 100 : 0), 0);
+        vIpi  = items.reduce((a, it) => a + (cfopFlags.ipi ? calcBaseItem(it) * Number(aliqIpi.value || 0) / 100 : 0), 0);
+        vPis  = items.reduce((a, it) => a + (cfopFlags.pis_cofins ? calcBaseItem(it) * Number(aliqPis.value || 0) / 100 : 0), 0);
+        vCof  = items.reduce((a, it) => a + (cfopFlags.pis_cofins ? calcBaseItem(it) * Number(aliqCof.value || 0) / 100 : 0), 0);
+        vIbs  = items.reduce((a, it) => a + (cfopFlags.ibs ? calcBaseItem(it) * Number(aliqIbs.value || 0) / 100 : 0), 0);
+        vCbs  = items.reduce((a, it) => a + (cfopFlags.cbs ? calcBaseItem(it) * Number(aliqCbs.value || 0) / 100 : 0), 0);
+      }
+      const trib=vIcms+vSt+vIpi+vPis+vCof+vIbs+vCbs;
+      const totalNota = items.reduce((a, it) => a + calcFinalItem(it), 0);
+      setH('total-tributos',trib); setH('total-nota',totalNota);
+      setH('total-icms',vIcms); setH('total-icms-st',vSt); setH('total-ipi',vIpi);
+      setH('total-pis',vPis);   setH('total-cofins',vCof); setH('total-cbs',vCbs); setH('total-ibs',vIbs);
+      setD('cfop-total-icms',vIcms); setD('cfop-total-icms-st',vSt); setD('cfop-total-ipi',vIpi);
+      setD('cfop-total-pis',vPis);   setD('cfop-total-cofins',vCof); setD('cfop-total-cbs',vCbs); setD('cfop-total-ibs',vIbs);
+      setDR('total-produtos-bar-disp',sum); setDR('total-descontos-bar-disp',desc);
+      setDR('total-tributos-bar-disp',trib); setDR('total-nota-bar-disp',totalNota);
+      const sT=(id,v)=>{ const e=document.getElementById(id); if(e) e.textContent=fmt2(v); };
+      sT('tribbar-icms',vIcms); sT('tribbar-ipi',vIpi); sT('tribbar-pis',vPis);
+      sT('tribbar-cofins',vCof); sT('tribbar-ibs',vIbs); sT('tribbar-cbs',vCbs);
+      syncTotaisDisplayFields();
+      syncFreteTransporteField();
+    };
+    [aliqIcms,aliqIpi,aliqPis,aliqCof,aliqIbs,aliqCbs].forEach(el=>el.addEventListener('input',calcTotais));
+    calcTotais();
+
+    /* ── Render items ── */
+    const tbody = document.querySelector('#items-table tbody');
+    const esc   = v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+    const renderItems = () => {
+      tbody.innerHTML = '';
+      if (!items.length) { tbody.innerHTML='<tr class="empty"><td colspan="9">Nenhum item adicionado</td></tr>'; calcTotais(); return; }
+      items.forEach((it,idx) => {
+        const totalBase = calcBaseItem(it);
+        const totalFinal = calcFinalItem(it);
+        const totalTrib = calcTributosItem(it);
+        const tr=document.createElement('tr');
+        tr.innerHTML=`
+          <td><div style="font-weight:500;">${esc(it.descricao||'')}</div>
+              ${it.codigo?`<div style="font-size:10px;color:var(--nf-muted);">Cód. ${esc(it.codigo)}</div>`:''}
+          </td>
+          <td class="r">${Number(it.quantidade||0).toFixed(4)}</td>
+          <td class="r">${Number(it.unitario||0).toFixed(2)}</td>
+          <td class="r">${Number(it.desconto||0).toFixed(2)}</td>
+          <td><span class="nf-badge">${esc(it.cfop||'-')}</span></td>
+          <td><span class="nf-badge">${esc(it.ncm||'-')}</span></td>
+          <td class="r" style="font-weight:600;">
+            <div>${fmt2(totalFinal)}</div>
+            <div style="font-size:10px;color:var(--nf-muted);">Base ${fmt2(totalBase)} + Trib ${fmt2(totalTrib)} + Frete ${fmt2(it.valor_frete||0)} + Seg ${fmt2(it.valor_seguro||0)} + Out ${fmt2(it.valor_outras_despesas||0)}</div>
+          </td>
+          <td><span class="nf-badge">${esc(it.fonte_tributacao||'-')}</span></td>
+          <td style="text-align:right;">
+            ${it.debug_calculo?`<button type="button" class="nf-btn nf-btn-ghost nf-btn-sm" data-debug="${idx}"><i class="bi bi-info-circle"></i></button>`:''}
+            <button type="button" class="nf-btn nf-btn-ghost nf-btn-sm" data-edit="${idx}"><i class="bi bi-pencil"></i></button>
+            <button type="button" class="nf-btn nf-btn-danger nf-btn-sm" data-remove="${idx}"><i class="bi bi-trash"></i></button>
+          </td>`;
+        tbody.appendChild(tr);
+      });
+      calcTotais();
+    };
+
+    document.getElementById('btn-add-item').addEventListener('click', () => {
+      const codigo=document.getElementById('produto-codigo').value||'';
+      const descricao=prodInput.value||'';
+      const ncm=ncmInput.value||'00000000';
+      const cfop=(itemCfop?.value||'').trim();
+      const unidade=unInput.value||'UN';
+      const quantidade=Number(document.getElementById('item-quantidade').value||0);
+      const unitario=Number(unitInput.value||0);
+      const desconto=Number(document.getElementById('item-desconto').value||0);
+      const valor_frete=Number(document.getElementById('item-frete')?.value||0);
+      const valor_seguro=Number(document.getElementById('item-seguro')?.value||0);
+      const valor_outras_despesas=Number(document.getElementById('item-outras')?.value||0);
+      if(!codigo){showToast('Selecione o produto.',{variant:'warning'});return;}
+      if(quantidade<=0||unitario<=0){showToast('Quantidade e unitário devem ser > 0.',{variant:'warning'});return;}
+      const obj={codigo,descricao,ncm,cfop,unidade,quantidade,unitario,desconto,valor_frete,valor_seguro,valor_outras_despesas};
+      if(editIndex>=0){items[editIndex]=obj;editIndex=-1;}else{items.push(obj);}
+      renderItems();
+      prodCodigoHidden.value=''; prodInput.value='';
+      document.getElementById('item-quantidade').value='1';
+      unitInput.value='0'; document.getElementById('item-desconto').value='0';
+      const f1=document.getElementById('item-frete'); if(f1) f1.value='0';
+      const f2=document.getElementById('item-seguro'); if(f2) f2.value='0';
+      const f3=document.getElementById('item-outras'); if(f3) f3.value='0';
+    });
+
+    /* delegated table events */
+    const modalEl   = document.getElementById('modal-item-calculo');
+    const modalBody = document.getElementById('modal-item-calculo-body');
+    const modal     = modalEl&&typeof bootstrap!=='undefined'?new bootstrap.Modal(modalEl):null;
+
+    tbody.addEventListener('click', ev => {
+      const eBtn=ev.target.closest('[data-edit]');
+      const rBtn=ev.target.closest('[data-remove]');
+      const dBtn=ev.target.closest('[data-debug]');
+      if(eBtn){
+        const idx=Number(eBtn.getAttribute('data-edit')),it=items[idx]; editIndex=idx;
+        prodCodigoHidden.value=it.codigo; prodInput.value=it.descricao;
+        ncmInput.value=it.ncm; if(itemCfop)itemCfop.value=it.cfop;
+        unInput.value=it.unidade;
+        document.getElementById('item-quantidade').value=String(it.quantidade);
+        unitInput.value=String(it.unitario);
+        document.getElementById('item-desconto').value=String(it.desconto||0);
+        const freteInput=document.getElementById('item-frete'); if(freteInput) freteInput.value=String(it.valor_frete||0);
+        const seguroInput=document.getElementById('item-seguro'); if(seguroInput) seguroInput.value=String(it.valor_seguro||0);
+        const outrasInput=document.getElementById('item-outras'); if(outrasInput) outrasInput.value=String(it.valor_outras_despesas||0);
+        tabs.forEach(t=>t.classList.remove('active'));
+        panes.forEach(p=>p.classList.remove('active'));
+        document.querySelector('[data-tab="itens"]').classList.add('active');
+        document.getElementById('pane-itens').classList.add('active');
+      }
+      if(dBtn){
+        const idx=Number(dBtn.getAttribute('data-debug')),it=items[idx];
+        if(!it?.debug_calculo){showToast('Cálculo ainda não disponível.',{variant:'warning'});return;}
+        if(!modal||!modalBody)return;
+        const db=it.debug_calculo,bases=db.bases||{},aliq=db.aliquotas||{},vals=db.valores_calculados||{},csts=db.csts||{},extras=db.extras||{},cond=db.condicionais_aplicadas||{};
+        modalBody.innerHTML=`
+          <div class="mb-2"><strong>Produto:</strong> ${it.descricao||''}</div>
+          <div class="mb-2"><strong>Qtd:</strong> ${it.quantidade} &nbsp;<strong>Unit.:</strong> ${Number(it.unitario).toFixed(2)} &nbsp;<strong>Desc.:</strong> ${Number(it.desconto||0).toFixed(2)}</div>
+          <div class="mb-2"><strong>CFOP:</strong> ${it.cfop||''} &nbsp;<strong>NCM:</strong> ${it.ncm||''}</div>
+          <div class="mb-2"><strong>Fonte:</strong> ${db.fonte_tributacao||it.fonte_tributacao||'-'} &nbsp;<strong>CFOP res.:</strong> ${db.cfop_resolvido||'-'}</div>
+          <hr>
+          <h6>Bases</h6>
+          <div class="row g-2 mb-2">
+            <div class="col-4"><strong>Raiz:</strong> ${bases.raiz||'-'}</div>
+            <div class="col-4"><strong>ICMS:</strong> ${bases.icms||'-'}</div>
+            <div class="col-4"><strong>ST:</strong> ${bases.st||'-'}</div>
+          </div>
+          <h6>Alíquotas</h6>
+          <div class="row g-2 mb-2">
+            <div class="col-4"><strong>ICMS %:</strong> ${aliq.icms||'-'}</div><div class="col-4"><strong>ST %:</strong> ${aliq.st||'-'}</div>
+            <div class="col-4"><strong>MVA %:</strong> ${extras.mva_st||'-'}</div><div class="col-4"><strong>IPI %:</strong> ${aliq.ipi||'-'}</div>
+            <div class="col-4"><strong>PIS %:</strong> ${aliq.pis||'-'}</div><div class="col-4"><strong>COFINS %:</strong> ${aliq.cofins||'-'}</div>
+            <div class="col-4"><strong>CBS %:</strong> ${aliq.cbs||'-'}</div><div class="col-4"><strong>IBS %:</strong> ${aliq.ibs||'-'}</div>
+          </div>
+          <h6>Valores calculados</h6>
+          <div class="row g-2 mb-2">
+            <div class="col-4"><strong>ICMS:</strong> ${vals.icms||'0.00'}</div><div class="col-4"><strong>ST:</strong> ${vals.st||'0.00'}</div>
+            <div class="col-4"><strong>IPI:</strong> ${vals.ipi||'0.00'}</div><div class="col-4"><strong>PIS:</strong> ${vals.pis||'0.00'}</div>
+            <div class="col-4"><strong>COFINS:</strong> ${vals.cofins||'0.00'}</div><div class="col-4"><strong>CBS:</strong> ${vals.cbs||'0.00'}</div>
+            <div class="col-4"><strong>IBS:</strong> ${vals.ibs||'0.00'}</div>
+          </div>
+          <h6>CSTs</h6>
+          <div class="row g-2 mb-2">
+            <div class="col-4"><strong>ICMS:</strong> ${csts.icms||'-'}</div><div class="col-4"><strong>PIS:</strong> ${csts.pis||'-'}</div>
+            <div class="col-4"><strong>COFINS:</strong> ${csts.cofins||'-'}</div><div class="col-4"><strong>CBS:</strong> ${csts.cbs||'-'}</div>
+            <div class="col-4"><strong>IBS:</strong> ${csts.ibs||'-'}</div>
+          </div>
+          <h6>Condicionais CFOP</h6>
+          <div class="row g-2">
+            <div class="col-4"><strong>ICMS:</strong> ${String(cond.icms_habilitado_cfop)}</div>
+            <div class="col-4"><strong>IPI:</strong> ${String(cond.ipi_habilitado_cfop)}</div>
+            <div class="col-4"><strong>PIS/COFINS:</strong> ${String(cond.pis_cofins_habilitado_cfop)}</div>
+            <div class="col-4"><strong>CBS:</strong> ${String(cond.cbs_habilitado_cfop)}</div>
+            <div class="col-4"><strong>IBS:</strong> ${String(cond.ibs_habilitado_cfop)}</div>
+          </div>`;
+        modal.show();
+      }
+      if(rBtn){items.splice(Number(rBtn.getAttribute('data-remove')),1);renderItems();}
+    });
+
+    /* ── preencherBackendDaNota ── */
+    const preencherBackendDaNota = nota => {
+      const debug=nota?.debug_calculo||null, debugMap={};
+      if(debug&&Array.isArray(debug.itens)) debug.itens.forEach(di=>{ if(di?.id!=null)debugMap[String(di.id)]=di; });
+      if(!Array.isArray(nota?.itens)){backendTotals=null;return;}
+      let tProd=0,tDesc=0,tIcms=0,tSt=0,tIpi=0,tPis=0,tCof=0,tCbs=0,tIbs=0;
+      nota.itens.forEach((itB,idx)=>{
+        const q=Number(itB.quantidade||0),u=Number(itB.unitario||0),d=Number(itB.desconto||0);
+        tProd+=q*u-d; tDesc+=d;
+        const imp=itB.impostos||{};
+        tIcms+=Number(imp.icms_valor||0); tSt+=Number(imp.icms_st_valor||0); tIpi+=Number(imp.ipi_valor||0);
+        tPis+=Number(imp.pis_valor||0);   tCof+=Number(imp.cofins_valor||0); tCbs+=Number(imp.cbs_valor||0); tIbs+=Number(imp.ibs_valor||0);
+        if(items[idx]) items[idx]={...items[idx],cfop:(itB.cfop||items[idx].cfop||'').trim(),ncm:(itB.ncm||items[idx].ncm||'').trim(),fonte_tributacao:itB.fonte_tributacao||items[idx].fonte_tributacao,valor_total_tributos:Number(itB.valor_total_tributos||0),valor_frete:Number(itB.valor_frete??items[idx].valor_frete||0),valor_seguro:Number(itB.valor_seguro??items[idx].valor_seguro||0),valor_outras_despesas:Number(itB.valor_outras_despesas??items[idx].valor_outras_despesas||0),impostos:imp,debug_calculo:debugMap[String(itB.id)]||items[idx].debug_calculo};
+      });
+      backendTotals={produtos:tProd,desconto:tDesc,icms:tIcms,st:tSt,ipi:tIpi,pis:tPis,cofins:tCof,cbs:tCbs,ibs:tIbs};
+      calcTotais();
+    };
+
+    /* ── API ── */
+    const readJsonSafe = async r => { try { return await r.json(); } catch { return {}; } };
+    const formatApiError = d => {
+      if (!d) return 'Erro';
+      if (typeof d === 'string') return d;
+      if (d.detail) return d.detail;
+      if (d.motivo) return d.motivo;
+      if (d.erro) return d.erro;
+      try { return JSON.stringify(d); } catch { return 'Erro'; }
+    };
+    const criarNota    = async b => { const r=await authFetch(`/api/${slug}/notasfiscais/notas-fiscais/notas/`,{method:'POST',body:JSON.stringify(b)}); return {ok:r.ok,data:await readJsonSafe(r)}; };
+    const atualizarNota= async(id,b)=>{ const r=await authFetch(`/api/${slug}/notasfiscais/notas-fiscais/notas/${id}/`,{method:'PATCH',body:JSON.stringify(b)}); return {ok:r.ok,data:await readJsonSafe(r)}; };
+    const gravarNota   = async id => { const r=await authFetch(`/api/${slug}/notasfiscais/notas-fiscais/notas/${id}/gravar/`,{method:'POST',body:JSON.stringify({descricao:'Rascunho via WEB'})}); return {ok:r.ok,data:await r.json()}; };
+
+    const montarPayload = fd => {
+      const itensValidos = items
+        .filter(it => String(it?.codigo || '').trim())
+        .map(it => ({
+          produto: String(it.codigo || '').trim(),
+          quantidade: Number(it.quantidade || 0),
+          unitario: Number(it.unitario || 0),
+          desconto: Number(it.desconto || 0),
+          valor_frete: Number(it.valor_frete || 0),
+          valor_seguro: Number(it.valor_seguro || 0),
+          valor_outras_despesas: Number(it.valor_outras_despesas || 0),
+          cfop: (it.cfop || '').trim(),
+          ncm: it.ncm || '00000000',
+          cest: '',
+          cst_icms: (document.getElementById('cst-icms').value || '').trim(),
+          cst_pis: (document.getElementById('cst-pis').value || '').trim(),
+          cst_cofins: (document.getElementById('cst-cofins').value || '').trim(),
+          cst_ibs: document.getElementById('cst-ibs').value || '',
+          cst_cbs: document.getElementById('cst-cbs').value || ''
+        }));
+
+      return {
+        modelo:String(Number(fd.get('modelo')||55)), serie:String(Number(fd.get('serie')||1)),
+        numero:Number(fd.get('numero')||0),
+        data_emissao:fd.get('data_emissao')||null, data_saida:fd.get('data_saida')||fd.get('data_emissao')||null,
+        tipo_operacao:1, finalidade:Number(fd.get('tipo_documento')||1), ambiente:2,
+        destinatario:Number(document.getElementById('destinatario-id').value||0),
+        itens:itensValidos,
+        impostos:itensValidos.map(()=>({icms_aliquota:Number(aliqIcms.value||0),ibs_aliquota:Number(aliqIbs.value||0),cbs_aliquota:Number(aliqCbs.value||0)})),
+        transporte:{modalidade_frete:Number(document.getElementById('transporte-modalidade').value||0),transportadora:Number(document.getElementById('transportadora-id').value||0)||null,placa_veiculo:(document.getElementById('placa-veiculo')?.value||'').trim(),uf_veiculo:(document.getElementById('uf-veiculo')?.value||'').trim()},
+        natureza_operacao:fd.get('natureza_operacao')||'Venda de mercadoria',
+      };
+    };
+
+    /* ── Salvar ── */
+    const btnSalvar=document.getElementById('btn-salvar');
+    btnSalvar.addEventListener('click', async()=>{
+      const fd=new FormData(document.getElementById('emit-form'));
+      if(!document.getElementById('destinatario-id').value){showToast('Selecione o cliente.',{variant:'warning'});return;}
+      if(!items.length){showToast('Adicione ao menos um item.',{variant:'warning'});return;}
+      const sp=btnSalvar.querySelector('.spinner-border'); btnSalvar.disabled=true; sp?.classList.remove('d-none');
+      const payload=montarPayload(fd);
+      const result=currentNotaId?await atualizarNota(currentNotaId,payload):await criarNota(payload);
+      if(!result.ok){showToast('Falha ao salvar: '+formatApiError(result.data),{variant:'danger',delay:5000});btnSalvar.disabled=false;sp?.classList.add('d-none');return;}
+      const notaId=result.data?.id||result.data?.pk||result.data?.nota?.id;
+      if(!notaId){showToast('Nota salva, porém ID não retornado.',{variant:'warning'});btnSalvar.disabled=false;sp?.classList.add('d-none');return;}
+      currentNotaId=notaId;
+      try{preencherBackendDaNota(result.data);renderItems();}catch{}
+      const grav=await gravarNota(notaId);
+      if(!grav.ok){showToast('Falha ao gravar: '+(grav.data?.detail||'Erro'),{variant:'danger',delay:4000});btnSalvar.disabled=false;sp?.classList.add('d-none');return;}
+      window.location.href=`/web/${slug}/notas-fiscais/`;
+      btnSalvar.disabled=false;sp?.classList.add('d-none');
+    });
+
+    /* ── Calcular ── */
+    const btnCalc=document.getElementById('btn-calcular');
+    if(btnCalc) btnCalc.addEventListener('click', async()=>{
+      const fd=new FormData(document.getElementById('emit-form'));
+      if(!document.getElementById('destinatario-id').value){showToast('Selecione o cliente.',{variant:'warning'});return;}
+      if(!items.length){showToast('Adicione ao menos um item.',{variant:'warning'});return;}
+      const sp=document.createElement('span'); sp.className='spinner-border spinner-border-sm me-1';
+      btnCalc.prepend(sp); btnCalc.disabled=true;
+      try{
+        const payload=montarPayload(fd);
+        const sync=currentNotaId?await atualizarNota(currentNotaId,payload):await criarNota(payload);
+        if(!sync.ok){throw new Error('Falha ao sincronizar nota para calcular: '+formatApiError(sync.data));}
+        const notaId=sync.data?.id||sync.data?.pk||sync.data?.nota?.id;
+        if(!notaId){throw new Error('ID da nota nao retornado para calculo.');}
+        currentNotaId=notaId;
+        const r=await authFetch(`/api/calcular/${slug}/${notaId}/`,{method:'POST'});
+        if(!r.ok){let d;try{d=await r.json();}catch{}throw new Error(d?.erro||d?.detail||`Erro ${r.status}`);}
+        showToast('Cálculo realizado com sucesso.',{variant:'success'});
+        const rg=await authFetch(`/api/${slug}/notasfiscais/notas-fiscais/notas/${notaId}/`);
+        if(rg.ok){const dg=await rg.json();preencherBackendDaNota(dg);renderItems();}
+      }catch(e){showToast(e.message||String(e),{variant:'danger'});}
+      finally{btnCalc.disabled=false;if(sp?.parentNode)sp.remove();}
+    });
+    if (freteTransporteInput) {
+      freteTransporteInput.addEventListener('change', () => {
+        aplicarFreteTransporteNosItens(Number(freteTransporteInput.value || 0));
+      });
+    }
+
+    /* ── Transmitir ── */
+    document.getElementById('emit-form').addEventListener('submit', async ev=>{
+      ev.preventDefault();
+      const fd=new FormData(ev.target);
+      if(!document.getElementById('destinatario-id').value){showToast('Selecione o cliente.',{variant:'warning'});return;}
+      if(!items.length){showToast('Adicione ao menos um item.',{variant:'warning'});return;}
+      const btnS=ev.target.querySelector('button[type="submit"]');
+      const sp=btnS?.querySelector('.spinner-border');
+      if(btnS){btnS.disabled=true;sp?.classList.remove('d-none');}
+      try{
+        const payload=montarPayload(fd);
+        const created=await criarNota(payload);
+        if(!created.ok){showToast('Falha na criação: '+formatApiError(created.data),{variant:'danger',delay:5000});return;}
+        const notaId=created.data?.id||created.data?.pk||created.data?.nota?.id;
+        if(!notaId){showToast('Nota criada, porém ID não retornado.',{variant:'warning'});return;}
+        try{preencherBackendDaNota(created.data);renderItems();}catch{}
+        await gravarNota(notaId);
+        const re=await authFetch(`/api/emitir/${slug}/${notaId}/`,{method:'GET'});
+        const de=await re.json();
+        if(re.ok){
+          if(Number(de?.status)===100){const w=window.open(`/api/imprimir/${slug}/${notaId}/`,'_blank');if(w)w.focus();}
+          showToast('Emitida com sucesso. Chave: '+(de?.chave||de?.chave_acesso||''),{variant:'success'});
+          window.location.href=`/web/${slug}/notas-fiscais/`;
+        }else{
+          const raw=de?.detail||de?.detalhes||de?.mensagem||de?.motivo||de?.erro||de?.error||(typeof de==='string'?de:'')||(de?JSON.stringify(de):'');
+          showToast('Falha na emissão: '+(raw||'Erro'),{variant:'danger',delay:4000});
+        }
+      }catch(e){showToast('Erro: '+e,{variant:'danger',delay:4000});}
+      finally{if(btnS){btnS.disabled=false;sp?.classList.add('d-none');}}
+    });
+
+    renderItems();
+  })();
+</script>
+
+    
+<style>
+    .bi {
+        font-size: 1.25rem;
+
+    }
+
+    .bi-facebook {
+        color: #3b5998;
+    }
+
+    .bi-facebook:hover {
+        color: #fff200;
+    }
+
+    .bi-twitter {
+        color: #1da1f2;
+    }
+
+    .bi-twitter:hover {
+        color: #fff200;
+    }
+
+    .bi-instagram {
+        color: #e4405f;
+    }
+
+    .bi-instagram:hover {
+        color: #fff200;
+    }
+
+    .mascot-container {
+        position: fixed;
+        bottom: 35px;
+        left: 35px;
+        width: 100px;
+        height: 100px;
+        z-index: 99999;
+        cursor: pointer;
+        animation: neonFloat 3.5s ease-in-out infinite;
+    }
+
+    .mascot-img {
+        width: 100%;
+        height: 70%;
+    }
+
+    #mascot-text {
+        position: absolute;
+        bottom: -20px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 0.6rem;
+        color: #69D9F0;
+        font-weight: bold;
+        text-shadow: 0 0 9px #ffffff;
+    }
+
+    @keyframes neonFloat {
+        0% {
+            transform: translateY(0px) scale(1);
+        }
+
+        40% {
+            transform: translateY(-10px) scale(1.03);
+        }
+
+        100% {
+            transform: translateY(0px) scale(1);
+        }
+    }
+</style>
+<footer class="bg-body text-center py-3">
+    <div class="container">
+        <p class="text-body-secondary mb-1">&copy; 2025 SPS. Todos os direitos reservados.</p>
+        <div class="small text-body-secondary mb-2">
+            <span id="empresaDisplay">
+                
+                Empresa: não selecionada
+                
+            </span>
+            |
+            <span id="filialDisplay">
+                
+                Filial: não selecionada
+                
+            </span>
+        </div>
+        <div class="small">
+
+            <a href="#" class="link-secondary me-2"><i class="bi bi-facebook"></i></a>
+            <a href="#" class="link-secondary me-2"><i class="bi bi-twitter"></i></a>
+            <a href="#" class="link-secondary"><i class="bi bi-instagram"></i></a>
+        </div>
+        <p class="text-body-secondary small">
+            Versão 1.0.14
+        </p>
+        <p class="text-body-secondary small">
+            Notas de versão:
+            <a href="#" data-bs-toggle="modal" data-bs-target="#modalAtualizacoes">Clique aqui</a>
+        </p>
+    </div>
+    
+    <div id="mascot-container" class="mascot-container" onclick="toggleAssistant()">
+        <img src="/static/assis.png" class="mascot-img" style="border-radius: 65%;"><span
+            id="mascot-text">Configure aqui sua Empresa</span>
+    </div>
+    
+
+</footer>
+<style>
+    .modal-dialog {
+        max-width: 600px;
+    }
+
+    .modal-content {
+        border-radius: 10px;
+        border-color: #007bff;
+        box-shadow: 0 0 10px rgba(105, 190, 205, 0.5);
+
+    }
+
+    .modal-header {
+        border-bottom: 1px solid #a0c2e7;
+        background: linear-gradient(90deg, #0f355f, #6f1445);
+    }
+
+    .modal-title {
+        color: #fff;
+    }
+</style>
+<div class="modal fade" id="modalAtualizacoes" tabindex="-1" aria-labelledby="modalAtualizacoesLabel"
+    aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalAtualizacoesLabel">Notas de Versão</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>
+                    <strong>Versão 1.0.7</strong><br>
+                    - Novos Dashboards
+                    - Melhoria na visualização de transações no Fluxo de Caixa.
+                    - Corrigido um bug crítico na funcionalidade de login.
+                    - Adicionado controle de Pisos.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    (function () {
+        try {
+            var eNome = localStorage.getItem('empresa_nome');
+            var eId = localStorage.getItem('empresa_id');
+            var fNome = localStorage.getItem('filial_nome');
+            var fId = localStorage.getItem('filial_id');
+            var eEl = document.getElementById('empresaDisplay');
+            var fEl = document.getElementById('filialDisplay');
+            if (eEl) {
+                if (eNome) { eEl.textContent = 'Empresa: ' + eNome; }
+                else if (eId) { eEl.textContent = 'Empresa: ' + eId; }
+            }
+            if (fEl) {
+                if (fNome) { fEl.textContent = 'Filial: ' + fNome; }
+                else if (fId) { fEl.textContent = 'Filial: ' + fId; }
+            }
+        } catch (_) { }
+    })();
+    function toggleAssistant() {
+        const el = document.getElementById('assistant-bubble');
+        if (!el) return;
+        el.style.display =
+            (el.style.display === 'none' || el.style.display === '')
+                ? 'block'
+                : 'none';
+    }
+</script>
+
+    
+<div id="assistant-bubble" class="assistant-bubble" style="display:none;">
+  <div class="assistant-header">
+    <strong>Assistente de Configuração</strong>
+    <button type="button" class="assistant-close" onclick="hideAssistant()">&times;</button>
+  </div>
+  <div class="assistant-body">
+    
+    <p>Já fez sua parametrização?</p>
+    <p>Próximo: <strong>Cadastro da empresa</strong></p>
+    
+    
+    <a data-slug-route="/web/{slug}/licencas/empresas/" class="btn btn-sm btn-primary">Configurar agora</a>
+    
+    
+    <button class="btn btn-sm btn-outline-secondary" onclick="hideAssistantTemporarily()">Depois</button>
+    
+  </div>
+  <div class="assistant-footer">
+    <small>
+      
+      
+      <span class="badge bg-secondary">
+        1. Cadastro da empresa
+      </span>
+      
+      <span class="badge bg-secondary">
+        2. Cadastro de filiais
+      </span>
+      
+      <span class="badge bg-secondary">
+        3. Configuração de CFOP
+      </span>
+      
+      <span class="badge bg-secondary">
+        4. Configuração de séries
+      </span>
+      
+      
+    </small>
+  </div>
+</div>
+<script>
+  function hideAssistant() { document.getElementById('assistant-bubble').style.display = 'none'; }
+  function hideAssistantTemporarily() { document.getElementById('assistant-bubble').style.display = 'none'; }
+</script>
+<style>
+  .assistant-bubble {
+    position: fixed;
+    bottom: 130px;
+    left: 35px;
+    max-width: 320px;
+    background: linear-gradient(135deg, #4b6a83 0%, #101620 100%);
+    color: #e5e7eb;
+    border-radius: 12px;
+    padding: 12px 14px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, .45);
+    z-index: 9999;
+    font-size: .9rem;
+  }
+
+  .assistant-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+
+  .assistant-close {
+    border: none;
+    background: transparent;
+    color: #95acd3;
+    cursor: pointer;
+  }
+
+  .assistant-body p {
+    margin-bottom: 25px;
+  }
+
+  .assistant-footer {
+    margin-top: 8px;
+  }
+</style>
+
+    <div id="globalToastContainer" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080;">
+        <div id="globalToast" class="toast align-items-center text-bg-success border-0" role="alert"
+            aria-live="assertive" aria-atomic="true" data-autoshow="false">
+            <div class="d-flex">
+                <div class="toast-body" id="globalToastBody"></div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+                    aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" id="bootstrap-bundle"
+        defer
+        onerror="(function(){var s=document.createElement('script');s.src='https://unpkg.com/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js';s.defer=true;document.body.appendChild(s);})();"></script>
+    
+    
+    
+    <script>
+        window.showToast = function (message, opts) {
+            try {
+                var options = opts || {};
+                var variant = options.variant || 'success';
+                var delay = options.delay || 2000;
+                var container = document.getElementById('globalToastContainer');
+                var toastEl = document.getElementById('globalToast');
+                var bodyEl = document.getElementById('globalToastBody');
+                if (!container || !toastEl || !bodyEl) { alert(message); return; }
+                bodyEl.textContent = message || '';
+                var variants = ['primary', 'secondary', 'success', 'danger', 'warning', 'info', 'light', 'dark'];
+                variants.forEach(function (v) { toastEl.classList.remove('text-bg-' + v); });
+                toastEl.classList.add('text-bg-' + (variants.indexOf(variant) >= 0 ? variant : 'success'));
+                if (typeof bootstrap !== 'undefined' && bootstrap.Toast) {
+                    var t = new bootstrap.Toast(toastEl, { autohide: true, delay: delay });
+                    t.show();
+                } else {
+                    alert(message);
+                }
+            } catch (e) { try { alert(message); } catch (_) { } }
+        };
+    </script>
+    <script>
+        // Fallback adicional caso ambos CDNs falhem
+        document.addEventListener('DOMContentLoaded', function () {
+            try {
+                if (typeof bootstrap === 'undefined') {
+                    console.warn('Bootstrap não carregado via CDN, tentando fallback...');
+                    var s = document.createElement('script');
+                    s.src = '/static/js/bootstrap.bundle.min.js'; // opcional: coloque local se disponível
+                    s.defer = true;
+                    document.body.appendChild(s);
+                }
+            } catch (e) { console.warn('Falha ao verificar Bootstrap:', e); }
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+    <!-- Scripts adicionais abaixo -->
+    <script>window.SLUG = (typeof SLUG !== 'undefined' && SLUG) ? SLUG : ("saveweb001") || (localStorage.getItem('slug') || '');</script>
+    <!-- Reescreve links com slug em toda a página (fallback genérico) -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                const slug = localStorage.getItem('slug');
+                const links = document.querySelectorAll('[data-slug-route]');
+                links.forEach(el => {
+                    const pattern = el.getAttribute('data-slug-route');
+                    if (!pattern) return;
+                    if (slug) {
+                        el.setAttribute('href', pattern.replace('{slug}', slug));
+                    }
+                });
+            } catch (e) {
+                console.warn('Falha ao aplicar slug nas rotas:', e);
+            }
+        });
+    </script>
+    <script>
+        const btnInsights = document.getElementById("btn-insights");
+        if (btnInsights) {
+            btnInsights.addEventListener("click", function () {
+                fetch("/insights/")
+                    .then((response) => response.json())
+                    .then((data) => {
+                        document.getElementById("produto-mais-vendido").textContent = data.produto_mais_vendido;
+                        document.getElementById("quantidade-produto").textContent = data.quantidade_produto;
+                        document.getElementById("vendedor-top").textContent = data.vendedor_top;
+                        document.getElementById("cliente-top").textContent = data.cliente_top;
+                        document.getElementById("dia-mais-vendas").textContent = data.dia_mais_vendas;
+                        document.getElementById("modal-insights").style.display = "block";
+                        const produtoMenorEstoque = data.produto_menor_estoque;
+                        document.getElementById("produto-menor-estoque").textContent = produtoMenorEstoque.nome;
+                        document.getElementById("estoque-total").textContent = data.estoque_total;
+                        const clientesInativos = data.clientes_inativos;
+                        const clientesList = document.getElementById("clientes-inativos");
+                        clientesList.innerHTML = "";
+                        clientesInativos.forEach((cliente) => {
+                            const clienteItem = document.createElement("li");
+                            clienteItem.textContent = `${cliente.cliente} - Última Compra: ${cliente.data_ultima_compra} - Vendedor: ${cliente.vendedor}`;
+                            clientesList.appendChild(clienteItem);
+                        });
+                        document.getElementById("clientes-aniversario").textContent = data.clientes_aniversario;
+                    });
+            });
+        }
+    </script>
+    <script>
+        document.body.addEventListener('htmx:configRequest', (event) => {
+            event.detail.headers['X-CSRFToken'] = 'ALKY8MKCEYEFHDzlaRq59oioBP5T5psfVZ6ZpYF95sdYfFixDqBs0kOOjniybFB6';
+        });
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            function splitKeys(s) {
+                return String(s || '')
+                    .split(',')
+                    .map(function (x) { return x.trim(); })
+                    .filter(Boolean);
+            }
+
+            function applyCardFilter(el) {
+                var url = new URL(window.location.href);
+                url.searchParams.delete('page');
+
+                splitKeys(el.dataset.filterUnset).forEach(function (k) { url.searchParams.delete(k); });
+
+                var set = new URLSearchParams(el.dataset.filterSet || '');
+                set.forEach(function (v, k) {
+                    if (v === '' || v === '__clear__') url.searchParams.delete(k);
+                    else url.searchParams.set(k, v);
+                });
+
+                window.location.href = url.toString();
+            }
+
+            document.querySelectorAll('[data-filter-set],[data-filter-unset],.js-card-filter').forEach(function (el) {
+                if (el.tagName === 'A' && el.getAttribute('href') && el.getAttribute('href') !== '#') return;
+                if (el.dataset.filterSet === undefined && el.dataset.filterUnset === undefined) return;
+                el.style.cursor = 'pointer';
+                el.addEventListener('click', function (e) {
+                    try { e.preventDefault(); } catch (_) { }
+                    applyCardFilter(el);
+                });
+                el.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        try { e.preventDefault(); } catch (_) { }
+                        applyCardFilter(el);
+                    }
+                });
+                if (!el.getAttribute('tabindex')) el.setAttribute('tabindex', '0');
+                if (!el.getAttribute('role')) el.setAttribute('role', 'button');
+            });
+        });
+    </script>
+    
+</body>
+
+</html>

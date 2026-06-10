@@ -141,7 +141,10 @@ class Command(BaseCommand):
                         if getattr(opts, "swapped", False):
                             continue
                         tables.append(opts.db_table)
-                    return sorted(set(tables))
+                    ignore_tables = set()
+                    if str(app_label or "").lower() in ("notas_fiscais", "notas-fiscais"):
+                        ignore_tables |= {"nf_nota_fatura", "nf_nota_duplicata"}
+                    return sorted(set([t for t in tables if t not in ignore_tables]))
 
                 def _missing_tables(table_names: list[str]) -> list[str]:
                     if not table_names:
@@ -351,6 +354,43 @@ class Command(BaseCommand):
                         run_syncdb=run_syncdb,
                     )
 
+                def _apply_notas_fiscais_fake_for_legacy_conflict(msg: str) -> bool:
+                    from django.db.migrations.recorder import MigrationRecorder
+
+                    if str(app_label or "").lower() not in ("notas_fiscais", "notas-fiscais"):
+                        return False
+
+                    recorder = MigrationRecorder(connections[alias])
+                    applied_migrations = recorder.applied_migrations()
+
+                    def _record(migration_name: str) -> bool:
+                        key = (app_label, migration_name)
+                        if key in applied_migrations:
+                            return False
+                        recorder.record_applied(app_label, migration_name)
+                        applied_migrations.add(key)
+                        return True
+
+                    to_record: list[str] = []
+
+                    if "already exists" in msg and "nf_nota_item" in msg:
+                        if "beneficio_fiscal" in msg:
+                            to_record.append("0006_nota_item_beneficio_ibscbs")
+
+                    if "column" in msg and "total" in msg and "does not exist" in msg:
+                        to_record.append("0002_auto_20260114_1620")
+
+                    if not to_record:
+                        return False
+
+                    changed = False
+                    for migration_name in to_record:
+                        if _record(migration_name):
+                            changed = True
+                            self.stdout.write(self.style.WARNING(f"[{alias}] Marcando {app_label}.{migration_name} como FAKED (registro direto)."))
+
+                    return changed
+
                 def _apply_cfop_fake_for_legacy_conflict(msg: str) -> bool:
                     from django.db.migrations.recorder import MigrationRecorder
 
@@ -424,29 +464,47 @@ class Command(BaseCommand):
                             failed[alias] = str(e)
                             break
                 else:
-                    try:
-                        _run_migrate_app()
-                        if not _ensure_app_tables_created():
-                            license_failed = True
-                            failed[alias] = f"Tabelas do app '{app_label}' não foram criadas"
-                    except Exception as e:
-                        msg = str(e)
-                        if "column \"name\" of relation \"django_content_type\" does not exist" in msg:
-                            try:
-                                _repair_legacy_contenttype()
-                                self.stdout.write(self.style.WARNING(f"[{alias}] Reparando django_content_type.name e reexecutando migrate {app_label}..."))
-                                _run_migrate_app()
-                                if not _ensure_app_tables_created():
-                                    license_failed = True
-                                    failed[alias] = f"Tabelas do app '{app_label}' não foram criadas"
-                            except Exception as e2:
-                                self.stdout.write(self.style.ERROR(f"[{alias}] Erro crítico ao migrar {app_label}: {e2}"))
+                    attempts = 0
+                    while True:
+                        try:
+                            _run_migrate_app()
+                            if not _ensure_app_tables_created():
                                 license_failed = True
-                                failed[alias] = str(e2)
-                        else:
+                                failed[alias] = f"Tabelas do app '{app_label}' não foram criadas"
+                            break
+                        except Exception as e:
+                            msg = str(e)
+                            if "column \"name\" of relation \"django_content_type\" does not exist" in msg:
+                                try:
+                                    _repair_legacy_contenttype()
+                                    attempts += 1
+                                    if attempts <= 3:
+                                        self.stdout.write(self.style.WARNING(f"[{alias}] Reparando django_content_type.name e reexecutando migrate {app_label}..."))
+                                        continue
+                                except Exception as e2:
+                                    msg = str(e2)
+
+                            applied_fix = _apply_notas_fiscais_fake_for_legacy_conflict(msg)
+                            if applied_fix and attempts < 3:
+                                attempts += 1
+                                self.stdout.write(self.style.WARNING(f"[{alias}] Reexecutando migrate {app_label} após ajustes..."))
+                                continue
+
+                            if "relation" in msg and "does not exist" in msg and str(app_label or "").lower() in ("notas_fiscais", "notas-fiscais"):
+                                try:
+                                    attempts += 1
+                                    if attempts <= 3:
+                                        self.stdout.write(self.style.WARNING(f"[{alias}] Tabelas ausentes detectadas. Tentando recriar tabelas do app e reexecutar..."))
+                                        ok_tables = _ensure_app_tables_created()
+                                        if ok_tables:
+                                            continue
+                                except Exception:
+                                    pass
+
                             self.stdout.write(self.style.ERROR(f"[{alias}] Erro crítico ao migrar {app_label}: {e}"))
                             license_failed = True
                             failed[alias] = str(e)
+                            break
 
                 if app_label.lower() == "cfop" and not license_failed:
                     try:

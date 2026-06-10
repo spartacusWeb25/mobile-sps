@@ -33,6 +33,8 @@ class EmissaoNotaService:
         validar_dados_iniciais(dto_dict)
 
         dto_sanitized = dict(dto_dict)
+        fatura = dto_sanitized.pop("fatura", None)
+        duplicatas = dto_sanitized.pop("duplicatas", None)
         dto_sanitized.pop("tpag", None)
 
         # Resolve destinatário se for dict
@@ -63,6 +65,8 @@ class EmissaoNotaService:
             empresa=empresa,
             filial=filial,
             database=database,
+            fatura=fatura,
+            duplicatas=duplicatas,
         )
 
         from Licencas.models import Filiais

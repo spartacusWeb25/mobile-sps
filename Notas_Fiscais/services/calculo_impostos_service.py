@@ -513,3 +513,19 @@ class CalculoImpostosService:
         imposto.fcp_valor = vals.get("fcp")
 
         imposto.save(using=self.banco)
+
+        try:
+            total_item = Decimal(str(imposto.icms_valor or 0))
+            total_item += Decimal(str(imposto.icms_st_valor or 0))
+            total_item += Decimal(str(imposto.ipi_valor or 0))
+            total_item += Decimal(str(imposto.pis_valor or 0))
+            total_item += Decimal(str(imposto.cofins_valor or 0))
+            total_item += Decimal(str(imposto.ibs_valor or 0))
+            total_item += Decimal(str(imposto.cbs_valor or 0))
+            total_item += Decimal(str(imposto.fcp_valor or 0))
+            total_item += Decimal(str(getattr(imposto, "icms_uf_dest_valor", 0) or 0))
+            total_item += Decimal(str(getattr(imposto, "icms_uf_dest_fcp_valor", 0) or 0))
+            item.valor_total_tributos = total_item.quantize(Decimal("0.01"))
+            item.save(using=self.banco)
+        except Exception:
+            pass

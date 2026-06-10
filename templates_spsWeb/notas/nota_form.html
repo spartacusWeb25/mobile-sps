@@ -6,7 +6,7 @@
 <link rel="stylesheet" href="{% static 'css/form.css' %}?v=20260313">
 
 <style>
-    :root {
+  :root {
     --nf-bg: #171a1d;
     --nf-surface: #212529;
     --nf-surface2: #191e22;
@@ -28,14 +28,14 @@
   body.light {
     --nf-bg: #e4e4e4;
     --nf-surface: #ffffff;
-    --nf-surface2: #e1e2e2; 
-    --nf-border: rgba(15,23,42,.08);
-    --nf-border-strong: rgba(15,23,42,.16);
+    --nf-surface2: #e1e2e2;
+    --nf-border: rgba(15, 23, 42, .08);
+    --nf-border-strong: rgba(15, 23, 42, .16);
     --nf-text: #111827;
     --nf-muted: #435268;
     --nf-input-bg: #ffffff;
   }
- 
+
 
   .nf-wrap {
     font-family: 'Segoe UI', system-ui, sans-serif;
@@ -592,16 +592,108 @@
     const parseNumber = (v) => {
       if (v == null) return null;
       if (typeof v === 'number') return Number.isFinite(v) ? v : null;
-      const s = String(v).trim();
+      let s = String(v).trim();
       if (!s) return null;
-      const n = Number(s.replace(',', '.'));
+      if (s.includes(',')) {
+        // formato pt-BR: "111.173,93" -> remove pontos de milhar e troca vírgula por ponto
+        s = s.replace(/\./g, '').replace(',', '.');
+      }
+      const n = Number(s);
       return Number.isFinite(n) ? n : null;
+    };
+    const calcBaseTotal = (q, u, d) => ((q || 0) * (u || 0)) - (d || 0);
+    const calcFinalTotal = (base, trib) => (base || 0) + (trib || 0);
+    const getActiveItemRows = () => {
+      const itensBody = document.getElementById('itens-formset-body');
+      return Array.from(itensBody?.querySelectorAll('tr') || []).filter(tr => {
+        if (tr.id) return false;
+        if (tr.style.display === 'none') return false;
+        const del = tr.querySelector('[name$="-DELETE"]');
+        return !(del && del.checked);
+      });
+    };
+    let syncingFreteTransporte = false;
+    const atualizarFreteTransporteField = () => {
+      const freteTotalField = document.getElementById('valor-frete-transporte');
+      if (!freteTotalField || syncingFreteTransporte) return;
+      const totalFrete = getActiveItemRows().reduce((acc, tr) => {
+        return acc + (parseNumber(tr.querySelector('[name$="-valor_frete"]')?.value) || 0);
+      }, 0);
+      freteTotalField.value = totalFrete.toFixed(2);
+    };
+    const resumirItensAtivos = () => {
+      const rows = getActiveItemRows();
+      const somaProdutos = rows.reduce((acc, tr) => {
+        const totalField = tr.querySelector('[name$="-total"]');
+        const total = parseNumber(totalField?.value);
+        if (total != null) return acc + total;
+        const q = parseNumber(tr.querySelector('[name$="-quantidade"]')?.value) || 0;
+        const u = parseNumber(tr.querySelector('[name$="-unitario"]')?.value) || 0;
+        const d = parseNumber(tr.querySelector('[name$="-desconto"]')?.value) || 0;
+        return acc + calcBaseTotal(q, u, d);
+      }, 0);
+      const somaDescontos = rows.reduce((acc, tr) => acc + (parseNumber(tr.querySelector('[name$="-desconto"]')?.value) || 0), 0);
+      const somaImpostos = rows.reduce((acc, tr) => acc + (parseNumber(tr.querySelector('[name$="-valor_total_tributos"]')?.value) || 0), 0);
+      const somaFrete = rows.reduce((acc, tr) => acc + (parseNumber(tr.querySelector('[name$="-valor_frete"]')?.value) || 0), 0);
+      const somaSeguro = rows.reduce((acc, tr) => acc + (parseNumber(tr.querySelector('[name$="-valor_seguro"]')?.value) || 0), 0);
+      const somaOutras = rows.reduce((acc, tr) => acc + (parseNumber(tr.querySelector('[name$="-valor_outras_despesas"]')?.value) || 0), 0);
+      const totalNota = rows.reduce((acc, tr) => {
+        const totalField = tr.querySelector('[name$="-total"]');
+        const tribField = tr.querySelector('[name$="-valor_total_tributos"]');
+        const totalBase = parseNumber(totalField?.value) || 0;
+        const totalTrib = parseNumber(tribField?.value) || 0;
+        return acc + calcFinalTotal(totalBase, totalTrib);
+      }, 0) + somaFrete + somaSeguro + somaOutras;
+      return { somaProdutos, somaDescontos, somaImpostos, somaFrete, somaSeguro, somaOutras, totalNota };
+    };
+    const aplicarFreteTransporteNosItens = (valorFrete) => {
+      const rows = getActiveItemRows();
+      const freteTotalField = document.getElementById('valor-frete-transporte');
+      if (freteTotalField) freteTotalField.value = Number(valorFrete || 0).toFixed(2);
+      if (!rows.length) return;
+      syncingFreteTransporte = true;
+      rows.forEach((tr, idx) => {
+        const freteField = tr.querySelector('[name$="-valor_frete"]');
+        if (!freteField) return;
+        freteField.value = (idx === 0 ? Number(valorFrete || 0) : 0).toFixed(2);
+        freteField.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+      syncingFreteTransporte = false;
+      atualizarFreteTransporteField();
+      montarTotaisFromForm();
+    };
+    const montarTotaisFromForm = () => {
+      const { somaProdutos, somaDescontos, somaImpostos, somaFrete, totalNota } = resumirItensAtivos();
+
+      const totProdEl = document.getElementById('total');
+      const totProdBarEl = document.getElementById('total-produtos-bar');
+      const totDescEl = document.getElementById('total-desconto');
+      const totDescBarEl = document.getElementById('total-descontos-bar');
+      const totFreteEl = document.getElementById('total-frete');
+      const totTribEl = document.getElementById('total-tributos');
+      const totNotaEl = document.getElementById('total-nota');
+
+      if (totFreteEl) totFreteEl.value = somaFrete.toFixed(2);
+      if (totProdEl) totProdEl.value = somaProdutos.toFixed(2);
+      if (totProdBarEl) totProdBarEl.value = somaProdutos.toFixed(2);
+      if (totDescEl) totDescEl.value = somaDescontos.toFixed(2);
+      if (totDescBarEl) totDescBarEl.value = somaDescontos.toFixed(2);
+      if (totTribEl) totTribEl.value = somaImpostos.toFixed(2);
+      if (totNotaEl) totNotaEl.value = totalNota.toFixed(2);
+      atualizarFreteTransporteField();
     };
     const montarTotais = async () => {
       try {
+        if (!notaId) {
+          montarTotaisFromForm();
+          return;
+        }
         const resp = await authFetch(`/api/${slug}/notasfiscais/notas-fiscais/notas/${notaId}/`);
         const data = await resp.json();
-        if (!resp.ok) return;
+        if (!resp.ok) {
+          montarTotaisFromForm();
+          return;
+        }
         const itens = Array.isArray(data?.itens) ? data.itens : [];
         const somaProdutos = itens.reduce((acc, it) => {
           const total = parseNumber(it.total);
@@ -609,9 +701,12 @@
           const q = parseNumber(it.quantidade) || 0;
           const u = parseNumber(it.unitario) || 0;
           const d = parseNumber(it.desconto) || 0;
-          return acc + (q * u - d);
+          return acc + calcBaseTotal(q, u, d);
         }, 0);
-        let totIcms = 0, totSt = 0, totIpi = 0, totPis = 0, totCofins = 0, totCbs = 0, totIbs = 0, totFcp = 0;
+        const somaFrete = itens.reduce((acc, it) => acc + (parseNumber(it.valor_frete) || 0), 0);
+        const somaSeguro = itens.reduce((acc, it) => acc + (parseNumber(it.valor_seguro) || 0), 0);
+        const somaOutras = itens.reduce((acc, it) => acc + (parseNumber(it.valor_outras_despesas) || 0), 0);
+        let totIcms = 0, totSt = 0, totIpi = 0, totPis = 0, totCofins = 0, totCbs = 0, totIbs = 0, totFcp = 0, totTrib = 0;
         itens.forEach(it => {
           const imp = it.impostos || {};
           totIcms += parseNumber(imp.icms_valor) || 0;
@@ -622,14 +717,27 @@
           totCbs += parseNumber(imp.cbs_valor) || 0;
           totIbs += parseNumber(imp.ibs_valor) || 0;
           totFcp += parseNumber(imp.fcp_valor) || 0;
+          const itemTotTrib = parseNumber(it.valor_total_tributos);
+          if (itemTotTrib) totTrib += itemTotTrib;
         });
-        const somaImpostos = totIcms + totSt + totIpi + totPis + totCofins + totCbs + totIbs + totFcp;
+        const somaImpostos = totTrib || (totIcms + totSt + totIpi + totPis + totCofins + totCbs + totIbs + totFcp);
         const somaDescontos = itens.reduce((acc, it) => acc + (parseNumber(it.desconto) || 0), 0);
-        const totalNota = somaProdutos + somaImpostos;
+        let totalNota = itens.reduce((acc, it) => {
+          const totalBase = parseNumber(it.total) != null
+            ? parseNumber(it.total)
+            : calcBaseTotal(parseNumber(it.quantidade) || 0, parseNumber(it.unitario) || 0, parseNumber(it.desconto) || 0);
+          const totalTrib = parseNumber(it.valor_total_tributos) || 0;
+          return acc + calcFinalTotal(totalBase || 0, totalTrib);
+        }, 0) + somaFrete + somaSeguro + somaOutras;
+        const resumoForm = resumirItensAtivos();
+        if (resumoForm.totalNota > totalNota) {
+          totalNota = resumoForm.totalNota;
+        }
         const totProdEl = document.getElementById('total');
         const totProdBarEl = document.getElementById('total-produtos-bar');
         const totDescEl = document.getElementById('total-desconto');
         const totDescBarEl = document.getElementById('total-descontos-bar');
+        const totFreteEl = document.getElementById('total-frete');
         const totTribEl = document.getElementById('total-tributos');
         const totNotaEl = document.getElementById('total-nota');
         const totIcmsEl = document.getElementById('total-icms');
@@ -643,6 +751,7 @@
         if (totProdBarEl) totProdBarEl.value = somaProdutos.toFixed(2);
         if (totDescEl) totDescEl.value = somaDescontos.toFixed(2);
         if (totDescBarEl) totDescBarEl.value = somaDescontos.toFixed(2);
+        if (totFreteEl) totFreteEl.value = somaFrete.toFixed(2);
         if (totTribEl) totTribEl.value = somaImpostos.toFixed(2);
         if (totNotaEl) totNotaEl.value = totalNota.toFixed(2);
         if (totIcmsEl) totIcmsEl.value = totIcms.toFixed(2);
@@ -669,7 +778,8 @@
           if (transpField) transpField.value = transp.transportadora || '';
         }
 
-        const rows = Array.from(document.querySelectorAll('tbody tr')).filter(tr => !tr.id);
+        const itensBody = document.getElementById('itens-formset-body');
+        const rows = Array.from(itensBody?.querySelectorAll('tr') || []).filter(tr => !tr.id);
         rows.forEach((row, idx) => {
           const it = itens[idx];
           if (!it) return;
@@ -680,17 +790,32 @@
           const unit = row.querySelector('[name$="-unitario"]');
           const desc = row.querySelector('[name$="-desconto"]');
           const total = row.querySelector('[name$="-total"]');
+          const trib = row.querySelector('[name$="-valor_total_tributos"]');
+          const frete = row.querySelector('[name$="-valor_frete"]');
+          const seguro = row.querySelector('[name$="-valor_seguro"]');
+          const outras = row.querySelector('[name$="-valor_outras_despesas"]');
           const totalDisplay = row.querySelector('.item-total-display');
+          const totalMeta = row.querySelector('.item-total-meta');
           const q = parseNumber(it.quantidade);
           const u = parseNumber(it.unitario);
           const d = parseNumber(it.desconto);
           const t = parseNumber(it.total);
+          const tt = parseNumber(it.valor_total_tributos) || 0;
+          const vf = parseNumber(it.valor_frete) || 0;
+          const vs = parseNumber(it.valor_seguro) || 0;
+          const vo = parseNumber(it.valor_outras_despesas) || 0;
           if (qtd && q != null) qtd.value = q.toFixed(4);
           if (unit && u != null) unit.value = u.toFixed(4);
           if (desc && d != null) desc.value = d.toFixed(4);
           if (total && t != null) total.value = t.toFixed(2);
-          if (totalDisplay && t != null) totalDisplay.value = t.toFixed(2);
+          if (trib) trib.value = tt.toFixed(2);
+          if (frete) frete.value = vf.toFixed(2);
+          if (seguro) seguro.value = vs.toFixed(2);
+          if (outras) outras.value = vo.toFixed(2);
+          if (totalDisplay && t != null) totalDisplay.value = (calcFinalTotal(t, tt) + vf + vs + vo).toFixed(2);
+          if (totalMeta && t != null) totalMeta.textContent = `Base ${t.toFixed(2)} + Trib ${tt.toFixed(2)} + Frete ${vf.toFixed(2)} + Seg ${vs.toFixed(2)} + Out ${vo.toFixed(2)}`;
         });
+        atualizarFreteTransporteField();
       } catch { }
     };
     const formMain = document.getElementById('edit-form');
@@ -746,24 +871,23 @@
       const desc = row.querySelector('[name$="-desconto"]');
       const total = row.querySelector('[name$="-total"]');
       const totalDisplay = row.querySelector('.item-total-display');
+      const totalMeta = row.querySelector('.item-total-meta');
+      const totTribItem = row.querySelector('[name$="-valor_total_tributos"]');
+      const freteItem = row.querySelector('[name$="-valor_frete"]');
+      const seguroItem = row.querySelector('[name$="-valor_seguro"]');
+      const outrasItem = row.querySelector('[name$="-valor_outras_despesas"]');
       const atualizarTotalProdutos = () => {
         const totEl = document.getElementById('total');
         const totBarEl = document.getElementById('total-produtos-bar');
         const totDescEl = document.getElementById('total-desconto');
         const totDescBarEl = document.getElementById('total-descontos-bar');
-        const rows = Array.from(document.querySelectorAll('tbody tr')).filter(tr => !tr.id);
+        const rows = getActiveItemRows();
         const soma = rows.reduce((acc, tr) => {
-          if (tr.style.display === 'none') return acc;
-          const del = tr.querySelector('[name$="-DELETE"]');
-          if (del && del.checked) return acc;
           const totalField = tr.querySelector('[name$="-total"]');
           const v = parseNumber(totalField?.value);
           return acc + (v || 0);
         }, 0);
         const somaDesc = rows.reduce((acc, tr) => {
-          if (tr.style.display === 'none') return acc;
-          const del = tr.querySelector('[name$="-DELETE"]');
-          if (del && del.checked) return acc;
           const descField = tr.querySelector('[name$="-desconto"]');
           const v = parseNumber(descField?.value);
           return acc + (v || 0);
@@ -777,10 +901,16 @@
         const q = parseNumber(qtd?.value) || 0;
         const u = parseNumber(unit?.value) || 0;
         const d = parseNumber(desc?.value) || 0;
-        const t = q * u - d;
+        const t = calcBaseTotal(q, u, d);
+        const trib = parseNumber(totTribItem?.value) || 0;
+        const frete = parseNumber(freteItem?.value) || 0;
+        const seguro = parseNumber(seguroItem?.value) || 0;
+        const outras = parseNumber(outrasItem?.value) || 0;
         if (total) total.value = t.toFixed(2);
-        if (totalDisplay) totalDisplay.value = t.toFixed(2);
+        if (totalDisplay) totalDisplay.value = (calcFinalTotal(t, trib) + frete + seguro + outras).toFixed(2);
+        if (totalMeta) totalMeta.textContent = `Base ${t.toFixed(2)} + Trib ${trib.toFixed(2)} + Frete ${frete.toFixed(2)} + Seg ${seguro.toFixed(2)} + Out ${outras.toFixed(2)}`;
         atualizarTotalProdutos();
+        montarTotaisFromForm();
       };
       if (prodText && prodField) {
         prodField.removeAttribute('required');
@@ -827,19 +957,25 @@
         });
       }
       [qtd, unit, desc].forEach(el => el && el.addEventListener('input', recalc));
+      if (totTribItem) totTribItem.addEventListener('input', recalc);
+      if (freteItem) freteItem.addEventListener('input', recalc);
+      if (seguroItem) seguroItem.addEventListener('input', recalc);
+      if (outrasItem) outrasItem.addEventListener('input', recalc);
       recalc();
       const delBtn = row.querySelector('.btn-remove-item');
       const delField = row.querySelector('[name$="-DELETE"]');
       if (delBtn && delField) {
-        delBtn.addEventListener('click', () => { delField.checked = true; row.style.display = 'none'; atualizarTotalProdutos(); });
+        delBtn.addEventListener('click', () => { delField.checked = true; row.style.display = 'none'; atualizarTotalProdutos(); montarTotaisFromForm(); });
       }
     };
 
-    document.querySelectorAll('tbody tr').forEach(attachItemRowBehaviors);
+    document.querySelectorAll('#itens-formset-body tr').forEach(attachItemRowBehaviors);
 
     const btnAdd = document.getElementById('btn-add-item');
     const emptyRow = document.getElementById('itens-empty-row');
-    const totalForms = document.querySelector('[name$="-TOTAL_FORMS"]');
+    const itemModelField = emptyRow?.querySelector('[name$="-produto"]');
+    const itemPrefix = itemModelField?.getAttribute('name')?.split('-__prefix__-')[0];
+    const totalForms = itemPrefix ? document.querySelector(`[name="${itemPrefix}-TOTAL_FORMS"]`) : null;
     btnAdd?.addEventListener('click', () => {
       if (!emptyRow || !totalForms) return;
       const idx = Number(totalForms.value || 0);
@@ -850,6 +986,7 @@
       emptyRow.parentElement.appendChild(clone);
       totalForms.value = String(idx + 1);
       attachItemRowBehaviors(clone);
+      montarTotaisFromForm();
     });
 
     const transpText = document.getElementById('transportadora-ac');
@@ -859,12 +996,19 @@
       transpField.removeAttribute('required');
       mountAutocomplete(transpText, (q) => `/web/${slug}/notas-fiscais/transportadoras-autocomplete/?q=${encodeURIComponent(q)}`, (it) => { transpText.value = it.label; transpField.value = it.value; }, transpList);
     }
+    const freteTotalField = document.getElementById('valor-frete-transporte');
+    if (freteTotalField) {
+      freteTotalField.addEventListener('change', () => {
+        aplicarFreteTransporteNosItens(parseNumber(freteTotalField.value) || 0);
+      });
+    }
     const totalsContainer = document.createElement('div');
     totalsContainer.className = '';
     totalsContainer.innerHTML = `
-      <div class="nf-tributos-grid g4" style="margin-bottom:8px;">
+      <div class="nf-tributos-grid g5" style="margin-bottom:8px;">
         <div class="nf-field"><label>Total Produtos</label><input type="text" id="total" readonly /></div>
         <div class="nf-field"><label>Desconto</label><input type="text" id="total-desconto" readonly /></div>
+        <div class="nf-field"><label>Frete</label><input type="text" id="total-frete" readonly /></div>
         <div class="nf-field"><label>Tributos</label><input type="text" id="total-tributos" readonly /></div>
         <div class="nf-field"><label>Total Nota</label><input type="text" id="total-nota" readonly /></div>
       </div>
@@ -904,6 +1048,10 @@
       btn.addEventListener('shown.bs.tab', atualizarVisibilidadeTotais);
     });
     montarTotais();
+    const recalcListener = () => montarTotaisFromForm();
+    document.getElementById('tab-itens-btn')?.addEventListener('shown.bs.tab', recalcListener);
+    document.getElementById('tab-totais-btn')?.addEventListener('shown.bs.tab', montarTotais);
+    document.getElementById('tab-financeiro-btn')?.addEventListener('shown.bs.tab', montarTotais);
   })();
 </script>
 {% endblock %}

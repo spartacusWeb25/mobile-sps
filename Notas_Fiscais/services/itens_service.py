@@ -40,7 +40,15 @@ class ItensService:
             return
 
         cols = ItensService._get_table_columns(db_alias, "nf_nota_item")
-        missing = {"beneficio_fiscal", "ibscbs_cst", "ibscbs_cclasstrib"} - set(cols or [])
+        missing = {
+            "beneficio_fiscal",
+            "ibscbs_cst",
+            "ibscbs_cclasstrib",
+            "numero_pedido",
+            "numero_item_pedido",
+            "informacoes_adicionais",
+            "valor_total_tributos",
+        } - set(cols or [])
         if not missing:
             return
 
@@ -52,7 +60,50 @@ class ItensService:
                     cursor.execute("ALTER TABLE nf_nota_item ADD COLUMN IF NOT EXISTS ibscbs_cst varchar(3) NULL;")
                 if "ibscbs_cclasstrib" in missing:
                     cursor.execute("ALTER TABLE nf_nota_item ADD COLUMN IF NOT EXISTS ibscbs_cclasstrib varchar(6) NULL;")
+                if "numero_pedido" in missing:
+                    cursor.execute("ALTER TABLE nf_nota_item ADD COLUMN IF NOT EXISTS numero_pedido varchar(20) NULL;")
+                if "numero_item_pedido" in missing:
+                    cursor.execute("ALTER TABLE nf_nota_item ADD COLUMN IF NOT EXISTS numero_item_pedido integer NULL;")
+                if "informacoes_adicionais" in missing:
+                    cursor.execute("ALTER TABLE nf_nota_item ADD COLUMN IF NOT EXISTS informacoes_adicionais text NULL;")
+                if "valor_total_tributos" in missing:
+                    cursor.execute("ALTER TABLE nf_nota_item ADD COLUMN IF NOT EXISTS valor_total_tributos numeric(15,2) NULL DEFAULT 0;")
             ItensService._columns_cache.pop((db_alias or "default", "nf_nota_item"), None)
+        except Exception:
+            return
+
+    @staticmethod
+    def _ensure_nf_item_imposto_schema(db_alias: str) -> None:
+        try:
+            if connections[db_alias].vendor != "postgresql":
+                return
+        except Exception:
+            return
+
+        cols = ItensService._get_table_columns(db_alias, "nf_item_imposto")
+        missing = {
+            "icms_uf_dest_base",
+            "icms_uf_dest_aliquota",
+            "icms_uf_dest_valor",
+            "icms_uf_dest_fcp_valor",
+            "icms_uf_dest_partilha",
+        } - set(cols or [])
+        if not missing:
+            return
+
+        try:
+            with connections[db_alias].cursor() as cursor:
+                if "icms_uf_dest_base" in missing:
+                    cursor.execute("ALTER TABLE nf_item_imposto ADD COLUMN IF NOT EXISTS icms_uf_dest_base numeric(15,2) NULL;")
+                if "icms_uf_dest_aliquota" in missing:
+                    cursor.execute("ALTER TABLE nf_item_imposto ADD COLUMN IF NOT EXISTS icms_uf_dest_aliquota numeric(5,2) NULL;")
+                if "icms_uf_dest_valor" in missing:
+                    cursor.execute("ALTER TABLE nf_item_imposto ADD COLUMN IF NOT EXISTS icms_uf_dest_valor numeric(15,2) NULL;")
+                if "icms_uf_dest_fcp_valor" in missing:
+                    cursor.execute("ALTER TABLE nf_item_imposto ADD COLUMN IF NOT EXISTS icms_uf_dest_fcp_valor numeric(15,2) NULL;")
+                if "icms_uf_dest_partilha" in missing:
+                    cursor.execute("ALTER TABLE nf_item_imposto ADD COLUMN IF NOT EXISTS icms_uf_dest_partilha numeric(5,2) NULL;")
+            ItensService._columns_cache.pop((db_alias or "default", "nf_item_imposto"), None)
         except Exception:
             return
 
@@ -69,6 +120,7 @@ class ItensService:
         db_alias = getattr(getattr(nota, "_state", None), "db", None) or "default"
         empresa_id = getattr(nota, "empresa", None)
         ItensService._ensure_nf_nota_item_schema(db_alias)
+        ItensService._ensure_nf_item_imposto_schema(db_alias)
 
         from CFOP.services.services import MotorFiscal, get_empresa_uf_origem
         from CFOP.models import CFOP, NcmFiscalPadrao

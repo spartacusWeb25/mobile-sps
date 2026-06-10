@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from decimal import Decimal
 from typing import List, Optional
 
@@ -55,6 +55,10 @@ class ItemDTO(BaseModel):
     ncm: str
     cest: Optional[str]
     cfop: str
+    numero_pedido: Optional[str] = None
+    numero_item_pedido: Optional[int] = None
+    informacoes_adicionais: Optional[str] = None
+    valor_total_tributos: Optional[Decimal] = None
     cst_icms: str
     cst_pis: str
     cst_cofins: str
@@ -72,6 +76,11 @@ class ItemDTO(BaseModel):
     valor_icms_st: Optional[Decimal] = None
     aliq_icms_st: Optional[Decimal] = None
     mva_st: Optional[Decimal] = None
+    base_icms_uf_dest: Optional[Decimal] = None
+    aliq_icms_uf_dest: Optional[Decimal] = None
+    valor_icms_uf_dest: Optional[Decimal] = None
+    valor_fcp_uf_dest: Optional[Decimal] = None
+    partilha_icms_uf_dest: Optional[Decimal] = None
 
     base_ipi: Optional[Decimal] = None
     aliq_ipi: Optional[Decimal] = None
@@ -100,6 +109,20 @@ class ItemDTO(BaseModel):
     valor_fcp: Optional[Decimal] = None
 
 
+class FaturaDTO(BaseModel):
+    numero: Optional[str] = None
+    valor_original: Optional[Decimal] = None
+    valor_desconto: Optional[Decimal] = None
+    valor_liquido: Optional[Decimal] = None
+
+
+class DuplicataDTO(BaseModel):
+    ordem: Optional[int] = None
+    numero: str
+    data_vencimento: Optional[str] = None
+    valor: Optional[Decimal] = None
+
+
 class NotaFiscalDTO(BaseModel):
     empresa: int
     filial: int
@@ -113,11 +136,16 @@ class NotaFiscalDTO(BaseModel):
     finalidade: int
     ambiente: int
     chave_referenciada: Optional[str] = None
+    informacoes_adicionais: Optional[str] = None
+    valor_total_tributos: Optional[Decimal] = None
+    icms_uf_dest_valor_total: Optional[Decimal] = None
 
     emitente: EmitenteDTO
     destinatario: DestinatarioDTO
     responsavel_tecnico: Optional[ResponsavelTecnicoDTO] = None
     itens: List[ItemDTO]
+    fatura: Optional[FaturaDTO] = None
+    duplicatas: List[DuplicataDTO] = Field(default_factory=list)
 
     modalidade_frete: Optional[int] = None
     transportadora: Optional[DestinatarioDTO] = None

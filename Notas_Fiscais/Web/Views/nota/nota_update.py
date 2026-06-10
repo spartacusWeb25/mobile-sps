@@ -5,7 +5,7 @@ from django.urls import reverse
 from core.utils import get_licenca_db_config
 from django.core.exceptions import ValidationError
 from ....models import Nota, NotaItem
-from ...forms import NotaForm, NotaItemFormSet, TransporteForm
+from ...forms import NotaForm, NotaItemFormSet, TransporteForm, NotaFaturaForm, NotaDuplicataFormSet
 from ....services.nota_service import NotaService
 from ....services.calculo_impostos_service import CalculoImpostosService
 from ....dominio.builder import NotaBuilder
@@ -64,6 +64,16 @@ class NotaUpdateView(SPSViewMixin, UpdateView):
                 form_kwargs={"database": banco, "empresa_id": empresa},
             )
             context["transporte_form"] = TransporteForm(self.request.POST, instance=transp_instance)
+            try:
+                fatura_instance = nota.fatura
+            except Exception:
+                fatura_instance = None
+            context["fatura_form"] = NotaFaturaForm(self.request.POST, instance=fatura_instance)
+            context["duplicatas_formset"] = NotaDuplicataFormSet(
+                self.request.POST,
+                instance=nota,
+                queryset=nota.duplicatas.all().using(banco).order_by("ordem", "id"),
+            )
         else:
             context["itens_formset"] = NotaItemFormSet(
                 instance=nota,
@@ -71,6 +81,15 @@ class NotaUpdateView(SPSViewMixin, UpdateView):
                 form_kwargs={"database": banco, "empresa_id": empresa},
             )
             context["transporte_form"] = TransporteForm(instance=transp_instance)
+            try:
+                fatura_instance = nota.fatura
+            except Exception:
+                fatura_instance = None
+            context["fatura_form"] = NotaFaturaForm(instance=fatura_instance)
+            context["duplicatas_formset"] = NotaDuplicataFormSet(
+                instance=nota,
+                queryset=nota.duplicatas.all().using(banco).order_by("ordem", "id"),
+            )
 
         context["slug"] = self.kwargs.get("slug")
 
@@ -80,6 +99,8 @@ class NotaUpdateView(SPSViewMixin, UpdateView):
         context = self.get_context_data()
         itens_fs = context["itens_formset"]
         transporte_form = context["transporte_form"]
+        fatura_form = context["fatura_form"]
+        duplicatas_formset = context["duplicatas_formset"]
 
         banco = get_licenca_db_config(self.request) or "default"
         empresa = self.request.session.get("empresa_id")
@@ -108,7 +129,7 @@ class NotaUpdateView(SPSViewMixin, UpdateView):
         except Exception:
             pass
 
-        if not itens_fs.is_valid() or not transporte_form.is_valid():
+        if not itens_fs.is_valid() or not transporte_form.is_valid() or not fatura_form.is_valid() or not duplicatas_formset.is_valid():
             return self.form_invalid(form)
 
         nota_data = form.cleaned_data
@@ -121,6 +142,15 @@ class NotaUpdateView(SPSViewMixin, UpdateView):
                 continue
             itens.append(cd)
         transp = transporte_form.cleaned_data if transporte_form.has_changed() else None
+        fatura = fatura_form.cleaned_data if fatura_form.has_changed() else None
+        duplicatas = []
+        for f in duplicatas_formset:
+            cd = getattr(f, "cleaned_data", None) or {}
+            if not cd or cd.get("DELETE"):
+                continue
+            if not str(cd.get("numero") or "").strip():
+                continue
+            duplicatas.append(cd)
 
         logger.info("NotaUpdateView itens_validos=%s transporte_changed=%s", len(itens), bool(transp))
         try:
@@ -152,6 +182,8 @@ class NotaUpdateView(SPSViewMixin, UpdateView):
                 transporte=transp,
                 database=banco,
                 usuario_id=getattr(getattr(self.request, "user", None), "id", None),
+                fatura=fatura,
+                duplicatas=duplicatas,
             )
         except ValidationError as e:
             logger.exception("NotaUpdateView ValidationError pk=%s", getattr(self.object, "pk", None))

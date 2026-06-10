@@ -17,7 +17,8 @@ class NotaHandler:
         # Remove campos que não pertencem ao modelo Nota (campos extras de controle/DTO)
         campos_remover = [
             "itens", "impostos", "transporte", 
-            "natureza_operacao", "consumidor_final", "indicador_presencial"
+            "natureza_operacao", "consumidor_final", "indicador_presencial",
+            "fatura", "duplicatas", "tpag",
         ]
         
         for campo in campos_remover:

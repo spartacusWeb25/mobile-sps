@@ -1,4 +1,12 @@
-from .dto import NotaFiscalDTO, EmitenteDTO, DestinatarioDTO, ItemDTO, ResponsavelTecnicoDTO
+from .dto import (
+    NotaFiscalDTO,
+    EmitenteDTO,
+    DestinatarioDTO,
+    ItemDTO,
+    ResponsavelTecnicoDTO,
+    FaturaDTO,
+    DuplicataDTO,
+)
 from ..models import Nota
 from Licencas.models import Filiais
 from Produtos.models import Produtos
@@ -163,6 +171,10 @@ class NotaBuilder:
                 ncm=self._limpar_ncm(it.ncm),
                 cest=self._limpar_cest(it.cest),
                 cfop=self._limpar_cfop(it.cfop),
+                numero_pedido=getattr(it, "numero_pedido", None),
+                numero_item_pedido=getattr(it, "numero_item_pedido", None),
+                informacoes_adicionais=getattr(it, "informacoes_adicionais", None),
+                valor_total_tributos=getattr(it, "valor_total_tributos", None),
 
                 cst_icms=it.cst_icms,
                 cst_pis=it.cst_pis,
@@ -181,6 +193,11 @@ class NotaBuilder:
                 valor_icms_st=imp.icms_st_valor if imp else None,
                 aliq_icms_st=imp.icms_st_aliquota if imp else None,
                 mva_st=imp.icms_mva_st if imp else None,
+                base_icms_uf_dest=imp.icms_uf_dest_base if imp else None,
+                aliq_icms_uf_dest=imp.icms_uf_dest_aliquota if imp else None,
+                valor_icms_uf_dest=imp.icms_uf_dest_valor if imp else None,
+                valor_fcp_uf_dest=imp.icms_uf_dest_fcp_valor if imp else None,
+                partilha_icms_uf_dest=imp.icms_uf_dest_partilha if imp else None,
                 
                 valor_frete=it.valor_frete,
                 valor_seguro=it.valor_seguro,
@@ -210,6 +227,39 @@ class NotaBuilder:
             ))
 
         return itens
+
+    def build_fatura(self):
+        try:
+            fatura = self.nota.fatura
+        except Exception:
+            fatura = None
+        if not fatura:
+            return None
+        return FaturaDTO(
+            numero=getattr(fatura, "numero", None),
+            valor_original=getattr(fatura, "valor_original", None),
+            valor_desconto=getattr(fatura, "valor_desconto", None),
+            valor_liquido=getattr(fatura, "valor_liquido", None),
+        )
+
+    def build_duplicatas(self):
+        try:
+            duplicatas = []
+            qs = self.nota.duplicatas.all()
+            if self.database:
+                qs = qs.using(self.database)
+            for dup in qs.order_by("ordem", "id"):
+                duplicatas.append(
+                    DuplicataDTO(
+                        ordem=getattr(dup, "ordem", None),
+                        numero=str(getattr(dup, "numero", "") or "").strip(),
+                        data_vencimento=str(getattr(dup, "data_vencimento", "") or "") or None,
+                        valor=getattr(dup, "valor", None),
+                    )
+                )
+            return duplicatas
+        except Exception:
+            return []
 
     # -------------------------------
     # RESPONSÁVEL TÉCNICO
@@ -311,10 +361,15 @@ class NotaBuilder:
             finalidade=n.finalidade,
             ambiente=n.ambiente,
             chave_referenciada=str(getattr(n, "chave_referenciada", "") or "").strip() or None,
+            informacoes_adicionais=str(getattr(n, "informacoes_adicionais", "") or "").strip() or None,
+            valor_total_tributos=getattr(n, "valor_total_tributos", None),
+            icms_uf_dest_valor_total=getattr(n, "icms_uf_dest_valor_total", None),
 
             emitente=self.build_emitente(),
             destinatario=self.build_destinatario(),
             itens=self.build_itens(),
+            fatura=self.build_fatura(),
+            duplicatas=self.build_duplicatas(),
 
             modalidade_frete=frete_modalidade,
             placa=placa,
