@@ -2,92 +2,117 @@
 {% load static %}
 {% block content %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
 <link rel="stylesheet" href="{% static 'css/list.css' %}">
 <div class="container py-3">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h3 class="page-title mb-0">Parcelas — Contas a Pagar</h3>
-    <a href="{% url 'contas_a_pagar_web:parcelas_a_pagar_criar' slug=slug %}" class="btn btn-success">
-      Incluir Parcelas
-    </a>
+  <div class="row">
+    <div class="col-md-12">
+      <h3 class="page-title mb-0" style="text-align: center;">Parcelas — Contas a Pagar</h3>
+    </div>
+   
   </div>
-  <form method="get" class="row g-3 mb-3">
-    <div class="col-md-2">
-      <label class="form-label">Fornecedor (ID)</label>
-      <input type="text" name="titu_forn" value="{{ filters.titu_forn }}" class="form-control"
-        placeholder="ID do fornecedor">
+   <a href="{% url 'contas_a_pagar_web:parcelas_a_pagar_criar' slug=slug %}" class="btn btn-success">
+      <i class="bi bi-plus"></i> Incluir Parcelas
+    </a>
+    <div class="mb-4 mt-4">
+    <button class="btn btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#filtrosCollapse">
+      <i class="bi bi-funnel"></i> Filtros
+    </button>
+
+  <div id="filtrosCollapse" class="collapse">
+    <form method="get" class="row g-3 mb-3">
+      <div class="col-md-2">
+        <label class="form-label"><i class="bi bi-people-fill"></i> Fornecedor (ID)</label>
+        <input type="text" name="titu_forn" value="{{ filters.titu_forn }}" class="form-control"
+          placeholder="ID do fornecedor">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label"><i class="bi bi-person-vcard-fill"></i> Fornecedor (Nome)</label>
+        <input type="text" name="fornecedor_nome" value="{{ filters.fornecedor_nome }}" class="form-control"
+          placeholder="Nome do fornecedor">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label"><i class="bi bi-5-circle-fill"></i> Status</label>
+        <select name="titu_aber" class="form-select">
+          <option value="">Todos</option>
+          <option value="A" {% if filters.titu_aber == 'A' %}selected{% endif %}>Aberto</option>
+          <option value="P" {% if filters.titu_aber == 'P' %}selected{% endif %}>Parcial</option>
+          <option value="T" {% if filters.titu_aber == 'T' %}selected{% endif %}>Total</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label"><i class="bi bi-calendar-fill"></i> Venc. Inicial</label>
+        <input type="date" name="venc_ini" value="{{ filters.venc_ini }}" class="form-control">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label"><i class="bi bi-calendar-fill"></i> Venc. Final</label>
+        <input type="date" name="venc_fim" value="{{ filters.venc_fim }}" class="form-control">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label"><i class="bi bi-upc-scan"></i> Série</label>
+        <input type="text" name="titu_seri" value="{{ filters.titu_seri }}" class="form-control"
+          placeholder="Ex.: PEV, ORS">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label"><i class="bi bi-people-fill"></i> Título</label>
+        <input type="text" name="titu_titu" value="{{ filters.titu_titu }}" class="form-control"
+          placeholder="Ex.: 12345678901234567890123456789012">
+      </div>
+      <div class="col-12">
+        <button type="submit" class="btn btn-primary"><i class="bi bi-filter"></i> Filtrar</button>
+        <a href="?" class="btn btn-secondary"><i class="bi bi-eraser"></i> Limpar</a>
+      </div>
+    </form>
     </div>
-    <div class="col-md-2">
-      <label class="form-label">Fornecedor (Nome)</label>
-      <input type="text" name="fornecedor_nome" value="{{ filters.fornecedor_nome }}" class="form-control"
-        placeholder="Nome do fornecedor">
     </div>
-    <div class="col-md-2">
-      <label class="form-label">Status</label>
-      <select name="titu_aber" class="form-select">
-        <option value="">Todos</option>
-        <option value="A" {% if filters.titu_aber == 'A' %}selected{% endif %}>Aberto</option>
-        <option value="P" {% if filters.titu_aber == 'P' %}selected{% endif %}>Parcial</option>
-        <option value="T" {% if filters.titu_aber == 'T' %}selected{% endif %}>Total</option>
-      </select>
-    </div>
-    <div class="col-md-2">
-      <label class="form-label">Venc. Inicial</label>
-      <input type="date" name="venc_ini" value="{{ filters.venc_ini }}" class="form-control">
-    </div>
-    <div class="col-md-2">
-      <label class="form-label">Venc. Final</label>
-      <input type="date" name="venc_fim" value="{{ filters.venc_fim }}" class="form-control">
-    </div>
-    <div class="col-md-2">
-      <label class="form-label">Série</label>
-      <input type="text" name="titu_seri" value="{{ filters.titu_seri }}" class="form-control"
-        placeholder="Ex.: PEV, ORS">
-    </div>
-    <div class="col-md-2">
-      <label class="form-label">Título</label>
-      <input type="text" name="titu_titu" value="{{ filters.titu_titu }}" class="form-control"
-        placeholder="Ex.: 12345678901234567890123456789012">
-    </div>
-    <div class="col-12">
-      <button type="submit" class="btn btn-primary">Filtrar</button>
-      <a href="?" class="btn btn-secondary">Limpar</a>
-    </div>
-  </form>
-  <div class="table-responsive">
+  <div class="table-responsive p-4">
     <table class="table table-sm align-middle">
       <thead>
         <tr>
-          <th>Título</th>
-          <th>Fornecedor</th>
-          <th>Nome Fornecedor</th>
-          <th>Parcela</th>
-          <th>Valor</th>
-          <th>Emissão</th>
-          <th>Vencimento</th>
-          <th>Status</th>
+          <th><i class="bi bi-people-fill"></i> Título</></th>
+          <th><i class="bi bi-upc-scan"></i> Série</></th>
+          <th><i class="bi bi-people-fill"></i> Fornecedor</></th>
+          <th><i class="bi bi-person-vcard-fill"></i> Nome Fornecedor</></th>
+          <th><i class="bi bi-building-fill"></i> Centro de Custo</></th>
+          <th><i class="bi bi-arrow-90deg-down"></i> Qtde Parcelas</></th>
+          <th><i class="bi bi-coin-fill"></i> Valor Total</></th>
+          <th><i class="bi bi-calendar-fill"></i> 1º Vencimento</></th>
+          <th><i class="bi bi-calendar-fill"></i> Último Vencimento</></th>
+          <th><i class="bi bi-5-circle-fill"></i> Status</></th>
+          <th><i class="bi bi-earmark-text-fill"></i> Ações</></th>
         </tr>
       </thead>
       <tbody>
         {% for t in object_list %}
         <tr>
           <td>{{ t.titu_titu }}</td>
+          <td>{{ t.titu_seri }}</td>
           <td>{{ t.titu_forn }}</td>
           <td>{{ t.fornecedor_nome }}</td>
-          <td>{{ t.titu_parc }}</td>
-          <td>{{ t.titu_valo }}</td>
-          <td>{{ t.titu_emis }}</td>
-          <td>{{ t.titu_venc }}</td>
+          <td>{{ t.nome_centro_custo|default:"-" }}</td>
+          <td>{{ t.total_parcelas }}</td>
+          <td>{{ t.valor_total }}</td>
+          <td>{{ t.primeiro_vencimento }}</td>
+          <td>{{ t.ultimo_vencimento }}</td>
           <td>
-            {% if t.titu_aber == 'T' %}
+            {% if t.status_grupo == 'T' %}
             <span class="badge bg-secondary">Pago</span>
+            {% elif t.status_grupo == 'P' %}
+            <span class="badge bg-warning text-dark">Parcial</span>
             {% else %}
             <span class="badge bg-primary">Aberto</span>
             {% endif %}
           </td>
+          <td>
+            <a href="{% url 'contas_a_pagar_web:parcelas_a_pagar_editar' slug=slug titu_forn=t.titu_forn titu_titu=t.titu_titu titu_seri=t.titu_seri %}"
+              class="btn btn-sm btn-outline-primary">
+              Editar Parcelas
+            </a>
+          </td>
         </tr>
         {% empty %}
         <tr>
-          <td colspan="7" class="text-center">Sem parcelas</td>
+          <td colspan="11" class="text-center">Sem parcelas</td>
         </tr>
         {% endfor %}
       </tbody>

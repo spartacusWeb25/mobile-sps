@@ -12,7 +12,7 @@
         <div class="card-header text-center py-3">
             <h3 class="mb-0 d-flex align-items-center justify-content-center">
                 <i class="bi bi-credit-card-2-front-fill"></i>
-                Gerar Parcelas — Pagar
+                {% if modo_edicao %}Editar Parcelas — Pagar{% else %}Gerar Parcelas — Pagar{% endif %}
             </h3>
         </div>
         <div class="card-body p-4">
@@ -32,8 +32,9 @@
             </div>
             {% endif %}
 
-            <form method="post">
+            <form method="post" id="parcelas-form">
                 {% csrf_token %}
+                <input type="hidden" name="parcelas_json" id="parcelas-json">
                 <div class="form-section">
                     <div class="row g-3">
                         <div class="col-md-2">
@@ -49,6 +50,8 @@
                         <div class="col-md-8 position-relative">
                             <label class="form-label" for="{{ form.titu_forn.id_for_label }}">Fornecedor</label>
                             <input type="text" class="form-control" id="autocomplete-fornecedor"
+                                value="{{ fornecedor_display|default:'' }}"
+                                {% if modo_edicao %}readonly{% endif %}
                                 placeholder="Digite nome ou código do fornecedor">
                             {{ form.titu_forn.as_hidden }}
                             {% if form.titu_forn.errors %}
@@ -112,9 +115,12 @@
 
                 <div class="form-section">
                     <div class="row g-3">
-                        <div class="col-md-4">
+                        <div class="col-md-4 position-relative">
                             <label class="form-label" for="{{ form.titu_cecu.id_for_label }}">Centro de Custo</label>
-                            {{ form.titu_cecu }}
+                            <input type="text" class="form-control" id="autocomplete-cecu"
+                                value="{{ centro_custo_display|default:'' }}"
+                                placeholder="Digite o código ou nome do centro de custo">
+                            {{ form.titu_cecu.as_hidden }}
                             {% if form.titu_cecu.errors %}
                             <div class="invalid-feedback d-block">{{ form.titu_cecu.errors|striptags }}</div>
                             {% endif %}
@@ -122,13 +128,50 @@
                     </div>
                 </div>
 
+                <div class="form-section">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h5 class="mb-1">Resumo das Parcelas</h5>
+                            <small class="text-muted" id="parcelas-resumo-texto">
+                                Informe quantidade, valor total e primeiro vencimento para visualizar as parcelas.
+                            </small>
+                        </div>
+                        <button type="button" class="btn btn-outline-primary btn-sm" id="recalcular-parcelas">
+                            <i class="bi bi-arrow-repeat me-1"></i> Recalcular Parcelas
+                        </button>
+                    </div>
+                    <div class="alert alert-info py-2 mb-3" id="parcelas-resumo-box">
+                        <strong id="parcelas-resumo-quantidade">0</strong> parcela(s)
+                        totalizando <strong id="parcelas-resumo-total">0.00</strong>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th style="width: 120px;">Parcela</th>
+                                    <th style="width: 220px;">Vencimento</th>
+                                    <th style="width: 220px;">Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody id="parcelas-preview-body">
+                                <tr>
+                                    <td colspan="3" class="text-center text-muted py-3">
+                                        Nenhuma parcela montada.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
                 <div class="d-flex gap-2 justify-content-end">
-                    <a href="{% url 'contas_a_pagar_web:titulos_pagar_list' slug=request.resolver_match.kwargs.slug %}"
+                    <a href="{% url 'contas_a_pagar_web:parcelas_a_pagar_list' slug=request.resolver_match.kwargs.slug %}"
                         class="btn btn-outline-danger">
                         <i class="bi bi-x-circle me-1"></i> Cancelar
                     </a>
                     <button type="submit" class="btn btn-outline-success">
-                        <i class="bi bi-check-circle me-1"></i> Gerar Parcelas
+                        <i class="bi bi-check-circle me-1"></i>
+                        {% if modo_edicao %}Salvar Parcelas{% else %}Gerar Parcelas{% endif %}
                     </button>
                 </div>
             </form>
@@ -146,10 +189,13 @@
             return ''
         }
     })();
+    const modoEdicao = {% if modo_edicao %}true{% else %}false{% endif %};
+    const parcelasExistentes = {{ parcelas_existentes_json|safe }};
     (function () {
         const input = document.getElementById('autocomplete-fornecedor');
         const hidden = document.getElementById('{{ form.titu_forn.id_for_label }}');
         if (!input || !hidden) return;
+        if (modoEdicao) return;
         let controller = null;
         let dd = null;
         function dropdown() {
@@ -200,6 +246,223 @@
         });
         document.addEventListener('click', e => {
             if (dd && !input.parentElement.contains(e.target)) dd.innerHTML = '';
+        });
+    })();
+
+    (function () {
+        const inputCC = document.getElementById('autocomplete-cecu');
+        const hiddenCC = document.getElementById('{{ form.titu_cecu.id_for_label }}');
+        if (!inputCC || !hiddenCC) return;
+        let controllerCC = null;
+        let ddCC = null;
+        function dropdownCC() {
+            if (ddCC) return ddCC;
+            ddCC = document.createElement('div');
+            ddCC.className = 'list-group position-absolute w-100';
+            ddCC.style.zIndex = '1000';
+            ddCC.style.maxHeight = '260px';
+            ddCC.style.overflowY = 'auto';
+            ddCC.style.marginTop = '4px';
+            inputCC.parentElement.appendChild(ddCC);
+            return ddCC;
+        }
+        inputCC.addEventListener('input', async function () {
+            const term = this.value.trim();
+            if (term.length < 2) { if (ddCC) ddCC.innerHTML = ''; return; }
+            try {
+                if (controllerCC) controllerCC.abort();
+                controllerCC = new AbortController();
+                const url = `/web/${slugP}/contas-a-pagar/autocomplete/centrodecustos/?q=${encodeURIComponent(term)}`;
+                const r = await fetch(url, { signal: controllerCC.signal });
+                const j = await r.json();
+                const results = j.results || [];
+                const d = dropdownCC(); d.innerHTML = '';
+                if (results.length === 0) {
+                    const empty = document.createElement('div');
+                    empty.className = 'list-group-item text-muted';
+                    empty.textContent = 'Nenhum centro de custo encontrado';
+                    d.appendChild(empty);
+                    return;
+                }
+                results.forEach(it => {
+                    const a = document.createElement('a');
+                    a.href = '#';
+                    a.className = 'list-group-item list-group-item-action';
+                    a.textContent = it.label || it.value || '';
+                    a.addEventListener('click', ev => {
+                        ev.preventDefault();
+                        hiddenCC.value = it.value || '';
+                        inputCC.value = it.label || it.value || '';
+                        d.innerHTML = '';
+                    });
+                    d.appendChild(a);
+                });
+            } catch (e) {
+                if (e.name !== 'AbortError') console.error(e);
+            }
+        });
+        document.addEventListener('click', e => {
+            if (ddCC && !inputCC.parentElement.contains(e.target)) ddCC.innerHTML = '';
+        });
+    })();
+
+    (function () {
+        const form = document.getElementById('parcelas-form');
+        const quantidadeInput = document.getElementById('{{ form.titu_parc.id_for_label }}');
+        const valorTotalInput = document.getElementById('{{ form.titu_valo.id_for_label }}');
+        const vencimentoInput = document.getElementById('{{ form.titu_venc.id_for_label }}');
+        const body = document.getElementById('parcelas-preview-body');
+        const resumoTexto = document.getElementById('parcelas-resumo-texto');
+        const resumoQuantidade = document.getElementById('parcelas-resumo-quantidade');
+        const resumoTotal = document.getElementById('parcelas-resumo-total');
+        const parcelasJsonInput = document.getElementById('parcelas-json');
+        const recalcularBtn = document.getElementById('recalcular-parcelas');
+        if (!form || !quantidadeInput || !valorTotalInput || !vencimentoInput || !body || !parcelasJsonInput) return;
+
+        function parseMoney(value) {
+            const normalized = String(value || '').replace(',', '.').trim();
+            const number = Number(normalized);
+            return Number.isFinite(number) ? number : 0;
+        }
+
+        function formatMoney(value) {
+            return Number(value || 0).toFixed(2);
+        }
+
+        function addMonths(dateString, months) {
+            const source = new Date(`${dateString}T00:00:00`);
+            if (Number.isNaN(source.getTime())) return '';
+            const result = new Date(source);
+            const originalDay = result.getDate();
+            result.setMonth(result.getMonth() + months, 1);
+            const lastDay = new Date(result.getFullYear(), result.getMonth() + 1, 0).getDate();
+            result.setDate(Math.min(originalDay, lastDay));
+            return result.toISOString().slice(0, 10);
+        }
+
+        function readRows() {
+            return Array.from(body.querySelectorAll('tr[data-row="parcela"]')).map((row, index) => ({
+                parcela: String(index + 1),
+                vencimento: row.querySelector('[data-field="vencimento"]').value,
+                valor: formatMoney(parseMoney(row.querySelector('[data-field="valor"]').value)),
+            }));
+        }
+
+        function updateResumo(parcelas) {
+            const total = parcelas.reduce((acc, item) => acc + parseMoney(item.valor), 0);
+            resumoQuantidade.textContent = parcelas.length;
+            resumoTotal.textContent = formatMoney(total);
+            if (!parcelas.length) {
+                resumoTexto.textContent = 'Informe quantidade, valor total e primeiro vencimento para visualizar as parcelas.';
+                return;
+            }
+            resumoTexto.textContent = modoEdicao
+                ? `Serão atualizadas ${parcelas.length} parcela(s) deste título.`
+                : `Serão geradas ${parcelas.length} parcela(s) para este título.`;
+        }
+
+        function serializeRows() {
+            const parcelas = readRows();
+            parcelasJsonInput.value = JSON.stringify(parcelas);
+            updateResumo(parcelas);
+        }
+
+        function renderRows(parcelas) {
+            body.innerHTML = '';
+            if (!parcelas.length) {
+                body.innerHTML = `
+                    <tr>
+                        <td colspan="3" class="text-center text-muted py-3">Nenhuma parcela montada.</td>
+                    </tr>
+                `;
+                parcelasJsonInput.value = '[]';
+                updateResumo([]);
+                return;
+            }
+
+            parcelas.forEach((item, index) => {
+                const row = document.createElement('tr');
+                row.setAttribute('data-row', 'parcela');
+                row.innerHTML = `
+                    <td>
+                        <input type="number" class="form-control" value="${index + 1}" readonly>
+                    </td>
+                    <td>
+                        <input type="date" class="form-control" data-field="vencimento" value="${item.vencimento || ''}">
+                    </td>
+                    <td>
+                        <input type="number" class="form-control" data-field="valor" step="0.01" min="0.01" value="${formatMoney(item.valor)}">
+                    </td>
+                `;
+                body.appendChild(row);
+            });
+
+            body.querySelectorAll('[data-field]').forEach((input) => {
+                input.addEventListener('input', serializeRows);
+                input.addEventListener('change', serializeRows);
+            });
+
+            serializeRows();
+        }
+
+        function buildDefaultSchedule() {
+            const quantidade = parseInt(quantidadeInput.value || '0', 10);
+            const valorTotal = parseMoney(valorTotalInput.value);
+            const primeiroVencimento = vencimentoInput.value;
+            if (!quantidade || quantidade < 1 || !valorTotal || !primeiroVencimento) {
+                renderRows([]);
+                return;
+            }
+
+            const base = Math.floor((valorTotal / quantidade) * 100) / 100;
+            const parcelas = [];
+            let acumulado = 0;
+            for (let i = 1; i <= quantidade; i += 1) {
+                let valor = base;
+                if (i === quantidade) {
+                    valor = Number((valorTotal - acumulado).toFixed(2));
+                } else {
+                    acumulado = Number((acumulado + valor).toFixed(2));
+                }
+                parcelas.push({
+                    parcela: String(i),
+                    vencimento: addMonths(primeiroVencimento, i - 1),
+                    valor,
+                });
+            }
+            renderRows(parcelas);
+        }
+
+        const quantidadeInicial = parseInt(quantidadeInput.value || '0', 10);
+        if (Array.isArray(parcelasExistentes) && parcelasExistentes.length) {
+            renderRows(parcelasExistentes.map((item, index) => ({
+                parcela: item.parcela || String(index + 1),
+                vencimento: item.vencimento || '',
+                valor: parseMoney(item.valor),
+            })));
+        } else if (quantidadeInicial > 0) {
+            buildDefaultSchedule();
+        }
+
+        recalcularBtn.addEventListener('click', buildDefaultSchedule);
+        quantidadeInput.addEventListener('change', buildDefaultSchedule);
+        valorTotalInput.addEventListener('change', buildDefaultSchedule);
+        vencimentoInput.addEventListener('change', buildDefaultSchedule);
+
+        form.addEventListener('submit', function (event) {
+            serializeRows();
+            const parcelas = readRows();
+            if (!parcelas.length) {
+                event.preventDefault();
+                alert('Monte ao menos uma parcela antes de salvar.');
+                return;
+            }
+            const totalParcelas = Number(parcelas.reduce((acc, item) => acc + parseMoney(item.valor), 0).toFixed(2));
+            const totalInformado = Number(parseMoney(valorTotalInput.value).toFixed(2));
+            if (totalParcelas !== totalInformado) {
+                event.preventDefault();
+                alert('A soma das parcelas deve ser igual ao valor total informado.');
+            }
         });
     })();
 </script>

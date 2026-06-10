@@ -14,7 +14,7 @@ class TitulosPagarForm(forms.ModelForm):
             'titu_forn': forms.NumberInput(attrs={'class': 'form-control'}),
             'titu_titu': forms.TextInput(attrs={'class': 'form-control'}),
             'titu_seri': forms.TextInput(attrs={'class': 'form-control'}),
-            'titu_parc': forms.TextInput(attrs={'class': 'form-control'}),
+            'titu_parc': forms.NumberInput(attrs={'class': 'form-control', 'min': '1', 'step': '1'}),
             'titu_emis': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'titu_venc': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'titu_form_reci': forms.Select(attrs={'class': 'form-select'}),
@@ -24,10 +24,14 @@ class TitulosPagarForm(forms.ModelForm):
         unique_together = ()
 
     def __init__(self, *args, **kwargs):
+        bloquear_parcela = kwargs.pop('bloquear_parcela', True)
         super().__init__(*args, **kwargs)
         # Em edição, não permitir alteração de chaves compostas para evitar conflitos de PK/UK
         if getattr(self.instance, 'pk', None):
-            for f in ('titu_forn', 'titu_titu', 'titu_seri', 'titu_parc'):
+            bloqueados = ['titu_forn', 'titu_titu', 'titu_seri']
+            if bloquear_parcela:
+                bloqueados.append('titu_parc')
+            for f in bloqueados:
                 if f in self.fields:
                     self.fields[f].disabled = True
                     attrs = self.fields[f].widget.attrs
