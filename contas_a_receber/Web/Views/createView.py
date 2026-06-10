@@ -1,3 +1,4 @@
+import json
 from django.views.generic import CreateView
 from django.shortcuts import redirect
 from django.contrib import messages
@@ -7,6 +8,56 @@ from ..forms import TitulosReceberForm
 from ...models import Titulosreceber
 from ...validators import validar_datas_titulo
 from django.db import IntegrityError
+from django.core.exceptions import ValidationError
+from Entidades.models import Entidades
+from CentrodeCustos.models import Centrodecustos
+
+
+def _carregar_parcelas_planejadas(request):
+    bruto = (request.POST.get('parcelas_json') or '').strip()
+    if not bruto:
+        return None
+    try:
+        data = json.loads(bruto)
+    except json.JSONDecodeError as exc:
+        raise ValidationError('Cronograma de parcelas inválido.') from exc
+    if not isinstance(data, list):
+        raise ValidationError('Cronograma de parcelas inválido.')
+    return data
+
+
+def _display_cliente(banco, empresa_id, cliente_id):
+    if not cliente_id:
+        return ''
+    try:
+        cliente = (
+            Entidades.objects.using(banco)
+            .filter(enti_empr=str(empresa_id), enti_clie=int(cliente_id))
+            .only('enti_clie', 'enti_nome')
+            .first()
+        )
+    except (TypeError, ValueError):
+        cliente = None
+    if not cliente:
+        return str(cliente_id)
+    return f'{cliente.enti_clie} - {cliente.enti_nome}'
+
+
+def _display_centro_custo(banco, empresa_id, centro_custo_id):
+    if not centro_custo_id:
+        return ''
+    try:
+        centro = (
+            Centrodecustos.objects.using(banco)
+            .filter(cecu_empr=int(empresa_id), cecu_redu=int(centro_custo_id))
+            .only('cecu_redu', 'cecu_nome')
+            .first()
+        )
+    except (TypeError, ValueError):
+        centro = None
+    if not centro:
+        return str(centro_custo_id)
+    return f'{centro.cecu_redu} - {centro.cecu_nome}'
 
 
 class TitulosReceberCreateView(DBAndSlugMixin, CreateView):
@@ -106,12 +157,31 @@ class TitulosReceberParcelasCreateView(DBAndSlugMixin, CreateView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['titulo'] = self.object
+        banco = get_licenca_db_config(self.request) or 'default'
+        cliente_id = None
+        centro_custo_id = None
+        form = context.get('form')
+        if form is not None:
+            cliente_id = form.data.get('titu_clie') or form.initial.get('titu_clie') or getattr(form.instance, 'titu_clie', None)
+            centro_custo_id = form.data.get('titu_cecu') or form.initial.get('titu_cecu') or getattr(form.instance, 'titu_cecu', None)
+        context.update({
+            'empresa_id': self.empresa_id,
+            'filial_id': self.filial_id,
+            'modo_edicao': False,
+            'cliente_display': _display_cliente(banco, self.empresa_id, cliente_id),
+            'centro_custo_display': _display_centro_custo(banco, self.empresa_id, centro_custo_id),
+            'parcelas_existentes_json': '[]',
+        })
         return context
     
     def form_valid(self, form):
         banco = get_licenca_db_config(self.request) or 'default'
         dados = form.cleaned_data
+        try:
+            parcelas_planejadas = _carregar_parcelas_planejadas(self.request)
+        except ValidationError as exc:
+            form.add_error(None, exc.message)
+            return self.form_invalid(form)
         empresa = (self.request.session.get('empresa_id')
                or self.request.headers.get('X-Empresa')
                or self.request.GET.get('titu_empr')
@@ -168,9 +238,14 @@ class TitulosReceberParcelasCreateView(DBAndSlugMixin, CreateView):
             form.add_error(None, '❌ Já existe um título com essas condições (mesma empresa, filial, cliente, número, série e parcela).')
             return self.form_invalid(form)
         
-        gera_parcelas_a_receber(
-            titulo=self.object,
-            banco=banco,
-        )
+        try:
+            gera_parcelas_a_receber(
+                titulo=self.object,
+                banco=banco,
+                parcelas_planejadas=parcelas_planejadas,
+            )
+        except ValidationError as exc:
+            form.add_error(None, '; '.join(exc.messages))
+            return self.form_invalid(form)
         messages.success(self.request, '✅ Parcelas criadas com sucesso!')
         return redirect('contas_a_receber_web:parcelas_a_receber_list', slug=self.slug)

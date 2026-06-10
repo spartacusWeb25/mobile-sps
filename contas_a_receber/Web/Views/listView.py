@@ -2,7 +2,7 @@ from django.views.generic import ListView
 from ..mixin import DBAndSlugMixin
 from django.utils import timezone
 from django.utils.http import urlencode
-from django.db.models import Sum, Q
+from django.db.models import Sum, Q, Count, Min, Max
 from django.http import JsonResponse
 from core.utils import get_licenca_db_config
 from ...models import Titulosreceber, Baretitulos
@@ -244,6 +244,70 @@ class TitulosReceberListView(DBAndSlugMixin, ListView):
 
 class TitulosReceberParcelasListView(TitulosReceberListView):
     template_name = 'ContasAReceber/parcelas_receber_list.html'
+
+    def get_queryset(self):
+        base_qs = super().get_queryset()
+        return (
+            base_qs.values('titu_empr', 'titu_fili', 'titu_clie', 'titu_titu', 'titu_seri')
+            .annotate(
+                total_parcelas=Count('titu_parc'),
+                valor_total=Sum('titu_valo'),
+                primeiro_vencimento=Min('titu_venc'),
+                ultimo_vencimento=Max('titu_venc'),
+                titu_cecu=Max('titu_cecu'),
+                status_grupo=Max('titu_aber'),
+            )
+            .order_by('primeiro_vencimento', 'titu_titu')
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super(TitulosReceberListView, self).get_context_data(**kwargs)
+        page_obj = context.get('page_obj')
+        object_list = list(context.get('object_list') or [])
+
+        cliente_ids = {item['titu_clie'] for item in object_list if item.get('titu_clie')}
+        cecu_ids = {item['titu_cecu'] for item in object_list if item.get('titu_cecu')}
+
+        entidades_map = {}
+        if cliente_ids:
+            ents = Entidades.objects.using(self.db_alias).filter(enti_clie__in=list(cliente_ids))
+            entidades_map = {e.enti_clie: e.enti_nome for e in ents}
+
+        centros_map = {}
+        if cecu_ids:
+            centros = Centrodecustos.objects.using(self.db_alias).filter(cecu_redu__in=list(cecu_ids))
+            centros_map = {int(c.cecu_redu): c.cecu_nome for c in centros}
+
+        for item in object_list:
+            item['cliente_nome'] = entidades_map.get(item.get('titu_clie'), '')
+            item['nome_centro_custo'] = centros_map.get(item.get('titu_cecu'), '')
+
+        if page_obj is not None:
+            page_obj.object_list = object_list
+
+        preserved = {
+            'titu_empr': self.empresa_id,
+            'titu_fili': self.filial_id,
+            'titu_clie': self.request.GET.get('titu_clie') or '',
+            'titu_titu': self.request.GET.get('titu_titu') or '',
+            'titu_parc': self.request.GET.get('titu_parc') or '',
+            'cliente_nome': self.request.GET.get('cliente_nome') or '',
+            'nome_centro_custo': self.request.GET.get('nome_centro_custo') or '',
+            'titu_aber': self.request.GET.get('titu_aber') or '',
+            'venc_ini': self.request.GET.get('venc_ini') or '',
+            'venc_fim': self.request.GET.get('venc_fim') or '',
+            'titu_seri': self.request.GET.get('titu_seri') or '',
+        }
+
+        context.update({
+            'object_list': object_list,
+            'slug': self.slug,
+            'empresa_id': self.empresa_id,
+            'filial_id': self.filial_id,
+            'preserved_query': urlencode({k: v for k, v in preserved.items() if v}),
+            'filters': preserved,
+        })
+        return context
 
 def autocomplete_clientes(request, slug=None):
     banco = get_licenca_db_config(request) or 'default'

@@ -20,6 +20,127 @@ def _validar_campos_obrigatorios(dados):
     if erros:
         raise ValidationError(erros)
 
+
+def _add_months(d: date, m: int) -> date:
+    y = d.year + (d.month - 1 + m) // 12
+    mo = (d.month - 1 + m) % 12 + 1
+    last = monthrange(y, mo)[1]
+    day = d.day if d.day <= last else last
+    return date(y, mo, day)
+
+
+def _money(value) -> Decimal:
+    return Decimal(str(value or 0)).quantize(Decimal('0.01'))
+
+
+def _parcela_sort_key(value) -> int:
+    try:
+        return int(str(value))
+    except (TypeError, ValueError):
+        return 0
+
+
+def _filtro_titulo(obj: Titulosreceber) -> dict:
+    return {
+        'titu_empr': obj.titu_empr,
+        'titu_fili': obj.titu_fili,
+        'titu_clie': obj.titu_clie,
+        'titu_titu': obj.titu_titu,
+        'titu_seri': obj.titu_seri,
+        'titu_parc': obj.titu_parc,
+        'titu_emis': obj.titu_emis,
+        'titu_venc': obj.titu_venc,
+    }
+
+
+def _campos_replicados_titulo(titulo: Titulosreceber) -> dict:
+    return {
+        'titu_cont': titulo.titu_cont,
+        'titu_cecu': titulo.titu_cecu,
+        'titu_even': titulo.titu_even,
+        'titu_prov': titulo.titu_prov,
+        'titu_hist': titulo.titu_hist,
+        'titu_aber': titulo.titu_aber or 'A',
+        'titu_ctrl': titulo.titu_ctrl,
+        'titu_form_reci': titulo.titu_form_reci,
+        'titu_tipo': titulo.titu_tipo,
+        'titu_port': titulo.titu_port,
+        'titu_situ': titulo.titu_situ,
+    }
+
+
+def _gerar_parcelas_padrao(*, quantidade: int, total: Decimal, vencimento_inicial: date) -> list[dict]:
+    base = (total / Decimal(quantidade)).quantize(Decimal('0.01'))
+    diferenca = total - (base * quantidade)
+    parcelas = []
+    for i in range(1, quantidade + 1):
+        valor = base if i < quantidade else base + diferenca
+        parcelas.append({
+            'parcela': str(i),
+            'vencimento': _add_months(vencimento_inicial, i - 1),
+            'valor': _money(valor),
+        })
+    return parcelas
+
+
+def _normalizar_parcelas_planejadas(
+    parcelas_planejadas,
+    *,
+    quantidade_padrao: int,
+    total_esperado: Decimal,
+    vencimento_inicial: date,
+) -> list[dict]:
+    total_esperado = _money(total_esperado)
+    if not parcelas_planejadas:
+        return _gerar_parcelas_padrao(
+            quantidade=quantidade_padrao,
+            total=total_esperado,
+            vencimento_inicial=vencimento_inicial,
+        )
+
+    normalizadas = []
+    for indice, item in enumerate(parcelas_planejadas, start=1):
+        if not isinstance(item, dict):
+            raise ValidationError({'detail': ['Cronograma de parcelas inválido.']})
+
+        parcela = str(item.get('parcela') or indice).strip()
+        valor = _money(item.get('valor'))
+        vencimento = item.get('vencimento')
+
+        if not parcela:
+            raise ValidationError({'detail': [f'Parcela {indice} sem identificação.']})
+        if valor <= 0:
+            raise ValidationError({'detail': [f'Parcela {parcela} com valor inválido.']})
+        if isinstance(vencimento, str):
+            try:
+                vencimento = date.fromisoformat(vencimento)
+            except ValueError as exc:
+                raise ValidationError({'detail': [f'Parcela {parcela} com vencimento inválido.']}) from exc
+        if not isinstance(vencimento, date):
+            raise ValidationError({'detail': [f'Parcela {parcela} com vencimento inválido.']})
+
+        normalizadas.append({
+            'parcela': parcela,
+            'vencimento': vencimento,
+            'valor': valor,
+        })
+
+    normalizadas.sort(key=lambda item: _parcela_sort_key(item['parcela']))
+    esperadas = [str(i) for i in range(1, len(normalizadas) + 1)]
+    atuais = [item['parcela'] for item in normalizadas]
+    if atuais != esperadas:
+        raise ValidationError({'detail': ['As parcelas devem ser sequenciais a partir de 1.']})
+
+    total_informado = sum((item['valor'] for item in normalizadas), Decimal('0.00')).quantize(Decimal('0.01'))
+    if total_informado != total_esperado:
+        raise ValidationError({
+            'detail': [
+                f'Total das parcelas ({total_informado}) difere do valor total informado ({total_esperado}).'
+            ]
+        })
+
+    return normalizadas
+
 def criar_titulo_receber(*, banco: str, dados: dict, empresa_id: int, filial_id: int) -> Titulosreceber:
     if not dados.get('titu_empr'):
         dados['titu_empr'] = empresa_id
@@ -90,40 +211,125 @@ def excluir_titulo_receber(titulo: Titulosreceber, *, banco: str) -> None:
         titulo.delete(using=banco)
 
 
-def gera_parcelas_a_receber(titulo: Titulosreceber, *, banco: str) -> None:
-    def _add_months(d: date, m: int) -> date:
-        y = d.year + (d.month - 1 + m) // 12
-        mo = (d.month - 1 + m) % 12 + 1
-        last = monthrange(y, mo)[1]
-        day = d.day if d.day <= last else last
-        return date(y, mo, day)
+def gera_parcelas_a_receber(titulo: Titulosreceber, *, banco: str, parcelas_planejadas=None) -> None:
     with transaction.atomic(using=banco):
-        n = int(str(titulo.titu_parc))
-        total = Decimal(str(titulo.titu_valo or 0))
-        base = (total / Decimal(n)).quantize(Decimal('0.01'))
-        dif = total - (base * n)
-        venc_base = titulo.titu_venc
-        valor_1 = base if n > 1 else base + dif
-        titulo.titu_parc = '1'
-        titulo.titu_venc = venc_base
-        titulo.titu_valo = valor_1
-        titulo.save(using=banco)
-        for i in range(2, n + 1):
-            v = base if i < n else base + dif
+        quantidade = int(str(titulo.titu_parc))
+        parcelas = _normalizar_parcelas_planejadas(
+            parcelas_planejadas,
+            quantidade_padrao=quantidade,
+            total_esperado=_money(titulo.titu_valo),
+            vencimento_inicial=titulo.titu_venc,
+        )
+        filtro_original = _filtro_titulo(titulo)
+        primeira = parcelas[0]
+        Titulosreceber.objects.using(banco).filter(**filtro_original).update(
+            titu_parc=primeira['parcela'],
+            titu_venc=primeira['vencimento'],
+            titu_valo=primeira['valor'],
+            titu_cecu=titulo.titu_cecu,
+        )
+
+        campos_replicados = _campos_replicados_titulo(titulo)
+        for item in parcelas[1:]:
             Titulosreceber.objects.using(banco).create(
                 titu_empr=titulo.titu_empr,
                 titu_fili=titulo.titu_fili,
                 titu_clie=titulo.titu_clie,
                 titu_titu=titulo.titu_titu,
                 titu_seri=titulo.titu_seri,
-                titu_parc=str(i),
+                titu_parc=item['parcela'],
                 titu_emis=titulo.titu_emis,
-                titu_venc=_add_months(venc_base, i - 1),
-                titu_valo=v,
-                titu_aber=titulo.titu_aber or 'A',
-                titu_form_reci=titulo.titu_form_reci,
-                titu_tipo=titulo.titu_tipo,
+                titu_venc=item['vencimento'],
+                titu_valo=item['valor'],
+                **campos_replicados,
             )
+
+
+def atualizar_grupo_parcelas_receber(
+    titulo: Titulosreceber,
+    *,
+    banco: str,
+    dados: dict,
+    parcelas_planejadas=None,
+) -> list[Titulosreceber]:
+    with transaction.atomic(using=banco):
+        grupo = list(
+            Titulosreceber.objects.using(banco)
+            .filter(
+                titu_empr=titulo.titu_empr,
+                titu_fili=titulo.titu_fili,
+                titu_clie=titulo.titu_clie,
+                titu_titu=titulo.titu_titu,
+                titu_seri=titulo.titu_seri,
+            )
+            .order_by('titu_parc', 'titu_venc')
+        )
+        if not grupo:
+            raise ValidationError({'detail': ['Grupo de parcelas não encontrado.']})
+
+        if any((item.titu_aber or 'A') != 'A' for item in grupo):
+            raise ValueError('Somente grupos com parcelas em aberto podem ser reorganizados.')
+
+        parcelas = _normalizar_parcelas_planejadas(
+            parcelas_planejadas,
+            quantidade_padrao=int(str(dados['titu_parc'])),
+            total_esperado=_money(dados.get('titu_valo')),
+            vencimento_inicial=dados.get('titu_venc'),
+        )
+
+        campos_comuns = {
+            'titu_emis': dados.get('titu_emis'),
+            'titu_form_reci': dados.get('titu_form_reci'),
+            'titu_cecu': dados.get('titu_cecu'),
+        }
+
+        atualizados = []
+        for indice, item in enumerate(parcelas):
+            payload = {
+                'titu_parc': item['parcela'],
+                'titu_emis': campos_comuns['titu_emis'],
+                'titu_venc': item['vencimento'],
+                'titu_valo': item['valor'],
+                'titu_form_reci': campos_comuns['titu_form_reci'],
+                'titu_cecu': campos_comuns['titu_cecu'],
+            }
+            if indice < len(grupo):
+                atual = grupo[indice]
+                Titulosreceber.objects.using(banco).filter(**_filtro_titulo(atual)).update(**payload)
+            else:
+                atual = Titulosreceber.objects.using(banco).create(
+                    titu_empr=titulo.titu_empr,
+                    titu_fili=titulo.titu_fili,
+                    titu_clie=titulo.titu_clie,
+                    titu_titu=titulo.titu_titu,
+                    titu_seri=titulo.titu_seri,
+                    titu_aber='A',
+                    titu_cont=titulo.titu_cont,
+                    titu_even=titulo.titu_even,
+                    titu_prov=titulo.titu_prov,
+                    titu_hist=titulo.titu_hist,
+                    titu_ctrl=titulo.titu_ctrl,
+                    titu_tipo=titulo.titu_tipo,
+                    titu_port=titulo.titu_port,
+                    titu_situ=titulo.titu_situ,
+                    **payload,
+                )
+                atualizados.append(atual)
+                continue
+
+            atual.titu_parc = payload['titu_parc']
+            atual.titu_emis = payload['titu_emis']
+            atual.titu_venc = payload['titu_venc']
+            atual.titu_valo = payload['titu_valo']
+            atual.titu_form_reci = payload['titu_form_reci']
+            atual.titu_cecu = payload['titu_cecu']
+            atualizados.append(atual)
+
+        for excedente in grupo[len(parcelas):]:
+            Titulosreceber.objects.using(banco).filter(**_filtro_titulo(excedente)).delete()
+
+        atualizados.sort(key=lambda item: _parcela_sort_key(item.titu_parc))
+        return atualizados
 
 
 def _resolver_banco_recebimento(titulo: Titulosreceber, *, banco: str, dados: dict) -> int:

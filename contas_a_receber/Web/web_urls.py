@@ -1,7 +1,7 @@
 from django.urls import path
 from .Views.listView import TitulosReceberListView, TitulosReceberParcelasListView, autocomplete_clientes
 from .Views.createView import TitulosReceberCreateView, TitulosReceberParcelasCreateView
-from .Views.updateView import TitulosReceberUpdateView
+from .Views.updateView import TitulosReceberUpdateView, TitulosReceberParcelasUpdateView
 from .Views.deleteView import TitulosReceberDeleteView
 from .Views.autocompletes import autocomplete_cc, autocomplete_bancos, autocomplete_planocontas, autocomplete_planodecontas
 
@@ -12,6 +12,11 @@ urlpatterns = [
     path('', TitulosReceberListView.as_view(), name='titulos_receber_list'),
     path('parcelas/', TitulosReceberParcelasListView.as_view(), name='parcelas_a_receber_list'),
     path('parcelas/novo/', TitulosReceberParcelasCreateView.as_view(), name='parcelas_a_receber_criar'),
+    path(
+        'parcelas/editar/<int:titu_clie>/<str:titu_titu>/<str:titu_seri>/',
+        TitulosReceberParcelasUpdateView.as_view(),
+        name='parcelas_a_receber_editar',
+    ),
     path('novo/', TitulosReceberCreateView.as_view(), name='criar'),
     path('editar/<str:titu_titu>/<str:titu_parc>/', TitulosReceberUpdateView.as_view(), name='editar'),
     path('excluir/<str:titu_titu>/', TitulosReceberDeleteView.as_view(), name='excluir'),
