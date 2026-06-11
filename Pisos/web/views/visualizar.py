@@ -2,13 +2,44 @@ from django.shortcuts import get_object_or_404, render
 from django.db.models import CharField
 from django.db.models import Value
 from django.db.models.functions import Cast, Coalesce, Lower
-import Entidades
 from core.utils import get_db_from_slug
 from core.mixins.vendedor_mixin import VendedorEntidadeMixin
-from Pisos.models import Pedidospisos, Itenspedidospisos
+from Pisos.models import Pedidospisos, Itenspedidospisos, StatusPisos
 from Produtos.models import Produtos
 from Entidades.models import Entidades
 from CFOP.services.fiscal_status_service import obter_status_fiscal_produtos
+
+
+def _buscar_status_pisos(banco, empresa, filial, tipo, codigo):
+    """
+    Busca o status na tabela StatusPisos pelo código.
+    Retorna (descricao, cor) ou (None, None) se não encontrar.
+    """
+    if codigo is None:
+        return None, None
+
+    try:
+        codigo = int(codigo)
+    except (ValueError, TypeError):
+        return None, None
+
+    qs = StatusPisos.objects.using(banco).filter(
+        stat_tipo=tipo,
+        stat_codigo=codigo,
+        stat_ativo=True,
+    )
+
+    # Tenta com empresa/filial exatos primeiro
+    status = qs.filter(stat_empr=empresa, stat_fili=filial).first()
+
+    # Fallback: qualquer registro do mesmo tipo/código
+    if not status:
+        status = qs.first()
+
+    if status:
+        return status.stat_desc, status.stat_cor
+
+    return None, None
 
 
 def visualizar_pedido_pisos(request, slug, pk):
@@ -35,7 +66,6 @@ def visualizar_pedido_pisos(request, slug, pk):
     except ValueError as e:
         # Handle database data corruption (invalid dates)
         if "year" in str(e).lower() or "out of range" in str(e).lower():
-            # Fix corrupted dates in database
             from datetime import date
             from django.db import connections
             current_date = date.today()
@@ -46,7 +76,6 @@ def visualizar_pedido_pisos(request, slug, pk):
                     [current_date, pk]
                 )
 
-            # Retry the query after fixing
             pedido = get_object_or_404(qs, pedi_nume=pk)
         raise
     except Exception:
@@ -70,9 +99,7 @@ def visualizar_pedido_pisos(request, slug, pk):
         try:
             pedido = get_object_or_404(qs, pedi_nume=pk)
         except ValueError as e:
-            # Handle database data corruption (invalid dates)
             if "year" in str(e).lower() or "out of range" in str(e).lower():
-                # Fix corrupted dates in database
                 from datetime import date
                 from django.db import connections
                 current_date = date.today()
@@ -83,7 +110,6 @@ def visualizar_pedido_pisos(request, slug, pk):
                         [current_date, pk]
                     )
 
-                # Retry the query after fixing
                 pedido = get_object_or_404(qs, pedi_nume=pk)
             raise
 
@@ -105,12 +131,28 @@ def visualizar_pedido_pisos(request, slug, pk):
     produtos = Produtos.objects.using(banco).filter(
         prod_codi__in=[i.item_prod for i in itens]
     )
+
     cliente_obj = get_object_or_404(
         Entidades.objects.using(banco),
         enti_empr=pedido.pedi_empr,
         enti_clie=pedido.pedi_clie,
     )
     cliente_nome = cliente_obj.enti_nome
+
+    vendedor_obj = Entidades.objects.using(banco).filter(
+        enti_empr=pedido.pedi_empr,
+        enti_vend=pedido.pedi_vend,
+    ).first()
+    vendedor_nome = vendedor_obj.enti_nome if vendedor_obj else ''
+
+    # Status do pedido (nome + cor da tabela StatusPisos)
+    status_nome, status_cor = _buscar_status_pisos(
+        banco=banco,
+        empresa=pedido.pedi_empr,
+        filial=pedido.pedi_fili,
+        tipo=StatusPisos.TIPO_PEDIDO,
+        codigo=getattr(pedido, 'pedi_stat', None),
+    )
 
     mapa_produtos = {
         p.prod_codi: p
@@ -153,5 +195,8 @@ def visualizar_pedido_pisos(request, slug, pk):
             "pedido": pedido,
             "itens": itens,
             "cliente_nome": cliente_nome,
+            "vendedor_nome": vendedor_nome,
+            "status_nome": status_nome,
+            "status_cor": status_cor,
         }
     )

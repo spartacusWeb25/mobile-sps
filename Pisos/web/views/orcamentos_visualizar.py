@@ -5,10 +5,42 @@ from django.db.models.functions import Cast, Coalesce, Lower
 
 from core.utils import get_db_from_slug
 from core.mixins.vendedor_mixin import VendedorEntidadeMixin
-from Pisos.models import Itensorcapisos, Orcamentopisos
+from Pisos.models import Itensorcapisos, Orcamentopisos, StatusPisos
 from Produtos.models import Produtos
 from Entidades.models import Entidades
 from CFOP.services.fiscal_status_service import obter_status_fiscal_produtos
+
+
+def _buscar_status_pisos(banco, empresa, filial, tipo, codigo):
+    """
+    Busca o status na tabela StatusPisos pelo código.
+    Retorna (descricao, cor) ou (None, None) se não encontrar.
+    """
+    if codigo is None:
+        return None, None
+
+    try:
+        codigo = int(codigo)
+    except (ValueError, TypeError):
+        return None, None
+
+    qs = StatusPisos.objects.using(banco).filter(
+        stat_tipo=tipo,
+        stat_codigo=codigo,
+        stat_ativo=True,
+    )
+
+    # Tenta com empresa/filial exatos primeiro
+    status = qs.filter(stat_empr=empresa, stat_fili=filial).first()
+
+    # Fallback: qualquer registro do mesmo tipo/código
+    if not status:
+        status = qs.first()
+
+    if status:
+        return status.stat_desc, status.stat_cor
+
+    return None, None
 
 
 def visualizar_orcamento_pisos(request, slug, pk):
@@ -33,9 +65,7 @@ def visualizar_orcamento_pisos(request, slug, pk):
     try:
         orcamento = get_object_or_404(qs, orca_nume=pk)
     except ValueError as e:
-        # Handle database data corruption (invalid dates)
         if "year" in str(e).lower() or "out of range" in str(e).lower():
-            # Fix corrupted dates in database
             from datetime import date
             from django.db import connections
             current_date = date.today()
@@ -46,11 +76,9 @@ def visualizar_orcamento_pisos(request, slug, pk):
                     [current_date, current_date, pk]
                 )
 
-            # Retry the query after fixing
             orcamento = get_object_or_404(qs, orca_nume=pk)
         raise
     except Exception:
-        # If multiple results, try with empresa/filial filters from session
         empresa_id = (
             request.session.get('empresa_id')
             or request.session.get('empresa')
@@ -70,9 +98,7 @@ def visualizar_orcamento_pisos(request, slug, pk):
         try:
             orcamento = get_object_or_404(qs, orca_nume=pk)
         except ValueError as e:
-            # Handle database data corruption (invalid dates)
             if "year" in str(e).lower() or "out of range" in str(e).lower():
-                # Fix corrupted dates in database
                 from datetime import date
                 from django.db import connections
                 current_date = date.today()
@@ -83,7 +109,6 @@ def visualizar_orcamento_pisos(request, slug, pk):
                         [current_date, current_date, pk]
                     )
 
-                # Retry the query after fixing
                 orcamento = get_object_or_404(qs, orca_nume=pk)
             raise
 
@@ -116,6 +141,15 @@ def visualizar_orcamento_pisos(request, slug, pk):
         enti_vend=orcamento.orca_vend,
     ).first()
     vendedor_nome = vendedor_obj.enti_nome if vendedor_obj else ''
+
+    # Status do orçamento (nome + cor da tabela StatusPisos)
+    status_nome, status_cor = _buscar_status_pisos(
+        banco=banco,
+        empresa=orcamento.orca_empr,
+        filial=orcamento.orca_fili,
+        tipo=StatusPisos.TIPO_ORCAMENTO,
+        codigo=getattr(orcamento, 'orca_stat', None),
+    )
 
     mapa_produtos = {
         p.prod_codi: p
@@ -156,6 +190,7 @@ def visualizar_orcamento_pisos(request, slug, pk):
             "itens": itens,
             "cliente_nome": cliente_nome,
             "vendedor_nome": vendedor_nome,
-            "orcamento": orcamento,
+            "status_nome": status_nome,
+            "status_cor": status_cor,
         }
     )

@@ -22,7 +22,6 @@
     --accent: #4f8ef7;
     --text: #000;
     --muted: #9aa999;
-
   }
 
   .page-wrap {
@@ -78,6 +77,17 @@
     font-weight: 700;
   }
 
+  .status-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+  }
+
   .table-dark {
     --bs-table-bg: transparent;
     --bs-table-striped-bg: rgba(255, 255, 255, .03);
@@ -97,6 +107,9 @@
     <div class="page-title">
       <span>Pedido Pisos</span>
       <span style="color:var(--muted);font-weight:400">#{{ pedido.pedi_nume }}</span>
+      {% if status_nome %}
+      <span class="status-badge" style="background: {{ status_cor|default:'#6c757d' }};">{{ status_nome }}</span>
+      {% endif %}
     </div>
     <div class="d-flex gap-2 flex-wrap">
       <a class="btn btn-outline-secondary btn-sm" href="{% url 'PisosWeb:pedidos_pisos_listar' slug=slug %}"><i
@@ -115,6 +128,8 @@
   </div>
 
   <div class="page-body {% if request.GET.white %} white {% endif %}">
+
+    <!-- Linha 1: Cliente / Total / Orçamento -->
     <div class="row g-3 mb-3">
       <div class="col-12 col-lg-4">
         <div class="cardx">
@@ -136,6 +151,7 @@
       </div>
     </div>
 
+    <!-- Linha 2: Desconto / Frete / Crédito -->
     <div class="row g-3 mb-3">
       <div class="col-12 col-lg-4">
         <div class="cardx">
@@ -157,11 +173,43 @@
       </div>
     </div>
 
+    <!-- Linha 3: Status / Vendedor / Data -->
+    <div class="row g-3 mb-3">
+      <div class="col-12 col-lg-4">
+        <div class="cardx">
+          <div class="label">Status</div>
+          <div class="value">
+            {% if status_nome %}
+              <span class="status-badge" style="background: {{ status_cor|default:'#6c757d' }};">{{ status_nome }}</span>
+            {% elif pedido.pedi_stat is not None %}
+              {{ pedido.pedi_stat }}
+            {% else %}
+              —
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      <div class="col-12 col-lg-4">
+        <div class="cardx">
+          <div class="label">Vendedor</div>
+          <div class="value">{{ vendedor_nome|default:pedido.pedi_vend|default:"—" }}</div>
+        </div>
+      </div>
+      <div class="col-12 col-lg-4">
+        <div class="cardx">
+          <div class="label">Data</div>
+          <div class="value">{{ pedido.pedi_data|default:"—" }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Observações -->
     <div class="cardx mb-3">
       <div class="label">Observações</div>
       <div class="value" style="font-weight:400">{{ pedido.pedi_obse|default:"—" }}</div>
     </div>
 
+    <!-- Itens -->
     <div class="cardx">
       <div class="label mb-2">Itens</div>
       <div class="table-responsive">
