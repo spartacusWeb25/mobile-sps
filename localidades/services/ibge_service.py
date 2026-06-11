@@ -177,3 +177,67 @@ class IBGEService:
         cidade.save(using=banco)
 
         return cidade, True
+
+    @classmethod
+    def _sincronizar_municipio(cls, banco, municipio, estado, pais):
+        _, created = Cidades.objects.using(banco).update_or_create(
+            cida_codi=municipio["id"],
+            defaults={
+                "cida_nome": (municipio["nome"] or "").strip(),
+                "cida_esta": estado,
+                "cida_pais": pais,
+                "cida_sigl": estado.esta_sigl,
+            },
+        )
+        return created
+
+    @classmethod
+    def sincronizar_cidades(cls, banco):
+        """
+        Cria/atualiza todas as cidades do Brasil com base nas UFs do IBGE.
+        Preserva o frete já cadastrado manualmente.
+        Retorna {'criados': X, 'atualizados': Y, 'ufs_processadas': Z}.
+        """
+        cls.sincronizar_estados(banco)
+        pais = cls._obter_ou_criar_pais_brasil(banco)
+
+        criados = 0
+        atualizados = 0
+        ufs_processadas = 0
+
+        for uf in cls.listar_estados_api():
+            estado = cls._obter_ou_criar_estado(banco, uf)
+            municipios = cls.listar_municipios_por_uf_api(uf["id"])
+            ufs_processadas += 1
+
+            for municipio in municipios:
+                created = cls._sincronizar_municipio(
+                    banco=banco,
+                    municipio=municipio,
+                    estado=estado,
+                    pais=pais,
+                )
+                if created:
+                    criados += 1
+                else:
+                    atualizados += 1
+
+        return {
+            "criados": criados,
+            "atualizados": atualizados,
+            "ufs_processadas": ufs_processadas,
+        }
+
+    @classmethod
+    def sincronizar_tudo(cls, banco):
+        """
+        Sincroniza países, estados e cidades em sequência.
+        """
+        paises = cls.sincronizar_paises(banco)
+        estados = cls.sincronizar_estados(banco)
+        cidades = cls.sincronizar_cidades(banco)
+        return {
+            "paises": paises,
+            "estados": estados,
+            "cidades": cidades,
+        }

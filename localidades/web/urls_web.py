@@ -21,6 +21,8 @@ from .views.cidades_views import (
     CidadesCreateView,
     CidadesUpdateView,
     CidadesDeleteView,
+    sincronizar_cidades_ibge,
+    sincronizar_localidades_ibge,
     importar_cidade_ibge,
 )
 
@@ -46,5 +48,7 @@ urlpatterns = [
     path("cidades/nova/", CidadesCreateView.as_view(), name="cidades_criar"),
     path("cidades/<int:pk>/editar/", CidadesUpdateView.as_view(), name="cidades_editar"),
     path("cidades/<int:pk>/excluir/", CidadesDeleteView.as_view(), name="cidades_excluir"),
+    path("cidades/sincronizar-ibge/", sincronizar_cidades_ibge, name="cidades_sincronizar_ibge"),
+    path("cidades/sincronizar-tudo-ibge/", sincronizar_localidades_ibge, name="localidades_sincronizar_tudo_ibge"),
     path("cidades/importar-ibge/", importar_cidade_ibge, name="cidades_importar_ibge"),
 ]

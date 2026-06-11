@@ -124,3 +124,19 @@ class CidadesViewSet(MultiBancoViewSet):
             {"criada": criada, "cidade": serializer.data},
             status=status.HTTP_201_CREATED if criada else status.HTTP_200_OK,
         )
+
+    @action(detail=False, methods=["post"], url_path="sincronizar-ibge")
+    def sincronizar_ibge(self, request, *args, **kwargs):
+        try:
+            resultado = IBGEService.sincronizar_cidades(self.banco)
+            return Response(resultado, status=status.HTTP_200_OK)
+        except IBGEServiceError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_502_BAD_GATEWAY)
+
+    @action(detail=False, methods=["post"], url_path="sincronizar-tudo-ibge")
+    def sincronizar_tudo_ibge(self, request, *args, **kwargs):
+        try:
+            resultado = IBGEService.sincronizar_tudo(self.banco)
+            return Response(resultado, status=status.HTTP_200_OK)
+        except IBGEServiceError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_502_BAD_GATEWAY)

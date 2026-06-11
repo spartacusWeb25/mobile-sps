@@ -9,6 +9,20 @@
       <span>Cidades</span>
     </div>
     <div class="d-flex gap-2 flex-wrap">
+      <form method="post" action="{% url 'LocalidadesWeb:localidades_sincronizar_tudo_ibge' slug=slug %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-outline-warning btn-sm"
+          onclick="return confirm('Sincronizar paises, estados e cidades do IBGE de uma vez?')">
+          <i class="bi bi-globe2"></i> Sincronizar Tudo
+        </button>
+      </form>
+      <form method="post" action="{% url 'LocalidadesWeb:cidades_sincronizar_ibge' slug=slug %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-outline-info btn-sm"
+          onclick="return confirm('Sincronizar todas as cidades do IBGE?')">
+          <i class="bi bi-cloud-download"></i> Sincronizar Cidades
+        </button>
+      </form>
       <a class="btn btn-outline-success btn-sm" href="{% url 'LocalidadesWeb:cidades_criar' slug=slug %}">
         <i class="bi bi-plus-lg"></i> Nova
       </a>
@@ -18,19 +32,19 @@
   <div class="page-body">
 
     {% if messages %}
-      {% for message in messages %}
-      <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
-        {{ message }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-      </div>
-      {% endfor %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
     {% endif %}
 
     <!-- Importar do IBGE -->
     <div class="cardx mb-3">
       <div class="label mb-2">Importar cidade do IBGE</div>
       <form method="post" action="{% url 'LocalidadesWeb:cidades_importar_ibge' slug=slug %}"
-            class="row g-2 align-items-end">
+        class="row g-2 align-items-end">
         {% csrf_token %}
         <div class="col-12 col-md-6 col-lg-4">
           {{ form_ibge.codigo_ibge }}
@@ -48,13 +62,12 @@
       <form method="get" class="row g-2 align-items-end">
         <div class="col-12 col-md-5 col-lg-4">
           <div class="label mb-1">Buscar por nome</div>
-          <input type="text" name="q" value="{{ q }}" class="form-control form-control-sm"
-                 placeholder="Nome da cidade">
+          <input type="text" name="q" value="{{ q }}" class="form-control form-control-sm" placeholder="Nome da cidade">
         </div>
         <div class="col-6 col-md-2">
           <div class="label mb-1">UF</div>
           <input type="text" name="uf" value="{{ uf }}" maxlength="2"
-                 class="form-control form-control-sm text-uppercase" placeholder="PR">
+            class="form-control form-control-sm text-uppercase" placeholder="PR">
         </div>
         <div class="col-auto">
           <button type="submit" class="btn btn-outline-primary btn-sm">
@@ -93,11 +106,11 @@
               <td class="text-end">{{ cidade.cida_fret|default:"—" }}</td>
               <td class="text-end">
                 <a class="btn btn-outline-primary btn-sm"
-                   href="{% url 'LocalidadesWeb:cidades_editar' slug=slug pk=cidade.pk %}">
+                  href="{% url 'LocalidadesWeb:cidades_editar' slug=slug pk=cidade.pk %}">
                   <i class="bi bi-pencil"></i> Editar
                 </a>
                 <a class="btn btn-outline-danger btn-sm"
-                   href="{% url 'LocalidadesWeb:cidades_excluir' slug=slug pk=cidade.pk %}">
+                  href="{% url 'LocalidadesWeb:cidades_excluir' slug=slug pk=cidade.pk %}">
                   <i class="bi bi-trash"></i> Excluir
                 </a>
               </td>
@@ -119,7 +132,7 @@
           {% if page_obj.has_previous %}
           <li class="page-item">
             <a class="page-link"
-               href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if uf %}&uf={{ uf }}{% endif %}">«</a>
+              href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if uf %}&uf={{ uf }}{% endif %}">«</a>
           </li>
           {% endif %}
           <li class="page-item disabled">
@@ -128,7 +141,7 @@
           {% if page_obj.has_next %}
           <li class="page-item">
             <a class="page-link"
-               href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if uf %}&uf={{ uf }}{% endif %}">»</a>
+              href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if uf %}&uf={{ uf }}{% endif %}">»</a>
           </li>
           {% endif %}
         </ul>

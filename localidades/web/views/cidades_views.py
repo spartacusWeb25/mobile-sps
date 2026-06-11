@@ -3,6 +3,7 @@
 from django.contrib import messages
 from django.shortcuts import redirect
 from django.urls import reverse
+from django.views.decorators.http import require_POST
 
 from core.utils import get_licenca_db_config
 from localidades.models import Cidades
@@ -58,6 +59,47 @@ class CidadesDeleteView(LocalidadeDeleteView):
     model = Cidades
     url_lista = "LocalidadesWeb:cidades_listar"
     mensagem_sucesso = "Cidade excluída com sucesso."
+
+
+@require_POST
+def sincronizar_cidades_ibge(request, slug):
+    """Importa/atualiza todas as cidades do IBGE."""
+    destino = reverse("LocalidadesWeb:cidades_listar", kwargs={"slug": slug})
+    banco = get_licenca_db_config(request) or "default"
+
+    try:
+        resultado = IBGEService.sincronizar_cidades(banco)
+        messages.success(
+            request,
+            f"Cidades sincronizadas com o IBGE: "
+            f"{resultado['criados']} criadas, {resultado['atualizados']} atualizadas "
+            f"em {resultado['ufs_processadas']} UFs.",
+        )
+    except IBGEServiceError as exc:
+        messages.error(request, str(exc))
+
+    return redirect(destino)
+
+
+@require_POST
+def sincronizar_localidades_ibge(request, slug):
+    """Sincroniza países, estados e cidades em sequência."""
+    destino = reverse("LocalidadesWeb:cidades_listar", kwargs={"slug": slug})
+    banco = get_licenca_db_config(request) or "default"
+
+    try:
+        resultado = IBGEService.sincronizar_tudo(banco)
+        messages.success(
+            request,
+            "Localidades sincronizadas com o IBGE: "
+            f"Paises {resultado['paises']['criados']} criados/{resultado['paises']['atualizados']} atualizados, "
+            f"Estados {resultado['estados']['criados']} criados/{resultado['estados']['atualizados']} atualizados, "
+            f"Cidades {resultado['cidades']['criados']} criadas/{resultado['cidades']['atualizados']} atualizadas.",
+        )
+    except IBGEServiceError as exc:
+        messages.error(request, str(exc))
+
+    return redirect(destino)
 
 
 def importar_cidade_ibge(request, slug):
