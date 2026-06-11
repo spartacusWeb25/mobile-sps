@@ -448,7 +448,7 @@
       const hoje       = normalizar(new Date());
       const avisos     = [];
 
-      if (emissao    && emissao    < hoje)    avisos.push('Data de emissão anterior à data atual.');
+
       if (vencimento && vencimento < hoje)    avisos.push('Data de vencimento anterior à data atual.');
       if (emissao && vencimento && vencimento < emissao) avisos.push('Data de vencimento menor que a data de emissão.');
 
