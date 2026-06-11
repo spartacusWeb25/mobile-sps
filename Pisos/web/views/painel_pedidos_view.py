@@ -1,10 +1,14 @@
 # views/painel_pedidos_view.py
 
 from django.shortcuts import render
+
+from core.utils import get_db_from_slug
 from Pisos.services.painel_gestao_compras_pisos import PainelPedidosService
 
 
 def modal_painel_pedidos(request, slug):
+
+    banco = get_db_from_slug(slug)
 
     empresa = request.session.get('empresa')
     filial = request.session.get('filial')
@@ -13,24 +17,15 @@ def modal_painel_pedidos(request, slug):
     req_empresa = request.GET.get('empresa') or empresa
     req_filial = request.GET.get('filial') or filial
 
-    print('modal_painel_pedidos: empresa(session) =', empresa, 'filial(session) =', filial)
-    print('modal_painel_pedidos: empresa(used) =', req_empresa, 'filial(used) =', req_filial)
-
-    pedidos_pendentes = (
-        PainelPedidosService
-        .pedidos_pendentes_compra(req_empresa, req_filial)
+    dados = PainelPedidosService.painel_pedidos(
+        banco=banco,
+        empr=req_empresa,
+        fili=req_filial,
     )
-    print('pedidos_pendentes ->', pedidos_pendentes)
-
-    pedidos_atrasados = (
-        PainelPedidosService
-        .pedidos_prazo_entrega_expirado(req_empresa, req_filial)
-    )
-    print('pedidos_atrasados ->', pedidos_atrasados)
 
     context = {
-        'pedidos_pendentes': pedidos_pendentes,
-        'pedidos_atrasados': pedidos_atrasados,
+        'pedidos_pendentes': dados['pedidos_pendentes'],
+        'pedidos_atrasados': dados['pedidos_atrasados'],
         'slug': slug,
     }
 

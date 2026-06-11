@@ -32,6 +32,7 @@
                                     <th>Obs</th>
                                     <th>Empresa</th>
                                     <th>Filial</th>
+                                    <th>Workflow</th>
                                 </tr>
                             </thead>
 
@@ -45,13 +46,31 @@
                                     <td>{{ item.pedi_vend }}</td>
                                     <td>{{ item.pedi_fech|date:"d/m/Y" }}</td>
                                     <td>{{ item.pedi_data_prev_entr|date:"d/m/Y" }}</td>
-                                    <td>{{ item.pedi_desc_comp_work }}</td>
-                                    <td>{{ item.pedi_empr }}</td>
-                                    <td>{{ item.pedi_fili }}</td>
+                                    <td>{{ item.pedi_desc_comp_work|default:"—" }}</td>
+                                    <td title="{{ item.empresa_nome }}">
+                                        {% if item.empresa_nome %}
+                                            {{ item.empresa_nome|truncatechars:15 }}
+                                        {% else %}
+                                            {{ item.pedi_empr }}
+                                        {% endif %}
+                                    </td>
+                                    <td title="{{ item.filial_nome }}">
+                                        {% if item.filial_nome %}
+                                            {{ item.filial_nome|truncatechars:15 }}
+                                        {% else %}
+                                            {{ item.pedi_fili }}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ item.workflow.classe }}"
+                                              title="Etapa {{ item.workflow.etapa }} de 4">
+                                            {{ item.workflow.texto }}
+                                        </span>
+                                    </td>
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="8" class="text-center">
+                                    <td colspan="9" class="text-center">
                                         Nenhum pedido pendente
                                     </td>
                                 </tr>
@@ -81,7 +100,7 @@
                                     <th>Observações</th>
                                     <th>Empresa</th>
                                     <th>Filial</th>
-                                    <th>Status</th>
+                                    <th>Workflow</th>
                                 </tr>
                             </thead>
 
@@ -95,9 +114,26 @@
                                     <td>{{ item.pedi_vend }}</td>
                                     <td>{{ item.pedi_data_prev_entr|date:"d/m/Y" }}</td>
                                     <td>{{ item.pedi_obse|default_if_none:"- Sem observações" }}</td>
-                                    <td>{{ item.pedi_empr }}</td>
-                                    <td>{{ item.pedi_fili }}</td>
-                                    <td>{{ item.pedi_stat }}</td>
+                                    <td title="{{ item.empresa_nome }}">
+                                        {% if item.empresa_nome %}
+                                            {{ item.empresa_nome|truncatechars:15 }}
+                                        {% else %}
+                                            {{ item.pedi_empr }}
+                                        {% endif %}
+                                    </td>
+                                    <td title="{{ item.filial_nome }}">
+                                        {% if item.filial_nome %}
+                                            {{ item.filial_nome|truncatechars:15 }}
+                                        {% else %}
+                                            {{ item.pedi_fili }}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ item.workflow.classe }}"
+                                              title="Etapa {{ item.workflow.etapa }} de 4">
+                                            {{ item.workflow.texto }}
+                                        </span>
+                                    </td>
                                 </tr>
                                 {% empty %}
                                 <tr>
