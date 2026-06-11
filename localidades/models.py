@@ -27,7 +27,7 @@ class Paises(models.Model):
         db_table = 'paises'
         
     def __str__(self):
-        return self.pais_sigl + ' - ' + self.pais_nome
+        return f"{self.pais_codi} - {self.pais_nome}"
         
 
 

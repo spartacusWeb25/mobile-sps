@@ -569,6 +569,7 @@
           const resp = await fetch(`${url}?term=${encodeURIComponent(term)}`, { signal: controller.signal });
           const json = await resp.json();
           const results = (json.results || []).map((raw) => ({
+            ...(raw || {}),
             id: (typeof raw.id !== 'undefined' && raw.id !== null) ? raw.id : raw.value,
             text: (typeof raw.text !== 'undefined' && raw.text !== null) ? raw.text : raw.label,
           })).filter((r) => typeof r.id !== 'undefined' && r.id !== null && r.text);

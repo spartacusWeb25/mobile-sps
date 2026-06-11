@@ -1,6 +1,7 @@
 from django.http import JsonResponse
 from django.db.models import Q
 from core.utils import get_licenca_db_config
+from Entidades.services.frete_cidade_service import FreteCidadeService
 
 def autocomplete_clientes(request, slug=None):
     banco = get_licenca_db_config(request) or 'default'
@@ -19,7 +20,11 @@ def autocomplete_clientes(request, slug=None):
         else:
             qs = qs.filter(enti_nome__icontains=term)
     qs = qs.order_by('enti_nome')[:20]
-    data = [{'id': str(obj.enti_clie), 'text': f"{obj.enti_clie} - {obj.enti_nome}"} for obj in qs]
+    data = FreteCidadeService.montar_payloads_autocomplete(
+        entidades=qs,
+        banco=banco,
+        descricao_builder=lambda obj: f"{obj.enti_clie} - {obj.enti_nome}",
+    )
     return JsonResponse({'results': data})
 
 def autocomplete_vendedores(request, slug=None):
@@ -61,7 +66,11 @@ def busca_entidades(request, slug=None):
     else:
         qs = BuscasEntidadesService.buscar_entidades(banco=banco, empresa_id=empresa_id, busca=term, limit=limit)
 
-    data = [{'id': str(obj.enti_clie), 'text': f"{obj.enti_clie} - {obj.enti_nome}"} for obj in qs]
+    data = FreteCidadeService.montar_payloads_autocomplete(
+        entidades=qs,
+        banco=banco,
+        descricao_builder=lambda obj: f"{obj.enti_clie} - {obj.enti_nome}",
+    )
     return JsonResponse({'results': data})
 
 def autocomplete_produtos(request, slug=None):

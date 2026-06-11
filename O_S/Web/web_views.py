@@ -3,6 +3,7 @@ import logging
 from django.views.generic import TemplateView
 from core.utils import get_licenca_db_config
 from core.middleware import get_licenca_slug
+from Entidades.services.frete_cidade_service import FreteCidadeService
 logger = logging.getLogger(__name__)
 
 def autocomplete_clientes(request, slug=None):
@@ -20,7 +21,11 @@ def autocomplete_clientes(request, slug=None):
         else:
             qs = qs.filter(enti_nome__icontains=term)
     qs = qs.order_by('enti_nome')[:20]
-    data = [{'id': str(obj.enti_clie), 'text': f"{obj.enti_clie} - {obj.enti_nome}"} for obj in qs]
+    data = FreteCidadeService.montar_payloads_autocomplete(
+        entidades=qs,
+        banco=banco,
+        descricao_builder=lambda obj: f"{obj.enti_clie} - {obj.enti_nome}",
+    )
     return JsonResponse({'results': data})
 
 def autocomplete_vendedores(request, slug=None):

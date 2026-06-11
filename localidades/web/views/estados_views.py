@@ -19,7 +19,7 @@ from .base import (
 
 class EstadosListView(LocalidadeListView):
     model = Estados
-    template_name = "localidades/estados_list.html"
+    template_name = "Localidades/estados_list.html"
     context_object_name = "estados"
     campo_busca_nome = "esta_nome"
 
@@ -27,22 +27,22 @@ class EstadosListView(LocalidadeListView):
 class EstadosCreateView(LocalidadeCreateView):
     model = Estados
     form_class = EstadosForm
-    template_name = "localidades/estados_form.html"
-    url_lista = "localidadesWeb:estados_listar"
+    template_name = "Localidades/estados_form.html"
+    url_lista = "LocalidadesWeb:estados_listar"
     mensagem_sucesso = "Estado criado com sucesso."
 
 
 class EstadosUpdateView(LocalidadeUpdateView):
     model = Estados
     form_class = EstadosForm
-    template_name = "localidades/estados_form.html"
-    url_lista = "localidadesWeb:estados_listar"
+    template_name = "Localidades/estados_form.html"
+    url_lista = "LocalidadesWeb:estados_listar"
     mensagem_sucesso = "Estado atualizado com sucesso."
 
 
 class EstadosDeleteView(LocalidadeDeleteView):
     model = Estados
-    url_lista = "localidadesWeb:estados_listar"
+    url_lista = "LocalidadesWeb:estados_listar"
     mensagem_sucesso = "Estado excluído com sucesso."
 
 
@@ -61,4 +61,4 @@ def sincronizar_estados_ibge(request, slug):
     except IBGEServiceError as exc:
         messages.error(request, str(exc))
 
-    return redirect(reverse("localidadesWeb:estados_listar", kwargs={"slug": slug}))
+    return redirect(reverse("LocalidadesWeb:estados_listar", kwargs={"slug": slug}))

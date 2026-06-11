@@ -7,6 +7,7 @@ class DBAndSlugMixin:
 
     def dispatch(self, request, *args, **kwargs):
         db_alias = get_licenca_db_config(request)
+        self.db_alias = db_alias
         setattr(request, 'db_alias', db_alias)
 
         self.empresa_id = (

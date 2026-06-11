@@ -25,6 +25,7 @@ class LocalidadeListView(DBAndSlugMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context["slug"] = self.slug
         context["q"] = (self.request.GET.get("q") or "").strip()
         return context
 
@@ -41,6 +42,11 @@ class LocalidadeFormMixin(DBAndSlugMixin):
         if hasattr(form, "set_banco"):
             form.set_banco(self.db_alias)
         return form
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["slug"] = self.slug
+        return context
 
     def form_valid(self, form):
         self.object = form.save(commit=False)
@@ -66,7 +72,7 @@ class LocalidadeDeleteView(DBAndSlugMixin, DeleteView):
 
     url_lista = None
     mensagem_sucesso = "Registro excluído com sucesso."
-    template_name = "localidades/confirmar_exclusao.html"   
+    template_name = "Localidades/confirmar_exclusao.html"
 
     def get_queryset(self):
         return self.model.objects.using(self.db_alias).all()
@@ -88,5 +94,6 @@ class LocalidadeDeleteView(DBAndSlugMixin, DeleteView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context["slug"] = self.slug
         context["url_lista"] = self.url_lista
         return context

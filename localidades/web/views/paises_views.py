@@ -19,7 +19,7 @@ from .base import (
 
 class PaisesListView(LocalidadeListView):
     model = Paises
-    template_name = "localidades/paises_list.html"
+    template_name = "Localidades/paises_list.html"
     context_object_name = "paises"
     campo_busca_nome = "pais_nome"
 
@@ -27,22 +27,22 @@ class PaisesListView(LocalidadeListView):
 class PaisesCreateView(LocalidadeCreateView):
     model = Paises
     form_class = PaisesForm
-    template_name = "localidades/paises_form.html"
-    url_lista = "localidadesWeb:paises_listar"
+    template_name = "Localidades/paises_form.html"
+    url_lista = "LocalidadesWeb:paises_listar"
     mensagem_sucesso = "País criado com sucesso."
 
 
 class PaisesUpdateView(LocalidadeUpdateView):
     model = Paises
     form_class = PaisesForm
-    template_name = "localidades/paises_form.html"
-    url_lista = "localidadesWeb:paises_listar"
+    template_name = "Localidades/paises_form.html"
+    url_lista = "LocalidadesWeb:paises_listar"
     mensagem_sucesso = "País atualizado com sucesso."
 
 
 class PaisesDeleteView(LocalidadeDeleteView):
     model = Paises
-    url_lista = "localidadesWeb:paises_listar"
+    url_lista = "LocalidadesWeb:paises_listar"
     mensagem_sucesso = "País excluído com sucesso."
 
 
@@ -61,4 +61,4 @@ def sincronizar_paises_ibge(request, slug):
     except IBGEServiceError as exc:
         messages.error(request, str(exc))
 
-    return redirect(reverse("localidadesWeb:paises_listar", kwargs={"slug": slug}))
+    return redirect(reverse("LocalidadesWeb:paises_listar", kwargs={"slug": slug}))

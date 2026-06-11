@@ -1,6 +1,7 @@
 from django.http import JsonResponse
 from core.utils import get_db_from_slug
 from Entidades.models import Entidades
+from Entidades.services.frete_cidade_service import FreteCidadeService
 
 
 def autocomplete_entidades(request, slug, tipo="clientes"):
@@ -16,7 +17,11 @@ def autocomplete_entidades(request, slug, tipo="clientes"):
         qs = qs.filter(enti_tipo_enti__in=["VE", "FU", "AM"])
     elif tipo == "clientes":
         qs = qs.filter(enti_tipo_enti__in=["CL", "AM", "FU", "FO", "VE"])
-    data = [{"id": e.enti_clie, "label": f"{e.enti_clie} - {e.enti_nome}", "value": e.enti_clie} for e in qs[:20]]
+    data = FreteCidadeService.montar_payloads_autocomplete(
+        entidades=qs[:20],
+        banco=banco,
+        descricao_builder=lambda e: f"{e.enti_clie} - {e.enti_nome}",
+    )
     return JsonResponse(data, safe=False)
 
 

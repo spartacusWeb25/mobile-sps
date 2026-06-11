@@ -22,7 +22,37 @@
 
             <li class="nav-item">
                 <div class="d-flex align-items-center">
-                    <a class="nav-link flex-grow-1" href="/web/login/" data-slug-route="/web/{slug}/entidades/relatorio/">
+                    <a class="nav-link collapsed flex-grow-1" data-bs-toggle="collapse" href="#" role="button"
+                         data-bs-target="#collapseLocalidades" aria-expanded="false"
+                        aria-controls="collapseLocalidades">
+                        <i class="bi bi-geo-alt"></i> Localidades
+                    </a>
+                </div>
+                <div class="collapse" id="collapseLocalidades">
+                    <ul class="list-unstyled ps-4">
+                        <li>
+                            <a class="nav-link" href="/web/login/" data-slug-route="/web/{slug}/localidades/estados/">
+                                Estados
+                            </a>
+                        </li>
+                        <li>
+                            <a class="nav-link" href="/web/login/" data-slug-route="/web/{slug}/localidades/paises/">
+                                Paises
+                            </a>
+                        </li>
+                        <li>
+                            <a class="nav-link" href="/web/login/" data-slug-route="/web/{slug}/localidades/cidades/">
+                                Cidades
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+
+            <li class="nav-item">
+                <div class="d-flex align-items-center">
+                    <a class="nav-link flex-grow-1" href="/web/login/"
+                        data-slug-route="/web/{slug}/entidades/relatorio/">
                         <i class="bi bi-bar-chart-fill"></i> Relatório de Entidades
                     </a>
                 </div>
@@ -40,8 +70,9 @@
 
             <li class="nav-item">
                 <div class="d-flex align-items-center">
-                    <a class="nav-link collapsed flex-grow-1" data-bs-toggle="collapse" href="#" role="button" data-modulo="CentrodeCustos"
-                        data-bs-target="#collapseCentros" aria-expanded="false" aria-controls="collapseCentros">
+                    <a class="nav-link collapsed flex-grow-1" data-bs-toggle="collapse" href="#" role="button"
+                        data-modulo="CentrodeCustos" data-bs-target="#collapseCentros" aria-expanded="false"
+                        aria-controls="collapseCentros">
                         <i class="bi bi-diagram-3"></i> Centros de Custo
                     </a>
                     <a href="https://www.youtube.com/watch?v=J8QIllYI3BY&feature=youtu.be" target="_blank"
@@ -52,8 +83,9 @@
                 </div>
                 <div class="collapse" id="collapseCentros">
                     <ul class="list-unstyled ps-4">
-                        <li><a class="nav-link" href="/web/login/" data-slug-route="/web/{slug}/centrosdecustos/">Listagem de Centros de Custo</a></li>
-                       
+                        <li><a class="nav-link" href="/web/login/"
+                                data-slug-route="/web/{slug}/centrosdecustos/">Listagem de Centros de Custo</a></li>
+
                     </ul>
                 </div>
             </li>
@@ -68,17 +100,20 @@
                 <div class="collapse" id="collapseParametrizacoes">
                     <ul class="list-unstyled ps-4">
                         <li>
-                            <a class="nav-link" href="/web/login/" data-slug-route="/web/{slug}/licencas/empresas/">Empresas</a>
+                            <a class="nav-link" href="/web/login/"
+                                data-slug-route="/web/{slug}/licencas/empresas/">Empresas</a>
                         </li>
                         <li>
-                            <a class="nav-link" href="/web/login/" data-slug-route="/web/{slug}/licencas/filiais/">Filiais</a>
+                            <a class="nav-link" href="/web/login/"
+                                data-slug-route="/web/{slug}/licencas/filiais/">Filiais</a>
                         </li>
                         <li>
                             <a class="nav-link" href="/web/login/" data-slug-route="/web/{slug}/cfop/">CFOP</a>
                         </li>
                         <li>
                             <div class="d-flex align-items-center">
-                                <a class="nav-link flex-grow-1" href="/web/login/" data-slug-route="/web/{slug}/series/">Séries</a>
+                                <a class="nav-link flex-grow-1" href="/web/login/"
+                                    data-slug-route="/web/{slug}/series/">Séries</a>
                                 <a href="https://youtu.be/sf9hj6Ge9Zg" target="_blank" class="text-decoration-none ms-2"
                                     title="Ver tutorial no YouTube" onclick="event.stopPropagation();">
                                     <i class="bi bi-youtube" style="font-size: 1.2rem; color: #ff2f2f;"></i>
@@ -87,7 +122,8 @@
                         </li>
                         <li>
                             <div class="d-flex align-items-center">
-                                <a class="nav-link flex-grow-1" href="/web/login/" data-slug-route="/web/{slug}/importador/">Importador de Produtos</a>
+                                <a class="nav-link flex-grow-1" href="/web/login/"
+                                    data-slug-route="/web/{slug}/importador/">Importador de Produtos</a>
                                 <a href="https://youtu.be/sf9hj6Ge9Zg" target="_blank" class="text-decoration-none ms-2"
                                     title="Ver tutorial no YouTube" onclick="event.stopPropagation();">
                                     <i class="bi bi-youtube" style="font-size: 1.2rem; color: #ff2f2f;"></i>
@@ -96,13 +132,15 @@
                         </li>
                         <li>
                             <div class="d-flex align-items-center">
-                                <a class="nav-link flex-grow-1" href="/web/login/" data-slug-route="/web/{slug}/importador/entidades/">Importador de Entidades</a>
+                                <a class="nav-link flex-grow-1" href="/web/login/"
+                                    data-slug-route="/web/{slug}/importador/entidades/">Importador de Entidades</a>
                             </div>
                         </li>
 
                         <li class="nav-item">
                             <div class="d-flex align-items-center">
-                                <a class="nav-link flex-grow-1" href="/web/login/" data-slug-route="/web/{slug}/licencas/users/">
+                                <a class="nav-link flex-grow-1" href="/web/login/"
+                                    data-slug-route="/web/{slug}/licencas/users/">
                                     <i class="bi bi-person"></i> Perfil / Usuários
                                 </a>
                             </div>

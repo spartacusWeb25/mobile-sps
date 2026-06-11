@@ -1192,6 +1192,18 @@
       }
     }
 
+    function aplicarFreteCidadeCliente(item, fieldId, force) {
+      var field = document.getElementById(fieldId);
+      if (!field || !item) return false;
+      var frete = Number(item.frete_cidade);
+      if (!isFinite(frete)) return false;
+      var atual = parseNumberBR(field.value);
+      if (!force && atual > 0) return false;
+      field.value = frete.toFixed(2);
+      field.dispatchEvent(new Event('input', { bubbles: true }));
+      return true;
+    }
+
     function aplicarCreditoAuto() {
       var credEl = document.getElementById('id_pedi_cred');
       var chk = document.getElementById('usar-credito');
@@ -1682,10 +1694,12 @@
         if (b) b.innerHTML = '';
       });
 
-      setupAutocomplete('cliente_nome', 'id_pedi_clie', URL_AUTO_CLIENTES, async function () {
+      setupAutocomplete('cliente_nome', 'id_pedi_clie', URL_AUTO_CLIENTES, async function (selected) {
+        aplicarFreteCidadeCliente(selected, 'id_pedi_fret', true);
         await carregarCreditoCliente(); aplicarCreditoAuto();
       });
-      prefillAutocomplete('cliente_nome', 'id_pedi_clie', URL_AUTO_CLIENTES, async function () {
+      prefillAutocomplete('cliente_nome', 'id_pedi_clie', URL_AUTO_CLIENTES, async function (selected) {
+        aplicarFreteCidadeCliente(selected, 'id_pedi_fret', false);
         await carregarCreditoCliente();
         var credAtual = parseNumberBR(document.getElementById('id_pedi_cred')?.value);
         var chk = document.getElementById('usar-credito');

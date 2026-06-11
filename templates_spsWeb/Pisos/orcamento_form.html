@@ -972,6 +972,18 @@
       }
     }
 
+    function aplicarFreteCidadeCliente(item, fieldId, force) {
+      var field = document.getElementById(fieldId);
+      if (!field || !item) return false;
+      var frete = Number(item.frete_cidade);
+      if (!isFinite(frete)) return false;
+      var atual = parseNumberBR(field.value);
+      if (!force && atual > 0) return false;
+      field.value = frete.toFixed(2);
+      field.dispatchEvent(new Event('input', { bubbles: true }));
+      return true;
+    }
+
     function showToast(message, type) {
       type = type || 'danger';
       var container = document.querySelector('.toast-container');
@@ -1453,11 +1465,13 @@
         atualizarPreviewStatus();
       }
 
-      setupAutocomplete('cliente_nome', 'id_orca_clie', URL_AUTO_CLIENTES, async function () {
+      setupAutocomplete('cliente_nome', 'id_orca_clie', URL_AUTO_CLIENTES, async function (selected) {
+        if (!orcamentoExportado()) aplicarFreteCidadeCliente(selected, 'id_orca_fret', true);
         await carregarCreditoCliente();
         if (!orcamentoExportado()) aplicarCreditoAuto();
       }, false);
-      prefillAutocomplete('cliente_nome', 'id_orca_clie', URL_AUTO_CLIENTES, async function () {
+      prefillAutocomplete('cliente_nome', 'id_orca_clie', URL_AUTO_CLIENTES, async function (selected) {
+        if (!orcamentoExportado()) aplicarFreteCidadeCliente(selected, 'id_orca_fret', false);
         await carregarCreditoCliente();
         var credAtual = parseNumberBR(document.getElementById('id_orca_cred')?.value);
         var chk = document.getElementById('usar-credito');

@@ -18,7 +18,7 @@ from .base import (
 
 class CidadesListView(LocalidadeListView):
     model = Cidades
-    template_name = "localidades/cidades_list.html"
+    template_name = "Localidades/cidades_list.html"
     context_object_name = "cidades"
     campo_busca_nome = "cida_nome"
 
@@ -41,22 +41,22 @@ class CidadesListView(LocalidadeListView):
 class CidadesCreateView(LocalidadeCreateView):
     model = Cidades
     form_class = CidadesForm
-    template_name = "localidades/cidades_form.html"
-    url_lista = "localidadesWeb:cidades_listar"
+    template_name = "Localidades/cidades_form.html"
+    url_lista = "LocalidadesWeb:cidades_listar"
     mensagem_sucesso = "Cidade criada com sucesso."
 
 
 class CidadesUpdateView(LocalidadeUpdateView):
     model = Cidades
     form_class = CidadesForm
-    template_name = "localidades/cidades_form.html"
-    url_lista = "localidadesWeb:cidades_listar"
+    template_name = "Localidades/cidades_form.html"
+    url_lista = "LocalidadesWeb:cidades_listar"
     mensagem_sucesso = "Cidade atualizada com sucesso."
 
 
 class CidadesDeleteView(LocalidadeDeleteView):
     model = Cidades
-    url_lista = "localidadesWeb:cidades_listar"
+    url_lista = "LocalidadesWeb:cidades_listar"
     mensagem_sucesso = "Cidade excluída com sucesso."
 
 
@@ -65,7 +65,7 @@ def importar_cidade_ibge(request, slug):
     Importa uma cidade pelo código IBGE do município.
     Cria estado e país automaticamente se ainda não existirem.
     """
-    destino = reverse("localidadesWeb:cidades_listar", kwargs={"slug": slug})
+    destino = reverse("LocalidadesWeb:cidades_listar", kwargs={"slug": slug})
 
     if request.method != "POST":
         return redirect(destino)
