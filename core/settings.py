@@ -135,6 +135,7 @@ INSTALLED_APPS = [
     'licencas_web',
     'Licencas',
     'listacasamento',
+    'localidades',
     'marketplace',
     'mcp_agent_db',
     'nfse',

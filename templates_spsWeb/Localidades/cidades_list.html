@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+{% block content %}
+{% include 'Localidades/parciais/estilo.html' %}
+
+<div class="page-wrap">
+  <div class="page-head">
+    <div class="page-title">
+      <i class="bi bi-buildings"></i>
+      <span>Cidades</span>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <a class="btn btn-outline-success btn-sm" href="{% url 'LocalidadesWeb:cidades_criar' slug=slug %}">
+        <i class="bi bi-plus-lg"></i> Nova
+      </a>
+    </div>
+  </div>
+
+  <div class="page-body">
+
+    {% if messages %}
+      {% for message in messages %}
+      <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+      {% endfor %}
+    {% endif %}
+
+    <!-- Importar do IBGE -->
+    <div class="cardx mb-3">
+      <div class="label mb-2">Importar cidade do IBGE</div>
+      <form method="post" action="{% url 'LocalidadesWeb:cidades_importar_ibge' slug=slug %}"
+            class="row g-2 align-items-end">
+        {% csrf_token %}
+        <div class="col-12 col-md-6 col-lg-4">
+          {{ form_ibge.codigo_ibge }}
+        </div>
+        <div class="col-auto">
+          <button type="submit" class="btn btn-outline-info btn-sm">
+            <i class="bi bi-cloud-download"></i> Importar do IBGE
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Filtros -->
+    <div class="cardx mb-3">
+      <form method="get" class="row g-2 align-items-end">
+        <div class="col-12 col-md-5 col-lg-4">
+          <div class="label mb-1">Buscar por nome</div>
+          <input type="text" name="q" value="{{ q }}" class="form-control form-control-sm"
+                 placeholder="Nome da cidade">
+        </div>
+        <div class="col-6 col-md-2">
+          <div class="label mb-1">UF</div>
+          <input type="text" name="uf" value="{{ uf }}" maxlength="2"
+                 class="form-control form-control-sm text-uppercase" placeholder="PR">
+        </div>
+        <div class="col-auto">
+          <button type="submit" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-funnel"></i> Filtrar
+          </button>
+          <a href="{% url 'LocalidadesWeb:cidades_listar' slug=slug %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-eraser"></i>
+          </a>
+        </div>
+      </form>
+    </div>
+
+    <!-- Tabela -->
+    <div class="cardx">
+      <div class="table-responsive">
+        <table class="table table-sm table-dark table-striped align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Cód. IBGE</th>
+              <th>Nome</th>
+              <th>UF</th>
+              <th>Estado</th>
+              <th>País</th>
+              <th class="text-end">Frete</th>
+              <th class="text-end">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for cidade in cidades %}
+            <tr>
+              <td>{{ cidade.cida_codi }}</td>
+              <td>{{ cidade.cida_nome }}</td>
+              <td>{{ cidade.cida_sigl }}</td>
+              <td>{{ cidade.cida_esta.esta_nome }}</td>
+              <td>{{ cidade.cida_pais.pais_nome }}</td>
+              <td class="text-end">{{ cidade.cida_fret|default:"—" }}</td>
+              <td class="text-end">
+                <a class="btn btn-outline-primary btn-sm"
+                   href="{% url 'LocalidadesWeb:cidades_editar' slug=slug pk=cidade.pk %}">
+                  <i class="bi bi-pencil"></i> Editar
+                </a>
+                <a class="btn btn-outline-danger btn-sm"
+                   href="{% url 'LocalidadesWeb:cidades_excluir' slug=slug pk=cidade.pk %}">
+                  <i class="bi bi-trash"></i> Excluir
+                </a>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="7" class="text-center">
+                Nenhuma cidade cadastrada. Importe pelo código IBGE acima.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% if is_paginated %}
+      <nav class="mt-3">
+        <ul class="pagination pagination-sm mb-0">
+          {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link"
+               href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if uf %}&uf={{ uf }}{% endif %}">«</a>
+          </li>
+          {% endif %}
+          <li class="page-item disabled">
+            <span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+          </li>
+          {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link"
+               href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if uf %}&uf={{ uf }}{% endif %}">»</a>
+          </li>
+          {% endif %}
+        </ul>
+      </nav>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+{% endblock %}

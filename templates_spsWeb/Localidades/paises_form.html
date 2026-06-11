@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block content %}
+{% include 'Localidades/parciais/estilo.html' %}
+
+<div class="page-wrap" style="max-width: 720px;">
+  <div class="page-head">
+    <div class="page-title">
+      <i class="bi bi-globe-americas"></i>
+      <span>{% if form.instance.pk %}Editar País{% else %}Novo País{% endif %}</span>
+      {% if form.instance.pk %}
+      <span style="color:var(--muted);font-weight:400">#{{ form.instance.pk }}</span>
+      {% endif %}
+    </div>
+    <a class="btn btn-outline-secondary btn-sm" href="{% url 'LocalidadesWeb:paises_listar' slug=slug %}">
+      <i class="bi bi-list"></i> Listar
+    </a>
+  </div>
+
+  <div class="page-body">
+    <div class="cardx">
+      <form method="post" novalidate>
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <div class="row g-3">
+          <div class="col-12 col-md-4">
+            <div class="label mb-1">{{ form.pais_codi.label }}</div>
+            {{ form.pais_codi }}
+            {{ form.pais_codi.errors }}
+          </div>
+          <div class="col-12 col-md-8">
+            <div class="label mb-1">{{ form.pais_nome.label }}</div>
+            {{ form.pais_nome }}
+            {{ form.pais_nome.errors }}
+          </div>
+          <div class="col-12">
+            <div class="label mb-1">{{ form.pais_obse.label }}</div>
+            {{ form.pais_obse }}
+            {{ form.pais_obse.errors }}
+          </div>
+        </div>
+
+        <div class="d-flex gap-2 mt-4">
+          <button type="submit" class="btn btn-outline-success btn-sm">
+            <i class="bi bi-check-lg"></i> Salvar
+          </button>
+          <a class="btn btn-outline-secondary btn-sm" href="{% url 'LocalidadesWeb:paises_listar' slug=slug %}">
+            Cancelar
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

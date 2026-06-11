@@ -1,0 +1,85 @@
+{% comment %} Localidades/parciais/estilo.html — estilo padrão das telas de localidades {% endcomment %}
+<style>
+  :root {
+    --bg: #151925;
+    --bg2: #202640;
+    --panel: #171b2a;
+    --border: #303a6b;
+    --border2: #344078;
+    --accent: #4f8ef7;
+    --text: #e2e8f8;
+    --muted: #9aa8c7;
+  }
+
+  [data-bs-theme="light"] {
+    --bg: #fff;
+    --bg2: #f9f9f9;
+    --panel: #f5f5f5;
+    --border: #e5e5e5;
+    --border2: #d5d5d5;
+    --accent: #4f8ef7;
+    --text: #000;
+    --muted: #9aa999;
+  }
+
+  .page-wrap {
+    max-width: calc(100vw - 48px);
+    margin: 18px auto;
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: 12px;
+    color: var(--text);
+    overflow: hidden;
+  }
+
+  .page-head {
+    padding: 10px 18px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border2);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .page-title {
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .page-body {
+    padding: 16px;
+  }
+
+  .cardx {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+  }
+
+  .label {
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+
+  .table-dark {
+    --bs-table-bg: transparent;
+    --bs-table-striped-bg: rgba(255, 255, 255, .03);
+    --bs-table-color: var(--text);
+    --bs-table-border-color: rgba(255, 255, 255, .08);
+  }
+
+  .btn-outline-primary-white {
+    --bs-btn-bg: transparent;
+    --bs-btn-color: var(--accent);
+    --bs-btn-border-color: var(--accent);
+  }
+</style>

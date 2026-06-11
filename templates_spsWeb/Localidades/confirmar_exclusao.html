@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block content %}
+{% include 'Localidades/parciais/estilo.html' %}
+
+<div class="page-wrap" style="max-width: 560px;">
+  <div class="page-head">
+    <div class="page-title">
+      <i class="bi bi-trash"></i>
+      <span>Confirmar exclusão</span>
+    </div>
+  </div>
+
+  <div class="page-body">
+    <div class="cardx">
+      <p class="mb-3">
+        Tem certeza que deseja excluir <b>{{ object }}</b>?
+        <br>
+        <small style="color:var(--muted)">Esta ação não pode ser desfeita.</small>
+      </p>
+
+      <form method="post">
+        {% csrf_token %}
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn btn-outline-danger btn-sm">
+            <i class="bi bi-trash"></i> Excluir
+          </button>
+          <a class="btn btn-outline-secondary btn-sm" href="{% url url_lista slug=slug %}">
+            Cancelar
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

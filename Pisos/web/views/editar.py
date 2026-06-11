@@ -1,6 +1,8 @@
 import json
 
 from django.contrib import messages
+from django.db.models import CharField, Q
+from django.db.models.functions import Cast
 from django.shortcuts import get_object_or_404, redirect, render
 
 from core.utils import get_db_from_slug
@@ -241,21 +243,13 @@ def editar_pedido_pisos(request, slug, pk):
         .values_list("item_prod", flat=True)
     )
     itens_prod_ids = [str(p).strip() for p in itens_prod_ids if p]
-    itens_prod_ids_nume = []
-    for p in itens_prod_ids:
-        if p.isdigit():
-            try:
-                itens_prod_ids_nume.append(int(p))
-            except Exception:
-                pass
     kohler_inicial = False
     if itens_prod_ids:
-        from django.db.models import Q
         filtro = Q(prod_codi__in=list(set(itens_prod_ids)))
-        if itens_prod_ids_nume:
-            filtro = filtro | Q(prod_codi_nume__in=list(set(itens_prod_ids_nume)))
+        filtro = filtro | Q(prod_codi_nume_text__in=list(set(itens_prod_ids)))
         produtos = (
             Produtos.objects.using(banco)
+            .annotate(prod_codi_nume_text=Cast("prod_codi_nume", output_field=CharField()))
             .filter(prod_empr=str(pedido.pedi_empr))
             .filter(filtro)
             .values_list("prod_codi", "prod_codi_nume", "prod_marc_id")

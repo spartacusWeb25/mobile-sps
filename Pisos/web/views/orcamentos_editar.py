@@ -1,7 +1,8 @@
 import logging
 
 from django.contrib import messages
-from django.db.models import Q
+from django.db.models import CharField, Q
+from django.db.models.functions import Cast
 from django.shortcuts import get_object_or_404, redirect, render
 
 from core.utils import get_db_from_slug
@@ -171,8 +172,10 @@ def editar_orcamento_pisos(request, slug, pk):
     if prod_ids:
         produtos = Produtos.objects.using(banco).filter(
             prod_empr=str(orcamento.orca_empr),
+        ).annotate(
+            prod_codi_nume_text=Cast("prod_codi_nume", output_field=CharField())
         ).filter(
-            Q(prod_codi__in=list(set(prod_ids))) | Q(prod_codi_nume__in=list(set(prod_ids)))
+            Q(prod_codi__in=list(set(prod_ids))) | Q(prod_codi_nume_text__in=list(set(prod_ids)))
         ).values_list("prod_codi", "prod_codi_nume", "prod_nome", "prod_marc_id")
 
         marca_por_prod = {}

@@ -225,6 +225,8 @@
               <th class="text-end">Qtd</th>
               <th class="text-end">Unit</th>
               <th class="text-end">Total</th>
+              <th class="text-start">Em Estoque?</th>
+              <th class="text-start">Comprado?</th>
             </tr>
           </thead>
           <tbody>
@@ -244,10 +246,12 @@
               <td class="text-end">{{ i.item_quan }}</td>
               <td class="text-end">{{ i.item_unit }}</td>
               <td class="text-end">{{ i.item_suto }}</td>
+              <td>{{ i.item_em_esto_label }}</td>
+              <td>{% if i.item_comp_efet_label %}{{ i.item_comp_efet_label|date:"d/m/Y" }}{% else %}Não Comprado{% endif %}</td>
             </tr>
             {% empty %}
             <tr>
-              <td colspan="8">Sem itens</td>
+              <td colspan="10">Sem itens</td>
             </tr>
             {% endfor %}
           </tbody>

@@ -186,6 +186,15 @@ def visualizar_pedido_pisos(request, slug, pk):
         st = status_map.get(str(getattr(item, "item_prod", "") or "").strip(), {}) if status_map else {}
         item.fiscal_ok = bool(st.get("ok"))
         item.fiscal_detalhe = st.get("detalhe")
+        if item.item_em_esto is True:
+            item.item_em_esto_label = "Produto em estoque"
+            item.item_comp_efet_label = "Em estoque"
+        elif item.item_comp_efet:
+            item.item_em_esto_label = "Compra efetuada"
+            item.item_comp_efet_label = item.item_comp_efet
+        else:
+            item.item_em_esto_label = "Aguardando compra"
+            item.item_comp_efet_label = None
 
     return render(
         request,
