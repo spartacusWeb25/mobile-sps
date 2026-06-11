@@ -53,6 +53,26 @@ def _filtro_titulo(obj: Titulosreceber) -> dict:
     }
 
 
+def _filtro_pk_titulo(obj: Titulosreceber) -> dict:
+    return {
+        'titu_empr': obj.titu_empr,
+        'titu_fili': obj.titu_fili,
+        'titu_clie': obj.titu_clie,
+        'titu_titu': obj.titu_titu,
+        'titu_seri': obj.titu_seri,
+        'titu_parc': obj.titu_parc,
+    }
+
+
+def _tmp_parcela(idx: int) -> str:
+    if idx < 1 or idx > 1295:
+        raise ValidationError({'detail': ['Quantidade de parcelas inválida para reorganização.']})
+    alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    high = idx // 36
+    low = idx % 36
+    return f"Z{alphabet[high]}{alphabet[low]}"
+
+
 def _campos_replicados_titulo(titulo: Titulosreceber) -> dict:
     return {
         'titu_cont': titulo.titu_cont,
@@ -283,7 +303,15 @@ def atualizar_grupo_parcelas_receber(
             'titu_cecu': dados.get('titu_cecu'),
         }
 
+        tmp_ids = []
+        for idx, atual in enumerate(grupo, start=1):
+            tmp = _tmp_parcela(idx)
+            Titulosreceber.objects.using(banco).filter(**_filtro_pk_titulo(atual)).update(titu_parc=tmp)
+            atual.titu_parc = tmp
+            tmp_ids.append(tmp)
+
         atualizados = []
+        reutilizar = min(len(grupo), len(parcelas))
         for indice, item in enumerate(parcelas):
             payload = {
                 'titu_parc': item['parcela'],
@@ -293,9 +321,9 @@ def atualizar_grupo_parcelas_receber(
                 'titu_form_reci': campos_comuns['titu_form_reci'],
                 'titu_cecu': campos_comuns['titu_cecu'],
             }
-            if indice < len(grupo):
+            if indice < reutilizar:
                 atual = grupo[indice]
-                Titulosreceber.objects.using(banco).filter(**_filtro_titulo(atual)).update(**payload)
+                Titulosreceber.objects.using(banco).filter(**_filtro_pk_titulo(atual)).update(**payload)
             else:
                 atual = Titulosreceber.objects.using(banco).create(
                     titu_empr=titulo.titu_empr,
@@ -325,8 +353,16 @@ def atualizar_grupo_parcelas_receber(
             atual.titu_cecu = payload['titu_cecu']
             atualizados.append(atual)
 
-        for excedente in grupo[len(parcelas):]:
-            Titulosreceber.objects.using(banco).filter(**_filtro_titulo(excedente)).delete()
+        excedentes_tmp = tmp_ids[len(parcelas):]
+        if excedentes_tmp:
+            Titulosreceber.objects.using(banco).filter(
+                titu_empr=titulo.titu_empr,
+                titu_fili=titulo.titu_fili,
+                titu_clie=titulo.titu_clie,
+                titu_titu=titulo.titu_titu,
+                titu_seri=titulo.titu_seri,
+                titu_parc__in=excedentes_tmp,
+            ).delete()
 
         atualizados.sort(key=lambda item: _parcela_sort_key(item.titu_parc))
         return atualizados
