@@ -94,16 +94,26 @@ class ProdutoViewSet(ModuloRequeridoMixin, viewsets.ModelViewSet):
 
     def get_queryset(self):
         banco = get_licenca_db_config(self.request)
-        
+
         empresa_id = self._empresa_id(self.request)
         filial_id = self._filial_id(self.request)
-        
+
+        # Aceita o termo de busca por qualquer um dos nomes usados pelos
+        # clientes (app mobile/web): q, termo, busca. O parâmetro `search`
+        # continua sendo tratado pelo SearchFilter do DRF normalmente.
+        q = (
+            self.request.query_params.get('q')
+            or self.request.query_params.get('termo')
+            or self.request.query_params.get('busca')
+        )
+
         # Reutiliza a consulta otimizada, mas sem limite padrão do ListView
-        
+
         return listar_produtos(
             banco=banco,
             empresa_id=empresa_id,
-            filial_id=filial_id
+            filial_id=filial_id,
+            q=q
         )
 
     def get_serializer_context(self):
