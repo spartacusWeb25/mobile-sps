@@ -120,6 +120,15 @@
   </div>
 
   <div class="os-actions" style="display: flex; justify-content: flex-end; gap: 10px;">
+    {% if processo is not None %}
+    <a class="btn btn-outline-secondary" href="{% url 'processos:detalhe' slug=slug pk=processo.pk %}">
+      <i class="bi bi-card-checklist"></i> Acessar Processo
+    </a>
+    {% else %}
+    <a class="btn btn-outline-secondary" href="{% url 'processos:criar' slug=slug %}?os={{ object.pk }}">
+      <i class="bi bi-card-checklist"></i> Gerar Processo
+    </a>
+    {% endif %}
     <a class="btn btn-outline-secondary" href="/web/login/" data-slug-route="/web/{slug}/os/{{ object.pk }}/imprimir/">
       <i class="bi bi-printer"></i> Imprimir
     </a>

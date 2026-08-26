@@ -5,13 +5,12 @@ from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
 
 from core.utils import get_db_from_slug
-from processos.models import ChecklistItem, ChecklistModelo, Processo, ProcessoTipo
+from processos.models import ChecklistItem, ChecklistModelo, Processo
 from processos.rest.serializers import (
     ChecklistItemSerializer,
     ChecklistModeloSerializer,
     ProcessoChecklistRespostaSerializer,
     ProcessoSerializer,
-    ProcessoTipoSerializer,
 )
 from processos.services.checklist_service import ChecklistService
 from processos.services.processo_service import ProcessoService
@@ -63,31 +62,6 @@ class BaseMultiDBViewSet(viewsets.ModelViewSet):
         raise NotFound({"detail": message})
 
 
-class ProcessoTipoViewSet(BaseMultiDBViewSet):
-    serializer_class = ProcessoTipoSerializer
-
-    def get_queryset(self):
-        cfg = self._ctx()
-        return ProcessoTipo.objects.using(cfg["db_alias"]).filter(
-            prot_empr=cfg["empresa"], prot_fili=cfg["filial"]
-        )
-
-    def create(self, request, *args, **kwargs):
-        cfg = self._ctx()
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        data = serializer.validated_data
-        tipo = ProcessoService.criar_tipo(
-            db_alias=cfg["db_alias"],
-            empresa=cfg["empresa"],
-            filial=cfg["filial"],
-            nome=data["prot_nome"],
-            codigo=data["prot_codi"],
-            ativo=data.get("prot_ativ", True),
-        )
-        return Response(self.get_serializer(tipo).data, status=status.HTTP_201_CREATED)
-
-
 class ChecklistModeloViewSet(BaseMultiDBViewSet):
     serializer_class = ChecklistModeloSerializer
 
@@ -96,8 +70,7 @@ class ChecklistModeloViewSet(BaseMultiDBViewSet):
         return (
             ChecklistModelo.objects.using(cfg["db_alias"])
             .filter(chmo_empr=cfg["empresa"], chmo_fili=cfg["filial"])
-            .select_related("chmo_proc_tipo")
-            .order_by("chmo_proc_tipo__prot_nome", "-chmo_vers", "chmo_nome")
+            .order_by("chmo_nome")
         )
 
     def create(self, request, *args, **kwargs):
@@ -105,25 +78,12 @@ class ChecklistModeloViewSet(BaseMultiDBViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
-        try:
-            tipo = ProcessoTipo.objects.using(cfg["db_alias"]).get(
-                id=data["chmo_proc_tipo_id"],
-                prot_empr=cfg["empresa"],
-                prot_fili=cfg["filial"],
-                prot_ativ=True,
-            )
-        except ObjectDoesNotExist:
-            self._not_found(
-                "Tipo de processo não encontrado/ativo para a empresa e filial informadas."
-            )
 
         modelo = ChecklistService.criar_modelo(
             db_alias=cfg["db_alias"],
             empresa=cfg["empresa"],
             filial=cfg["filial"],
-            processo_tipo=tipo,
             nome=data["chmo_nome"],
-            versao=data.get("chmo_vers", 1),
             ativo=data.get("chmo_ativ", True),
         )
         return Response(
@@ -139,8 +99,8 @@ class ChecklistItemViewSet(BaseMultiDBViewSet):
         return (
             ChecklistItem.objects.using(cfg["db_alias"])
             .filter(chit_empr=cfg["empresa"], chit_fili=cfg["filial"])
-            .select_related("chit_mode", "chit_mode__chmo_proc_tipo")
-            .order_by("chit_mode_id", "chit_orde")
+            .select_related("chit_mode")
+            .order_by("chit_mode_id")
         )
 
     def create(self, request, *args, **kwargs):
@@ -166,7 +126,6 @@ class ChecklistItemViewSet(BaseMultiDBViewSet):
             filial=cfg["filial"],
             modelo=modelo,
             descricao=data["chit_desc"],
-            ordem=data.get("chit_orde", 0),
             obrigatorio=data.get("chit_obri", True),
         )
         return Response(self.get_serializer(item).data, status=status.HTTP_201_CREATED)
@@ -190,7 +149,6 @@ class ProcessoViewSet(BaseMultiDBViewSet):
             db_alias=cfg["db_alias"],
             empresa=cfg["empresa"],
             filial=cfg["filial"],
-            tipo_id=data["proc_tipo_id"],
             descricao=data["proc_desc"],
             usuario_id=cfg["usuario_id"],
         )
@@ -206,7 +164,6 @@ class ProcessoViewSet(BaseMultiDBViewSet):
             processo.respostas.using(cfg["db_alias"])
             .filter(pchr_empr=cfg["empresa"], pchr_fili=cfg["filial"])
             .select_related("pchr_item")
-            .order_by("pchr_item__chit_orde")
         )
         return Response(ProcessoChecklistRespostaSerializer(respostas, many=True).data)
 

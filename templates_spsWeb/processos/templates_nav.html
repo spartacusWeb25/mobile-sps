@@ -1,10 +1,9 @@
 {% extends 'processos/layouts/processos_base.html' %}
 {% load static %}
 
-{% block title %}Templates de Processos{% endblock %}
+{% block title %}Modelos de Processos{% endblock %}
 
 {% block processos_css %}
-<link rel="stylesheet" href="{% static 'css/list.css' %}">
 <style>
   .template-card {
     border-radius: 14px;
@@ -56,28 +55,16 @@
       <div>
         <h4 class="mb-1">
           <i class="bi bi-database-fill-down"></i>
-          Templates de Processos
+          Modelos de Processos
         </h4>
         <p class="text-muted mb-0">
           Clique em um modelo/versão para ver, em modal, os itens vinculados a ele.
         </p>
       </div>
-      <a class="btn btn-outline-info" href="{% url 'processos:item_criar' slug=slug %}">
-        <i class="bi bi-list-check"></i> Adicionar item ao template
-      </a>
-    </div>
-
-    <div class="card mb-4">
-      <div class="card-body">
-        <h6 class="fw-bold mb-3">Tipos de processo</h6>
-        {% for t in tipos %}
-          <span class="tipo-pill">
-            <strong>{{ t.prot_codi }}</strong>
-            <span>{{ t.prot_nome }}</span>
-          </span>
-        {% empty %}
-          <div class="text-muted">Sem tipos cadastrados.</div>
-        {% endfor %}
+      <div>
+        <button type="button" class="modelo-button btn btn-outline-info d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#modeloCriarModal">
+          <i class="bi bi-plus-circle"></i> Criar Novo Modelo
+        </button>
       </div>
     </div>
 
@@ -88,25 +75,79 @@
           <div class="d-flex justify-content-between align-items-start gap-2">
             <div>
               <div class="fw-bold">{{ m.chmo_nome }}</div>
-              <div class="small text-muted">{{ m.chmo_proc_tipo.prot_nome }}</div>
             </div>
-            <span class="badge text-bg-primary">v{{ m.chmo_vers }}</span>
           </div>
           <div class="modelo-meta">
-            <span><i class="bi bi-list-check"></i> {{ m.itens.all|length }} item(ns)</span>
+            <span class="d-flex align-items-center gap-1"><i class="bi bi-list-check"></i> {{ m.itens.all|length }} item(ns)</span>
             {% if m.chmo_ativ %}
-              <span class="text-success"><i class="bi bi-check-circle"></i> Ativo</span>
+              <span class="text-success d-flex align-items-center gap-1"><i class="bi bi-check-circle"></i> Ativo</span>
             {% else %}
-              <span class="text-muted"><i class="bi bi-slash-circle"></i> Inativo</span>
+              <span class="text-muted d-flex align-items-center gap-1"><i class="bi bi-slash-circle"></i> Inativo</span>
             {% endif %}
           </div>
         </button>
       </div>
       {% empty %}
       <div class="col-12">
-        <div class="alert alert-info mb-0">Nenhum modelo de checklist cadastrado.</div>
+        <div class="alert alert-info mb-0">Nenhum modelo de processo cadastrado.</div>
       </div>
       {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="modeloCriarModal" tabindex="-1" aria-labelledby="modeloCriarModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Novo Modelo de Processo</h3>
+        <button type="button" class="btn-close ml-2" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <form method="post" class="form-modelo-criar" action="{% url 'processos:modelo_criar' slug=slug %}" onsubmit="prepararEnvio(event)">{% csrf_token %}
+        <div class="modal-body">
+          <input type="hidden" name="itens_json" id="itens_json">
+          <div class="row g-3">
+            <div class="col-md-8"><label class="form-label required-label">Nome</label></div>
+          </div>
+          <div class="row g-3">
+            <div class="col-md-8">{{ form.nome }}</div>
+            <div class="col-md-4 d-flex align-items-center">
+              <div class="form-check">{{ form.ativo }} <label class="form-check-label">{{ form.ativo.label }}</label></div>
+            </div>
+          </div>
+          <br>
+          <div id="table-criar-container">
+            <h4>Itens:</h4>
+            <table class="table table-sm item-table align-middle border">
+              <thead>
+                <tr>
+                  <th>Descrição</th>
+                  <th style="width: 130px;">Obrigatório</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="itens-criar-container">
+                <tr class = "item-row mb-2 item-input">
+                  <td>
+                    <input type="text" name="item_desc" class="form-control" placeholder="Descrição do Item" required>
+                  </td>
+                  <td>
+                    <input type="checkbox" name="item_obr" class="form-check-input" role="switch">
+                  </td>
+                  <td>
+                    <button type="button" class="btn btn-danger remove-btn" onclick="removerItem(this)">Remover</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" id="add-item-criar-btn" class="btn btn-secondary d-inline-flex align-items-center gap-1"><i class="bi bi-plus-circle"></i> Adicionar Item</button>
+          <button type="submit" class="btn btn-primary">Salvar</button>
+        </div>
+      </form>
     </div>
   </div>
 </div>
@@ -118,54 +159,278 @@
       <div class="modal-header">
         <div>
           <h5 class="modal-title" id="modeloItensModalLabel{{ m.id }}">
-            {{ m.chmo_nome }} — v{{ m.chmo_vers }}
+            {{ m.chmo_nome }}
           </h5>
-          <div class="small text-muted">Tipo: {{ m.chmo_proc_tipo.prot_nome }}</div>
         </div>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        <div class="d-flex align-items-center gap-2 ml-2">
+          <form method="post" action="{% url 'processos:modelo_toggle_ativo' slug=slug modelo_id=m.id %}">
+            {% csrf_token %}
+            {% if m.chmo_ativ %}
+            <button type="submit" class="btn btn-outline-danger" name="btn-desativar">Desativar</button>
+            {% else %}
+            <button type="submit" class="btn btn-outline-info" name="btn-ativar">Ativar</button>
+            {% endif %}
+          </form>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
       </div>
       <div class="modal-body">
-        <div class="table-responsive">
-          <table class="table table-sm item-table align-middle">
-            <thead>
-              <tr>
-                <th style="width: 90px;">Ordem</th>
-                <th>Item vinculado</th>
-                <th style="width: 130px;">Obrigatório</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for item in m.itens.all %}
-              <tr>
-                <td>{{ item.chit_orde }}</td>
-                <td>{{ item.chit_desc }}</td>
-                <td>
-                  {% if item.chit_obri %}
-                    <span class="badge text-bg-danger">Sim</span>
-                  {% else %}
-                    <span class="badge text-bg-secondary">Não</span>
-                  {% endif %}
-                </td>
-              </tr>
-              {% empty %}
-              <tr>
-                <td colspan="3" class="text-center text-muted py-4">
-                  Nenhum item vinculado a esta versão.
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+        <table class="table table-sm item-table align-middle border">
+          <thead>
+            <tr>
+              <th>Item vinculado</th>
+              <th style="width: 130px;">Obrigatório</th>
+            </tr>
+          </thead>
+          <tbody class="itens-container">
+            {% for item in m.itens.all %}
+            <tr>
+              <td name="item-desc">{{ item.chit_desc }}</td>
+              <td>
+                {% if item.chit_obri %}
+                  <span class="badge text-bg-danger" name="item-obri">Sim</span>
+                {% else %}
+                  <span class="badge text-bg-secondary" name="item-obri">Não</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr name="linha-vazia">
+              <td colspan="3" class="text-center text-muted py-4">
+                Nenhum item vinculado a esta versão.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <form onsubmit="salvarItens(event, '{{ m.id }}')">
+        {% csrf_token %}
+        <input type="hidden" name="modelo_id" value="{{ m.id }}">
+        <div class="table-container">
         </div>
-      </div>
-      <div class="modal-footer">
-        <a class="btn btn-outline-info" href="{% url 'processos:item_criar' slug=slug %}?modelo_id={{ m.id }}">
-          <i class="bi bi-plus-circle"></i> Adicionar item nesta versão
-        </a>
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-      </div>
+        <div class="modal-footer align-items-center">
+          <div class="me-auto">
+            {% if m.chmo_ativ %}
+            <a href="{% url 'processos:criar' slug=slug %}?modelo={{ m.id }}" class="btn btn-primary">Criar Novo Processo</a>
+            {% endif %}
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <div class="edit-btn-container d-flex align-items-center gap-2">
+            </div>
+            <button type="button" class="btn btn-secondary btn-editar">Editar</button>
+          </div>
+        </div>
+      </form>
     </div>
   </div>
 </div>
 {% endfor %}
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const modelo = urlParams.get('modelo');
+    if(modelo){
+      const modeloModal = document.getElementById(`modeloItensModal${modelo}`);
+      if (modeloModal) {
+        const modalInstance = bootstrap.Modal.getOrCreateInstance(modeloModal);
+        modalInstance.show();
+      }
+    };
+  });
+  
+  let itens;
+  document.addEventListener("click", function(event) {
+    const editBtn = event.target.closest(".btn-editar");
+    if (editBtn) {
+      const activeModal = editBtn.closest(".modal");
+      const tableHeader = activeModal.querySelector("thead tr");
+      const tempHeader = document.createElement("th");
+      tempHeader.className = "temp-header";
+      tempHeader.style = "width: 100px;";
+      tableHeader.appendChild(tempHeader);
+      const modalFooter = editBtn.closest(".modal-footer");
+      const campoBotao = modalFooter.querySelector(".edit-btn-container");
+      campoBotao.innerHTML = `
+      <button type="button" class="btn btn-secondary d-flex align-items-center gap-2 btn-add-item"><i class="bi bi-plus-circle"></i> Adicionar Item</button>
+      <button type="submit" class="btn btn-primary">Salvar</button>
+      `
+      editBtn.textContent = "Cancelar Edição"
+      editBtn.className = "btn btn-secondary btn-cancelar-edicao"
+      const itensContainer = activeModal.querySelector(".itens-container");
+      const rows = itensContainer.querySelectorAll("tr");
+      itens = extrairItens(rows);
+      rows.forEach(row => {
+        row.remove();
+      });
+      itens.forEach(item => {
+        const newRow = document.createElement("tr");
+        newRow.className = "item-row mb-2 item-input";
+        newRow.innerHTML = `
+        <td>
+          <input type="text" name="item-desc" class="form-control" value="${item.descricao}" placeholder="Descrição do Item" required>
+        </td>
+        <td>
+          <input type="checkbox" name="item-obri" class="form-check-input" role="switch" ${item.obrigatorio ? 'checked' : ''}>
+        </td>
+        <td>
+          <button type="button" class="btn btn-danger remove-btn" onclick="removerItem(this)">Remover</button>
+        </td>
+        `;
+        itensContainer.appendChild(newRow);
+      })
+      return;
+    }
+    const addBtn = event.target.closest(".btn-add-item");
+    if (addBtn) {
+      const activeModal = addBtn.closest(".modal");
+      let container = activeModal.querySelector(".itens-container");
+      const newRow = document.createElement("tr");
+      newRow.className = "item-row mb-2 item-input";
+      newRow.innerHTML = `
+      <td>
+        <input type="text" name="item-desc" class="form-control" placeholder="Descrição do Item" required>
+      </td>
+      <td>
+        <input type="checkbox" name="item-obri" class="form-check-input" role="switch">
+      </td>
+      <td>
+        <button type="button" class="btn btn-danger remove-btn" onclick="removerItem(this)">Remover</button>
+      </td>
+      `;
+      container.appendChild(newRow);
+      return;
+    }
+    const cancelarEdicaoBtn = event.target.closest(".btn-cancelar-edicao");
+    if(cancelarEdicaoBtn){
+      const activeModal = cancelarEdicaoBtn.closest(".modal");
+      const tempHeader = activeModal.querySelector("thead tr .temp-header");
+      tempHeader.remove();
+      const container = activeModal.querySelector(".itens-container");
+      const rows = container.querySelectorAll("tr");
+      rows.forEach(row => {
+        row.remove();
+      });
+      itens.forEach(item =>{
+        const newRow = document.createElement("tr");
+        newRow.innerHTML = `
+        <tr>
+          <td name="item-desc">${item["descricao"]}</td>
+          <td>
+            <span class="badge ${item["obrigatorio"]?"text-bg-danger":"text-bg-secondary"}" name="item-obri">${item["obrigatorio"]?"Sim":"Não"}</span>
+          </td>
+        </tr>
+        `;
+        container.appendChild(newRow);
+      })
+      const modalFooter = cancelarEdicaoBtn.closest(".modal-footer");
+      const campoBotao = modalFooter.querySelector(".edit-btn-container");
+      campoBotao.innerHTML = ``
+      cancelarEdicaoBtn.textContent = "Editar"
+      cancelarEdicaoBtn.className = "btn btn-secondary btn-editar"
+
+    }
+  });
+
+  document.getElementById("add-item-criar-btn").addEventListener("click", function() {
+    const container = document.getElementById("itens-criar-container");
+    const newRow = document.createElement("tr");
+    newRow.className = "item-row mb-2 item-input";
+    newRow.innerHTML = `
+    <td>
+      <input type="text" name="item_desc" class="form-control" placeholder="Descrição do Item" required>
+    </td>
+    <td>
+      <input type="checkbox" name="item_obr" class="form-check-input" role="switch">
+    </td>
+    <td>
+      <button type="button" class="btn btn-danger remove-btn" onclick="removerItem(this)">Remover</button>
+    </td>
+    `;
+    container.appendChild(newRow);
+  });
+
+
+  function removerItem(button) {
+    const container = button.closest("tbody");
+    if (container.children.length > 1) {
+      button.parentElement.parentElement.remove();
+    }
+  }
+
+  function extrairItens(rows){
+    const itens = [];
+    rows.forEach(row => {
+      if(row.name == "linha-vazia"){
+        return;
+      }
+      const descCol = row.querySelector("[name='item-desc']");
+      const obriCol = row.querySelector("[name='item-obri']");
+      let desc;
+      let obri;
+      if (!descCol) return;
+      if(descCol.tagName === "INPUT"){
+        desc = descCol.value;
+        obri = obriCol.checked;
+      }else{
+        desc = descCol.textContent.trim();
+        obri = obriCol.textContent.trim() === "Sim";
+      }
+      itens.push({
+        "descricao" : desc,
+        "obrigatorio" : obri
+      });
+    });
+    return itens;
+  }
+
+  function salvarItens(event, modeloId) {
+    event.preventDefault();
+    const form = event.target;
+    const modal = form.closest(".modal");
+    const table = modal.querySelector(".itens-container");
+    const rowsAntigos = table.querySelectorAll("tr");
+    const itensAntigos = extrairItens(rowsAntigos);
+    const payload = {
+      itens: itensAntigos
+    };
+    const rows = form.querySelectorAll(".item-input");
+    rows.forEach((row) => {
+      payload.itens.push({
+        descricao: row.querySelector("[name='item_desc']").value,
+        obrigatorio: row.querySelector("[name='item_obri']").checked
+      });
+    });
+    const urlTemplate = "{% url 'processos:modelo_editar' slug=slug modelo_id=0 %}";
+    const targetUrl = urlTemplate.replace('0', modeloId);
+    fetch(targetUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": form.querySelector("[name='csrfmiddlewaretoken']").value
+      },
+      body: JSON.stringify(payload)
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        location.reload();
+      }
+    });
+  }
+
+  function prepararEnvio(event) {
+    const rows = document.querySelectorAll("#itens-criar-container tr");
+    const itens = [];
+
+    rows.forEach((row, index) => {
+      itens.push({
+        descricao: row.querySelector("[name='item_desc']").value,
+        obrigatorio: row.querySelector("[name='item_obri']").checked
+      });
+    });
+
+    document.getElementById("itens_json").value = JSON.stringify(itens);
+  }
+</script>
 {% endblock %}

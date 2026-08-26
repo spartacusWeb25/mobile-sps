@@ -3,6 +3,7 @@ from core.utils import get_licenca_db_config
 from decimal import Decimal
 
 from ...models import Os, PecasOs, ServicosOs
+from processos.models import Processo
 
 class OsDetailView(DetailView):
     model = Os
@@ -150,4 +151,10 @@ class OsDetailView(DetailView):
             os_obj.os_topr = subtotal
         except Exception:
             pass
+
+        context['processo'] = Processo.objects.using(banco).filter(
+            proc_empr=self.request.session.get('empresa_id', 1),
+            proc_fili=self.request.session.get('filial_id', 1),
+            proc_os=os_obj.os_os
+            ).first()
         return context

@@ -42,6 +42,15 @@
   background: #4d9e69;
   color: #fff;
 }
+.badge-status-reprovado {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #7a7a7a;
+  color: #fff;
+}
 .section-label {
   font-size: 12px;
   font-weight: 600;
@@ -197,100 +206,70 @@
 <div class="processo-card card p-4">
 
   <!-- Header -->
-  <div class="processo-header">
-    <div>
-      <div class="processo-title">
-        <span class="icon">📋</span>
-        Processo #{{ processo.id }}
+  <div class="processo-header w-100">
+    <div class="d-flex justify-content-between w-100">
+      <div>
+        <div class="processo-title">
+          <span class="icon">📋</span>
+          Processo #{{ processo.id }}
+        </div>
+        <div class="meta-row">
+          <span class="meta-item"><strong>Ordem de Serviço:</strong> {{ processo.proc_os.os_os }}</span>
+          <span class="meta-item"><strong>Status:</strong> <span class="{% if processo.proc_stat == processo.STATUS_REPROVADO %}badge-status-reprovado{% else %}badge-status{% endif %}">{{ processo.proc_stat }}</span></span>
+          {% if checklist_modelo %}
+          <span class="meta-item"><strong>Modelo:</strong> {{ checklist_modelo.chmo_nome }}</span>
+          {% endif %}
+        </div>
       </div>
-      <div class="meta-row">
-        <span class="meta-item"><strong>Tipo:</strong> {{ processo.proc_tipo.prot_nome }}</span>
-        <span class="meta-item"><strong>Status:</strong> <span class="badge-status">{{ processo.proc_stat }}</span></span>
+      <div class="d-inline-flex align-items-center gap-2">
+        {% if processo.proc_stat == processo.STATUS_REPROVADO %}
+        <button class="btn btn-outline-info" name="btn-editar" onclick="toggleEditar(this)">
+          Editar
+        </button>
+        {% endif %}
         {% if checklist_modelo %}
-        <span class="meta-item"><strong>Checklist:</strong> {{ checklist_modelo.chmo_nome }}</span>
+        <a class="btn btn-outline-primary d-inline-flex align-items-center gap-2"
+          href="{% url 'processos:templates' slug=slug %}?modelo={{ checklist_modelo.id }}">
+          <i class="bi bi-grid-1x2"></i> Acessar Modelo
+        </a>
+        {% else %}
+        <a class="btn btn-outline-primary d-inline-flex align-items-center gap-2" href="{% url 'processos:modelo_criar' slug=slug %}">
+          <i class="bi bi-plus-square"></i> Criar modelo
+        </a>
         {% endif %}
-        {% if checklist_versao %}
-        <span class="meta-item"><strong>Versão:</strong> v{{ checklist_versao }}</span>
-        {% endif %}
+        <a href="{% url 'OsWeb:os_detalhe' slug=slug pk=processo.proc_os.os_os %}" class="btn btn-outline-info d-inline-flex align-items-center gap-2">
+          <i class="bi bi-tools"></i> Ir Para OS
+        </a>
       </div>
     </div>
   </div>
-
-  <!-- Cliente -->
-      <div class="meta-item" id="cliente">
-      <strong>Cliente:</strong>
-      {% if cliente %}
-        {{ cliente.enti_nome }}
-        <span class="text-muted">#{{ processo.proc_clie }}</span>
-      {% elif processo.proc_clie %}
-        Cliente #{{ processo.proc_clie }}
-      {% else %}
-        Não informado
-      {% endif %}
-    </div>
-    <form method="post" action="{% url 'processos:atualizar_cliente' slug=slug pk=processo.id %}" class="mt-2">
-      {% csrf_token %}
-      <div class="row g-2 align-items-end" style="max-width: 520px;">
-        <div class="col-12 col-md-9">
-          <label class="form-label fw-semibold" style="font-size:13px;">Atualizar cliente</label>
-          <div class="position-relative">
-            {{ cliente_form.proc_clie_label }}
-            {{ cliente_form.proc_clie }}
-            <div id="cliente_detail_box" class="list-group position-absolute w-100 d-none" style="z-index:1200; max-height:240px; overflow:auto;"></div>
-          </div>
-        </div>
-        <div class="col-12 col-md-3 d-grid">
-          <button type="submit" class="btn btn-outline-primary">
-            Salvar
-          </button>
-        </div>
-      </div>
-    </form>
 
   <!-- Checklist -->
   <div class="section-label">Itens vinculados ao processo</div>
-
-  <div class="sync-panel">
-    <div>
-      <div class="sync-title">
-        {{ respostas|length }} item(ns) vinculado(s) ao processo
-        {% if itens_modelo_count %}de {{ itens_modelo_count }} item(ns) no modelo ativo{% endif %}.
+  {% if processo.proc_stat != processo.STATUS_APROVADO and itens_diferenca %}
+    <div class="sync-panel {% if processo.proc_stat != processo.STATUS_ABERTO %}d-none{% endif %} modo-editar">
+      <div>
+        <div class="sync-title {% if itens_diferenca %}{% endif %}">
+          Modelo dessincronizado.
+        </div>
+        <p class="sync-help">
+          Sincronize os itens do modelo para vinculá-los a este processo.
+        </p>
       </div>
-      <p class="sync-help">
-        Cadastre novos itens no modelo ativo quando necessário e sincronize para vinculá-los a este processo.
-      </p>
-      {% if itens_pendentes_count %}
-      <ul class="pending-list">
-        {% for item in itens_pendentes %}
-        <li>{{ item.chit_orde }} - {{ item.chit_desc }}</li>
-        {% endfor %}
-      </ul>
-      {% endif %}
+
+      <div class="d-flex gap-2 flex-wrap justify-content-end">
+        <form method="post" action="{% url 'processos:sincronizar_checklist' slug=slug pk=processo.id %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-outline-info d-inline-flex align-items-center gap-2">
+            <i class="bi bi-arrow-repeat"></i>
+            Sincronizar processo
+          </button>
+        </form>
+      </div>
     </div>
+  {% endif %}
 
-    <div class="d-flex gap-2 flex-wrap justify-content-end">
-      {% if checklist_modelo %}
-      <a class="btn btn-outline-primary d-inline-flex align-items-center gap-2"
-        href="{% url 'processos:item_criar' slug=slug %}?modelo_id={{ checklist_modelo.id }}&next={{ next_url|urlencode }}">
-        <i class="bi bi-plus-circle"></i> Cadastrar item no modelo
-      </a>
-      {% else %}
-      <a class="btn btn-outline-primary d-inline-flex align-items-center gap-2" href="{% url 'processos:modelo_criar' slug=slug %}">
-        <i class="bi bi-plus-square"></i> Criar modelo
-      </a>
-      {% endif %}
-
-      <form method="post" action="{% url 'processos:sincronizar_checklist' slug=slug pk=processo.id %}">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-outline-info d-inline-flex align-items-center gap-2">
-          <i class="bi bi-arrow-repeat"></i>
-          {% if itens_pendentes_count %}Vincular itens pendentes{% else %}Sincronizar checklist{% endif %}
-        </button>
-      </form>
-    </div>
-  </div>
-
-  <form method="post" action="{% url 'processos:salvar_checklist' slug=slug pk=processo.id %}">
+  <form method="post">
     {% csrf_token %}
     <div class="table-responsive">
       <table class="checklist-table">
@@ -304,17 +283,53 @@
         </thead>
         <tbody>
           {% for r in respostas %}
-          <tr>
-            <td class="item-desc">{{ r.pchr_item.chit_desc }}</td>
-            <td>
-              {% if r.pchr_item.chit_obri %}
+          <tr class="{% if processo.proc_stat != processo.STATUS_ABERTO and r.pchr_vers is None %}d-none modo-editar{% else %}modo-ver{% endif %}">
+            <td class="item-desc">{{ r.pchr_desc }}</td>
+            <td class="text-center">
+              {% if r.pchr_obri %}
                 <span class="badge-obri sim">Sim</span>
               {% else %}
                 <span class="badge-obri nao">Não</span>
               {% endif %}
             </td>
             <td>
-              <select name="resposta_{{ r.pchr_item.id }}"
+              {% if processo.proc_stat != processo.STATUS_APROVADO and r.pchr_vers is None %}
+              <select name="resposta_{{ r.id }}"
+                class="select-resposta {% if r.pchr_resp == 'SIM' %}sim{% elif r.pchr_resp == 'NAO' %}nao{% elif r.pchr_resp == 'NA' %}na{% endif %}"
+                onchange="colorSelect(this)">
+                <option value="">--</option>
+                <option value="SIM" {% if r.pchr_resp == 'SIM' %}selected{% endif %}>SIM</option>
+                <option value="NAO" {% if r.pchr_resp == 'NAO' %}selected{% endif %}>NÃO</option>
+                <option value="NA"  {% if r.pchr_resp == 'NA'  %}selected{% endif %}>N/A</option>
+              </select>
+              {% else %}
+              <p name="resposta_{{ r.id }}"
+                class="m-auto">{{ r.pchr_resp }}</p>
+              {% endif %}
+            </td>
+            <td>
+              {% if processo.proc_stat != processo.STATUS_APROVADO and r.pchr_vers is None %}
+              <textarea class="input-obs" type="text"
+                name="observacao_{{ r.id }}"
+                placeholder="Observação...">{{ r.pchr_obse|default:'' }}</textarea>
+              {% else %}
+              <p class="m-auto"
+                name="observacao_{{ r.id }}">{{ r.pchr_obse|default:'' }}</p>
+              {% endif %}
+            </td>
+          </tr>
+          {% if temp_resp %}
+          <tr class="d-none modo-editar">
+            <td class="item-desc">{{ r.pchr_desc }}</td>
+            <td class="text-center">
+              {% if r.pchr_obri %}
+                <span class="badge-obri sim">Sim</span>
+              {% else %}
+                <span class="badge-obri nao">Não</span>
+              {% endif %}
+            </td>
+            <td>
+              <select name="resposta_{{ r.id }}"
                 class="select-resposta {% if r.pchr_resp == 'SIM' %}sim{% elif r.pchr_resp == 'NAO' %}nao{% elif r.pchr_resp == 'NA' %}na{% endif %}"
                 onchange="colorSelect(this)">
                 <option value="">--</option>
@@ -324,73 +339,59 @@
               </select>
             </td>
             <td>
-              <input class="input-obs" type="text"
-                name="observacao_{{ r.pchr_item.id }}"
-                value="{{ r.pchr_obse|default:'' }}"
-                placeholder="Observação...">
+              <textarea class="input-obs" type="text"
+                name="observacao_{{ r.id }}"
+                placeholder="Observação...">{{ r.pchr_obse|default:'' }}</textarea>
             </td>
           </tr>
+          {% endif %}
           {% empty %}
           <tr>
             <td colspan="4" class="text-center py-4" style="font-size:14px; color: var(--bs-secondary-color);">
-              Nenhum item vinculado a este processo. Cadastre itens no modelo ativo ou clique em “Sincronizar checklist”.
+              Nenhum item vinculado a este processo. Cadastre itens no modelo ativo ou clique em “Sincronizar processo.
             </td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
+      <input type="hidden" value="{{ temp_resp }}" name="temp_resp">
     </div>
-
+    {% if processo.proc_stat == processo.STATUS_ABERTO %}
     <div class="action-bar">
-      <button type="submit" class="btn btn-outline-primary d-inline-flex align-items-center gap-2">
-        <i class="fas fa-save"></i> Salvar checklist
+      <button type="submit" class="btn btn-outline-primary d-inline-flex align-items-center gap-2" formaction="{% url 'processos:salvar_checklist' slug=slug pk=processo.id %}" formnovalidate>
+        <i class="fas fa-save"></i> Salvar processo
       </button>
     </div>
-  </form>
-
-  <!-- Assinatura / Validação -->
-  <div class="assinatura-card">
-    <div class="assinatura-title">
-      <i class="fas fa-pen-nib"></i> Assinatura para validação
+    {% endif %}
+    {% if processo.proc_stat != processo.STATUS_ABERTO and responsavel %}
+    <div class="assinatura-card modo-ver">
+      <div class="assinatura-title mb-0">
+        Responsável: {{ responsavel }}
+      </div>
     </div>
-    <form method="post" action="{% url 'processos:validar' slug=slug pk=processo.id %}">
-      {% csrf_token %}
-      <div class="row g-3">
-        <div class="col-md-5">
-          <label class="form-label fw-semibold" style="font-size:13px;">Nome do responsável</label>
-          <input type="text" name="assinatura_nome" class="form-control" required placeholder="Nome completo">
-        </div>
-        <div class="col-md-4">
-          <label class="form-label fw-semibold" style="font-size:13px;">Documento (CPF / Matrícula)</label>
-          <input type="text" name="assinatura_documento" class="form-control" required placeholder="000.000.000-00">
-        </div>
-        <div class="col-md-3 d-flex align-items-end pb-1">
-          <div class="form-check">
-            <input class="form-check-input" type="checkbox" name="assinatura_confirmada" id="assinatura_confirmada" required>
-            <label class="form-check-label" for="assinatura_confirmada" style="font-size:13px;">
-              Confirmo minha assinatura
-            </label>
+    {% endif %}
+    {% if processo.proc_stat != processo.STATUS_APROVADO %}
+    <!-- Assinatura / Validação -->
+    <div class="assinatura-card {% if processo.proc_stat != processo.STATUS_ABERTO and r.pchr_vers is None %}d-none{% endif %} modo-editar">
+      <div class="assinatura-title">
+        <i class="fas fa-pen-nib"></i> Assinatura para validação
+      </div>
+        <div class="row g-3">
+          <div class="col-md-4">
+            {{ assinatura_form.responsavel }}
+          </div>
+          <div class="col-md-4">
+            {{ assinatura_form.documento }}
           </div>
         </div>
-      </div>
-      <div class="mt-3">
-        <button class="btn btn-outline-success d-inline-flex align-items-center gap-2">
-          <i class="fas fa-check"></i> Validar processo
-        </button>
-      </div>
-    </form>
-     {% if processo.proc_stat == processo.STATUS_APROVADO and not processo.proc_os %}
-          <form method="post"
-                action="{% url 'processos:abrir_os' slug=slug pk=processo.id %}"
-                class="d-inline">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-sm btn-outline-info">
-              <i class="bi bi-tools"></i> Abrir OS
-            </button>
-          </form>
-        {% endif %}
-  </div>
-
+        <div class="mt-2">
+          <button class="btn btn-outline-success d-inline-flex align-items-center gap-2" formaction="{% url 'processos:validar' slug=slug pk=processo.id %}">
+            <i class="fas fa-check"></i> Validar processo
+          </button>
+        </div>
+      </form>
+    </div>
+    {% endif %}
 </div>
 </div>
 
@@ -400,50 +401,12 @@ function colorSelect(el) {
   const map = { SIM: 'sim', NAO: 'nao', NA: 'na' };
   if (map[el.value]) el.classList.add(map[el.value]);
 }
+function toggleEditar(editBtn){
+    document.querySelectorAll('.modo-ver, .modo-editar').forEach(el => el.classList.toggle('d-none'));
+    editBtn.classList.toggle('btn-outline-info');
+    editBtn.classList.toggle('btn-secondary');
+    editBtn.textContent = editBtn.classList.contains('btn-secondary') ? "Cancelar Edição" : "Editar";
+}
 </script>
-<script>
-  (function () {
-    const input = document.getElementById('id_proc_clie_label');
-    const hidden = document.getElementById('id_proc_clie');
-    const box = document.getElementById('cliente_detail_box');
-    if (!input || !hidden || !box) return;
-    const url = "{% url 'processos:autocomplete_entidades' slug=slug %}";
-    let ctrl;
-    let t;
-    input.addEventListener('input', () => {
-      clearTimeout(t);
-      const term = (input.value || '').trim();
-      hidden.value = '';
-      if (term.length < 2) { box.classList.add('d-none'); box.innerHTML = ''; return; }
-      t = setTimeout(async () => {
-        try {
-          if (ctrl) ctrl.abort();
-          ctrl = new AbortController();
-          const res = await fetch(url + '?term=' + encodeURIComponent(term), { signal: ctrl.signal });
-          const payload = await res.json();
-          const data = Array.isArray(payload) ? payload : (payload.results || []);
-          box.innerHTML = '';
-          data.forEach((item) => {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'list-group-item list-group-item-action';
-            btn.textContent = item.label || '';
-            btn.addEventListener('click', () => {
-              input.value = item.label || '';
-              hidden.value = item.id;
-              box.classList.add('d-none');
-            });
-            box.appendChild(btn);
-          });
-          box.classList.toggle('d-none', data.length === 0);
-        } catch (e) {
-          box.classList.add('d-none');
-        }
-      }, 250);
-    });
-    document.addEventListener('click', (e) => {
-      if (!input.parentElement.contains(e.target)) box.classList.add('d-none');
-    });
-  })();
-</script>
+
 {% endblock %}

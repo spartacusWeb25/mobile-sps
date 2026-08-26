@@ -1,132 +1,52 @@
 from django import forms
 
-from processos.models import Processo, ProcessoChecklistResposta
 from Entidades.models import Entidades
+from processos.models import Processo, ProcessoChecklistResposta, ChecklistModelo
 
-
-class ProcessoTipoForm(forms.Form):
-    nome = forms.CharField(
-        max_length=120,
-        label="Nome",
-        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "Nome do tipo"}),
-    )
-    codigo = forms.CharField(
-        max_length=50,
-        label="Código",
-        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "Código do tipo"}),
-    )
-    ativo = forms.BooleanField(required=False, initial=True, label="Ativo")
+import logging
+logger = logging.getLogger(__name__)
 
 
 class ChecklistModeloForm(forms.Form):
-    processo_tipo_id = forms.IntegerField(
-        label="Tipo de processo",
-        widget=forms.NumberInput(attrs={"class": "form-control", "min": "1"}),
-    )
     nome = forms.CharField(
         max_length=120,
         label="Nome do modelo",
         widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "Nome do modelo"}),
     )
-    versao = forms.IntegerField(
-        min_value=1,
-        initial=1,
-        label="Versão",
-        widget=forms.NumberInput(attrs={"class": "form-control", "min": "1"}),
-    )
     ativo = forms.BooleanField(required=False, initial=True, label="Ativo")
 
 
-class ChecklistItemForm(forms.Form):
-    checklist_modelo_id = forms.IntegerField(
-        label="Modelo",
-        widget=forms.NumberInput(attrs={"class": "form-control", "min": "1"}),
-    )
-    ordem = forms.IntegerField(
-        min_value=0,
-        initial=0,
-        label="Ordem",
-        widget=forms.NumberInput(attrs={"class": "form-control", "min": "0"}),
-    )
-    descricao = forms.CharField(
-        max_length=255,
-        label="Descrição",
-        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "Descrição do item"}),
-    )
-    obrigatorio = forms.BooleanField(required=False, initial=True, label="Obrigatório")
-
-
 class ProcessoForm(forms.ModelForm):
-    proc_clie_label = forms.CharField(
-        required=False,
-        label="Cliente",
-        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "Cliente (nome ou código)"}),
-    )
-    proc_clie = forms.IntegerField(required=False, widget=forms.HiddenInput)
 
     class Meta:
         model = Processo
-        fields = ["proc_tipo", "proc_desc", "proc_clie"]
-        labels = {"proc_tipo": "Tipo de processo", "proc_desc": "Descrição", "proc_clie": "Cliente"}
+        fields = ["proc_os", "proc_mode", "proc_desc"]
+        labels = {"proc_os" : "Ordem de serviço", "proc_mode": "Modelo de processo", "proc_desc": "Descrição"}
         widgets = {
-            "proc_tipo": forms.Select(attrs={"class": "form-select"}),
-            "proc_desc": forms.TextInput(attrs={"class": "form-control", "placeholder": "Descreva o processo"}),
+            "proc_os": forms.Select(attrs={"class": "form-select", "id": "os_input"}),
+            "proc_mode": forms.Select(attrs={"class": "form-select", "id": "modelo_input"}),
+            "proc_desc": forms.TextInput(attrs={"class": "form-control", "placeholder": "Descreva o processo (Opcional)"}),
         }
 
     def __init__(self, *args, **kwargs):
-        tipos = kwargs.pop("tipos", None)
+        os = kwargs.pop("os", None)
+        modelos = kwargs.pop("modelos", None)
         self.db_alias = kwargs.pop("db_alias", None)
         self.empresa = kwargs.pop("empresa", None)
         super().__init__(*args, **kwargs)
-        if tipos is not None:
-            self.fields["proc_tipo"].queryset = tipos
-        self.fields["proc_clie"].required = False
-
-        if getattr(self.instance, "proc_clie", None):
-            try:
-                ent = (
-                    Entidades.objects.using(self.db_alias or "default")
-                    .filter(
-                        enti_empr=(self.empresa if self.empresa is not None else 1),
-                        enti_clie=self.instance.proc_clie,
-                    )
-                    .first()
-                )
-                if ent:
-                    self.initial["proc_clie_label"] = ent.enti_nome
-                    self.initial["proc_clie"] = int(ent.enti_clie)
-                else:
-                    self.initial["proc_clie"] = int(self.instance.proc_clie)
-            except Exception:
-                pass
-            except Exception:
-                self.initial["proc_clie"] = getattr(self.instance, "proc_clie", None)
-
-    def clean_proc_clie(self):
-        val = self.cleaned_data.get("proc_clie")
-        if val:
-            try:
-                return int(val)
-            except Exception:
-                return val
-
-        raw = (self.cleaned_data.get("proc_clie_label") or "").strip()
-        if not raw:
-            return None
-        if raw.isdigit():
-            return int(raw)
-
-        db_alias = self.db_alias or "default"
-        empresa = self.empresa if self.empresa is not None else 1
-        ent = (
-            Entidades.objects.using(db_alias)
-            .filter(enti_empr=empresa, enti_nome__icontains=raw)
-            .order_by("enti_nome")
-            .first()
-        )
-        if ent:
-            return int(ent.enti_clie)
-        raise forms.ValidationError("Cliente não encontrado. Informe o código ou selecione no autocomplete.")
+        self.fields['proc_mode'].queryset = ChecklistModelo.objects.none()
+        if modelos is not None:
+            self.fields["proc_mode"].queryset = modelos
+        if os is not None:
+            self.fields["proc_os"].queryset = os
+            self.os_cliente_map = {
+                str(obj.pk): obj.clie_nome for obj in os
+            }
+        else:
+            self.os_cliente_map = {}
+        self.fields["proc_mode"].label_from_instance = lambda obj: f"{obj.chmo_nome}"
+        self.fields["proc_os"].label_from_instance = lambda obj: f"{obj.os_os} - ({obj.os_data_aber.strftime("%d/%m/%Y")}) - {obj.clie_nome}"
+        self.fields['proc_os'].empty_label = "Selecione uma OS"
 
 
 class ProcessoRespostaInlineForm(forms.Form):
@@ -141,41 +61,24 @@ class ProcessoRespostaInlineForm(forms.Form):
         widget=forms.Textarea(attrs={"rows": 2, "class": "form-control", "placeholder": "Observações"}),
     )
 
-
-class ProcessoClienteForm(forms.Form):
-    proc_clie_label = forms.CharField(
-        required=False,
-        label="Cliente",
-        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "Cliente (nome ou código)"}),
+class ProcessoResponsavelForm(forms.Form):
+    responsavel = forms.ModelChoiceField(
+        label="Responsável",
+        queryset=Entidades.objects.none(),
+        widget=forms.Select(attrs={"class": "form-control"}),
     )
-    proc_clie = forms.IntegerField(required=False, widget=forms.HiddenInput)
-
+    documento = forms.CharField(
+        required=True,
+        max_length=255,
+        label="Documento (CPF / Matrícula)",
+        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "000.000.000-00"}),
+    )
     def __init__(self, *args, **kwargs):
         self.db_alias = kwargs.pop("db_alias", None)
         self.empresa = kwargs.pop("empresa", None)
+        entidades = kwargs.pop("entidades", None)
         super().__init__(*args, **kwargs)
-
-    def clean_proc_clie(self):
-        val = self.cleaned_data.get("proc_clie")
-        if val:
-            try:
-                return int(val)
-            except Exception:
-                return val
-
-        raw = (self.cleaned_data.get("proc_clie_label") or "").strip()
-        if not raw:
-            return None
-        if raw.isdigit():
-            return int(raw)
-        db_alias = self.db_alias or "default"
-        empresa = self.empresa if self.empresa is not None else 1
-        ent = (
-            Entidades.objects.using(db_alias)
-            .filter(enti_empr=empresa, enti_nome__icontains=raw)
-            .order_by("enti_nome")
-            .first()
-        )
-        if ent:
-            return int(ent.enti_clie)
-        raise forms.ValidationError("Cliente não encontrado. Informe o código ou selecione no autocomplete.")
+        if entidades is not None:
+            self.fields["responsavel"].queryset = entidades
+        self.fields["responsavel"].label_from_instance = lambda obj: f"{obj.enti_nome}"
+        self.fields["responsavel"].empty_label = "Selecione o responsável"

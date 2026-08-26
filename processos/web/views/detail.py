@@ -1,15 +1,13 @@
 from django.views.generic import DetailView
-from django.views import View
-from django.contrib import messages
-from django.shortcuts import redirect
-from django.http import JsonResponse
 from processos.services.processo_service import ProcessoService
 from core.utils import get_db_from_slug
-from processos.models import ChecklistItem, ChecklistModelo, Processo, ProcessoTipo
-from Entidades.models import Entidades
+from processos.models import ChecklistItem, ChecklistModelo, Processo
 from processos.services.checklist_service import ChecklistService
-from processos.web.forms import ProcessoClienteForm
+from processos.web.forms import ProcessoResponsavelForm
+from django.db.models import Q
 
+import logging
+logger = logging.getLogger(__name__)
 
 class ProcessoDetailView(DetailView):
     model = Processo
@@ -30,136 +28,77 @@ class ProcessoDetailView(DetailView):
         return (
             Processo.objects.using(ctx["db_alias"])
             .filter(proc_empr=ctx["empresa"], proc_fili=ctx["filial"])
-            .select_related("proc_tipo")
+            .select_related("proc_mode")
         )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         ctx = self._get_db_ctx()
         processo = context["processo"]
-
-        respostas = (
+        if processo.proc_vers:
+            vers = processo.proc_vers
+        else:
+            vers = 0
+        respostas = list(
             processo.respostas.using(ctx["db_alias"])
             .filter(pchr_empr=ctx["empresa"], pchr_fili=ctx["filial"])
+            .filter(Q(pchr_vers=vers) | Q(pchr_vers__isnull=True))
             .select_related("pchr_item__chit_mode")
-            .order_by("pchr_item__chit_orde")
         )
-        cliente = None
 
-        if processo.proc_clie:
-            cliente = (
-                Entidades.objects.using(ctx["db_alias"])
-                .filter(
-                    enti_empr=ctx["empresa"],
-                    enti_clie=processo.proc_clie,
-                )
-                .first()
-            )
-
-        modelo = ChecklistService.obter_modelo_ativo(
+        modelo = ChecklistService.obter_modelo_de_processo(
             db_alias=ctx["db_alias"],
             empresa=ctx["empresa"],
             filial=ctx["filial"],
-            proc_tipo=processo.proc_tipo,
+            processo_id=processo.id,
         )
         itens_modelo = ChecklistItem.objects.using(ctx["db_alias"]).none()
-        itens_pendentes = ChecklistItem.objects.using(ctx["db_alias"]).none()
+        temp_resp = False
         if modelo:
             itens_modelo = modelo.itens.using(ctx["db_alias"]).filter(
                 chit_empr=ctx["empresa"],
                 chit_fili=ctx["filial"],
             )
-            respostas_item_ids = list(respostas.values_list("pchr_item_id", flat=True))
-            itens_pendentes = itens_modelo.exclude(id__in=respostas_item_ids).order_by(
-                "chit_orde"
-            )
-
+            mapa_modelo = {
+                item.id: (item.chit_obri, item.chit_desc) 
+                for item in itens_modelo
+            }
+            mapa_respostas = {
+                r.pchr_item_id: (r.pchr_obri, r.pchr_desc) 
+                for r in respostas
+                if r.pchr_vers is None
+            }
+            if not mapa_respostas:
+                mapa_respostas = {
+                    r.pchr_item_id: (r.pchr_obri, r.pchr_desc) 
+                    for r in respostas
+                    if r.pchr_vers == vers
+                }
+                itens_diferenca = mapa_modelo != mapa_respostas
+                temp_resp = True
+            else:
+                itens_diferenca = mapa_modelo != mapa_respostas
+            
         context["slug"] = ctx["slug"]
         context["respostas"] = respostas
-        context["cliente"] = cliente
         context["checklist_modelo"] = modelo
-        context["checklist_versao"] = getattr(modelo, "chmo_vers", None)
-        context["itens_pendentes"] = itens_pendentes
-        context["itens_pendentes_count"] = itens_pendentes.count()
-        context["itens_modelo_count"] = itens_modelo.count()
+        context["itens_diferenca"] = itens_diferenca
+        context["temp_resp"] = temp_resp
         context["next_url"] = self.request.get_full_path()
-        context["tipos"] = ProcessoTipo.objects.using(ctx["db_alias"]).filter(
-            prot_empr=ctx["empresa"], prot_fili=ctx["filial"]
-        )
         context["modelos"] = ChecklistModelo.objects.using(ctx["db_alias"]).filter(
             chmo_empr=ctx["empresa"], chmo_fili=ctx["filial"]
         )
-        context["cliente_form"] = ProcessoClienteForm(
-            initial={
-                "proc_clie": getattr(cliente, "enti_nome", None) or (str(processo.proc_clie) if processo.proc_clie else ""),
-            },
+        entidades = ProcessoService.listar_entidades_responsaveis(db_alias=ctx["db_alias"],empresa=ctx["empresa"])
+        
+        context["assinatura_form"] = ProcessoResponsavelForm(
             db_alias=ctx["db_alias"],
             empresa=ctx["empresa"],
+            entidades=entidades
         )
-        processo = context["processo"]
+        if processo.proc_enti_vali != None:
+            context["responsavel"] = ProcessoService.obter_nome_responsavel(
+                db_alias=ctx["db_alias"],
+                empresa=ctx["empresa"],
+                processo=processo
+            )
         return context
-
-
-class ProcessoAbrirOSView(View):
-    def post(self, request, slug, pk):
-        db_alias = get_db_from_slug(slug)
-
-        try:
-          
-            ordem = ProcessoService.avancar_ordem_de_servico(
-                db_alias=db_alias,
-                processo_id=pk,
-                empresa=request.session.get("empresa_id"),
-                filial=request.session.get("filial_id"),
-                usuario_id=request.session.get("usuario_id"),
-            )
-            messages.success(request, f"OS #{ordem.os_os} aberta com sucesso.")
-            return redirect(f"/web/{slug}/os/")
-        except ValueError as e:
-            messages.warning(request, str(e))
-        except Exception as e:
-            messages.error(request, f"Falha ao abrir OS: {e}")
-        return redirect("processos:detalhe", slug=slug, pk=pk)
-
-
-class ProcessoAtualizarClienteView(View):
-    def post(self, request, slug, pk):
-        db_alias = get_db_from_slug(slug)
-        empresa = request.session.get("empresa_id", 1)
-        filial = request.session.get("filial_id", 1)
-        form = ProcessoClienteForm(request.POST, db_alias=db_alias, empresa=empresa)
-        if not form.is_valid():
-            msg = "Cliente inválido."
-            try:
-                msg = next(iter(form.errors.values()))[0]
-            except Exception:
-                pass
-            messages.error(request, msg)
-            return redirect("processos:detalhe", slug=slug, pk=pk)
-        try:
-            ProcessoService.atualizar_cliente(
-                db_alias=db_alias,
-                processo_id=pk,
-                empresa=empresa,
-                filial=filial,
-                cliente_id=form.cleaned_data.get("proc_clie"),
-            )
-            messages.success(request, "Cliente do processo atualizado.")
-        except Exception as exc:
-            messages.error(request, f"Falha ao atualizar cliente: {exc}")
-        return redirect("processos:detalhe", slug=slug, pk=pk)
-
-
-def autocomplete_entidades(request, slug):
-    db_alias = get_db_from_slug(slug) if slug else "default"
-    empresa = request.session.get("empresa_id", 1)
-    term = (request.GET.get("term") or "").strip()
-    qs = Entidades.objects.using(db_alias).filter(enti_empr=empresa)
-    if term:
-        if term.isdigit():
-            qs = qs.filter(enti_clie=int(term))
-        else:
-            qs = qs.filter(enti_nome__icontains=term)
-    qs = qs.order_by("enti_nome")[:20]
-    results = [{"id": int(e.enti_clie), "label": f"{e.enti_clie} - {e.enti_nome}"} for e in qs]
-    return JsonResponse({"results": results})

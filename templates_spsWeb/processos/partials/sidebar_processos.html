@@ -3,23 +3,18 @@
   <div class="card-body p-2">
     <div class="row g-2 row-cols-2">
       <div class="col">
-        <a class="btn btn-sm btn-outline-primary w-100 text-start" href="{% url 'processos:tipo_criar' slug=slug %}">
-          <i class="bi bi-plus-circle"></i> Novo Tipo
+        <a class="btn btn-sm btn-outline-secondary w-100 text-start" href="{% url 'processos:templates' slug=slug %}">
+          <i class="bi bi-arrow-left-right"></i> Acessar Modelos
         </a>
       </div>
       <div class="col">
-        <a class="btn btn-sm btn-outline-danger w-100 text-start" href="{% url 'processos:modelo_criar' slug=slug %}">
-          <i class="bi bi-plus-square"></i> Novo Modelo
+        <a class="btn btn-sm btn-outline-primary w-100 text-start" href="{% url 'processos:lista' slug=slug %}">
+          <i class="bi bi-arrow-left-right"></i> Acessar Processos
         </a>
       </div>
       <div class="col">
-        <a class="btn btn-sm btn-outline-info w-100 text-start" href="{% url 'processos:item_criar' slug=slug %}">
-          <i class="bi bi-list-check"></i> Adicionar Item
-        </a>
-      </div>
-      <div class="col">
-        <a class="btn btn-sm btn-outline-secondary w-100 text-start" href="{% url 'processos:lista' slug=slug %}">
-          <i class="bi bi-arrow-left-right"></i> Ir para Processos
+        <a class="btn btn-sm btn-outline-primary w-100 text-start" href="{% url 'processos:criar' slug=slug %}">
+          <i class="bi bi-plus-square"></i> Criar novo Processo
         </a>
       </div>
     </div>
@@ -30,36 +25,21 @@
   <div class="card-body p-3">
 
     <h6 class="fw-bold mb-3">
-      <i class="bi bi-diagram-3"></i> Processos
+      <i class="bi bi-diagram-3"></i> Menus
     </h6>
 
     <div class="d-grid gap-2">
-      <a class="btn btn-sm btn-outline-primary text-start" href="{% url 'processos:tipo_criar' slug=slug %}">
-        <i class="bi bi-plus-circle"></i> Novo Tipo
+      <a class="btn btn-sm btn-outline-secondary text-start d-flex align-items-center gap-2" href="{% url 'processos:templates' slug=slug %}">
+        <i class="bi bi-grid-1x2"></i> Acessar Modelos
       </a>
 
-      <a class="btn btn-sm btn-outline-danger text-start" href="{% url 'processos:modelo_criar' slug=slug %}">
-        <i class="bi bi-plus-square"></i> Novo Modelo
+      <a class="btn btn-sm btn-outline-primary text-start d-flex align-items-center gap-2" href="{% url 'processos:lista' slug=slug %}">
+        <i class="bi bi-clipboard"></i> Acessar Processos
       </a>
 
-      <a class="btn btn-sm btn-outline-info text-start" href="{% url 'processos:item_criar' slug=slug %}">
-        <i class="bi bi-list-check"></i> Adicionar Item
+      <a class="btn btn-sm btn-outline-primary text-start d-flex align-items-center gap-2" href="{% url 'processos:criar' slug=slug %}">
+        <i class="bi bi-clipboard-plus"></i> Criar novo Processo
       </a>
-
-      <a class="btn btn-sm btn-outline-secondary text-start" href="{% url 'processos:lista' slug=slug %}">
-        <i class="bi bi-arrow-left-right"></i> Ir para Processos
-      </a>
-    </div>
-
-    <hr>
-
-    <small class="text-muted fw-bold">Tipos</small>
-    <div class="mt-2 small">
-      {% for t in tipos %}
-      <div class="mb-1">{{ t.prot_codi }} - {{ t.prot_nome }}</div>
-      {% empty %}
-      <div class="text-muted">Sem tipos</div>
-      {% endfor %}
     </div>
 
     <hr>
@@ -67,7 +47,7 @@
     <small class="text-muted fw-bold">Modelos</small>
     <div class="mt-2 small">
       {% for m in modelos %}
-      <div class="mb-1">{{ m.chmo_nome }} <span class="text-muted">v{{ m.chmo_vers }}</span></div>
+      <div class="mb-1">{{ m.chmo_nome }}</div>
       {% empty %}
       <div class="text-muted">Sem modelos</div>
       {% endfor %}

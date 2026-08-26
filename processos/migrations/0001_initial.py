@@ -13,20 +13,6 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='ProcessoTipo',
-            fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('prot_empr', models.IntegerField()),
-                ('prot_fili', models.IntegerField()),
-                ('prot_nome', models.CharField(max_length=120)),
-                ('prot_codi', models.CharField(max_length=50)),
-                ('prot_ativ', models.BooleanField(default=True)),
-            ],
-            options={
-                'db_table': 'processo_tipo',
-            },
-        ),
-        migrations.CreateModel(
             name='Processo',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
@@ -38,7 +24,6 @@ class Migration(migrations.Migration):
                 ('proc_data_fech', models.DateTimeField(blank=True, null=True)),
                 ('proc_usro_aber', models.IntegerField(blank=True, null=True)),
                 ('proc_usro_vali', models.IntegerField(blank=True, null=True)),
-                ('proc_tipo', models.ForeignKey(db_column='proc_tipo', on_delete=django.db.models.deletion.DO_NOTHING, to='processos.ProcessoTipo')),
             ],
             options={
                 'db_table': 'processo',
@@ -51,9 +36,7 @@ class Migration(migrations.Migration):
                 ('chmo_empr', models.IntegerField()),
                 ('chmo_fili', models.IntegerField()),
                 ('chmo_nome', models.CharField(max_length=120)),
-                ('chmo_vers', models.IntegerField(default=1)),
                 ('chmo_ativ', models.BooleanField(default=True)),
-                ('chmo_proc_tipo', models.ForeignKey(db_column='chmo_proc_tipo', on_delete=django.db.models.deletion.DO_NOTHING, to='processos.ProcessoTipo')),
             ],
             options={
                 'db_table': 'checklist_modelo',
@@ -65,14 +48,12 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('chit_empr', models.IntegerField()),
                 ('chit_fili', models.IntegerField()),
-                ('chit_orde', models.IntegerField(default=0)),
                 ('chit_desc', models.CharField(max_length=255)),
                 ('chit_obri', models.BooleanField(default=True)),
                 ('chit_mode', models.ForeignKey(db_column='chit_mode', on_delete=django.db.models.deletion.DO_NOTHING, related_name='itens', to='processos.ChecklistModelo')),
             ],
             options={
                 'db_table': 'checklist_item',
-                'ordering': ['chit_orde'],
             },
         ),
         migrations.CreateModel(

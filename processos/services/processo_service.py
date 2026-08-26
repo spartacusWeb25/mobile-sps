@@ -1,9 +1,9 @@
-from django.db import transaction
+from django.db.models import Subquery, OuterRef
 from django.utils import timezone
-from processos.models import Processo, ProcessoTipo
+from processos.models import Processo, ChecklistModelo
 from .checklist_service import ChecklistService
-from O_S.services.os_service import OsService
-
+from O_S.models import Os
+from Entidades.models import Entidades
 
 class ProcessoService:
     @staticmethod
@@ -11,47 +11,51 @@ class ProcessoService:
         return (
             Processo.objects.using(db_alias)
             .filter(proc_empr=empresa, proc_fili=filial)
-            .select_related("proc_tipo")
+            .select_related("proc_mode")
             .order_by("-id")
         )
 
     @staticmethod
-    def listar_tipos(*, db_alias, empresa, filial):
-        return ProcessoTipo.objects.using(db_alias).filter(
-            prot_empr=empresa,
-            prot_fili=filial,
-            prot_ativ=True,
-        ).order_by("prot_nome")
-
-    @staticmethod
-    def criar_tipo(*, db_alias, empresa, filial, nome, codigo, ativo=True):
-        return ProcessoTipo.objects.using(db_alias).create(
-            prot_empr=empresa,
-            prot_fili=filial,
-            prot_nome=nome,
-            prot_codi=codigo,
-            prot_ativ=ativo,
+    def listar_modelos(*, db_alias, empresa, filial, ativo=True):
+        return ChecklistModelo.objects.using(db_alias).filter(
+            chmo_empr=empresa,
+            chmo_fili=filial,
+            chmo_ativ=ativo,
         )
 
     @staticmethod
-    def criar(*, db_alias, empresa, filial, tipo_id, descricao, cliente_id=None, usuario_id=None):
-        tipo = ProcessoTipo.objects.using(db_alias).get(
-            id=tipo_id,
-            prot_empr=empresa,
-            prot_fili=filial,
-            prot_ativ=True,
+    def listar_os_sem_processo(*, db_alias, empresa, filial):
+        cliente_nome_subquery = Entidades.objects.filter(
+            enti_empr=OuterRef('os_empr'),
+            enti_clie=OuterRef('os_clie')
+        ).values('enti_nome')[:1]
+
+        return Os.objects.using(db_alias).filter(
+            os_empr=empresa,
+            os_fili=filial,
+            processo__isnull=True
+        ).annotate(
+            clie_nome=Subquery(cliente_nome_subquery)
+        ).order_by("-os_os")
+
+    @staticmethod
+    def criar(*, db_alias, empresa, filial, modelo_id, descricao=None, usuario_id=None, os=None):
+        modelo = ChecklistModelo.objects.using(db_alias).get(
+            id=modelo_id,
+            chmo_empr=empresa,
+            chmo_fili=filial,
+            chmo_ativ=True,
         )
 
         processo = Processo.objects.using(db_alias).create(
             proc_empr=empresa,
             proc_fili=filial,
-            proc_tipo=tipo,
+            proc_mode=modelo,
             proc_desc=descricao,
-            proc_clie=cliente_id,
             proc_stat=Processo.STATUS_ABERTO,
             proc_data_aber=timezone.now(),
             proc_usro_aber=usuario_id,
-            proc_usro_vali=usuario_id,
+            proc_os = os
         )
 
         ChecklistService.gerar_respostas_para_processo(
@@ -75,68 +79,17 @@ class ProcessoService:
             processo.proc_data_fech = timezone.now()
         processo.save(using=db_alias)
         return processo
+
+    @staticmethod
+    def listar_entidades_responsaveis(*, db_alias, empresa):
+        return Entidades.objects.using(db_alias).filter(
+            enti_empr=empresa,
+            enti_tipo_enti__in=["VE","FU"]
+        )
     
     @staticmethod
-    def atualizar_cliente(*, db_alias, processo_id, empresa, filial, cliente_id=None):
-        processo = Processo.objects.using(db_alias).get(
-            id=processo_id,
-            proc_empr=empresa,
-            proc_fili=filial,
-        )
-        processo.proc_clie = cliente_id
-        processo.save(using=db_alias, update_fields=["proc_clie"])
-        return processo
-
-    @staticmethod
-    def avancar_ordem_de_servico(*, db_alias, processo_id, empresa, filial, usuario_id=None):
-        with transaction.atomic(using=db_alias):
-            processo = (
-                Processo.objects.using(db_alias)
-                .select_related("proc_tipo")
-                .get(
-                    id=processo_id,
-                    proc_empr=empresa,
-                    proc_fili=filial,
-                )
-            )
-
-            if processo.proc_stat != Processo.STATUS_APROVADO:
-                raise ValueError("O processo precisa estar aprovado para abrir OS.")
-
-            if processo.proc_os:
-                raise ValueError(f"Este processo já possui OS vinculada: {processo.proc_os}")
-
-            os_data = {
-                        "os_empr": empresa,
-                        "os_fili": filial,
-                        "os_data_aber": timezone.now().date(),
-                        "os_stat_os": 1,
-                        "os_desc": 0,
-                        "os_tota": 0,
-
-                        "os_clie": processo.proc_clie if processo.proc_clie else None,
-
-                        "os_obse": f"OS gerada pelo processo #{processo.id} - {processo.proc_desc or ''}",
-                        "os_resp": usuario_id,
-                    }
-            ordem = OsService.create_os(
-                banco=db_alias,
-                os_data=os_data,
-                pecas_data=[],
-                servicos_data=[],
-                horas_data=[],
-            )
-
-            try:
-                processo.proc_os = ordem.os_os
-                processo.proc_os_cria_em = timezone.now()
-                processo.save(
-                    using=db_alias,
-                    update_fields=["proc_os", "proc_os_cria_em"],
-                )
-            except Exception as e:
-                # Rollback the transaction if OS creation fails
-                transaction.set_rollback(True)
-                raise e
-
-            return ordem
+    def obter_nome_responsavel(*, db_alias, empresa, processo):
+        return Entidades.objects.using(db_alias).filter(
+                enti_empr=empresa,
+                enti_clie=processo.proc_enti_vali
+            ).values_list("enti_nome", flat=True).first()

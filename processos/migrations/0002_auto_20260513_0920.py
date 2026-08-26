@@ -12,17 +12,7 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name='processo',
-            name='proc_clie',
-            field=models.IntegerField(blank=True, null=True, verbose_name='Cliente'),
-        ),
-        migrations.AddField(
-            model_name='processo',
             name='proc_os',
             field=models.IntegerField(blank=True, null=True),
-        ),
-        migrations.AddField(
-            model_name='processo',
-            name='proc_os_cria_em',
-            field=models.DateTimeField(blank=True, null=True),
         ),
     ]

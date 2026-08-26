@@ -9,62 +9,86 @@ from processos.models import (
 class ChecklistService:
     @staticmethod
     def criar_modelo(
-        *, db_alias, empresa, filial, processo_tipo, nome, versao=1, ativo=True
+        *, db_alias, empresa, filial, nome, ativo=True
     ):
         return ChecklistModelo.objects.using(db_alias).create(
             chmo_empr=empresa,
             chmo_fili=filial,
-            chmo_proc_tipo=processo_tipo,
             chmo_nome=nome,
-            chmo_vers=versao,
             chmo_ativ=ativo,
         )
 
     @staticmethod
     def criar_item(
-        *, db_alias, empresa, filial, modelo, descricao, ordem=0, obrigatorio=True
+        *, db_alias, empresa, filial, modelo, descricao, obrigatorio=True
     ):
         return ChecklistItem.objects.using(db_alias).create(
             chit_empr=empresa,
             chit_fili=filial,
             chit_mode=modelo,
-            chit_orde=ordem,
             chit_desc=descricao,
             chit_obri=obrigatorio,
         )
 
+    def criar_ou_atualizar_item(
+        *, db_alias, empresa, filial, modelo, descricao, obrigatorio=True
+    ):
+        return ChecklistItem.objects.using(db_alias).update_or_create(
+            chit_empr=empresa,
+            chit_fili=filial,
+            chit_mode=modelo,
+            chit_desc=descricao,
+            defaults={
+                "chit_obri": obrigatorio,
+            }
+        )
+
     @staticmethod
-    def obter_modelo_ativo(*, db_alias, empresa, filial, proc_tipo):
+    def alternar_status_modelo(db_alias, empresa, filial, modelo_id):
+        modelo = ChecklistModelo.objects.using(db_alias).get(
+            id=modelo_id,
+            chmo_empr=empresa,
+            chmo_fili=filial,
+        )
+        modelo.chmo_ativ = not modelo.chmo_ativ
+        modelo.save(using=db_alias, update_fields=["chmo_ativ"])
+        return modelo.chmo_ativ
+
+    @staticmethod
+    def obter_modelo_de_processo(*, db_alias, empresa, filial, processo_id):
         return (
             ChecklistModelo.objects.using(db_alias)
-            .filter(
+            .get(
                 chmo_empr=empresa,
                 chmo_fili=filial,
-                chmo_proc_tipo=proc_tipo,
-                chmo_ativ=True,
+                processo__id=processo_id
             )
-            .order_by("-chmo_vers")
-            .first()
         )
 
     @staticmethod
     def sincronizar_respostas_para_processo(*, db_alias, empresa, filial, processo):
-        modelo = ChecklistService.obter_modelo_ativo(
+        modelo = ChecklistService.obter_modelo_de_processo(
             db_alias=db_alias,
             empresa=empresa,
             filial=filial,
-            proc_tipo=processo.proc_tipo,
+            processo_id=processo.id
         )
         if not modelo:
             return {"modelo": None, "respostas": [], "criadas": 0}
 
         respostas = []
         criadas = 0
+        atualizadas = 0
         itens = (
             modelo.itens.using(db_alias)
             .filter(chit_empr=empresa, chit_fili=filial)
-            .order_by("chit_orde")
         )
+        respostas_antigas = ProcessoChecklistResposta.objects.using(db_alias).filter(
+            pchr_empr=empresa,
+            pchr_fili=filial,
+            pchr_proc=processo,
+        )
+        respostas_antigas.exclude(pchr_vers__isnull=False).exclude(pchr_item__in=itens).delete()
         for item in itens:
             resposta, criada = ProcessoChecklistResposta.objects.using(
                 db_alias
@@ -73,11 +97,21 @@ class ChecklistService:
                 pchr_fili=filial,
                 pchr_proc=processo,
                 pchr_item=item,
+                pchr_vers=None,
+                defaults={
+                    'pchr_obri': item.chit_obri,
+                    'pchr_desc': item.chit_desc,
+                }
             )
             if criada:
                 criadas += 1
-            respostas.append(resposta)
-        return {"modelo": modelo, "respostas": respostas, "criadas": criadas}
+            else:
+                if resposta.pchr_obri != item.chit_obri or resposta.pchr_desc != item.chit_desc:
+                    resposta.pchr_obri = item.chit_obri
+                    resposta.pchr_desc = item.chit_desc
+                    resposta.save(update_fields=['pchr_obri', 'pchr_desc'])
+                    atualizadas += 1
+        return {"modelo": modelo, "respostas": respostas, "criadas": criadas, "atualizadas": atualizadas}
 
     @staticmethod
     def gerar_respostas_para_processo(*, db_alias, empresa, filial, processo):
@@ -110,12 +144,12 @@ class ChecklistService:
         )
         dados = ChecklistService._normalizar_dados_respostas(dados)
         respostas_salvas = []
-        for item_id, payload in dados.items():
+        for resposta_id, payload in dados.items():
             resposta = ProcessoChecklistResposta.objects.using(db_alias).get(
                 pchr_empr=empresa,
                 pchr_fili=filial,
                 pchr_proc_id=processo_id,
-                pchr_item_id=item_id,
+                id=resposta_id,
             )
             resposta.pchr_resp = payload.get("resposta")
             resposta.pchr_obse = payload.get("observacao")

@@ -3,37 +3,15 @@
 from django.db import models
 
 
-class ProcessoTipo(models.Model):
-    prot_empr = models.IntegerField()
-    prot_fili = models.IntegerField()
-
-    prot_nome = models.CharField(max_length=120)
-    prot_codi = models.CharField(max_length=50)
-    prot_ativ = models.BooleanField(default=True)
-
-    def __str__(self):
-        return f"{self.prot_codi} - {self.prot_nome}"
-
-    class Meta:
-        db_table = "processo_tipo"
-
-
 class ChecklistModelo(models.Model):
     chmo_empr = models.IntegerField()
     chmo_fili = models.IntegerField()
 
-    chmo_proc_tipo = models.ForeignKey(
-        ProcessoTipo,
-        on_delete=models.DO_NOTHING,
-        db_column="chmo_proc_tipo",
-    )
-
     chmo_nome = models.CharField(max_length=120)
-    chmo_vers = models.IntegerField(default=1)
     chmo_ativ = models.BooleanField(default=True)
 
     def __str__(self):
-        return f"{self.chmo_proc_tipo.prot_nome} - {self.chmo_nome} - v{self.chmo_vers}"
+        return f"{self.chmo_nome}"
 
     class Meta:
         db_table = "checklist_modelo"
@@ -50,16 +28,14 @@ class ChecklistItem(models.Model):
         related_name="itens",
     )
 
-    chit_orde = models.IntegerField(default=0)
     chit_desc = models.CharField(max_length=255)
     chit_obri = models.BooleanField(default=True)
 
     def __str__(self):
-        return f"{self.chit_mode.chmo_nome} - {self.chit_orde} - {self.chit_desc}"
+        return f"{self.chit_mode.chmo_nome} - {self.chit_desc}"
 
     class Meta:
         db_table = "checklist_item"
-        ordering = ["chit_orde"]
 
 
 class Processo(models.Model):
@@ -80,13 +56,13 @@ class Processo(models.Model):
     proc_empr = models.IntegerField()
     proc_fili = models.IntegerField()
 
-    proc_tipo = models.ForeignKey(
-        ProcessoTipo,
+    proc_mode = models.ForeignKey(
+        ChecklistModelo,
         on_delete=models.DO_NOTHING,
-        db_column="proc_tipo",
+        db_column="proc_mode",
     )
 
-    proc_desc = models.CharField(max_length=255)
+    proc_desc = models.CharField(max_length=255, null=True, blank=True)
     proc_stat = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
@@ -96,18 +72,20 @@ class Processo(models.Model):
     proc_data_aber = models.DateTimeField(auto_now_add=True)
     proc_data_fech = models.DateTimeField(null=True, blank=True)
 
+    proc_vers = models.IntegerField(null=True, blank=True)
     proc_usro_aber = models.IntegerField(null=True, blank=True)
     proc_usro_vali = models.IntegerField(null=True, blank=True)
-    proc_os = models.IntegerField(null=True, blank=True)
-    proc_os_cria_em = models.DateTimeField(null=True, blank=True)
-    proc_clie = models.IntegerField(
-                                    null=True,
-                                    blank=True,
-                                    verbose_name="Cliente"
-                                )
+    proc_enti_vali = models.IntegerField(null=True, blank=True)
+    proc_os = models.ForeignKey(
+        'O_S.Os',
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        db_column='proc_os'
+    )
 
     def __str__(self):
-        return f"{self.proc_tipo.prot_nome} - {self.proc_desc}"
+        return f"{self.proc_mode.chmo_nome} - {self.proc_desc}"
 
     class Meta:
         db_table = "processo"
@@ -136,7 +114,8 @@ class ProcessoChecklistResposta(models.Model):
 
     pchr_item = models.ForeignKey(
         ChecklistItem,
-        on_delete=models.DO_NOTHING,
+        on_delete=models.SET_NULL,
+        null=True,
         db_column="pchr_item",
     )
 
@@ -149,13 +128,17 @@ class ProcessoChecklistResposta(models.Model):
 
     pchr_obse = models.TextField(null=True, blank=True)
 
+    pchr_desc = models.CharField(max_length=255, null=True, blank=True)
+    pchr_obri = models.BooleanField(default=False)
+
+    pchr_vers = models.IntegerField(null=True, blank=True)
     pchr_vali = models.BooleanField(default=False)
     pchr_data_vali = models.DateTimeField(null=True, blank=True)
     pchr_usro_vali = models.IntegerField(null=True, blank=True)
+    pchr_enti_vali = models.IntegerField(null=True, blank=True)
 
     def __str__(self):
-        return f"{self.pchr_proc.proc_tipo.prot_nome} - {self.pchr_item.chit_desc} - {self.pchr_resp}"
+        return f"{self.pchr_proc.proc_mode.chmo_nome} - {self.pchr_item.chit_desc} - {self.pchr_resp}"
 
     class Meta:
         db_table = "processo_checklist_resposta"
-        unique_together = ("pchr_proc", "pchr_item")
