@@ -49,7 +49,6 @@ urlpatterns = [
     path("<slug>/devolucoes-pisos/", include("devolucoes_pisos.urls")),
     path("<slug>/mcp-agent/", include("mcp_agent_db.urls")),
     path("<slug>/coletaestoque/", include("coletaestoque.REST.urls")),
-    path("<slug>/Floresta/", include("Floresta.urls")),
     path("<slug>/lctobancario/", include("Lancamentos_Bancarios.urls")),
     path("<slug>/notasfiscais/", include("Notas_Fiscais.urls")),
     path("<slug>/notasdestinadas/", include("NotasDestinadas.urls")),
