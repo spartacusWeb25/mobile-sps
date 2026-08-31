@@ -62,9 +62,6 @@ URLS que geram as rotas para o Swagger e para o acesso externo de acordo com cad
     path('api/<slug>/mcp-agent/', include('mcp_agent_db.urls')),
     path('api/<slug>/coletaestoque/', include('coletaestoque.urls')),
     
-    #Floresta
-    path('api/<slug>/Floresta/', include('Floresta.urls')),
-    
     #Lançamentos Bancários
     path('api/<slug>/lctobancario/', include('Lancamentos_Bancarios.urls')),
     

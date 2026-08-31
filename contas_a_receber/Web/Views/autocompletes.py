@@ -3,7 +3,6 @@ from django.db.models import Q
 from core.utils import get_licenca_db_config
 from CentrodeCustos.models import Centrodecustos
 from Entidades.models import Entidades
-from planogerencial.models import PlanoGerencialConta
 from planocontas.models import Planodecontas
 from core.utils import get_db_from_slug
 
@@ -53,32 +52,6 @@ def autocomplete_bancos(request, slug=None):
             'text': f"{obj.enti_clie} - {obj.enti_nome}",
         }
         for obj in qs
-    ]
-    return JsonResponse({'results': data})
-
-
-def autocomplete_planocontas(request, slug=None):
-    banco = get_db_from_slug(slug) if slug else (get_licenca_db_config(request) or 'default')
-    empresa_id = request.session.get('empresa_id')
-    term = (request.GET.get('term') or request.GET.get('q') or '').strip()
-    analitico = str(request.GET.get("analitico") or "").lower() in ("1", "true", "sim", "yes")
-
-    qs = PlanoGerencialConta.objects.using(banco).all()
-    if empresa_id:
-        qs = qs.filter(gere_empr=int(empresa_id))
-    if analitico:
-        qs = qs.filter(gere_anal='A')
-    qs = qs.filter(Q(gere_inat=False) | Q(gere_inat__isnull=True))
-
-    if term:
-        if term.isdigit():
-            qs = qs.filter(Q(gere_redu=int(term)) | Q(gere_nome__icontains=term))
-        else:
-            qs = qs.filter(Q(gere_nome__icontains=term) | Q(gere_expa__icontains=term))
-
-    data = [
-        {'id': str(obj.gere_redu), 'text': f"{obj.gere_redu} - {obj.gere_nome or ''}".strip()}
-        for obj in qs.order_by('gere_redu')[:30]
     ]
     return JsonResponse({'results': data})
 
