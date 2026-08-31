@@ -72,6 +72,8 @@ def listar_produtos(banco, empresa_id=None, filial_id=None, q=None, marca_nome=N
         queryset = queryset.filter(prod_empr=empresa_id)
 
     if q:
+        q = str(q).strip()
+    if q:
         queryset = queryset.filter(
             Q(prod_nome__icontains=q) |
             Q(prod_coba_str__exact=q) |
