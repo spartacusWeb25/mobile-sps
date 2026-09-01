@@ -47,3 +47,7 @@
 ## Atualização do `savexml1`
 - O registro `slug=save1` é migrado automaticamente via `0002_load_initial_licencas`.
 - Credenciais podem ser lidas do `.env` (`SAVE1_DB_USER`, `SAVE1_DB_PASSWORD`) e gravadas na tabela.
+
+---
+
+*Movido para docs/ em 2026-09-01. Fonte original: `docs/licencas_web_migration.md`.*

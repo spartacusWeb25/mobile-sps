@@ -255,3 +255,7 @@ Melhorias futuras sugeridas:
 - Adicionar paginação/filtros por status e tipo na lista web e REST.
 - Persistir assinatura em campos próprios ou tabela de auditoria, caso ela precise ter validade jurídica/histórica.
 - Padronizar a URL REST para evitar dupla semântica `processos/processos/` em uma versão futura (`/api/{slug}/processos/instancias/`, por exemplo), mantendo compatibilidade atual.
+
+---
+
+*Movido para docs/ em 2026-09-01. Fonte original: `docs/processos_rest_react_native.md`. Referência do módulo: [processos.md](processos.md).*

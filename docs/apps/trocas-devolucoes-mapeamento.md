@@ -212,3 +212,7 @@ Com base neste mapa, criar:
 2. **Contrato técnico entre módulos** (`Pedidos`, `Estoque`, `Financeiro`, `Comissões`);
 3. **Backlog por fase** com histórias pequenas e critérios de aceite.
 
+
+---
+
+*Movido para docs/ em 2026-09-01. Fonte original: `Pedidos/docs/mapeamento_trocas_devolucoes.md`. Implementação: [trocas-devolucoes.md](trocas-devolucoes.md).*
