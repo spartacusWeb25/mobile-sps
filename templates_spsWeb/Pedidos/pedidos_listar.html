@@ -32,15 +32,16 @@
 
 <div class="container page-container">
   <div class="page-header-custom">
-        <div class="container align-items-center">
-            <h2 class="page-title">
-                <i class="bi bi-cart"></i> Pedidos
-            </h2>
-        </div>
-         <div class="container d-flex justify-content-end">
-            <a class="btn btn-success" href="{% url 'PedidosWeb:pedido_criar' slug=slug %}">Novo Pedido</a>
-        </div>
+    <div class="container align-items-center">
+      <h2 class="page-title">
+        <i class="bi bi-cart"></i> Pedidos
+      </h2>
     </div>
+    <div class="container d-flex justify-content-end align-items-center gap-3">
+      <a class="btn btn-outline-secondary d-flex align-items-center gap-2" style="padding: 8px 16px;font-size: 16px;margin-bottom: 10px;" href="{% url 'PedidosWeb:ocorrencias' slug=slug %}"><i class="bi bi-flag-fill"></i>Ver Ocorrências</a>
+      <a class="btn btn-success d-flex align-items-center gap-2" style="background-color: #198754;margin-bottom: 10px;" href="{% url 'PedidosWeb:pedido_criar' slug=slug %}"><i class="bi bi-plus"></i>Novo Pedido</a>
+    </div>
+  </div>
 
   <div class="row g-2 g-md-3 mb-3 cards-resumo-grid">
     {% for c in cards_resumo %}
@@ -145,14 +146,16 @@
             {% endif %}
           </td>
           <td class="text-end">
-            <a class="btn btn-sm btn-outline-primary" href="{% url 'PedidosWeb:pedido_detalhe' slug=slug pk=p.pk %}">Detalhes</a>
-            <a class="btn btn-sm btn-outline-secondary" href="{% url 'PedidosWeb:pedido_editar' slug=slug pk=p.pk %}">Editar</a>
-            <button type="button" class="btn btn-sm btn-outline-info js-rentabilidade rounded-circle p-0"
-                    data-bs-toggle="tooltip" title="Rentabilidade"
-                    style="width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center"
-                    data-url="{% url 'PedidosWeb:pedido_rentabilidade' slug=slug pk=p.pk %}">
-              <i class="bi bi-coin"></i>
-            </button>
+            <div class="d-flex justify-content-end align-items-center gap-2">     
+              <a class="btn btn-sm btn-outline-primary m-0" href="{% url 'PedidosWeb:pedido_detalhe' slug=slug pk=p.pk %}">Detalhes</a>
+              <a class="btn btn-sm btn-outline-secondary m-0" href="{% url 'PedidosWeb:pedido_editar' slug=slug pk=p.pk %}">Editar</a>
+              <button type="button" class="btn btn-sm btn-outline-info js-rentabilidade rounded-circle p-0"
+                      data-bs-toggle="tooltip" title="Rentabilidade"
+                      style="width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center"
+                      data-url="{% url 'PedidosWeb:pedido_rentabilidade' slug=slug pk=p.pk %}">
+                <i class="bi bi-coin"></i>
+              </button>
+            </div>  
           </td>
         </tr>
         {% empty %}
