@@ -35,6 +35,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='processo',
             name='proc_os',
-            field=models.ForeignKey(blank=True, db_column='proc_os', null=True, on_delete=django.db.models.deletion.SET_NULL, to='O_S.Os'),
+            field=models.ForeignKey(blank=True, db_column='proc_os', db_constraint=False, null=True, on_delete=django.db.models.deletion.SET_NULL, to='O_S.Os'),
         ),
     ]

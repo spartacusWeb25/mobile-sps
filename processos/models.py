@@ -81,7 +81,8 @@ class Processo(models.Model):
         on_delete=models.SET_NULL, 
         null=True, 
         blank=True,
-        db_column='proc_os'
+        db_column='proc_os',
+        db_constraint=False
     )
 
     def __str__(self):
