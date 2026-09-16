@@ -92,7 +92,11 @@ class ProcessoSerializer(serializers.ModelSerializer):
     filial = serializers.IntegerField(source="proc_fili", read_only=True)
     modelo_id = serializers.IntegerField(source="proc_mode_id")
     modelo_nome = serializers.CharField(source="proc_mode.chmo_nome", read_only=True)
-    descricao = serializers.CharField(source="proc_desc")
+    os_id = serializers.IntegerField(source="proc_os_id")
+    descricao = serializers.CharField(
+        source="proc_desc", required=False, allow_null=True, allow_blank=True
+    )
+    versao = serializers.IntegerField(source="proc_vers", read_only=True)
     status = serializers.CharField(source="proc_stat", read_only=True)
     respostas = ProcessoChecklistRespostaSerializer(many=True, read_only=True)
     data_abertura = serializers.DateTimeField(source="proc_data_aber", read_only=True)
@@ -106,8 +110,10 @@ class ProcessoSerializer(serializers.ModelSerializer):
             "filial",
             "modelo_id",
             "modelo_nome",
+            "os_id",
             "descricao",
             "status",
+            "versao",
             "respostas",
             "data_abertura",
             "data_fechamento",

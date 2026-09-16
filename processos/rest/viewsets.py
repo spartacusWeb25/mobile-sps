@@ -5,6 +5,7 @@ from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
 
 from core.utils import get_db_from_slug
+from O_S.models import Os
 from processos.models import ChecklistItem, ChecklistModelo, Processo
 from processos.rest.serializers import (
     ChecklistItemSerializer,
@@ -53,7 +54,9 @@ class BaseMultiDBViewSet(viewsets.ModelViewSet):
             "empresa": empresa,
             "filial": filial,
             "usuario_id": self.request.session.get("usuario_id")
-            or self.request.headers.get("X-Usuario"),
+            or self.request.headers.get("X-Usuario")
+            or self.request.data.get("usuario_id")
+            or self.request.query_params.get("usuario_id"),
         }
 
     def _not_found(
@@ -136,24 +139,63 @@ class ProcessoViewSet(BaseMultiDBViewSet):
 
     def get_queryset(self):
         cfg = self._ctx()
-        return ProcessoService.listar(
+        queryset = ProcessoService.listar(
             db_alias=cfg["db_alias"], empresa=cfg["empresa"], filial=cfg["filial"]
         ).prefetch_related("respostas__pchr_item")
+        os_id = self.request.query_params.get("os")
+        if os_id:
+            queryset = queryset.filter(proc_os_id=os_id)
+        return queryset
 
     def create(self, request, *args, **kwargs):
         cfg = self._ctx()
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
-        processo = ProcessoService.criar(
-            db_alias=cfg["db_alias"],
-            empresa=cfg["empresa"],
-            filial=cfg["filial"],
-            descricao=data["proc_desc"],
-            usuario_id=cfg["usuario_id"],
-        )
+        try:
+            os_obj = Os.objects.using(cfg["db_alias"]).get(
+                os_os=data["proc_os_id"],
+                os_empr=cfg["empresa"],
+                os_fili=cfg["filial"],
+            )
+        except ObjectDoesNotExist:
+            self._not_found("OS não encontrada para a empresa/filial informada.")
+        if Processo.objects.using(cfg["db_alias"]).filter(
+            proc_empr=cfg["empresa"], proc_fili=cfg["filial"], proc_os=os_obj
+        ).exists():
+            raise ValidationError({"detail": "Esta OS já possui um processo."})
+        try:
+            processo = ProcessoService.criar(
+                db_alias=cfg["db_alias"],
+                empresa=cfg["empresa"],
+                filial=cfg["filial"],
+                modelo_id=data["proc_mode_id"],
+                descricao=data.get("proc_desc"),
+                usuario_id=cfg["usuario_id"],
+                os=os_obj,
+            )
+        except ObjectDoesNotExist:
+            self._not_found("Modelo de checklist não encontrado ou inativo.")
         return Response(
             self.get_serializer(processo).data, status=status.HTTP_201_CREATED
+        )
+
+    @action(detail=False, methods=["get"], url_path="os-disponiveis")
+    def os_disponiveis(self, request, slug=None):
+        cfg = self._ctx()
+        os_list = ProcessoService.listar_os_sem_processo(
+            db_alias=cfg["db_alias"], empresa=cfg["empresa"], filial=cfg["filial"]
+        )
+        return Response(
+            [
+                {
+                    "os_os": o.os_os,
+                    "os_data_aber": o.os_data_aber,
+                    "os_clie": o.os_clie,
+                    "clie_nome": o.clie_nome,
+                }
+                for o in os_list
+            ]
         )
 
     @action(detail=True, methods=["get"], url_path="checklist")
@@ -165,7 +207,17 @@ class ProcessoViewSet(BaseMultiDBViewSet):
             .filter(pchr_empr=cfg["empresa"], pchr_fili=cfg["filial"])
             .select_related("pchr_item")
         )
-        return Response(ProcessoChecklistRespostaSerializer(respostas, many=True).data)
+        temp_resp = False
+        atuais = respostas.filter(pchr_vers__isnull=True)
+        if not atuais.exists():
+            atuais = respostas.filter(pchr_vers=processo.proc_vers)
+            temp_resp = True
+        return Response(
+            {
+                "temp_resp": temp_resp,
+                "respostas": ProcessoChecklistRespostaSerializer(atuais, many=True).data,
+            }
+        )
 
     @action(detail=True, methods=["post"], url_path="sincronizar-checklist")
     def sincronizar_checklist(self, request, pk=None, slug=None):
@@ -211,11 +263,47 @@ class ProcessoViewSet(BaseMultiDBViewSet):
     @action(detail=True, methods=["post"], url_path="validar")
     def validar(self, request, pk=None, slug=None):
         cfg = self._ctx()
+        processo = self.get_object()
+        if processo.proc_stat == Processo.STATUS_APROVADO:
+            raise ValidationError({"detail": "Processo já foi aprovado."})
+        responsavel_id = request.data.get("responsavel_id")
+        documento = request.data.get("documento")
+        if not responsavel_id or not documento:
+            raise ValidationError(
+                {"detail": "Informe responsavel_id e documento para validar."}
+            )
+        try:
+            assinatura_valida = ValidacaoProcessoService.validar_assinatura(
+                db_alias=cfg["db_alias"],
+                empresa=cfg["empresa"],
+                responsavel_id=responsavel_id,
+                documento_inserido=documento,
+            )
+        except ObjectDoesNotExist:
+            self._not_found("Responsável não encontrado.")
+        if not assinatura_valida:
+            raise ValidationError({"detail": "Documento inválido."})
+        dados = ChecklistService._normalizar_dados_respostas(
+            request.data.get("respostas", {})
+        )
+        dados["temp_resp"] = bool(request.data.get("temp_resp", False))
         resultado = ValidacaoProcessoService.validar_processo(
             db_alias=cfg["db_alias"],
             empresa=cfg["empresa"],
             filial=cfg["filial"],
             processo_id=pk,
             usuario_id=cfg["usuario_id"],
+            responsavel_id=responsavel_id,
+            dados=dados,
         )
         return Response(resultado)
+
+    @action(detail=False, methods=["get"], url_path="responsaveis")
+    def responsaveis(self, request, slug=None):
+        cfg = self._ctx()
+        entidades = ProcessoService.listar_entidades_responsaveis(
+            db_alias=cfg["db_alias"], empresa=cfg["empresa"]
+        )
+        return Response(
+            [{"enti_clie": e.enti_clie, "enti_nome": e.enti_nome} for e in entidades]
+        )

@@ -1,6 +1,5 @@
 from django.utils import timezone
 
-from distutils import version
 from processos.models import Processo, ProcessoChecklistResposta
 from Entidades.models import Entidades
 
@@ -94,7 +93,7 @@ class ValidacaoProcessoService:
             resposta.pchr_data_vali=timezone.now()
             resposta.pchr_usro_vali=usuario_id
             resposta.pchr_enti_vali=responsavel_id
-            resposta.pchr_vers=version
+            resposta.pchr_vers=vers
         if dados["temp_resp"]:
             ProcessoChecklistResposta.objects.using(db_alias).bulk_create(respostas_modificadas)
         else:
