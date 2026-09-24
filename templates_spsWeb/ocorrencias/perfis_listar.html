@@ -1,0 +1,330 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Perfis{%endblock%}
+{% block content %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="{% static 'css/form.css' %}">
+<div class="container py-4 page-container">
+  <div class="page-header-custom">
+      <h3 class="d-flex align-items-center gap-2">
+          <i class="bi bi-file-person"></i>Perfis
+      </h3>
+      <div class="d-flex align-items-center gap-2">
+        <a class="btn btn-outline-secondary d-flex align-items-center gap-1" href="{% url "PedidosWeb:pedidos_listar" slug=slug %}">
+          <i class="bi bi-cart"></i>
+          Ver Pedidos
+        </a>
+        <a class="btn btn-outline-secondary d-flex align-items-center gap-1" href="{% url "ocorrencias:ocorrencias" slug=slug %}">
+          <i class="bi bi-flag-fill"></i>
+          Ver Ocorrências
+        </a>
+        <button type="button" class="btn btn-primary d-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#perfilCriarModal">
+          <i class="bi bi-plus-circle"></i>
+          Novo Perfil
+        </button>
+      </div>
+  </div>
+  <div class="card-body">
+    <form class="row g-3 mb-2" method="get">
+      <div class="row">
+        <div class="col-md-5">
+          <input type="text" name="descricao" value="{{ request.GET.descricao }}" class="form-control p-2" placeholder="Filtrar por descrição">
+        </div>
+        <div class="col-md-4 d-flex align-items-center gap-3">
+          <div>Incluir Inativos</div>
+          <input type="checkbox" name="ativo" class="checkbox" {% if request.GET.inativo %}checked{% endif %}>
+        </div>
+        <div class="col-md-3">
+          <button class="btn btn-outline-secondary w-100 h-100" type="submit">Buscar</button>
+        </div>
+      </div>
+    </form>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Descrição</th>
+                <th>Ativo</th>
+                <th class="text-end"></th>
+            </tr>
+        </thead>
+        <tbody>
+          {% for p in pedidos %}
+          <tr>
+            <td>{{p.pfoc_desc}}</td>
+            <td>{% if p.pfoc_ativ %}ATIVO{% else %}INATIVO{% endif %}</td>
+            <td class="text-end">
+                <button class="btn btn-info">Editar</button>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="3" class="text-center text-muted">
+              Nenhum perfil encontrado.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal fade" id="perfilCriarModal" tabindex="-1" aria-labelledby="perfilCriarModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" action="{% url 'ocorrencias:perfil_criar' slug=slug %}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h3 class="modal-title" id="perfilCriarModalLabel">
+            Cadastrar Perfil
+          </h3>
+          <div>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+          </div>
+        </div>
+        <div class="modal-body">
+          <div class="mb-2">
+            <div class="my-2">{{ form.pfoc_desc.label }}</div>
+            <div>{{ form.pfoc_desc }}</div>
+          </div>
+          <div class="mb-2 d-flex align-items-center gap-3">
+            <div class="my-2">{{ form.pfoc_ativ.label }}</div>
+            <div>{{ form.pfoc_ativ }}</div>
+          </div>
+          <h3 class="mt-1">Ocorrências</h3>
+          <table class="ocorrencias-container table">
+            <thead>
+              <tr>
+                <th></th>
+                <th class="text-end"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="ocorrencias-create-container">
+                <td id="primeiro-grupo">
+                  <select class="form-select" name="ocorrencia_id">
+                    <option value="">Selecione uma ocorrência...</option>
+                    {% for ocorrencia in todas_ocorrencias %}
+                      <option value="{{ ocorrencia.id }}">{{ ocorrencia }}</option>
+                    {% endfor %}
+                  </select>
+                </td>
+                <td></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-success btn-add d-flex align-items-center gap-2"><i class="bi bi-plus-circle"></i>Adicionar Ocorrência</button>
+          <button type="submit" class="btn btn-info d-flex align-items-center gap-2"><i class="bi bi-plus-circle"></i>Criar</button>
+        </div>
+      </form>
+    </div>
+  </div>  
+</div>
+
+{% for p in perfis %}
+<div class="modal fade" id="perfilModal{{p.id}}" tabindex="-1" aria-labelledby="perfilModal{{p.id}}Label" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" action="{% url 'ocorrencias:perfil_editar' slug=slug pk=p.id %}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h3 class="modal-title" id="perfilModal{{p.id}}Label">
+            {{p.pfoc_desc}}
+          </h3>
+          <div class="d-flex align-items-center gap-2">
+            {% if p.pfoc_ativ %}
+            <button type="button" class="btn btn-outline-danger btn-desativar" data-url="{% url 'ocorrencias:perfil_toggle_ativar' slug=slug pk=p.id %}">Desativar Perfil</button>
+            {% else %}
+            <button type="button" class="btn btn-outline-info btn-ativar" data-url="{% url 'ocorrencias:perfil_toggle_ativar' slug=slug pk=p.id %}">Ativar Perfil</button>
+            {% endif %}
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+          </div>
+        </div>
+        <div class="modal-body">
+          <div class="descricao-field d-none mb-2">
+            <div class="my-2">Atualizar descrição</div>
+            <div>{{ form.pfoc_desc }}</div>
+          </div>
+          <h3 class="mt-1">Ocorrências</h3>
+          <table class="ocorrencias-container table">
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th class="text-end">Descrição</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for o in p.ocorrencias.all %}
+              <tr data-oc-id="{{o.id}}" class="ocorrencia-field">
+                <td>{{o.ocor_codi}}</td>
+                <td class="text-end">{{o.ocor_desc}}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-info btn-editar" data-desc="{{ p.pfoc_desc }}">Editar</button>
+          <button type="button" class="btn btn-outline-success btn-add d-none d-flex align-items-center gap-2"><i class="bi bi-plus-circle"></i>Adicionar Ocorrência</button>
+          <button type="submit" class="btn btn-info d-none d-flex align-items-center gap-2"><i class="bi bi-floppy"></i>Salvar</button>
+          <button type="button" class="btn btn-outline-info btn-cancelar-edicao d-none">Cancelar Edição</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+<script>
+  const createContainer = document.getElementById('ocorrencias-create-container');
+  const primeiroGrupo = createContainer.querySelector('.primeiro-grupo');
+
+  document.querySelectorAll('.btn-add').forEach(button => {
+    button.addEventListener('click', (e) => {
+      const modal = e.currentTarget.closest(".modal");
+      const tbody = modal.querySelector(".edit-container tbody");
+      const novoGrupo = primeiroGrupo.cloneNode(true);
+      const select = novoGrupo.querySelector('select');
+      select.selectedIndex = 0;
+      tbody.appendChild(novoGrupo);
+      const camposSelect = modal.querySelectorAll('select');
+      removerOpcoesDuplicadas(camposSelect)
+      camposSelect.forEach(select => {
+        select.addEventListener('change', (e) =>{
+          const modal = e.currentTarget.closest(".modal");
+          const camposSelect = modal.querySelectorAll('select');
+          removerOpcoesDuplicadas(camposSelect)
+        })
+      })
+    })
+  });
+
+  function removerOpcoesDuplicadas(camposSelect){
+    const valoresSelecionados = Array.from(camposSelect)
+    .map(select => select.value)
+    .filter(val => val !== "" && val !== null);
+    camposSelect.forEach(select => {
+      const valorAtual = select.value;
+      Array.from(select.options).forEach(option => {
+        if (!option.value) return;
+        const ehSelecionado = valoresSelecionados.includes(option.value) && option.value !== valorAtual;
+        option.disabled = ehSelecionado;
+        option.hidden = ehSelecionado;
+      });
+    });
+  }
+  document.querySelectorAll('.btn-editar').forEach(button => {
+    button.addEventListener('click', (e) => {
+      const modal = e.currentTarget.closest(".modal");
+      const ocorrenciasContainer = modal.querySelector(".ocorrencias-container");
+      const editContainer = modal.querySelector(".edit-container");
+      if(editContainer){
+        editContainer.classList.toggle('d-none');
+      }
+      else{
+        const ocorrenciasField = ocorrenciasContainer.querySelectorAll(".ocorrencia-field")
+        const editOcorrenciasTable = document.createElement('table')
+        editOcorrenciasTable.classList = "edit-container table"
+        editOcorrenciasTable.innerHTML = `<thead>
+            <tr>
+              <th></th>
+              <th class="text-end"></th>
+            </tr>
+          </thead>
+          <tbody class="edit-tbody border">
+          </tbody>`
+        const modalBody = ocorrenciasContainer.closest(".modal-body")
+        modalBody.appendChild(editOcorrenciasTable)
+        const editOcorrenciasField = editOcorrenciasTable.querySelector(".edit-tbody")
+        const selectedValues = []
+        ocorrenciasField.forEach(ocorrencia => {
+          const novoGrupo = primeiroGrupo.cloneNode(true);
+          const select = novoGrupo.querySelector('select');
+          select.value = ocorrencia.dataset.ocId;
+          editOcorrenciasField.appendChild(novoGrupo);
+        });
+      }
+      const descInput = modal.querySelector(".descricao-field");
+      if(descInput){
+        descInput.classList.toggle('d-none');
+        const descInputField = descInput.querySelector('input')
+        descInputField.value = e.currentTarget.dataset.desc;
+      }
+      ocorrenciasContainer.classList.toggle('d-none');
+      const footer = modal.querySelector(".modal-footer")
+      const footerButtons = footer.querySelectorAll("button")
+      footerButtons.forEach((button)=>{
+        button.classList.toggle('d-none')
+      })
+      const camposSelect = modal.querySelectorAll('select')
+      camposSelect.forEach(select => {
+        select.addEventListener('change', (e) =>{
+          const modal = e.currentTarget.closest(".modal");
+          const camposSelect = modal.querySelectorAll('select');
+          removerOpcoesDuplicadas(camposSelect)
+        })
+      })
+      removerOpcoesDuplicadas(camposSelect)
+    })
+  });
+  document.querySelectorAll('.btn-cancelar-edicao').forEach(button => {
+    button.addEventListener('click', (e) => {
+      const modal = e.currentTarget.closest(".modal");
+      const descInput = modal.querySelector(".descricao-field");
+      descInput.classList.toggle('d-none');
+      const ocorrenciasContainer = modal.querySelector(".ocorrencias-container");
+      const editContainer = modal.querySelector(".edit-container");
+      ocorrenciasContainer.classList.toggle('d-none');
+      editContainer.classList.toggle('d-none');
+      const footer = modal.querySelector(".modal-footer")
+      const footerButtons = footer.querySelectorAll("button")
+      footerButtons.forEach((button)=>{
+        button.classList.toggle('d-none')
+      })
+    })
+  });
+
+  function removerLinha(btn) {
+    const container = btn.closest(".edit-container");
+    const tbody = container?.querySelector('tbody')
+    const visibleRows = tbody?.querySelectorAll("tr");
+    const tr = btn.closest("tr");
+    if (visibleRows && visibleRows.length > 1) {
+        tr.remove();
+    }
+  }
+  document.querySelectorAll('.btn-desativar, .btn-ativar').forEach(button => {
+    button.addEventListener('click', async (e) => {
+      const acao = e.currentTarget.classList.contains('btn-desativar') ? 'desativar' : 'ativar';
+      const ok = confirm(`Deseja ${acao} este perfil?`);
+      if(!ok){
+        return
+      }
+      const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+      const url = e.target.dataset.url;
+      try {
+          const response = await fetch(url, {
+              method: 'POST',
+              headers: {
+                  'X-CSRFToken': csrfToken,
+                  'Content-Type': 'application/json'
+              }
+          });
+          if (!response.ok) {
+              throw new Error(`Requisição falhou com status ${response.status}`);
+          }
+          const data = await response.json();
+          if (response.ok && data.status === 'success') {
+            window.location.reload();
+            console.log('Status do perfil atualizado:', data);
+          }
+      } catch (error) {
+          console.error('Erro atualizando status de perfil:', error);
+      }
+    });
+  });
+</script>
+{% endblock %}
+

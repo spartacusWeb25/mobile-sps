@@ -68,6 +68,7 @@ urlpatterns = [
     path("<slug>/processos/", include("processos.rest.urls")),
     path("<slug>/nfse/", include("nfse.Rest.api_urls")),
     path("<slug>/localidades/", include("localidades.rest.api_urls")),
+    path("<slug>/ocorrencias/", include("ocorrencias.rest.api_urls")),
 
     # Documentação da API
     path("schema/", SpectacularAPIView.as_view(), name="schema"),

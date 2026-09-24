@@ -4,10 +4,8 @@ from urllib.parse import quote_plus
 from django.db.models import Subquery, OuterRef, BigIntegerField, Sum, Count
 from django.db.models.functions import Cast
 from core.utils import get_licenca_db_config
-from ...models import PedidoVenda, PedidoOcorrencia
+from ...models import PedidoVenda
 from core.decorator import ModuloRequeridoMixin
-from ..forms import PedidoOcorrenciaForm
-
 
 
 logger = logging.getLogger(__name__)
@@ -180,32 +178,3 @@ class PedidosListView(ModuloRequeridoMixin, ListView):
                 params.append(f"{quote_plus(key)}={quote_plus(val)}")
         context['extra_query'] = ("&" + "&".join(params)) if params else ""
         return context
-
-class OcorrenciaListView(ListView):
-    template_name = 'Pedidos/ocorrencia_listar.html'
-    context_object_name = 'ocorrencias'
-    paginate_by = 50
-    modulo_requerido = 'Ocorrencias'
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['form'] = PedidoOcorrenciaForm
-        context['slug'] = self.kwargs.get('slug')
-        return context
-    def get_queryset(self):
-        banco = get_licenca_db_config(self.request) or 'default'
-
-        qs = PedidoOcorrencia.objects.using(banco).filter(
-            ocor_empr=self.request.session.get('empresa_id', 1),
-            ocor_fili=self.request.session.get('filial_id', 1),
-        )
-
-        codigo_param = (self.request.GET.get('codigo') or '').strip()
-        descricao_param = (self.request.GET.get('descricao') or '').strip()
-
-        if codigo_param:
-            qs = qs.filter(ocor_codi__icontains=codigo_param)
-
-        if descricao_param:
-            qs = qs.filter(ocor_desc__icontains=descricao_param)
-
-        return qs
