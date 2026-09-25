@@ -27,7 +27,7 @@ class OcorrenciaService:
         return perfil
 
     @staticmethod
-    def atualizar_perfil(*, banco, empresa, filial, id, descricao="", ativo=True, ocorrencias=None):
+    def atualizar_perfil(*, banco, empresa, filial, id, descricao="", ocorrencias=None):
         if ocorrencias is None:
             ocorrencias = []
 
@@ -40,7 +40,6 @@ class OcorrenciaService:
         except PerfilOcorrencia.DoesNotExist:
             return None
         perfil.pfoc_desc = descricao
-        perfil.pfoc_ativ = ativo
         perfil.save(using=banco)
         unique_ocorrencias = list(set(filter(None, ocorrencias)))
         perfil.ocorrencias.set(unique_ocorrencias)

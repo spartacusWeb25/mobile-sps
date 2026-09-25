@@ -6,7 +6,7 @@ from ocorrencias.rest.viewsets import (
 )
 
 router = DefaultRouter()
-router.register(r"", OcorrenciaTranspViewSet, basename="ocorrencia")
-router.register(r"perfis", PerfilOcorrenciaViewSet, basename="perfil-ocorrencia")
+router.register(r"ocorrencias/", OcorrenciaTranspViewSet, basename="ocorrencia")
+router.register(r"ocorrencias/perfis/", PerfilOcorrenciaViewSet, basename="perfil-ocorrencia")
 
 urlpatterns = router.urls

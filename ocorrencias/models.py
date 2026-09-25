@@ -22,7 +22,6 @@ class PerfilOcorrencia(models.Model):
 
     ocorrencias = models.ManyToManyField(
         "OcorrenciaTransp",
-        related_name="perfis",
     )
 
     def __str__(self):

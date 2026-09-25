@@ -33,7 +33,7 @@
         </div>
         <div class="col-md-4 d-flex align-items-center gap-3">
           <div>Incluir Inativos</div>
-          <input type="checkbox" name="ativo" class="checkbox" {% if request.GET.inativo %}checked{% endif %}>
+          <input type="checkbox" name="inativo" class="checkbox" {% if request.GET.inativo %}checked{% endif %}>
         </div>
         <div class="col-md-3">
           <button class="btn btn-outline-secondary w-100 h-100" type="submit">Buscar</button>
@@ -49,12 +49,12 @@
             </tr>
         </thead>
         <tbody>
-          {% for p in pedidos %}
+          {% for p in perfis %}
           <tr>
             <td>{{p.pfoc_desc}}</td>
             <td>{% if p.pfoc_ativ %}ATIVO{% else %}INATIVO{% endif %}</td>
             <td class="text-end">
-                <button class="btn btn-info">Editar</button>
+                <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#perfilModal{{p.id}}">Editar</button>
             </td>
           </tr>
           {% empty %}
@@ -92,7 +92,7 @@
             <div>{{ form.pfoc_ativ }}</div>
           </div>
           <h3 class="mt-1">Ocorrências</h3>
-          <table class="ocorrencias-container table">
+          <table class="edit-container table">
             <thead>
               <tr>
                 <th></th>
@@ -100,16 +100,16 @@
               </tr>
             </thead>
             <tbody>
-              <tr class="ocorrencias-create-container">
-                <td id="primeiro-grupo">
-                  <select class="form-select" name="ocorrencia_id">
+              <tr id="primeiro-grupo" class="align-middle">
+                <td>
+                  <select class="form-select" name="ocorrencia_ids" required>
                     <option value="">Selecione uma ocorrência...</option>
                     {% for ocorrencia in todas_ocorrencias %}
                       <option value="{{ ocorrencia.id }}">{{ ocorrencia }}</option>
                     {% endfor %}
                   </select>
                 </td>
-                <td></td>
+                <td><button type="button" class="btn btn-danger" onclick="removerLinha(this)"><i class="bi bi-trash"></i></button></td>
               </tr>
             </tbody>
           </table>
@@ -178,8 +178,9 @@
 {% endfor %}
 
 <script>
-  const createContainer = document.getElementById('ocorrencias-create-container');
-  const primeiroGrupo = createContainer.querySelector('.primeiro-grupo');
+  const criarModal = document.getElementById('perfilCriarModal');
+  const createContainer = criarModal.querySelector('.edit-container');
+  const primeiroGrupo = createContainer.querySelector('#primeiro-grupo');
 
   document.querySelectorAll('.btn-add').forEach(button => {
     button.addEventListener('click', (e) => {

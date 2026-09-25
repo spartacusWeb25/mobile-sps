@@ -58,9 +58,19 @@ class OcorrenciaTranspViewSet(BaseMultiDBViewSet):
 
     def get_queryset(self):
         cfg = self._ctx()
-        return OcorrenciaTransp.objects.using(cfg["db_alias"]).filter(
+        qs = OcorrenciaTransp.objects.using(cfg["db_alias"]).filter(
             ocor_empr=cfg["empresa"], ocor_fili=cfg["filial"]
         )
+        codigo_param = (self.request.GET.get('codigo') or '').strip()
+        descricao_param = (self.request.GET.get('descricao') or '').strip()
+
+        if codigo_param:
+            qs = qs.filter(ocor_codi__icontains=codigo_param)
+
+        if descricao_param:
+            qs = qs.filter(ocor_desc__icontains=descricao_param)
+
+        return qs
 
     def create(self, request, *args, **kwargs):
         cfg = self._ctx()
