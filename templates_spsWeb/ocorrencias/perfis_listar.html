@@ -27,32 +27,30 @@
   </div>
   <div class="card-body">
     <form class="row g-3 mb-2" method="get">
-      <div class="row">
-        <div class="col-md-5">
-          <input type="text" name="descricao" value="{{ request.GET.descricao }}" class="form-control p-2" placeholder="Filtrar por descrição">
-        </div>
-        <div class="col-md-4 d-flex align-items-center gap-3">
-          <div>Incluir Inativos</div>
-          <input type="checkbox" name="inativo" class="checkbox" {% if request.GET.inativo %}checked{% endif %}>
-        </div>
-        <div class="col-md-3">
-          <button class="btn btn-outline-secondary w-100 h-100" type="submit">Buscar</button>
-        </div>
+      <div class="col-md-6">
+        <input type="text" name="descricao" value="{{ request.GET.descricao }}" class="form-control p-2" placeholder="Filtrar por descrição">
+      </div>
+      <div class="col-md-3 d-flex align-items-center gap-3">
+        <div>Incluir Inativos</div>
+        <input type="checkbox" name="inativo" class="checkbox" {% if request.GET.inativo %}checked{% endif %}>
+      </div>
+      <div class="col-md-3">
+        <button class="btn btn-outline-secondary w-100 h-100" type="submit">Buscar</button>
       </div>
     </form>
     <table class="table">
         <thead>
             <tr>
                 <th>Descrição</th>
-                <th>Ativo</th>
+                <th>Status</th>
                 <th class="text-end"></th>
             </tr>
         </thead>
         <tbody>
           {% for p in perfis %}
           <tr>
-            <td>{{p.pfoc_desc}}</td>
-            <td>{% if p.pfoc_ativ %}ATIVO{% else %}INATIVO{% endif %}</td>
+            <td class="align-middle">{{p.pfoc_desc}}</td>
+            <td class="align-middle">{% if p.pfoc_ativ %}ATIVO{% else %}INATIVO{% endif %}</td>
             <td class="text-end">
                 <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#perfilModal{{p.id}}">Editar</button>
             </td>
@@ -109,7 +107,7 @@
                     {% endfor %}
                   </select>
                 </td>
-                <td><button type="button" class="btn btn-danger" onclick="removerLinha(this)"><i class="bi bi-trash"></i></button></td>
+                <td class="text-center"><button type="button" class="btn btn-danger" onclick="removerLinha(this)"><i class="bi bi-trash"></i></button></td>
               </tr>
             </tbody>
           </table>

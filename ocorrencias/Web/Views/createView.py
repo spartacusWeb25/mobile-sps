@@ -1,3 +1,5 @@
+from django.http import JsonResponse
+
 from ...models import OcorrenciaTransp, PerfilOcorrencia
 from ..forms import OcorrenciaForm, PerfilOcorrenciaForm
 from django.views.generic import CreateView, UpdateView, View
@@ -118,9 +120,19 @@ class PerfilOcorrenciaToggleView(View):
             filial = filial_id,
             id = perfil_id
         )
+        if not perfil:
+            return JsonResponse({'success': False, 'error': 'Perfil não encontrado.'}, status=404)
+
+       
         logger.debug(
             "[PerfilOcorrenciaToggleView] Status do perfil atualizado pfoc_ativ=%s",
             getattr(perfil, 'pfoc_ativ', None)
         )
         messages.success(self.request, f"Status do perfil {perfil.pfoc_desc} atualizado com sucesso.")
-        return redirect("ocorrencias:perfis", slug=slug)
+
+        return JsonResponse({
+                'status': "success",
+                'perfil_id': perfil.id,
+                'pfoc_ativ': perfil.pfoc_ativ,
+                'message': f"Status do perfil '{perfil.pfoc_desc}' atualizado com sucesso."
+            })
