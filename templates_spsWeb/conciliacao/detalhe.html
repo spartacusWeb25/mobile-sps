@@ -607,1009 +607,356 @@
 {% include "conciliacao/components/modal_detalhes_vinculos.html" %}
 {% csrf_token %}
 <script>
-
 document.addEventListener("DOMContentLoaded", function () {
 
-    /*
-    ============================================================
-    REFERÊNCIAS DOS ELEMENTOS
-    ============================================================
-    */
+    const modalDetalhes = document.getElementById("modalDetalhesVinculos");
+    const modalConfirmarEl = document.getElementById("modalConfirmarDesvinculo");
+    const btnConfirmar = document.getElementById("btnConfirmarDesvinculo");
 
-    const modal =
-        document.getElementById(
-            "modalDetalhesVinculos"
-        );
-
-    if (!modal) {
+    if (!modalDetalhes || !modalConfirmarEl || !btnConfirmar) {
+        console.error("Detalhes: elementos dos modais não encontrados.", {
+            modalDetalhes: !!modalDetalhes,
+            modalConfirmarEl: !!modalConfirmarEl,
+            btnConfirmar: !!btnConfirmar
+        });
         return;
     }
 
+    // Garante que os modais fiquem direto no <body>
+    // (evita ficarem dentro de um pai escondido).
+    [modalDetalhes, modalConfirmarEl].forEach(function (m) {
+        if (m.parentElement !== document.body) {
+            console.warn("Detalhes: movendo modal para o body:", m.id);
+            document.body.appendChild(m);
+        }
+    });
 
-    /*
-    ============================================================
-    CSRF DO DJANGO
-    ============================================================
+    const URL_DETALHES_BASE =
+        "{% url 'conciliacao:detalhe_vinculos' slug=slug empresa=conciliacao.empresa filial=conciliacao.filial numero=conciliacao.nume item_id=0 %}";
 
-    Em vez de depender do cookie csrftoken, pegamos o token
-    diretamente do input criado pelo:
+    const URL_DESVINCULAR =
+        "{% url 'conciliacao:desvincular' slug=slug empresa=conciliacao.empresa filial=conciliacao.filial numero=conciliacao.nume %}";
 
-        {% csrf_token %}
+    const BTN_CONFIRMAR_HTML =
+        '<i class="bi bi-x-circle me-1"></i>Sim, desvincular';
 
-    Isso é mais seguro para este fluxo.
-    */
+    const el = {
+        loading: document.getElementById("detalhesLoading"),
+        erro: document.getElementById("detalhesErro"),
+        conteudo: document.getElementById("detalhesConteudo"),
+        valorExtrato: document.getElementById("detalhesValorExtrato"),
+        totalVinculado: document.getElementById("detalhesTotalVinculado"),
+        saldo: document.getElementById("detalhesSaldo"),
+        lista: document.getElementById("listaVinculos")
+    };
 
-    const csrfInput =
-        document.querySelector(
-            '[name="csrfmiddlewaretoken"]'
-        );
-
-
-    /*
-    Guarda o token CSRF.
-    */
-
-    const csrfToken =
-        csrfInput
-            ? csrfInput.value
-            : null;
-
-
-    /*
-    ============================================================
-    CONTROLE DO ITEM ATUAL
-    ============================================================
-    */
-
-    let itemExtratoAtual = null;
-
-
-    /*
-    ============================================================
-    CONTROLE DO VÍNCULO A DESVINCULAR
-    ============================================================
-
-    Guarda o ID do vínculo enquanto o usuário está
-    no modal de confirmação.
-    */
-
+    let itemAtual = null;
     let vinculoParaDesvincular = null;
+    let houveAlteracao = false;
 
 
-    /*
-    ============================================================
-    ELEMENTOS DO MODAL DE DETALHES
-    ============================================================
-    */
+    function obterModal(elemento) {
 
-    const loading =
-        document.getElementById(
-            "detalhesLoading"
-        );
+        if (typeof bootstrap === "undefined" || !bootstrap.Modal) {
+            throw new Error("Bootstrap JS não foi carregado nesta página.");
+        }
 
-    const erro =
-        document.getElementById(
-            "detalhesErro"
-        );
+        if (bootstrap.Modal.getOrCreateInstance) {
+            return bootstrap.Modal.getOrCreateInstance(elemento);
+        }
 
-    const conteudo =
-        document.getElementById(
-            "detalhesConteudo"
-        );
-
-    const valorExtrato =
-        document.getElementById(
-            "detalhesValorExtrato"
-        );
-
-    const totalVinculado =
-        document.getElementById(
-            "detalhesTotalVinculado"
-        );
-
-    const saldo =
-        document.getElementById(
-            "detalhesSaldo"
-        );
-
-    const listaVinculos =
-        document.getElementById(
-            "listaVinculos"
-        );
-
-
-    /*
-    ============================================================
-    ELEMENTOS DO MODAL DE CONFIRMAÇÃO
-    ============================================================
-    */
-
-    const modalConfirmacaoElement =
-        document.getElementById(
-            "modalConfirmarDesvinculo"
-        );
-
-
-    if (!modalConfirmacaoElement) {
-
-        console.error(
-            "Modal de confirmação não encontrado."
-        );
-
-        return;
+        return bootstrap.Modal.getInstance(elemento) ||
+            new bootstrap.Modal(elemento);
     }
-
-
-    /*
-    Cria a instância do modal Bootstrap.
-    */
-
-    const modalConfirmacao =
-        new bootstrap.Modal(
-            modalConfirmacaoElement
-        );
-
-
-    /*
-    Botão "Sim, desvincular".
-    */
-
-    const btnConfirmarDesvinculo =
-        document.getElementById(
-            "btnConfirmarDesvinculo"
-        );
-
-
-    if (!btnConfirmarDesvinculo) {
-
-        console.error(
-            "Botão de confirmação não encontrado."
-        );
-
-        return;
-    }
-
-
-    /*
-    ============================================================
-    FORMATAÇÃO DE MOEDA
-    ============================================================
-    */
 
     function formatarMoeda(valor) {
-
-        const numero =
-            Number(valor || 0);
-
-        return numero.toLocaleString(
-            "pt-BR",
-            {
-                style: "currency",
-                currency: "BRL"
-            }
-        );
-    }
-
-
-    /*
-    ============================================================
-    CARREGAR DETALHES
-    ============================================================
-
-    Busca no backend os vínculos do item selecionado.
-    */
-
-    function carregarDetalhes(itemId) {
-
-        /*
-        Guarda o item atualmente aberto.
-        */
-
-        itemExtratoAtual =
-            itemId;
-
-
-        /*
-        Mostra loading.
-        */
-
-        loading.classList.remove(
-            "d-none"
-        );
-
-
-        /*
-        Esconde erro anterior.
-        */
-
-        erro.classList.add(
-            "d-none"
-        );
-
-
-        /*
-        Esconde conteúdo enquanto carrega.
-        */
-
-        conteudo.classList.add(
-            "d-none"
-        );
-
-
-        /*
-        Limpa vínculos anteriores.
-        */
-
-        listaVinculos.innerHTML = "";
-
-
-        /*
-        ========================================================
-        URL DO ENDPOINT
-        ========================================================
-        */
-
-        const url =
-            "{% url 'conciliacao:detalhe_vinculos' slug=slug empresa=conciliacao.empresa filial=conciliacao.filial numero=conciliacao.nume item_id=0 %}"
-            .replace(
-                "/0/",
-                "/" + itemId + "/"
-            );
-
-
-        /*
-        ========================================================
-        GET DOS VÍNCULOS
-        ========================================================
-        */
-
-        fetch(url, {
-
-            method: "GET",
-
-            headers: {
-                "X-Requested-With":
-                    "XMLHttpRequest"
-            }
-
-        })
-
-        .then(function (response) {
-
-            if (!response.ok) {
-
-                throw new Error(
-                    "Não foi possível carregar os vínculos."
-                );
-            }
-
-            return response.json();
-
-        })
-
-        .then(function (data) {
-
-            /*
-            Valor do extrato.
-            */
-
-            valorExtrato.textContent =
-                formatarMoeda(
-                    data.valor_extrato
-                );
-
-
-            /*
-            Total vinculado.
-            */
-
-            totalVinculado.textContent =
-                formatarMoeda(
-                    data.total_vinculado
-                );
-
-
-            /*
-            Saldo.
-            */
-
-            saldo.textContent =
-                formatarMoeda(
-                    data.saldo
-                );
-
-
-            /*
-            Limpa lista.
-            */
-
-            listaVinculos.innerHTML = "";
-
-
-            /*
-            ====================================================
-            NENHUM VÍNCULO
-            ====================================================
-            */
-
-            if (
-                !data.vinculos ||
-                data.vinculos.length === 0
-            ) {
-
-                listaVinculos.innerHTML = `
-
-                    <div class="alert alert-light border">
-
-                        <i class="bi bi-info-circle me-1"></i>
-
-                        Nenhum vínculo encontrado.
-
-                    </div>
-
-                `;
-
-            }
-
-
-            /*
-            ====================================================
-            EXISTEM VÍNCULOS
-            ====================================================
-            */
-
-            else {
-
-                data.vinculos.forEach(
-                    function (vinculo) {
-
-                        /*
-                        Cria o card.
-                        */
-
-                        const elemento =
-                            document.createElement(
-                                "div"
-                            );
-
-
-                        elemento.className =
-                            "border rounded p-3 mb-3";
-
-
-                        /*
-                        Nome da entidade.
-                        */
-
-                        const nomeEntidade =
-                            vinculo.nome_entidade ||
-                            vinculo.entidade ||
-                            "—";
-
-
-                        /*
-                        Monta o card.
-                        */
-
-                        elemento.innerHTML = `
-
-                            <div class="d-flex justify-content-between align-items-start">
-
-                                <div>
-
-                                    <div class="fw-bold">
-
-                                        ${vinculo.origem || "—"}
-
-                                    </div>
-
-
-                                    <div class="small text-muted mt-1">
-
-                                        Entidade:
-                                        ${nomeEntidade}
-
-                                    </div>
-
-
-                                    <div class="small text-muted">
-
-                                        Título:
-                                        ${vinculo.titulo || "—"}
-
-                                    </div>
-
-
-                                    <div class="small text-muted">
-
-                                        Série:
-                                        ${vinculo.serie || "—"}
-
-                                        &nbsp; | &nbsp;
-
-                                        Parcela:
-                                        ${vinculo.parcela || "—"}
-
-                                    </div>
-
-
-                                    <div class="small text-muted">
-
-                                        Data:
-                                        ${vinculo.data || "—"}
-
-                                    </div>
-
-                                </div>
-
-
-                                <div class="text-end">
-
-                                    <div class="fw-bold">
-
-                                        ${formatarMoeda(vinculo.valor)}
-
-                                    </div>
-
-
-                                    <button
-                                        type="button"
-                                        class="btn btn-sm btn-outline-danger mt-2 js-desvincular"
-                                        data-vinculo-id="${vinculo.id}">
-
-                                        <i class="bi bi-x-circle me-1"></i>
-
-                                        Desvincular
-
-                                    </button>
-
-                                </div>
-
-                            </div>
-
-                        `;
-
-
-                        /*
-                        Adiciona o card.
-                        */
-
-                        listaVinculos.appendChild(
-                            elemento
-                        );
-
-                    }
-                );
-
-            }
-
-
-            /*
-            Esconde loading.
-            */
-
-            loading.classList.add(
-                "d-none"
-            );
-
-
-            /*
-            Mostra conteúdo.
-            */
-
-            conteudo.classList.remove(
-                "d-none"
-            );
-
-        })
-
-        .catch(function (error) {
-
-            console.error(
-                error
-            );
-
-
-            loading.classList.add(
-                "d-none"
-            );
-
-
-            erro.textContent =
-                error.message;
-
-
-            erro.classList.remove(
-                "d-none"
-            );
-
+        return Number(valor || 0).toLocaleString("pt-BR", {
+            style: "currency",
+            currency: "BRL"
         });
+    }
 
+    function esc(valor) {
+        if (valor === null || valor === undefined || valor === "") {
+            return "—";
+        }
+        return String(valor).replace(/[&<>"']/g, function (c) {
+            return {
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#39;"
+            }[c];
+        });
+    }
+
+    function mostrarErro(mensagem) {
+        el.loading.classList.add("d-none");
+        el.conteudo.classList.add("d-none");
+        el.erro.textContent = mensagem;
+        el.erro.classList.remove("d-none");
     }
 
 
-    /*
-    ============================================================
-    ABRIR MODAL DE DETALHES
-    ============================================================
-    */
+    async function carregarDetalhes(itemId) {
 
-    modal.addEventListener(
-        "show.bs.modal",
-        function (event) {
+        itemAtual = itemId;
 
-            const botao =
-                event.relatedTarget;
+        el.loading.classList.remove("d-none");
+        el.erro.classList.add("d-none");
+        el.conteudo.classList.add("d-none");
+        el.lista.innerHTML = "";
 
+        const url = URL_DETALHES_BASE.replace(/\/0\/$/, "/" + itemId + "/");
 
-            if (!botao) {
-                return;
-            }
+        console.log("Detalhes: buscando", url);
 
+        try {
 
-            /*
-            Recupera o ID:
-
-                data-item-id="3"
-            */
-
-            const itemId =
-                botao.dataset.itemId;
-
-
-            if (!itemId) {
-
-                erro.textContent =
-                    "ID do item do extrato não informado.";
-
-                erro.classList.remove(
-                    "d-none"
-                );
-
-                return;
-            }
-
-
-            /*
-            Guarda o item atual.
-            */
-
-            itemExtratoAtual =
-                itemId;
-
-
-            /*
-            Carrega os detalhes.
-            */
-
-            carregarDetalhes(
-                itemId
-            );
-
-        }
-    );
-
-
-    /*
-    ============================================================
-    CLIQUE EM "DESVINCULAR"
-    ============================================================
-
-    Aqui apenas abrimos o modal de confirmação.
-    Ainda NÃO fazemos o POST.
-    */
-
-    document.addEventListener(
-        "click",
-        function (event) {
-
-            /*
-            Encontra o botão de desvincular.
-
-            O closest() permite clicar também no ícone.
-            */
-
-            const botao =
-                event.target.closest(
-                    ".js-desvincular"
-                );
-
-
-            if (!botao) {
-                return;
-            }
-
-
-            /*
-            Recupera o ID do vínculo.
-            */
-
-            const histId =
-                botao.dataset.vinculoId;
-
-
-            if (!histId) {
-
-                console.error(
-                    "ID do vínculo não informado."
-                );
-
-                return;
-            }
-
-
-            /*
-            Guarda o ID.
-            */
-
-            vinculoParaDesvincular =
-                histId;
-
-
-            /*
-            Abre confirmação.
-            */
-
-            modalConfirmacao.show();
-
-        }
-    );
-
-
-    /*
-    ============================================================
-    CONFIRMAR DESVINCULAÇÃO
-    ============================================================
-
-    Agora sim fazemos o POST para o Django.
-    */
-
-    btnConfirmarDesvinculo.addEventListener(
-        "click",
-        function () {
-
-            /*
-            Verifica se existe um vínculo selecionado.
-            */
-
-            if (!vinculoParaDesvincular) {
-
-                return;
-            }
-
-
-            /*
-            Verifica se o CSRF existe.
-            */
-
-            if (!csrfToken) {
-
-                console.error(
-                    "CSRF token não encontrado."
-                );
-
-
-                alert(
-                    "Token de segurança não encontrado. Atualize a página e tente novamente."
-                );
-
-
-                return;
-            }
-
-
-            /*
-            ID do histórico que será removido.
-            */
-
-            const histId =
-                vinculoParaDesvincular;
-
-
-            /*
-            ====================================================
-            URL DO POST
-            ====================================================
-            */
-
-            const url =
-                "{% url 'conciliacao:desvincular' slug=slug empresa=conciliacao.empresa filial=conciliacao.filial numero=conciliacao.nume %}";
-
-
-            /*
-            ====================================================
-            FORM DATA
-            ====================================================
-            */
-
-            const formData =
-                new FormData();
-
-
-            formData.append(
-                "hist_id",
-                histId
-            );
-
-
-            /*
-            ====================================================
-            BLOQUEIA BOTÃO
-            ====================================================
-            */
-
-            btnConfirmarDesvinculo.disabled =
-                true;
-
-
-            btnConfirmarDesvinculo.innerHTML = `
-
-                <span
-                    class="spinner-border spinner-border-sm me-1"
-                    role="status"
-                    aria-hidden="true">
-                </span>
-
-                Desvinculando...
-
-            `;
-
-
-            /*
-            ====================================================
-            POST
-            ====================================================
-            */
-
-            fetch(url, {
-
-                method: "POST",
-
-                body: formData,
-
-                headers: {
-
-                    /*
-                    CSRF enviado diretamente
-                    no header.
-                    */
-
-                    "X-CSRFToken":
-                        csrfToken,
-
-                    /*
-                    Indica requisição AJAX.
-                    */
-
-                    "X-Requested-With":
-                        "XMLHttpRequest"
-
-                }
-
-            })
-
-
-            /*
-            ====================================================
-            TRATAMENTO DA RESPOSTA
-            ====================================================
-
-            Aqui fizemos uma alteração importante.
-
-            NÃO assumimos que toda resposta é JSON.
-
-            Se o Django devolver HTML, por exemplo um 403,
-            mostramos um erro compreensível em vez de:
-
-                Unexpected token '<'
-            */
-
-            .then(async function (response) {
-
-                const contentType =
-                    response.headers.get(
-                        "content-type"
-                    ) || "";
-
-
-                /*
-                Se for JSON, podemos processar normalmente.
-                */
-
-                if (
-                    contentType.includes(
-                        "application/json"
-                    )
-                ) {
-
-                    const data =
-                        await response.json();
-
-
-                    return {
-                        ok:
-                            response.ok,
-
-                        data:
-                            data
-                    };
-                }
-
-
-                /*
-                Se não for JSON, pegamos o texto.
-                */
-
-                const texto =
-                    await response.text();
-
-
-                console.error(
-                    "Resposta não JSON:",
-                    texto
-                );
-
-
-                throw new Error(
-                    "O servidor rejeitou a operação. HTTP " +
-                    response.status
-                );
-
-            })
-
-
-            /*
-            ====================================================
-            RESULTADO
-            ====================================================
-            */
-
-            .then(function (result) {
-
-                /*
-                Backend precisa retornar:
-
-                    {
-                        "sucesso": true
-                    }
-                */
-
-                if (
-                    !result.ok ||
-                    !result.data.sucesso
-                ) {
-
-                    throw new Error(
-
-                        result.data.erro ||
-
-                        "Não foi possível desvincular o lançamento."
-
-                    );
-                }
-
-
-                /*
-                =================================================
-                SUCESSO
-                =================================================
-
-                Fecha o modal.
-                */
-
-                modalConfirmacao.hide();
-
-
-                /*
-                Limpa vínculo selecionado.
-                */
-
-                vinculoParaDesvincular =
-                    null;
-
-
-                /*
-                Recarrega os detalhes.
-
-                O vínculo removido deverá desaparecer
-                da lista e os valores serão recalculados.
-                */
-
-                carregarDetalhes(
-                    itemExtratoAtual
-                );
-
-            })
-
-
-            /*
-            ====================================================
-            ERRO
-            ====================================================
-            */
-
-            .catch(function (error) {
-
-                console.error(
-                    "Erro ao desvincular:",
-                    error
-                );
-
-
-                alert(
-                    error.message
-                );
-
-            })
-
-
-            /*
-            ====================================================
-            FINALIZAÇÃO
-            ====================================================
-
-            Executa tanto em sucesso quanto em erro.
-
-            Restaura o botão.
-            */
-
-            .finally(function () {
-
-                btnConfirmarDesvinculo.disabled =
-                    false;
-
-
-                btnConfirmarDesvinculo.innerHTML = `
-
-                    <i class="bi bi-x-circle me-1"></i>
-
-                    Sim, desvincular
-
-                `;
-
+            const resp = await fetch(url, {
+                headers: { "X-Requested-With": "XMLHttpRequest" }
             });
 
+            if (!resp.ok) {
+
+                let mensagem =
+                    "Não foi possível carregar os vínculos (HTTP " + resp.status + ").";
+
+                try {
+                    const corpo = await resp.json();
+                    if (corpo.erro) {
+                        mensagem = corpo.erro;
+                    }
+                } catch (e) {
+                    /* resposta não era JSON */
+                }
+
+                throw new Error(mensagem);
+            }
+
+            const data = await resp.json();
+
+            el.valorExtrato.textContent = formatarMoeda(data.valor_extrato);
+            el.totalVinculado.textContent = formatarMoeda(data.total_vinculado);
+            el.saldo.textContent = formatarMoeda(data.saldo);
+
+            if (!data.vinculos || data.vinculos.length === 0) {
+
+                el.lista.innerHTML =
+                    '<div class="alert alert-light border">' +
+                    '<i class="bi bi-info-circle me-1"></i>' +
+                    'Nenhum vínculo encontrado.' +
+                    '</div>';
+
+            } else {
+
+                data.vinculos.forEach(function (v) {
+
+                    const card = document.createElement("div");
+                    card.className = "border rounded p-3 mb-3";
+
+                    card.innerHTML = `
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="fw-bold">${esc(v.origem)}</div>
+                                <div class="small text-muted mt-1">
+                                    Entidade: ${esc(v.nome_entidade || v.entidade)}
+                                </div>
+                                <div class="small text-muted">
+                                    Título: ${esc(v.titulo)}
+                                </div>
+                                <div class="small text-muted">
+                                    Série: ${esc(v.serie)}
+                                    &nbsp;|&nbsp;
+                                    Parcela: ${esc(v.parcela)}
+                                </div>
+                                <div class="small text-muted">
+                                    Data: ${esc(v.data)}
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <div class="fw-bold">${formatarMoeda(v.valor)}</div>
+                                <button type="button"
+                                    class="btn btn-sm btn-outline-danger mt-2 js-desvincular"
+                                    data-vinculo-id="${esc(v.id)}">
+                                    <i class="bi bi-x-circle me-1"></i>
+                                    Desvincular
+                                </button>
+                            </div>
+                        </div>
+                    `;
+
+                    el.lista.appendChild(card);
+                });
+            }
+
+            el.loading.classList.add("d-none");
+            el.conteudo.classList.remove("d-none");
+
+        } catch (err) {
+
+            console.error("Detalhes: falha ao carregar", url, err);
+            mostrarErro(err.message);
         }
-    );
+    }
 
 
-    /*
-    ============================================================
-    FECHAMENTO DO MODAL DE CONFIRMAÇÃO
-    ============================================================
+    function abrirDetalhes(itemId) {
 
-    Se o usuário clicar em "Cancelar" ou fechar o modal,
-    apagamos o ID que estava aguardando confirmação.
-    */
+        console.log("Detalhes: clique no botão, item =", itemId);
 
-    modalConfirmacaoElement.addEventListener(
-        "hidden.bs.modal",
-        function () {
+        houveAlteracao = false;
 
-            vinculoParaDesvincular =
-                null;
-
-
-            /*
-            Garante que o botão volte ao estado normal.
-            */
-
-            btnConfirmarDesvinculo.disabled =
-                false;
-
-
-            btnConfirmarDesvinculo.innerHTML = `
-
-                <i class="bi bi-x-circle me-1"></i>
-
-                Sim, desvincular
-
-            `;
-
+        if (!itemId) {
+            alert("ID do item do extrato não informado.");
+            return;
         }
-    );
+
+        try {
+            obterModal(modalDetalhes).show();
+        } catch (err) {
+            console.error("Detalhes: não foi possível abrir o modal.", err);
+            alert("Não foi possível abrir os detalhes: " + err.message);
+            return;
+        }
+
+        carregarDetalhes(itemId);
+    }
+
+
+    // Clique em "Detalhes" (fase de captura: não depende do data-api do Bootstrap
+    // e não é afetado por outros handlers que parem a propagação).
+    document.addEventListener("click", function (event) {
+
+        const botao = event.target.closest(".js-detalhes-vinculos");
+
+        if (!botao) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation(); // impede o data-api de abrir o modal uma 2ª vez
+
+        abrirDetalhes(botao.dataset.itemId);
+
+    }, true);
+
+
+    // Ao fechar o modal depois de desvincular, recarrega a página
+    // para a linha do extrato refletir o novo status.
+    modalDetalhes.addEventListener("hidden.bs.modal", function () {
+
+        if (houveAlteracao) {
+            window.location.reload();
+        }
+    });
+
+
+    // Clique em "Desvincular": só abre a confirmação.
+    document.addEventListener("click", function (event) {
+
+        const botao = event.target.closest(".js-desvincular");
+
+        if (!botao) {
+            return;
+        }
+
+        const histId = botao.dataset.vinculoId;
+
+        if (!histId) {
+            console.error("Desvincular: ID do vínculo não informado.");
+            return;
+        }
+
+        vinculoParaDesvincular = histId;
+
+        try {
+            obterModal(modalConfirmarEl).show();
+        } catch (err) {
+            console.error("Desvincular: não foi possível abrir a confirmação.", err);
+            alert(err.message);
+        }
+    });
+
+
+    // Confirmação: aqui sim faz o POST.
+    btnConfirmar.addEventListener("click", async function () {
+
+        if (!vinculoParaDesvincular) {
+            return;
+        }
+
+        const csrfInput =
+            document.querySelector('[name="csrfmiddlewaretoken"]');
+
+        if (!csrfInput) {
+            alert("Token de segurança não encontrado. Atualize a página e tente novamente.");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("hist_id", vinculoParaDesvincular);
+
+        btnConfirmar.disabled = true;
+        btnConfirmar.innerHTML =
+            '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>' +
+            'Desvinculando...';
+
+        try {
+
+            const resp = await fetch(URL_DESVINCULAR, {
+                method: "POST",
+                body: formData,
+                headers: {
+                    "X-CSRFToken": csrfInput.value,
+                    "X-Requested-With": "XMLHttpRequest"
+                }
+            });
+
+            const tipo = resp.headers.get("content-type") || "";
+
+            if (!tipo.includes("application/json")) {
+                console.error("Desvincular: resposta não JSON:", await resp.text());
+                throw new Error(
+                    "O servidor rejeitou a operação. HTTP " + resp.status
+                );
+            }
+
+            const data = await resp.json();
+
+            if (!resp.ok || !data.sucesso) {
+                throw new Error(
+                    data.erro || "Não foi possível desvincular o lançamento."
+                );
+            }
+
+            houveAlteracao = true;
+            vinculoParaDesvincular = null;
+
+            obterModal(modalConfirmarEl).hide();
+            carregarDetalhes(itemAtual);
+
+        } catch (err) {
+
+            console.error("Erro ao desvincular:", err);
+            alert(err.message);
+
+        } finally {
+
+            btnConfirmar.disabled = false;
+            btnConfirmar.innerHTML = BTN_CONFIRMAR_HTML;
+        }
+    });
+
+
+    modalConfirmarEl.addEventListener("hidden.bs.modal", function () {
+
+        vinculoParaDesvincular = null;
+        btnConfirmar.disabled = false;
+        btnConfirmar.innerHTML = BTN_CONFIRMAR_HTML;
+    });
 
 });
-
 </script>
 {% endblock %}

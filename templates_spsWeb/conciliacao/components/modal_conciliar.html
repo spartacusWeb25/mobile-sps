@@ -40,7 +40,7 @@
                 <!-- BODY -->
                 <!-- ================================================= -->
 
-                <div class="modal-body">
+                <div class="modal-body modal-body-conciliacao">
 
                     <!-- ============================================= -->
                     <!-- DADOS DO EXTRATO -->
@@ -106,9 +106,31 @@
                                     </strong>
 
                                 </div>
+                                <div class="col-md-3">
 
+                                    <small class="text-muted d-block">
+                                        Data de emissão
+                                    </small>
 
-                                <div class="col-12">
+                                    <strong id="conciliarDataEmissao">
+                                        —
+                                    </strong>
+
+                                </div>
+
+                                <div class="col-md-3">
+
+                                    <small class="text-muted d-block">
+                                        Data de vencimento
+                                    </small>
+
+                                    <strong id="conciliarDataVencimento">
+                                        —
+                                    </strong>
+
+                                </div>
+
+                                <div class="col-md-12">
 
                                     <small class="text-muted d-block">
                                         Histórico
@@ -447,17 +469,32 @@
                                         <input type="number" class="form-control" name="valor[]" min="0.01" step="0.01">
 
                                     </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">
+                                            Data de emissão
+                                        </label>
 
-                                </div>
+                                        <input type="date" class="form-control" name="titu_emis[]" autocomplete="off">
+                                    </div>
+
+                                    <div class="col-md-3">
+                                        <label class="form-label">
+                                            Data de vencimento
+                                        </label>
+
+                                        <input type="date" class="form-control" name="titu_venc[]" autocomplete="off">
+                                    </div>
 
 
-                                <div class="text-end mt-2">
+                                    <div class="text-end mt-2">
 
-                                    <button type="button" class="btn btn-outline-danger btn-sm js-remover-titulo">
+                                        <button type="button" class="btn btn-outline-danger btn-sm js-remover-titulo">
 
-                                        Remover título
+                                            Remover título
 
-                                    </button>
+                                        </button>
+
+                                    </div>
 
                                 </div>
 
@@ -465,48 +502,46 @@
 
                         </div>
 
+
+                        <!-- ============================================= -->
+                        <!-- ALERTA -->
+                        <!-- ============================================= -->
+
+                        <div class="alert alert-info mb-0" id="alertaConciliacao">
+
+                            <strong>Atenção:</strong>
+
+                            os dados informados serão enviados para a baixa
+                            financeira. Confira os títulos e valores antes
+                            de confirmar.
+
+                        </div>
+
                     </div>
 
 
-                    <!-- ============================================= -->
-                    <!-- ALERTA -->
-                    <!-- ============================================= -->
+                    <!-- ================================================= -->
+                    <!-- FOOTER -->
+                    <!-- ================================================= -->
 
-                    <div class="alert alert-info mb-0" id="alertaConciliacao">
+                    <div class="modal-footer">
 
-                        <strong>Atenção:</strong>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
 
-                        os dados informados serão enviados para a baixa
-                        financeira. Confira os títulos e valores antes
-                        de confirmar.
+                            Cancelar
+
+                        </button>
+
+
+                        <button type="submit" class="btn btn-success" id="btnConfirmarConciliacao">
+
+                            <i class="bi bi-check-circle"></i>
+
+                            Confirmar conciliação
+
+                        </button>
 
                     </div>
-
-                </div>
-
-
-                <!-- ================================================= -->
-                <!-- FOOTER -->
-                <!-- ================================================= -->
-
-                <div class="modal-footer">
-
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
-
-                        Cancelar
-
-                    </button>
-
-
-                    <button type="submit" class="btn btn-success" id="btnConfirmarConciliacao">
-
-                        <i class="bi bi-check-circle"></i>
-
-                        Confirmar conciliação
-
-                    </button>
-
-                </div>
 
             </form>
 
@@ -516,7 +551,26 @@
 
 </div>
 
+<style>
+    #modalConciliar .modal-body-conciliacao {
+        max-height: calc(100vh - 180px);
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
 
+    #modalConciliar .modal-body-conciliacao::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    #modalConciliar .modal-body-conciliacao::-webkit-scrollbar-thumb {
+        background: #adb5bd;
+        border-radius: 10px;
+    }
+
+    #modalConciliar .modal-body-conciliacao::-webkit-scrollbar-track {
+        background: #f1f3f5;
+    }
+</style>
 <script>
     (function () {
 
@@ -973,6 +1027,36 @@
                             '[name="valor[]"]'
                         ).value = titulo.valor;
 
+                        const emis =
+                            titulo.emissao ||
+                            titulo.titu_emis ||
+                            titulo.data_emissao ||
+                            "";
+
+
+                        // Tenta encontrar a data de vencimento em diferentes
+                        // nomes possíveis retornados pela API.
+                        const venc =
+                            titulo.vencimento ||
+                            titulo.titu_venc ||
+                            titulo.data_vencimento ||
+                            "";
+
+
+                        // =========================================================
+                        // PREENCHE OS CAMPOS HIDDEN DO FORMULÁRIO
+                        // =========================================================
+
+                        // Data de emissão
+                        linha.querySelector(
+                            '[name="titu_emis[]"]'
+                        ).value = emis;
+
+
+                        // Data de vencimento
+                        linha.querySelector(
+                            '[name="titu_venc[]"]'
+                        ).value = venc;
 
                         fecharSugestoes(linha);
                     }

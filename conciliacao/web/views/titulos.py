@@ -68,6 +68,8 @@ def buscar_titulos_abertos(request, slug, empresa, filial, numero):
                 "titu_parc",
                 "titu_valo",
                 "titu_venc",
+                "titu_aber",
+                "titu_emis",
             )[:50]
         )
     else:
@@ -82,11 +84,13 @@ def buscar_titulos_abertos(request, slug, empresa, filial, numero):
             )
             .order_by("titu_venc")
             .values(
-                "titu_titu",
+                 "titu_titu",
                 "titu_seri",
                 "titu_parc",
                 "titu_valo",
                 "titu_venc",
+                "titu_aber",
+                "titu_emis",
             )[:50]
         )
 
@@ -99,6 +103,11 @@ def buscar_titulos_abertos(request, slug, empresa, filial, numero):
             "vencimento": (
                 item["titu_venc"].isoformat()
                 if item["titu_venc"]
+                else None
+            ),
+            "emissao": (
+                item["titu_emis"].isoformat()
+                if item["titu_emis"]
                 else None
             ),
         }

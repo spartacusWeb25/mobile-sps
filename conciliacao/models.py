@@ -264,6 +264,16 @@ class ConciliacaoHist(models.Model):
         null=True,
         blank=True,
     )
+    titu_emis = models.DateField(
+        db_column="conc_hist_titu_emis",
+        null=True,
+        blank=True,
+    )
+    titu_venc = models.DateField(
+        db_column="conc_hist_titu_venc",
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         managed = False

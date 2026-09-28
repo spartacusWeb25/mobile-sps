@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 import logging
 
@@ -38,6 +38,31 @@ def _parse_decimal(valor, mensagem="Valor inválido."):
     return valor
 
 
+def _parse_data(valor, mensagem="Data inválida."):
+    """
+    Converte texto em date aceitando:
+      - 2026-09-23
+      - 2026-09-23T00:00:00 / 2026-09-23 00:00:00
+      - 23/09/2026
+    """
+    texto = str(valor or "").strip()
+
+    # Pega só a parte da data (10 primeiros caracteres),
+    # descartando eventual hora depois.
+    texto_data = texto[:10]
+
+    for formato in ("%Y-%m-%d", "%d/%m/%Y"):
+        try:
+            return datetime.strptime(texto_data, formato).date()
+        except ValueError:
+            continue
+
+    logger.warning(
+        "Data em formato não reconhecido: %r", valor
+    )
+    raise ValidationError(mensagem)
+
+
 def _obter_titulos_post(request, origem):
     """
     Converte os campos repetidos do formulário
@@ -59,6 +84,8 @@ def _obter_titulos_post(request, origem):
     series = request.POST.getlist("serie[]")
     parcelas = request.POST.getlist("parcela[]")
     valores = request.POST.getlist("valor[]")
+    emissoes = request.POST.getlist("titu_emis[]")
+    vencimentos = request.POST.getlist("titu_venc[]")
 
     tamanhos = {
         len(entidades),
@@ -66,7 +93,26 @@ def _obter_titulos_post(request, origem):
         len(series),
         len(parcelas),
         len(valores),
+        len(emissoes),
+        len(vencimentos),
     }
+    logger.info(
+            "Campos recebidos | "
+            "entidades=%s | "
+            "titulos=%s | "
+            "series=%s | "
+            "parcelas=%s | "
+            "valores=%s | "
+            "emissoes=%s | "
+            "vencimentos=%s",
+            entidades,
+            titulos,
+            series,
+            parcelas,
+            valores,
+            emissoes,
+            vencimentos,
+        )
 
     if len(tamanhos) != 1:
         raise ValidationError(
@@ -75,12 +121,14 @@ def _obter_titulos_post(request, origem):
 
     resultado = []
 
-    for entidade, titulo, serie, parcela, valor in zip(
+    for entidade, titulo, serie, parcela, valor, emissao, vencimento in zip(
         entidades,
         titulos,
         series,
         parcelas,
         valores,
+        emissoes,
+        vencimentos,
     ):
         if not all([
             entidade,
@@ -88,6 +136,8 @@ def _obter_titulos_post(request, origem):
             serie,
             parcela,
             valor,
+            emissao,
+            vencimento,
         ]):
             raise ValidationError(
                 "Preencha todos os campos dos títulos."
@@ -98,12 +148,24 @@ def _obter_titulos_post(request, origem):
             "Foi informado um valor inválido.",
         )
 
+        titu_emis = _parse_data(
+            emissao,
+            "Data de emissão de um dos títulos é inválida.",
+        )
+
+        titu_venc = _parse_data(
+            vencimento,
+            "Data de vencimento de um dos títulos é inválida.",
+        )
+
         resultado.append({
             campo_entidade: entidade,
             "titulo": titulo.strip(),
             "serie": serie.strip(),
             "parcela": parcela.strip(),
             "valor": valor_decimal,
+            "titu_emis": titu_emis,
+            "titu_venc": titu_venc,
         })
 
     if not resultado:
@@ -241,14 +303,10 @@ def conciliar(request, slug, empresa, filial, numero):
                 "O valor do lançamento avulso é inválido.",
             )
 
-            try:
-                data_lancamento = date.fromisoformat(
-                    data_lancamento
-                )
-            except (TypeError, ValueError):
-                raise ValidationError(
-                    "Data do lançamento inválida."
-                )
+            data_lancamento = _parse_data(
+                data_lancamento,
+                "Data do lançamento inválida.",
+            )
 
             try:
                 banco = int(banco)
@@ -298,12 +356,10 @@ def conciliar(request, slug, empresa, filial, numero):
                 numero,
             )
 
-        try:
-            data_baixa = date.fromisoformat(data_baixa)
-        except (TypeError, ValueError):
-            raise ValidationError(
-                "Data da baixa inválida."
-            )
+        data_baixa = _parse_data(
+            data_baixa,
+            "Data da baixa inválida.",
+        )
 
         titulos_selecionados = _obter_titulos_post(
             request,

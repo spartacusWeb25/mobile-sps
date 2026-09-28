@@ -9,13 +9,13 @@ from conciliacao.models import (
     ConciliacaoHist,
 )
 
-from contas_a_receber.models import Titulosreceber
+from contas_a_receber.models import Titulosreceber, Baretitulos
 from contas_a_receber.services import (
     baixar_titulo_receber,
     excluir_baixa_receber,
 )
 
-from contas_a_pagar.models import Titulospagar
+from contas_a_pagar.models import Titulospagar, Bapatitulos
 from contas_a_pagar.services import (
     baixar_titulo_pagar,
     excluir_baixa_titulo,
@@ -202,6 +202,12 @@ class ConciliarExtratoService:
                     "Informe o valor de cada título."
                 )
 
+            if "titu_emis" not in dados or "titu_venc" not in dados:
+                raise ValidationError(
+                    "Informe a emissão e o vencimento de cada título "
+                    "(necessário para identificar a parcela corretamente)."
+                )
+
     @staticmethod
     def _validar_forma_pagamento(forma):
         """
@@ -216,6 +222,130 @@ class ConciliarExtratoService:
             )
 
         return str(forma).strip()
+
+    # ---------------------------------------------------------
+    # LOCALIZAR TÍTULO PARA DESVINCULAR
+    # ---------------------------------------------------------
+
+    def _buscar_titulo_pagar_do_hist(self, hist):
+        """
+        Localiza o Titulospagar de um vínculo.
+
+        Vínculos novos têm titu_emis/titu_venc gravados no hist.
+        Vínculos legados (criados antes dessas colunas existirem)
+        estão com NULL -- nesse caso recupera emissão e vencimento
+        da própria baixa (Bapatitulos), que guarda os dois valores.
+        """
+        emis = hist.titu_emis
+        venc = hist.titu_venc
+
+        if emis is None or venc is None:
+            baixa = (
+                Bapatitulos.objects
+                .using(self.banco)
+                .filter(
+                    bapa_sequ=hist.baixa_pagar_sequ,
+                    bapa_empr=self.empresa,
+                    bapa_fili=self.filial,
+                    bapa_forn=hist.entidade,
+                    bapa_titu=hist.titulo,
+                    bapa_seri=hist.serie,
+                    bapa_parc=hist.parcela,
+                )
+                .first()
+            )
+
+            if baixa:
+                emis = baixa.bapa_emis
+                venc = baixa.bapa_venc
+
+                logger.info(
+                    "CONCILIACAO LEGADO | hist=%s | emis/venc "
+                    "recuperados da baixa %s",
+                    hist.id,
+                    hist.baixa_pagar_sequ,
+                )
+
+        filtros = {
+            "titu_empr": self.empresa,
+            "titu_fili": self.filial,
+            "titu_forn": hist.entidade,
+            "titu_titu": hist.titulo,
+            "titu_seri": hist.serie,
+            "titu_parc": hist.parcela,
+        }
+
+        if emis is not None:
+            filtros["titu_emis"] = emis
+
+        if venc is not None:
+            filtros["titu_venc"] = venc
+
+        return (
+            Titulospagar.objects
+            .using(self.banco)
+            .select_for_update()
+            .filter(**filtros)
+            .first()
+        )
+
+    def _buscar_titulo_receber_do_hist(self, hist):
+        """
+        Mesma lógica de _buscar_titulo_pagar_do_hist,
+        usando Baretitulos como fallback para vínculos legados.
+        """
+        emis = hist.titu_emis
+        venc = hist.titu_venc
+
+        if emis is None or venc is None:
+            baixa = (
+                Baretitulos.objects
+                .using(self.banco)
+                .filter(
+                    bare_sequ=hist.baixa_receber_sequ,
+                    bare_empr=self.empresa,
+                    bare_fili=self.filial,
+                    bare_clie=hist.entidade,
+                    bare_titu=hist.titulo,
+                    bare_seri=hist.serie,
+                    bare_parc=hist.parcela,
+                )
+                .first()
+            )
+
+            if baixa:
+                emis = baixa.bare_emis
+                venc = baixa.bare_venc
+
+                logger.info(
+                    "CONCILIACAO LEGADO | hist=%s | emis/venc "
+                    "recuperados da baixa %s",
+                    hist.id,
+                    hist.baixa_receber_sequ,
+                )
+
+        filtros = {
+            "titu_empr": self.empresa,
+            "titu_fili": self.filial,
+            "titu_clie": hist.entidade,
+            "titu_titu": hist.titulo,
+            "titu_seri": hist.serie,
+            "titu_parc": hist.parcela,
+        }
+
+        if emis is not None:
+            filtros["titu_emis"] = emis
+
+        if venc is not None:
+            filtros["titu_venc"] = venc
+
+        return (
+            Titulosreceber.objects
+            .using(self.banco)
+            .select_for_update()
+            .filter(**filtros)
+            .first()
+        )
 
     # ---------------------------------------------------------
     # RECEBIMENTOS
@@ -272,6 +402,8 @@ class ConciliarExtratoService:
                         titu_titu=dados_titulo["titulo"],
                         titu_seri=dados_titulo["serie"],
                         titu_parc=dados_titulo["parcela"],
+                        titu_emis=dados_titulo["titu_emis"],
+                        titu_venc=dados_titulo["titu_venc"],
                     )
                     .first()
                 )
@@ -303,6 +435,8 @@ class ConciliarExtratoService:
                     entidade=titulo.titu_clie,
                     serie=titulo.titu_seri,
                     parcela=titulo.titu_parc,
+                    titu_emis=titulo.titu_emis,
+                    titu_venc=titulo.titu_venc,
                     banco=None,
                     controle_bancario=(
                         lancamento.laba_ctrl
@@ -385,6 +519,8 @@ class ConciliarExtratoService:
                         titu_titu=dados_titulo["titulo"],
                         titu_seri=dados_titulo["serie"],
                         titu_parc=dados_titulo["parcela"],
+                        titu_emis=dados_titulo["titu_emis"],
+                        titu_venc=dados_titulo["titu_venc"],
                     )
                     .first()
                 )
@@ -416,6 +552,8 @@ class ConciliarExtratoService:
                     entidade=titulo.titu_forn,
                     serie=titulo.titu_seri,
                     parcela=titulo.titu_parc,
+                    titu_emis=titulo.titu_emis,
+                    titu_venc=titulo.titu_venc,
                     banco=None,
                     controle_bancario=(
                         lancamento.laba_ctrl
@@ -679,20 +817,7 @@ class ConciliarExtratoService:
                         "Vínculo de pagamento sem baixa associada."
                     )
 
-                titulo = (
-                    Titulospagar.objects
-                    .using(self.banco)
-                    .select_for_update()
-                    .filter(
-                        titu_empr=self.empresa,
-                        titu_fili=self.filial,
-                        titu_forn=hist.entidade,
-                        titu_titu=hist.titulo,
-                        titu_seri=hist.serie,
-                        titu_parc=hist.parcela,
-                    )
-                    .first()
-                )
+                titulo = self._buscar_titulo_pagar_do_hist(hist)
 
                 if not titulo:
                     raise ValidationError(
@@ -714,20 +839,7 @@ class ConciliarExtratoService:
                         "Vínculo de recebimento sem baixa associada."
                     )
 
-                titulo = (
-                    Titulosreceber.objects
-                    .using(self.banco)
-                    .select_for_update()
-                    .filter(
-                        titu_empr=self.empresa,
-                        titu_fili=self.filial,
-                        titu_clie=hist.entidade,
-                        titu_titu=hist.titulo,
-                        titu_seri=hist.serie,
-                        titu_parc=hist.parcela,
-                    )
-                    .first()
-                )
+                titulo = self._buscar_titulo_receber_do_hist(hist)
 
                 if not titulo:
                     raise ValidationError(
