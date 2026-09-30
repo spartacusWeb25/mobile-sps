@@ -2,16 +2,17 @@ from rest_framework import serializers
 from ..models import PerfilOcorrencia, OcorrenciaTransp
 
 class OcorrenciaSerializer(serializers.ModelSerializer):
-    codigo = serializers.CharField(source="ocor_codi", read_only=True)
-    descricao = serializers.CharField(source="ocor_desc", read_only=True)
+    codigo = serializers.CharField(source="ocor_codi")
+    descricao = serializers.CharField(source="ocor_desc")
+    finalizadora = serializers.BooleanField(source="ocor_fina")
 
     class Meta:
         model = OcorrenciaTransp
-        fields = ["id", "codigo", "descricao"]
+        fields = ["id", "codigo", "descricao", "finalizadora"]
 
 
 class PerfilSerializer(serializers.ModelSerializer):
-    descricao = serializers.CharField(source="pfoc_desc", read_only=True)
+    descricao = serializers.CharField(source="pfoc_desc")
     ativo = serializers.BooleanField(source="pfoc_ativ", required=False)
 
     ocorrencias = serializers.PrimaryKeyRelatedField(
@@ -23,8 +24,6 @@ class PerfilSerializer(serializers.ModelSerializer):
         model = PerfilOcorrencia
         fields = [
             "id",
-            "empresa",
-            "filial",
             "descricao",
             "ativo",
             "ocorrencias",

@@ -2,7 +2,7 @@ from ..models import OcorrenciaTransp, PerfilOcorrencia
 
 class OcorrenciaService:
     @staticmethod
-    def criar_ocorrencia(*, banco, empresa, filial, codigo, descricao="", finalizadora=False):
+    def criar_ocorrencia(*, banco, empresa, filial, codigo, descricao, finalizadora=False):
         return OcorrenciaTransp.objects.using(banco).create(
             ocor_empr = empresa,
             ocor_fili = filial,
@@ -12,8 +12,10 @@ class OcorrenciaService:
         )
 
     @staticmethod
-    def criar_perfil(*, banco, empresa, filial, descricao="", ativo=True, ocorrencias=[]):
+    def criar_perfil(*, banco, empresa, filial, descricao, ativo=True, ocorrencias=[]):
         unique_ocorrencias = list(set(filter(None, ocorrencias)))
+        if not unique_ocorrencias:
+            return None
 
         perfil = PerfilOcorrencia.objects.using(banco).create(
             pfoc_empr = empresa,
@@ -27,7 +29,7 @@ class OcorrenciaService:
         return perfil
 
     @staticmethod
-    def atualizar_perfil(*, banco, empresa, filial, id, descricao="", ocorrencias=None):
+    def atualizar_perfil(*, banco, empresa, filial, id, descricao, ocorrencias=None):
         if ocorrencias is None:
             ocorrencias = []
 

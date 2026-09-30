@@ -1,3 +1,5 @@
+from sympy import false
+
 from ..models import OcorrenciaTransp, PerfilOcorrencia
 from ..services.ocorrencia_service import OcorrenciaService
 from rest_framework import status, viewsets
@@ -78,12 +80,12 @@ class OcorrenciaTranspViewSet(BaseMultiDBViewSet):
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
         ocorrencia = OcorrenciaService.criar_ocorrencia(
-            db_alias=cfg["db_alias"],
+            banco=cfg["db_alias"],
             empresa=cfg["empresa"],
             filial=cfg["filial"],
-            codigo=data["codigo"],
-            descricao=data["descricao"],
-            finalizadora=data.get("finalizadora", False),
+            codigo=data.get("ocor_codi", ""),
+            descricao=data.get("ocor_desc", ""),
+            finalizadora=data.get("ocor_fina", False),
         )
         return Response(self.get_serializer(ocorrencia).data, status=status.HTTP_201_CREATED)
 
@@ -92,9 +94,20 @@ class PerfilOcorrenciaViewSet(BaseMultiDBViewSet):
 
     def get_queryset(self):
         cfg = self._ctx()
-        return PerfilOcorrencia.objects.using(cfg["db_alias"]).filter(
-            ocor_empr=cfg["empresa"], ocor_fili=cfg["filial"]
-        )
+        qs = PerfilOcorrencia.objects.using(cfg["db_alias"]).filter(
+            pfoc_empr=cfg["empresa"], pfoc_fili=cfg["filial"]
+        ).prefetch_related("ocorrencias")
+
+        descricao_param = (self.request.GET.get('descricao') or '').strip()
+        inativo_param = self.request.GET.get("inativo", "false").lower() == "true"
+
+        if descricao_param:
+            qs = qs.filter(pfoc_desc__icontains=descricao_param)
+
+        if not inativo_param:
+            qs = qs.filter(pfoc_ativ=True)
+
+        return qs
 
     def create(self, request, *args, **kwargs):
         cfg = self._ctx()
@@ -102,11 +115,41 @@ class PerfilOcorrenciaViewSet(BaseMultiDBViewSet):
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
         perfil = OcorrenciaService.criar_perfil(
-            db_alias=cfg["db_alias"],
+            banco=cfg["db_alias"],
             empresa=cfg["empresa"],
             filial=cfg["filial"],
-            descricao=data["descricao"],
-            ativo=data.get("ativo", True),
-            ocorrencias=data.get["ocorrencias"],
+            descricao=data.get("pfoc_desc"),
+            ativo=data.get("pfoc_ativ", True),
+            ocorrencias=data.get("ocorrencias", []),
         )
         return Response(self.get_serializer(perfil).data, status=status.HTTP_201_CREATED)
+
+    def update(self, request, *args, **kwargs):
+        cfg = self._ctx()
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        perfil_id = kwargs.get("pk")
+
+        perfil = OcorrenciaService.atualizar_perfil(
+            banco=cfg["db_alias"],
+            empresa=cfg["empresa"],
+            filial=cfg["filial"],
+            id=perfil_id,
+            descricao=data["pfoc_desc"],
+            ocorrencias=data.get("ocorrencias", []),
+        )
+        return Response(self.get_serializer(perfil).data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'])
+    def toggle_ativo(self, request, *args, **kwargs):
+        cfg = self._ctx()
+        perfil_id = kwargs.get("pk")
+
+        perfil = OcorrenciaService.perfil_toggle_ativar(
+            banco = cfg["db_alias"],
+            empresa = cfg["empresa"],
+            filial = cfg["filial"],
+            id = perfil_id,
+        )
+        return Response(self.get_serializer(perfil).data, status=status.HTTP_200_OK)
