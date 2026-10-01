@@ -166,7 +166,9 @@ INSTALLED_APPS = [
     'SpsComissoes',
     'transportes',
     'TrocasDevolucoes',
+    'conciliacao',
     # 'Gerencial',
+    'ModeloEtiquetas',
 ]
 
 # Middleware
