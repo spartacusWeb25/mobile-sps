@@ -39,7 +39,6 @@ class _BaseProcessoFormView(FormView):
 
 
 class ChecklistModeloCreateView(_BaseProcessoFormView):
-    template_name = "processos/modelo_create.html"
     form_class = ChecklistModeloForm
 
     def get_context_data(self, **kwargs):
