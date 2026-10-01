@@ -7,8 +7,8 @@ from processos.rest.viewsets import (
 )
 
 router = DefaultRouter()
-router.register(r"checklist-modelos", ChecklistModeloViewSet, basename="checklist-modelos")
-router.register(r"checklist-itens", ChecklistItemViewSet, basename="checklist-itens")
+router.register(r"modelos-processos", ChecklistModeloViewSet, basename="checklist-modelos")
+router.register(r"itens-processos", ChecklistItemViewSet, basename="checklist-itens")
 router.register(r"processos", ProcessoViewSet, basename="processos")
 
 urlpatterns = router.urls

@@ -61,7 +61,6 @@ class BaseMultiDBViewSet(viewsets.ModelViewSet):
     ):
         raise NotFound({"detail": message})
 
-
 class ChecklistModeloViewSet(BaseMultiDBViewSet):
     serializer_class = ChecklistModeloSerializer
 
