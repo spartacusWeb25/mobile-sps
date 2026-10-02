@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from O_S.REST.serializers import OsSerializer
 from processos.models import (
     ChecklistItem,
     ChecklistModelo,
@@ -95,7 +96,7 @@ class ProcessoSerializer(serializers.ModelSerializer):
     descricao = serializers.CharField(source="proc_desc")
     status = serializers.CharField(source="proc_stat", read_only=True)
     respostas = ProcessoChecklistRespostaSerializer(many=True, read_only=True)
-    os = serializers.IntegerField(source="proc_os", read_only=True)
+    os = OsSerializer(source="proc_os", read_only=True)
     data_abertura = serializers.DateTimeField(source="proc_data_aber", read_only=True)
     data_fechamento = serializers.DateTimeField(source="proc_data_fech", read_only=True)
 

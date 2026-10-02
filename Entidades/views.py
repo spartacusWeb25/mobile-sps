@@ -47,7 +47,7 @@ class EntidadesViewSet(ModuloRequeridoMixin,viewsets.ModelViewSet):
         queryset = Entidades.objects.using(banco).filter(enti_empr= empresa_id)
         # Aplicar filtros de forma otimizada
         
-        tipo = self.request.query_params.get('enti_tipo_enti')
+        raw_tipos = self.request.query_params.get('enti_tipo_enti')
         classificacao = self.request.query_params.get('enti_espe_enti')
         situacao = self.request.query_params.get('enti_situ')
         search_query = self.request.query_params.get('search')
@@ -56,8 +56,16 @@ class EntidadesViewSet(ModuloRequeridoMixin,viewsets.ModelViewSet):
         if empresa_id:
             queryset = queryset.filter(enti_empr=empresa_id)
         # Filtro por tipo de entidade (ex.: VE para vendedores)
-        if tipo:
-            queryset = queryset.filter(enti_tipo_enti=tipo)
+        if raw_tipos:
+            if isinstance(raw_tipos, str):
+                tipos_list = [t.strip() for t in raw_tipos.split(',') if t.strip()]
+            elif isinstance(raw_tipos, list):
+                tipos_list = raw_tipos
+            else:
+                tipos_list = []
+
+            if tipos_list:
+                queryset = queryset.filter(enti_tipo_enti__in=tipos_list)
         if classificacao:
             queryset = queryset.filter(enti_espe_enti=classificacao)
         if situacao:
