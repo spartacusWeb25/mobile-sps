@@ -372,7 +372,7 @@
     {% endif %}
     {% if processo.proc_stat != processo.STATUS_APROVADO %}
     <!-- Assinatura / Validação -->
-    <div class="assinatura-card {% if processo.proc_stat != processo.STATUS_ABERTO and r.pchr_vers is None %}d-none{% endif %} modo-editar">
+    <div class="assinatura-card {% if processo.proc_stat != processo.STATUS_ABERTO and processo.proc_vers is None %}d-none{% endif %} modo-editar">
       <div class="assinatura-title">
         <i class="fas fa-pen-nib"></i> Assinatura para validação
       </div>

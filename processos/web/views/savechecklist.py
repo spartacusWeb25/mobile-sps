@@ -130,24 +130,27 @@ class ValidarProcessoView(_ChecklistBaseView):
                 )
                 return redirect("processos:detalhe", slug=cfg["slug"], pk=pk)
 
-            resultado = ValidacaoProcessoService.validar_processo(
-                db_alias=cfg["db_alias"],
-                empresa=cfg["empresa"],
-                filial=cfg["filial"],
-                processo_id=pk,
-                usuario_id=cfg["usuario_id"],
-                responsavel_id=responsavel.enti_clie,
-                dados=dados
-            )
-
-            if resultado["aprovado"]:
-                messages.success(
-                    request,
-                    f"Processo aprovado. Assinado por {responsavel.enti_nome} ({assinatura_documento}).",
+            try:
+                resultado = ValidacaoProcessoService.validar_processo(
+                    db_alias=cfg["db_alias"],
+                    empresa=cfg["empresa"],
+                    filial=cfg["filial"],
+                    processo_id=pk,
+                    usuario_id=cfg["usuario_id"],
+                    responsavel_id=responsavel.enti_clie,
+                    dados=dados
                 )
-            else:
-                for erro in resultado["erros"]:
-                    messages.error(request, erro)
+
+                if resultado["aprovado"]:
+                    messages.success(
+                        request,
+                        f"Processo aprovado. Assinado por {responsavel.enti_nome} ({assinatura_documento}).",
+                    )
+                else:
+                    for erro in resultado["erros"]:
+                        messages.error(request, erro)
+            except Exception as erro:
+                messages.error(request, f"Ocorreu um erro ao validar processo: {erro}")
             return redirect("processos:detalhe", slug=cfg["slug"], pk=pk)
 
         return redirect("processos:detalhe", slug=cfg["slug"], pk=pk)

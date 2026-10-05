@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.utils import timezone
 
 from distutils import version
@@ -94,15 +95,20 @@ class ValidacaoProcessoService:
             resposta.pchr_data_vali=timezone.now()
             resposta.pchr_usro_vali=usuario_id
             resposta.pchr_enti_vali=responsavel_id
-            resposta.pchr_vers=version
-        if dados["temp_resp"]:
-            ProcessoChecklistResposta.objects.using(db_alias).bulk_create(respostas_modificadas)
-        else:
-            ProcessoChecklistResposta.objects.using(db_alias).bulk_update(
-                respostas_modificadas, 
-                fields=["pchr_resp","pchr_obse","pchr_vali","pchr_data_vali", "pchr_usro_vali", "pchr_enti_vali", "pchr_vers"]
-            )
-        return {"aprovado": aprovado, "status": processo.proc_stat, "erros": erros}
+            resposta.pchr_vers=vers
+        try:
+            with transaction.atomic(using=db_alias):
+                if dados["temp_resp"]:
+                    ProcessoChecklistResposta.objects.using(db_alias).bulk_create(respostas_modificadas)
+                else:
+                    ProcessoChecklistResposta.objects.using(db_alias).bulk_update(
+                        respostas_modificadas, 
+                        fields=["pchr_resp","pchr_obse","pchr_vali","pchr_data_vali", "pchr_usro_vali", "pchr_enti_vali", "pchr_vers"]
+                    )
+            return {"aprovado": aprovado, "status": processo.proc_stat, "erros": erros}
+        except Exception as erro:
+            raise
+        
         
         
         

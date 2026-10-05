@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from Entidades.serializers import EntidadesSerializer
 from O_S.REST.serializers import OsSerializer
 from processos.models import (
     ChecklistItem,
@@ -70,6 +71,7 @@ class ProcessoChecklistRespostaSerializer(serializers.ModelSerializer):
     )
     validado = serializers.BooleanField(source="pchr_vali", read_only=True)
     data_validacao = serializers.DateTimeField(source="pchr_data_vali", read_only=True)
+    versao = serializers.IntegerField(source="pchr_vers", read_only=True)
 
     class Meta:
         model = ProcessoChecklistResposta
@@ -85,6 +87,7 @@ class ProcessoChecklistRespostaSerializer(serializers.ModelSerializer):
             "observacao",
             "validado",
             "data_validacao",
+            "versao"
         ]
 
 
@@ -99,6 +102,8 @@ class ProcessoSerializer(serializers.ModelSerializer):
     os = OsSerializer(source="proc_os", read_only=True)
     data_abertura = serializers.DateTimeField(source="proc_data_aber", read_only=True)
     data_fechamento = serializers.DateTimeField(source="proc_data_fech", read_only=True)
+    versao = serializers.IntegerField(source="proc_vers", read_only=True)
+    responsavel_id = serializers.IntegerField(source="proc_enti_vali")
 
     class Meta:
         model = Processo
@@ -113,5 +118,7 @@ class ProcessoSerializer(serializers.ModelSerializer):
             "respostas",
             "data_abertura",
             "data_fechamento",
-            "os"
+            "os",
+            "versao",
+            "responsavel_id"
         ]
