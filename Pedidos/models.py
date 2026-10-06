@@ -194,3 +194,18 @@ class Parcelaspedidovenda(models.Model):
         db_table = 'parcelaspedidovenda'
         unique_together = (('parc_empr', 'parc_fili', 'parc_pedi', 'parc_parc', 'parc_forn'),)
 
+
+
+class PedidoOcorrencia(models.Model):
+    ocor_empr = models.IntegerField()
+    ocor_fili = models.IntegerField()
+    ocor_codi = models.TextField()
+    ocor_desc = models.TextField()
+    ocor_fina = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.ocor_codi} - {self.ocor_desc}"
+
+    class Meta:
+        managed = False
+        db_table = 'pedido_ocorrencia'

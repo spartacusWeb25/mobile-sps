@@ -2,10 +2,11 @@ from django.views.generic import CreateView
 import logging
 from django.shortcuts import redirect
 from django.contrib import messages
+from Pedidos.services.ocorrencia_service import OcorrenciaService
 from core.utils import get_licenca_db_config
-from ...models import PedidoVenda
+from ...models import PedidoVenda, PedidoOcorrencia
 from ...services.pedido_service import PedidoVendaService
-from ..forms import PedidoVendaForm
+from ..forms import PedidoVendaForm, PedidoOcorrenciaForm
 from ..formssets import ItensPedidoFormSet
 
 
@@ -149,3 +150,37 @@ class PedidoCreateView(CreateView):
                 messages.error(self.request, f"Erros nos itens: {formset_itens.errors}")
             return self.form_invalid(form)
         
+
+
+class OcorrenciaCreateView(CreateView):
+    model = PedidoOcorrencia
+    form_class = PedidoOcorrenciaForm
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['slug'] = self.kwargs.get('slug')
+        return context
+    def form_valid(self, form):
+        context = self.get_context_data()
+        ocor_codi = form.cleaned_data.get('ocor_codi')
+        ocor_desc = form.cleaned_data.get('ocor_desc')
+        ocor_fina = form.cleaned_data.get('ocor_fina')
+        empresa_id = self.request.session.get('empresa_id', 1)
+        filial_id = self.request.session.get('filial_id', 1)
+        banco = get_licenca_db_config(self.request) or 'default'
+
+        logger.debug("[OcorrenciaCreateView] Form valid=%s", form.is_valid())
+        ocorrencia = OcorrenciaService.create_ocorrencia(
+            banco = banco,
+            empresa = empresa_id,
+            filial = filial_id,
+            codigo = ocor_codi,
+            descricao = ocor_desc,
+            finalizadora = ocor_fina
+        )
+        logger.debug(
+            "[OcorrenciaCreateView] Ocorrência criada ocor_codi=%s ocor_desc=%s ocor_fina=%s",
+            getattr(ocorrencia, 'ocor_codi', None), getattr(ocorrencia, 'ocor_desc', None), getattr(ocorrencia, 'ocor_fina', None)
+        )
+        messages.success(self.request, f"Ocorrência {ocorrencia.ocor_codi} criada com sucesso.")
+        return redirect("PedidosWeb:ocorrencias", slug=context["slug"])
