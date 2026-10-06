@@ -1,9 +1,13 @@
+from venv import logger
+
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
 
+from O_S.REST.serializers import OsSerializer
+from O_S.models import Os
 from core.utils import get_db_from_slug
 from processos.models import ChecklistItem, ChecklistModelo, Processo
 from processos.rest.serializers import (
@@ -12,10 +16,12 @@ from processos.rest.serializers import (
     ProcessoChecklistRespostaSerializer,
     ProcessoSerializer,
 )
+from processos.services import processo_service
 from processos.services.checklist_service import ChecklistService
 from processos.services.processo_service import ProcessoService
 from processos.services.validacao_service import ValidacaoProcessoService
-
+import logging
+logger = logging.getLogger(__name__)
 
 class BaseMultiDBViewSet(viewsets.ModelViewSet):
     """Base REST do app Processos com roteamento por slug + escopo empresa/filial."""
@@ -70,6 +76,7 @@ class ChecklistModeloViewSet(BaseMultiDBViewSet):
             ChecklistModelo.objects.using(cfg["db_alias"])
             .filter(chmo_empr=cfg["empresa"], chmo_fili=cfg["filial"])
             .order_by("chmo_nome")
+            .prefetch_related("itens")
         )
 
     def create(self, request, *args, **kwargs):
@@ -78,16 +85,59 @@ class ChecklistModeloViewSet(BaseMultiDBViewSet):
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
-        modelo = ChecklistService.criar_modelo(
+        try:
+            modelo = ChecklistService.criar_modelo(
+                db_alias=cfg["db_alias"],
+                empresa=cfg["empresa"],
+                filial=cfg["filial"],
+                nome=data.get("chmo_nome"),
+                ativo=data.get("chmo_ativ", True),
+            )
+            return Response(
+                self.get_serializer(modelo).data, status=status.HTTP_201_CREATED
+            )
+        except ValueError as e: 
+            return Response(
+                {"detail": str(e)}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        except Exception as e:
+            return Response(
+                {"detail": "Ocorreu um erro interno ao tentar criar o modelo de processo."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    @action(detail=True, methods=["post"], url_path="toggle_ativo")
+    def toggle_ativo(self, request, *args, **kwargs):
+        cfg = self._ctx()
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        modelo = self.get_object()
+        ChecklistService.alternar_status_modelo(
             db_alias=cfg["db_alias"],
             empresa=cfg["empresa"],
             filial=cfg["filial"],
-            nome=data["chmo_nome"],
-            ativo=data.get("chmo_ativ", True),
+            modelo_id = modelo.id
         )
         return Response(
-            self.get_serializer(modelo).data, status=status.HTTP_201_CREATED
+            self.get_serializer(modelo).data, status=status.HTTP_200_SUCCESS
         )
+
+    # def update(self, request, *args, **kwargs):
+    #     cfg = self._ctx()
+    #     serializer = self.get_serializer(data=request.data)
+    #     serializer.is_valid(raise_exception=True)
+    #     modelo = self.get_object()
+    #     ChecklistService.criar_ou_atualizar_item(
+    #         db_alias=cfg["db_alias"],
+    #         empresa=cfg["empresa"],
+    #         filial=cfg["filial"],
+    #         modelo_id = modelo.id
+    #     )
+    #     return Response(
+    #         self.get_serializer(modelo).data, status=status.HTTP_200_SUCCESS
+    #     )
 
 
 class ChecklistItemViewSet(BaseMultiDBViewSet):
@@ -124,7 +174,7 @@ class ChecklistItemViewSet(BaseMultiDBViewSet):
             empresa=cfg["empresa"],
             filial=cfg["filial"],
             modelo=modelo,
-            descricao=data["chit_desc"],
+            descricao=data.get("chit_desc"),
             obrigatorio=data.get("chit_obri", True),
         )
         return Response(self.get_serializer(item).data, status=status.HTTP_201_CREATED)
@@ -144,12 +194,19 @@ class ProcessoViewSet(BaseMultiDBViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
+
+        os = data.get("proc_os")
+        os.os_fili = cfg["filial"]
+        os.os_empr = cfg["empresa"]
+        logger.info(os)
         processo = ProcessoService.criar(
             db_alias=cfg["db_alias"],
             empresa=cfg["empresa"],
             filial=cfg["filial"],
-            descricao=data["proc_desc"],
+            descricao=data.get("proc_desc", ""),
             usuario_id=cfg["usuario_id"],
+            modelo_id=data.get("proc_mode_id"),
+            os=os,
         )
         return Response(
             self.get_serializer(processo).data, status=status.HTTP_201_CREATED
@@ -218,3 +275,14 @@ class ProcessoViewSet(BaseMultiDBViewSet):
             usuario_id=cfg["usuario_id"],
         )
         return Response(resultado)
+
+    @action(detail=False, methods=["get"], url_path="os_sem_processo")
+    def listar_os_sem_processo(self, request, pk=None, slug=None):
+        cfg = self._ctx()
+        resultado = ProcessoService.listar_os_sem_processo(
+            db_alias=cfg["db_alias"],
+            empresa=cfg["empresa"],
+            filial=cfg["filial"],
+        )
+        serializer = OsSerializer(resultado, many=True)
+        return Response(serializer.data)

@@ -1,3 +1,5 @@
+from django.db import transaction
+
 from processos.models import (
     ChecklistItem,
     ChecklistModelo,
@@ -9,14 +11,30 @@ from processos.models import (
 class ChecklistService:
     @staticmethod
     def criar_modelo(
-        *, db_alias, empresa, filial, nome, ativo=True
+        *, db_alias, empresa, filial, nome, ativo=True, itens=[]
     ):
-        return ChecklistModelo.objects.using(db_alias).create(
-            chmo_empr=empresa,
-            chmo_fili=filial,
-            chmo_nome=nome,
-            chmo_ativ=ativo,
-        )
+        if itens.length < 1:
+            return
+        try:
+            with transaction.atomic(using=db_alias):
+                modelo = ChecklistModelo.objects.using(db_alias).create(
+                    chmo_empr=empresa,
+                    chmo_fili=filial,
+                    chmo_nome=nome,
+                    chmo_ativ=ativo,
+                )
+                for item in itens:
+                    if item.get("descricao"):
+                        ChecklistItem.objects.using(db_alias).create(
+                            chit_empr=empresa,
+                            chit_fili=filial,
+                            chit_mode=modelo,
+                            chit_desc=item.get("descricao"),
+                            chit_obri=item.get("obrigatorio"),
+                        )
+            return modelo
+        except Exception as e:
+            raise
 
     @staticmethod
     def criar_item(

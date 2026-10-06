@@ -57,25 +57,14 @@ class ChecklistModeloCreateView(_BaseProcessoFormView):
             messages.error(self.request, "Modelo faltando itens")
             return self.form_invalid(form)
         try:
-            with transaction.atomic(using=cfg["db_alias"]):
-                modelo = ChecklistService.criar_modelo(
-                    db_alias=cfg["db_alias"],
-                    empresa=cfg["empresa"],
-                    filial=cfg["filial"],
-                    nome=form.cleaned_data["nome"],
-                    ativo=form.cleaned_data.get("ativo", True),
-                )
-
-                for item in itens_data:
-                    if item.get("descricao"):
-                        ChecklistService.criar_item(
-                            db_alias=cfg["db_alias"],
-                            empresa=cfg["empresa"],
-                            filial=cfg["filial"],
-                            modelo=modelo,
-                            descricao=item["descricao"],
-                            obrigatorio=item["obrigatorio"],
-                        )
+            ChecklistService.criar_modelo(
+                db_alias=cfg["db_alias"],
+                empresa=cfg["empresa"],
+                filial=cfg["filial"],
+                nome=form.cleaned_data["nome"],
+                ativo=form.cleaned_data.get("ativo", True),
+                itens=itens_data
+            )
             messages.success(self.request, "Modelo de checklist criado com sucesso.")
             return redirect("processos:templates", slug=cfg["slug"])
 

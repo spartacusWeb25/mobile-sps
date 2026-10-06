@@ -1,9 +1,13 @@
 from django.db.models import Subquery, OuterRef
 from django.utils import timezone
+from rest_framework.exceptions import ValidationError
 from processos.models import Processo, ChecklistModelo
 from .checklist_service import ChecklistService
 from O_S.models import Os
 from Entidades.models import Entidades
+import logging
+
+logger = logging.getLogger(__name__)
 
 class ProcessoService:
     @staticmethod
@@ -39,13 +43,19 @@ class ProcessoService:
         ).order_by("-os_os")
 
     @staticmethod
-    def criar(*, db_alias, empresa, filial, modelo_id, descricao=None, usuario_id=None, os=None):
-        modelo = ChecklistModelo.objects.using(db_alias).get(
-            id=modelo_id,
-            chmo_empr=empresa,
-            chmo_fili=filial,
-            chmo_ativ=True,
-        )
+    def criar(*, db_alias, empresa, filial, modelo_id, os, descricao=None, usuario_id=None):
+        logger.info(os)
+        try:
+            modelo = ChecklistModelo.objects.using(db_alias).get(
+                id=modelo_id,
+                chmo_empr=empresa,
+                chmo_fili=filial,
+                chmo_ativ=True,
+            )
+        except ChecklistModelo.DoesNotExist:
+            raise ValidationError({
+                "modelo_id": "Modelo de checklist não encontrado, inativo ou pertencente a outra empresa/filial."
+            })
 
         processo = Processo.objects.using(db_alias).create(
             proc_empr=empresa,

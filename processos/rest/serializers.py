@@ -9,24 +9,6 @@ from processos.models import (
     ProcessoChecklistResposta,
 )
 
-
-class ChecklistModeloSerializer(serializers.ModelSerializer):
-    empresa = serializers.IntegerField(source="chmo_empr", read_only=True)
-    filial = serializers.IntegerField(source="chmo_fili", read_only=True)
-    nome = serializers.CharField(source="chmo_nome")
-    ativo = serializers.BooleanField(source="chmo_ativ", required=False)
-
-    class Meta:
-        model = ChecklistModelo
-        fields = [
-            "id",
-            "empresa",
-            "filial",
-            "nome",
-            "ativo",
-        ]
-
-
 class ChecklistItemSerializer(serializers.ModelSerializer):
     empresa = serializers.IntegerField(source="chit_empr", read_only=True)
     filial = serializers.IntegerField(source="chit_fili", read_only=True)
@@ -47,6 +29,24 @@ class ChecklistItemSerializer(serializers.ModelSerializer):
             "checklist_modelo_nome",
             "descricao",
             "obrigatorio",
+        ]
+
+class ChecklistModeloSerializer(serializers.ModelSerializer):
+    empresa = serializers.IntegerField(source="chmo_empr", read_only=True)
+    filial = serializers.IntegerField(source="chmo_fili", read_only=True)
+    nome = serializers.CharField(source="chmo_nome")
+    ativo = serializers.BooleanField(source="chmo_ativ", required=False)
+    itens = ChecklistItemSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = ChecklistModelo
+        fields = [
+            "id",
+            "empresa",
+            "filial",
+            "nome",
+            "ativo",
+            "itens"
         ]
 
 
@@ -96,14 +96,14 @@ class ProcessoSerializer(serializers.ModelSerializer):
     filial = serializers.IntegerField(source="proc_fili", read_only=True)
     modelo_id = serializers.IntegerField(source="proc_mode_id")
     modelo_nome = serializers.CharField(source="proc_mode.chmo_nome", read_only=True)
-    descricao = serializers.CharField(source="proc_desc")
+    descricao = serializers.CharField(source="proc_desc", required=False, allow_null=True, allow_blank=True, default=None)
     status = serializers.CharField(source="proc_stat", read_only=True)
     respostas = ProcessoChecklistRespostaSerializer(many=True, read_only=True)
-    os = OsSerializer(source="proc_os", read_only=True)
+    os = OsSerializer(source="proc_os")
     data_abertura = serializers.DateTimeField(source="proc_data_aber", read_only=True)
     data_fechamento = serializers.DateTimeField(source="proc_data_fech", read_only=True)
     versao = serializers.IntegerField(source="proc_vers", read_only=True)
-    responsavel_id = serializers.IntegerField(source="proc_enti_vali")
+    responsavel_id = serializers.IntegerField(source="proc_enti_vali", required=False, allow_null=True, default=None)
 
     class Meta:
         model = Processo
