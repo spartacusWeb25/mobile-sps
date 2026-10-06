@@ -1,7 +1,7 @@
 from django import forms
 import logging
 from django.forms import inlineformset_factory
-from ..models import PedidoOcorrencia, PedidoVenda, Itenspedidovenda, STATUS_PEDIDO
+from ..models import PedidoVenda, Itenspedidovenda, STATUS_PEDIDO
 from Produtos.models import Produtos
 from Entidades.models import Entidades
 from CFOP.services.services import MotorFiscal
@@ -173,18 +173,3 @@ class ItensPedidoVendaForm(forms.ModelForm):
             item.save()
 
         return item
-
-class PedidoOcorrenciaForm(forms.ModelForm):
-    class Meta:
-        model = PedidoOcorrencia
-        fields = ['ocor_codi', 'ocor_desc', 'ocor_fina']
-        widgets = {
-            'ocor_codi': forms.TextInput(attrs={'class': 'form-control', 'required': True}),
-            'ocor_desc': forms.TextInput(attrs={'class': 'form-control', 'required': True}),
-            'ocor_fina': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-        }
-        labels = {
-            'ocor_codi': 'Código',
-            'ocor_desc': 'Descrição',
-            'ocor_fina': 'Finalizadora',
-        }

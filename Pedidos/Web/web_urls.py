@@ -1,6 +1,6 @@
 from django.urls import path
-from .Views.createView import OcorrenciaCreateView, PedidoCreateView
-from .Views.listView import PedidosListView, OcorrenciaListView
+from .Views.createView import PedidoCreateView
+from .Views.listView import PedidosListView
 from .Views.detailView import PedidoDetailView
 from .Views.printView import PedidoPrintView
 from .Views.updateView import PedidoUpdateView
@@ -29,6 +29,4 @@ urlpatterns = [
     path("preco/", preco_produto, name="preco_produto"),
     path("lotes/produto/", lotes_produto, name="lotes_produto"),
     path("<int:pk>/emitir-nfe/", PedidoEmitirNFeView.as_view(), name="pedido_emitir_nfe"),
-    path("ocorrencias/", OcorrenciaListView.as_view(), name="ocorrencias"),
-    path("ocorrencias/criar", OcorrenciaCreateView.as_view(), name="ocorrencia_criar")
 ]
