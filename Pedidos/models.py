@@ -193,4 +193,3 @@ class Parcelaspedidovenda(models.Model):
         managed = False
         db_table = 'parcelaspedidovenda'
         unique_together = (('parc_empr', 'parc_fili', 'parc_pedi', 'parc_parc', 'parc_forn'),)
-

@@ -8,7 +8,6 @@ from ...models import PedidoVenda
 from core.decorator import ModuloRequeridoMixin
 
 
-
 logger = logging.getLogger(__name__)
 
 
