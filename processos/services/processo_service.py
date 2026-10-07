@@ -15,7 +15,7 @@ class ProcessoService:
         return (
             Processo.objects.using(db_alias)
             .filter(proc_empr=empresa, proc_fili=filial)
-            .select_related("proc_mode")
+            .select_related("proc_mode", "proc_os")
             .order_by("-id")
         )
 

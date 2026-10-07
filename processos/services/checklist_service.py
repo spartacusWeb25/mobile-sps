@@ -13,7 +13,7 @@ class ChecklistService:
     def criar_modelo(
         *, db_alias, empresa, filial, nome, ativo=True, itens=[]
     ):
-        if itens.length < 1:
+        if not itens:
             return
         try:
             with transaction.atomic(using=db_alias):
@@ -24,13 +24,13 @@ class ChecklistService:
                     chmo_ativ=ativo,
                 )
                 for item in itens:
-                    if item.get("descricao"):
+                    if item["chit_desc"]:
                         ChecklistItem.objects.using(db_alias).create(
                             chit_empr=empresa,
                             chit_fili=filial,
                             chit_mode=modelo,
-                            chit_desc=item.get("descricao"),
-                            chit_obri=item.get("obrigatorio"),
+                            chit_desc=item["chit_desc"],
+                            chit_obri=item["chit_obri"],
                         )
             return modelo
         except Exception as e:
