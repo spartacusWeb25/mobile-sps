@@ -22,7 +22,7 @@ class ValidacaoProcessoService:
             return False
 
     @staticmethod
-    def validar_processo(*, db_alias, empresa, filial, processo_id, usuario_id=None, responsavel_id=None, dados={}):
+    def validar_processo(*, db_alias, empresa, filial, processo_id, usuario_id=None, responsavel_id=None, assinatura=None, dados={}):
         processo = Processo.objects.using(db_alias).get(
             id=processo_id,
             proc_empr=empresa,
@@ -87,6 +87,8 @@ class ValidacaoProcessoService:
             processo.proc_stat = Processo.STATUS_APROVADO
         processo.proc_usro_vali = usuario_id
         processo.proc_enti_vali = responsavel_id
+        if(assinatura):
+            processo.proc_enti_assi = assinatura
         processo.proc_data_fech = timezone.now()
         processo.proc_vers = vers
         processo.save(using=db_alias)

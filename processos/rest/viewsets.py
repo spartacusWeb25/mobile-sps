@@ -330,12 +330,16 @@ class ProcessoViewSet(BaseMultiDBViewSet):
     @action(detail=True, methods=["post"], url_path="validar")
     def validar(self, request, pk=None, slug=None):
         cfg = self._ctx()
+        serializer = self.get_serializer(data=request.data)
+        data = serializer.validated_data
         resultado = ValidacaoProcessoService.validar_processo(
             db_alias=cfg["db_alias"],
             empresa=cfg["empresa"],
             filial=cfg["filial"],
             processo_id=pk,
             usuario_id=cfg["usuario_id"],
+            responsavel_id=data.get("proc_enti_vali"),
+            assinatura=data.get("proc_enti_assi"),
         )
         return Response(resultado)
 

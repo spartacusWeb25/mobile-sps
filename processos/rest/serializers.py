@@ -105,6 +105,8 @@ class ProcessoReadSerializer(serializers.ModelSerializer):
     data_fechamento = serializers.DateTimeField(source="proc_data_fech", read_only=True)
     versao = serializers.IntegerField(source="proc_vers", read_only=True)
     responsavel_id = serializers.IntegerField(source="proc_enti_vali", required=False, allow_null=True, default=None)
+    responsavel_nome = serializers.CharField(source="proc_enti_vali.enti_nome", read_only=True)
+    assinatura_responsavel = Base64BinaryField(source="proc_enti_assi", required=False, allow_null=True)
 
     class Meta:
         model = Processo
@@ -121,7 +123,9 @@ class ProcessoReadSerializer(serializers.ModelSerializer):
             "data_fechamento",
             "os",
             "versao",
-            "responsavel_id"
+            "responsavel_id",
+            "responsavel_nome",
+            "assinatura_responsavel"
         ]
 
 class ProcessoWriteSerializer(serializers.ModelSerializer):
@@ -133,7 +137,7 @@ class ProcessoWriteSerializer(serializers.ModelSerializer):
             write_only=True
         )
     responsavel_id = serializers.IntegerField(source="proc_enti_vali", required=False, allow_null=True, default=None)
-    assinatura_responsavel = Base64BinaryField()
+    assinatura_responsavel = Base64BinaryField(source="proc_enti_assi", required=False, allow_null=True)
 
     class Meta:
         model = Processo
@@ -142,5 +146,6 @@ class ProcessoWriteSerializer(serializers.ModelSerializer):
             "modelo_id",
             "descricao",
             "os_id",
-            "responsavel_id"
+            "responsavel_id",
+            "assinatura_responsavel"
         ]
