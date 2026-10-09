@@ -22,6 +22,8 @@ from .services.cadastro_rapido import EntidadeCadastroRapido
 from .services.cadastro_rapido_simplificado import EntidadeCadastroRapidoSimplificado
 from .services.entidades_filters import apply_vinculo_filters
 
+import logging
+logger = logging.getLogger(__name__)
 
 BANCOS_CEP_FIXO = {"savexml896", "pg pisos", 'demonstracao'}
 CEP_FALLBACK_PG_PISOS = "84010200"
@@ -51,7 +53,8 @@ class EntidadesViewSet(ModuloRequeridoMixin,viewsets.ModelViewSet):
         classificacao = self.request.query_params.get('enti_espe_enti')
         situacao = self.request.query_params.get('enti_situ')
         search_query = self.request.query_params.get('search')
-        
+        raw_cliente_ids = self.request.query_params.get('cliente_ids')
+        logger.info(self.request.query_params)
         # Filtro por empresa primeiro (mais eficiente)
         if empresa_id:
             queryset = queryset.filter(enti_empr=empresa_id)
@@ -66,6 +69,18 @@ class EntidadesViewSet(ModuloRequeridoMixin,viewsets.ModelViewSet):
 
             if tipos_list:
                 queryset = queryset.filter(enti_tipo_enti__in=tipos_list)
+
+        if raw_cliente_ids:
+            logger.info(raw_cliente_ids)
+            if isinstance(raw_cliente_ids, str):
+                ids_list = [id.strip() for id in raw_cliente_ids.split(',') if id.strip()]
+            elif isinstance(raw_cliente_ids, list):
+                ids_list = raw_cliente_ids
+            else:
+                ids_list = []
+
+            if ids_list:
+                queryset = queryset.filter(enti_clie__in=ids_list)
         if classificacao:
             queryset = queryset.filter(enti_espe_enti=classificacao)
         if situacao:

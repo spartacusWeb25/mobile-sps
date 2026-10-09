@@ -63,14 +63,17 @@ class ChecklistService:
 
     @staticmethod
     def alternar_status_modelo(db_alias, empresa, filial, modelo_id):
-        modelo = ChecklistModelo.objects.using(db_alias).get(
-            id=modelo_id,
-            chmo_empr=empresa,
-            chmo_fili=filial,
-        )
-        modelo.chmo_ativ = not modelo.chmo_ativ
-        modelo.save(using=db_alias, update_fields=["chmo_ativ"])
-        return modelo.chmo_ativ
+        try:
+            modelo = ChecklistModelo.objects.using(db_alias).get(
+                id=modelo_id,
+                chmo_empr=empresa,
+                chmo_fili=filial,
+            )
+            modelo.chmo_ativ = not modelo.chmo_ativ
+            modelo.save(using=db_alias, update_fields=["chmo_ativ"])
+            return modelo.chmo_ativ
+        except:
+            raise
 
     @staticmethod
     def obter_modelo_de_processo(*, db_alias, empresa, filial, processo_id):

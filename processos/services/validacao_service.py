@@ -38,7 +38,7 @@ class ValidacaoProcessoService:
         )
         erros = []
         respostas_modificadas = []
-        if dados["temp_resp"]:
+        if "temp_resp" in dados and dados["temp_resp"]:
             vers = processo.proc_vers
             for resposta in respostas_proc:
                 if resposta.pchr_vers < vers:
@@ -100,7 +100,7 @@ class ValidacaoProcessoService:
             resposta.pchr_vers=vers
         try:
             with transaction.atomic(using=db_alias):
-                if dados["temp_resp"]:
+                if "temp_resp" in dados and dados["temp_resp"]:
                     ProcessoChecklistResposta.objects.using(db_alias).bulk_create(respostas_modificadas)
                 else:
                     ProcessoChecklistResposta.objects.using(db_alias).bulk_update(

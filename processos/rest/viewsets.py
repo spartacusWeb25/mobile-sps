@@ -167,18 +167,29 @@ class ChecklistModeloViewSet(BaseMultiDBViewSet):
     @action(detail=True, methods=["post"], url_path="toggle_ativo")
     def toggle_ativo(self, request, *args, **kwargs):
         cfg = self._ctx()
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
         modelo = self.get_object()
-        ChecklistService.alternar_status_modelo(
-            db_alias=cfg["db_alias"],
-            empresa=cfg["empresa"],
-            filial=cfg["filial"],
-            modelo_id = modelo.id
-        )
-        return Response(
-            self.get_serializer(modelo).data, status=status.HTTP_200_SUCCESS
-        )
+        if not modelo:
+            return Response(
+                {"detail": "Modelo não encontrado"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        try:
+            ChecklistService.alternar_status_modelo(
+                db_alias=cfg["db_alias"],
+                empresa=cfg["empresa"],
+                filial=cfg["filial"],
+                modelo_id = modelo.id
+            )
+            return Response(
+                status=status.HTTP_200_OK
+            )
+        except Exception as e:
+            logger.info(e)
+            return Response(
+                {"detail": "Ocorreu um erro interno ao tentar atualizar o status do modelo."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
 
     # def update(self, request, *args, **kwargs):
     #     cfg = self._ctx()
@@ -239,8 +250,10 @@ class ChecklistItemViewSet(BaseMultiDBViewSet):
 class ProcessoViewSet(BaseMultiDBViewSet):
 
     def get_serializer_class(self):
-        if self.action in ["create", "update", "partial_update"]:
+        if self.action in ["create", "update", "partial_update", "sincronizar-checklist", "salvar", "validar"]:
+            logger.info("ProcessoWriteSerializer")
             return ProcessoWriteSerializer
+        logger.info("ProcessoReadSerializer")
         return ProcessoReadSerializer
     
     def get_queryset(self):
@@ -331,6 +344,7 @@ class ProcessoViewSet(BaseMultiDBViewSet):
     def validar(self, request, pk=None, slug=None):
         cfg = self._ctx()
         serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
         resultado = ValidacaoProcessoService.validar_processo(
             db_alias=cfg["db_alias"],
