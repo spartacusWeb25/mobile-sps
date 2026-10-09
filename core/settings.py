@@ -77,11 +77,13 @@ logger = logging.getLogger("django")
 logger.warning("🧠 BASE USADA: %s", "LOCAL" if USE_LOCAL_DB else "REMOTA")
 
 
+
 DATABASE_ROUTERS = ['core.db_router.LicencaDBRouter']
 
 # Definir aplicativos instalados
 INSTALLED_APPS = [
     # Django built-ins
+    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -285,6 +287,40 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
+# ============ Jazzmin ============
+JAZZMIN_SETTINGS = {
+    "site_title": "Spartacus Web/Mobile",
+    "site_header": "Spartacus Web/Mobile",
+    "site_brand": "Spartacus Web/Mobile",
+    "welcome_sign": "Spartacus Web/Mobile",
+    "copyright": "Spartacus Sistemas",
+
+    "site_logo": "logo.png",   # existe em core/static/logo.png
+    "login_logo": "logo.png",
+
+    "show_sidebar": True,
+    "navigation_expanded": True,
+    "show_ui_builder": False,
+
+    # Só descomente se o arquivo existir em core/static/admin/css/
+    # "custom_css": "admin/css/sps.css",
+
+    "icons": {
+        "auth.group": "fas fa-users-cog",
+        "licencas_web.licencaweb": "fas fa-key",
+        "planos.planos": "fas fa-layer-group",
+        "centraldeajuda.centraldeajuda": "fas fa-life-ring",
+        "fiscal.nfedocumento": "fas fa-file-invoice",
+    },
+}
+
+JAZZMIN_UI_TWEAKS = {
+    "theme": "default",
+    "navbar_small_text": False,
+    "sidebar_nav_child_indent": True,
+}
+
+
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

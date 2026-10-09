@@ -1,0 +1,51 @@
+:root {
+  --colcha-rosa: #f6b6d6;
+  --colcha-rosa-claro: #fce8f2;
+
+  --colcha-azul: #afcbff;
+  --colcha-azul-claro: #eaf2ff;
+
+  --colcha-branco: #ffffff;
+  --colcha-preto: #242424;
+  --colcha-texto-secundario: #6f7180;
+
+  --colcha-fundo: #fce8f2;
+  --colcha-card: #ffffff;
+  --colcha-texto: #242424;
+  --colcha-borda: rgba(255, 255, 255, 0.65);
+
+  --colcha-primary: #8a72d8;
+}
+
+html[data-bs-theme='dark'] {
+  --colcha-fundo: #171827;
+  --colcha-card: #222337;
+  --colcha-texto: #ffffff;
+  --colcha-texto-secundario: #b8b9c8;
+
+  --colcha-borda: rgba(255, 255, 255, 0.1);
+
+  --colcha-primary: #a78bfa;
+}
+
+/* Logo da tela de login */
+.login-logo img {
+  max-width: 220px !important;
+  width: 220px !important;
+  height: auto !important;
+  object-fit: contain !important;
+}
+
+/* Logo do sidebar */
+.brand-image {
+  width: 36px !important;
+  height: 36px !important;
+  object-fit: contain !important;
+}
+
+/* Logo da marca no sidebar */
+.brand-link .brand-image {
+  width: 36px !important;
+  height: 36px !important;
+  object-fit: contain !important;
+}
