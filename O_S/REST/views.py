@@ -8,6 +8,8 @@ from core.impressoes.documentos.os import OrdemServicoPrinter
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
+
+from processos.services.processo_service import ProcessoService
 from ..filters.os import OsFilter, OrdemServicoGeralFilter
 from django.db import transaction, IntegrityError
 from django.db.models import Max, OuterRef, Subquery, DecimalField, Value as V
@@ -214,7 +216,7 @@ class OsViewSet(BaseMultiDBModelViewSet):
             self.check_object_permissions(self.request, obj)
             return obj
             
-        except Os.DoesNotExist:
+        except Os.DoesNotExist as e:
             tratar_erro(e)
             raise ErroDominio("Ordem de Serviço não encontrada.", codigo="os_nao_encontrada")
             
@@ -223,7 +225,7 @@ class OsViewSet(BaseMultiDBModelViewSet):
                 "Múltiplas Ordens de Serviço encontradas com o mesmo código. Informe a empresa e filial.", 
                 codigo="os_multiplas_encontradas"
             )
-        except ValueError:
+        except ValueError as e:
              tratar_erro(e)
              raise ErroDominio("ID da ordem inválido.", codigo="id_invalido")
                 
@@ -576,6 +578,28 @@ class OsViewSet(BaseMultiDBModelViewSet):
             return tratar_sucesso(serializer.data)
         except Exception as e:
             return tratar_erro(e)
+
+    @action(detail=True, methods=['get'], url_path='get-processo', permission_classes=[])
+    # @modulo_necessario('processo')
+    def get_processo(self, request, pk=None):
+        banco = self.get_banco()
+        empresa = (
+            request.query_params.get('os_empr') or 
+            request.query_params.get('empresa_id') or 
+            request.query_params.get('empr')
+        )
+        filial = (
+            request.query_params.get('os_fili') or 
+            request.query_params.get('filial_id') or 
+            request.query_params.get('fili')
+        )
+        processo = ProcessoService.get_processo_de_os(
+            db_alias=banco,
+            empresa= empresa,
+            filial= filial,
+            os_os = pk
+        )
+        return processo
     
     
     @action(detail=True, methods=['get'], permission_classes=[])

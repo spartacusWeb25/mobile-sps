@@ -56,9 +56,9 @@ class ProcessoChecklistRespostaSerializer(serializers.ModelSerializer):
     filial = serializers.IntegerField(source="pchr_fili", read_only=True)
     processo_id = serializers.IntegerField(source="pchr_proc_id", read_only=True)
     item_id = serializers.IntegerField(source="pchr_item_id")
-    item_descricao = serializers.CharField(source="pchr_item.chit_desc", read_only=True)
+    item_descricao = serializers.CharField(source="pchr_desc", read_only=True)
     item_obrigatorio = serializers.BooleanField(
-        source="pchr_item.chit_obri", read_only=True
+        source="pchr_obri", read_only=True
     )
     resposta = serializers.ChoiceField(
         source="pchr_resp",
@@ -131,13 +131,10 @@ class ProcessoReadSerializer(serializers.ModelSerializer):
 class ProcessoWriteSerializer(serializers.ModelSerializer):
     modelo_id = serializers.IntegerField(source="proc_mode_id")
     descricao = serializers.CharField(source="proc_desc", required=False, allow_null=True, allow_blank=True, default=None)
-    os_id = serializers.PrimaryKeyRelatedField(
-            source="proc_os",
-            queryset=Os.objects.all(),
-            write_only=True
-        )
+    os_id = serializers.IntegerField(source="proc_os_id")
     responsavel_id = serializers.IntegerField(source="proc_enti_vali", required=False, allow_null=True, default=None)
     assinatura_responsavel = Base64BinaryField(source="proc_enti_assi", required=False, allow_null=True)
+    respostas = ProcessoChecklistRespostaSerializer(many=True, required=False)
 
     class Meta:
         model = Processo
@@ -147,5 +144,6 @@ class ProcessoWriteSerializer(serializers.ModelSerializer):
             "descricao",
             "os_id",
             "responsavel_id",
-            "assinatura_responsavel"
+            "assinatura_responsavel",
+            "respostas"
         ]

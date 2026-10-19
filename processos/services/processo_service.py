@@ -103,3 +103,11 @@ class ProcessoService:
                 enti_empr=empresa,
                 enti_clie=processo.proc_enti_vali
             ).values_list("enti_nome", flat=True).first()
+
+    @staticmethod
+    def get_processo_de_os(*, db_alias, empresa, filial, os_os):
+        return Processo.objects.using(db_alias).filter(
+                proc_empr=empresa,
+                proc_fili=filial,
+                proc_os=os_os
+                ).first()

@@ -258,9 +258,14 @@ class ProcessoViewSet(BaseMultiDBViewSet):
     
     def get_queryset(self):
         cfg = self._ctx()
-        return ProcessoService.listar(
-            db_alias=cfg["db_alias"], empresa=cfg["empresa"], filial=cfg["filial"]
-        ).prefetch_related("respostas__pchr_item")
+        qs = (Processo.objects.using(cfg["db_alias"])
+            .filter(proc_empr=cfg["empresa"], proc_fili=cfg["filial"])
+            .order_by("-id"))
+        if self.action == 'retrieve':
+            return qs.select_related("proc_mode", "proc_os").prefetch_related("respostas")
+        
+        return qs.select_related("proc_os")
+        
 
     def create(self, request, *args, **kwargs):
         cfg = self._ctx()
@@ -268,7 +273,8 @@ class ProcessoViewSet(BaseMultiDBViewSet):
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
-        os_id = data.get("proc_os")
+        os_id = data.get("proc_os_id")
+        logger.info(os_id)
         os = Os.objects.using(cfg["db_alias"]).get(
             os_os = os_id,
             os_empr=cfg["empresa"],
@@ -346,6 +352,7 @@ class ProcessoViewSet(BaseMultiDBViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
+        logger.info(data)
         resultado = ValidacaoProcessoService.validar_processo(
             db_alias=cfg["db_alias"],
             empresa=cfg["empresa"],
