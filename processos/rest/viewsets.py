@@ -1,9 +1,13 @@
+from venv import logger
+
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
 
+from O_S.REST.serializers import OsSerializer
+from O_S.models import Os
 from core.utils import get_db_from_slug
 from O_S.models import Os
 from processos.models import ChecklistItem, ChecklistModelo, Processo
@@ -11,12 +15,15 @@ from processos.rest.serializers import (
     ChecklistItemSerializer,
     ChecklistModeloSerializer,
     ProcessoChecklistRespostaSerializer,
-    ProcessoSerializer,
+    ProcessoReadSerializer,
+    ProcessoWriteSerializer,
 )
+from processos.services import processo_service
 from processos.services.checklist_service import ChecklistService
 from processos.services.processo_service import ProcessoService
 from processos.services.validacao_service import ValidacaoProcessoService
-
+import logging
+logger = logging.getLogger(__name__)
 
 class BaseMultiDBViewSet(viewsets.ModelViewSet):
     """Base REST do app Processos com roteamento por slug + escopo empresa/filial."""
@@ -64,7 +71,6 @@ class BaseMultiDBViewSet(viewsets.ModelViewSet):
     ):
         raise NotFound({"detail": message})
 
-
 class ChecklistModeloViewSet(BaseMultiDBViewSet):
     serializer_class = ChecklistModeloSerializer
 
@@ -74,6 +80,7 @@ class ChecklistModeloViewSet(BaseMultiDBViewSet):
             ChecklistModelo.objects.using(cfg["db_alias"])
             .filter(chmo_empr=cfg["empresa"], chmo_fili=cfg["filial"])
             .order_by("chmo_nome")
+            .prefetch_related("itens")
         )
 
     def create(self, request, *args, **kwargs):
@@ -81,17 +88,126 @@ class ChecklistModeloViewSet(BaseMultiDBViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
+        logger.info(data)
+        itens = data.get("itens", [])
+        if not itens:
+            return Response(
+                {"detail": "Modelo deve possuir itens"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        try:
+            modelo = ChecklistService.criar_modelo(
+                db_alias=cfg["db_alias"],
+                empresa=cfg["empresa"],
+                filial=cfg["filial"],
+                nome=data.get("chmo_nome"),
+                ativo=data.get("chmo_ativ", True),
+                itens=itens
+            )
+            return Response(
+                self.get_serializer(modelo).data, status=status.HTTP_201_CREATED
+            )
+        except ValueError as e: 
+            return Response(
+                {"detail": str(e)}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        except Exception as e:
+            logger.info(e)
+            return Response(
+                {"detail": "Ocorreu um erro interno ao tentar criar o modelo de processo."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
-        modelo = ChecklistService.criar_modelo(
-            db_alias=cfg["db_alias"],
-            empresa=cfg["empresa"],
-            filial=cfg["filial"],
-            nome=data["chmo_nome"],
-            ativo=data.get("chmo_ativ", True),
-        )
-        return Response(
-            self.get_serializer(modelo).data, status=status.HTTP_201_CREATED
-        )
+    def partial_update(self, request, *args, **kwargs):
+            cfg = self._ctx()
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            data = serializer.validated_data
+            modelo = self.get_object()
+            logger.info(data)
+            itens = data.get("itens", [])
+            if not itens:
+                return Response(
+                    {"detail": "Modelo deve possuir itens"}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            try:
+                logger.info(itens)
+                itens_antigos = ChecklistItem.objects.using(cfg["db_alias"]).filter(
+                    chit_empr=cfg["empresa"],
+                    chit_fili=cfg["filial"],
+                    chit_mode=modelo
+                )
+                descricoes = set(item.get("chit_desc").strip() for item in itens)
+                itens_antigos.exclude(chit_desc__in=descricoes).delete()
+                for item in itens:
+                    ChecklistService.criar_ou_atualizar_item(
+                        db_alias=cfg["db_alias"],
+                        empresa=cfg["empresa"],
+                        filial=cfg["filial"],
+                        modelo=modelo,
+                        descricao=item.get("chit_desc"),
+                        obrigatorio=item.get("chit_obri"),
+                    )
+                return Response(
+                    status=status.HTTP_200_OK
+                )
+            except ValueError as e: 
+                return Response(
+                    {"detail": str(e)}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+                
+            except Exception as e:
+                logger.info(e)
+                return Response(
+                    {"detail": "Ocorreu um erro interno ao tentar atualizar o modelo."},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+
+    @action(detail=True, methods=["post"], url_path="toggle_ativo")
+    def toggle_ativo(self, request, *args, **kwargs):
+        cfg = self._ctx()
+        modelo = self.get_object()
+        if not modelo:
+            return Response(
+                {"detail": "Modelo não encontrado"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        try:
+            ChecklistService.alternar_status_modelo(
+                db_alias=cfg["db_alias"],
+                empresa=cfg["empresa"],
+                filial=cfg["filial"],
+                modelo_id = modelo.id
+            )
+            return Response(
+                status=status.HTTP_200_OK
+            )
+        except Exception as e:
+            logger.info(e)
+            return Response(
+                {"detail": "Ocorreu um erro interno ao tentar atualizar o status do modelo."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+    # def update(self, request, *args, **kwargs):
+    #     cfg = self._ctx()
+    #     serializer = self.get_serializer(data=request.data)
+    #     serializer.is_valid(raise_exception=True)
+    #     modelo = self.get_object()
+    #     ChecklistService.criar_ou_atualizar_item(
+    #         db_alias=cfg["db_alias"],
+    #         empresa=cfg["empresa"],
+    #         filial=cfg["filial"],
+    #         modelo_id = modelo.id
+    #     )
+    #     return Response(
+    #         self.get_serializer(modelo).data, status=status.HTTP_200_SUCCESS
+    #     )
 
 
 class ChecklistItemViewSet(BaseMultiDBViewSet):
@@ -128,24 +244,31 @@ class ChecklistItemViewSet(BaseMultiDBViewSet):
             empresa=cfg["empresa"],
             filial=cfg["filial"],
             modelo=modelo,
-            descricao=data["chit_desc"],
+            descricao=data.get("chit_desc"),
             obrigatorio=data.get("chit_obri", True),
         )
         return Response(self.get_serializer(item).data, status=status.HTTP_201_CREATED)
 
 
 class ProcessoViewSet(BaseMultiDBViewSet):
-    serializer_class = ProcessoSerializer
 
+    def get_serializer_class(self):
+        if self.action in ["create", "update", "partial_update", "sincronizar-checklist", "salvar", "validar"]:
+            logger.info("ProcessoWriteSerializer")
+            return ProcessoWriteSerializer
+        logger.info("ProcessoReadSerializer")
+        return ProcessoReadSerializer
+    
     def get_queryset(self):
         cfg = self._ctx()
-        queryset = ProcessoService.listar(
-            db_alias=cfg["db_alias"], empresa=cfg["empresa"], filial=cfg["filial"]
-        ).prefetch_related("respostas__pchr_item")
-        os_id = self.request.query_params.get("os")
-        if os_id:
-            queryset = queryset.filter(proc_os_id=os_id)
-        return queryset
+        qs = (Processo.objects.using(cfg["db_alias"])
+            .filter(proc_empr=cfg["empresa"], proc_fili=cfg["filial"])
+            .order_by("-id"))
+        if self.action == 'retrieve':
+            return qs.select_related("proc_mode", "proc_os").prefetch_related("respostas")
+        
+        return qs.select_related("proc_os")
+        
 
     def create(self, request, *args, **kwargs):
         cfg = self._ctx()
@@ -266,27 +389,20 @@ class ProcessoViewSet(BaseMultiDBViewSet):
         processo = self.get_object()
         if processo.proc_stat == Processo.STATUS_APROVADO:
             raise ValidationError({"detail": "Processo já foi aprovado."})
-        responsavel_id = request.data.get("responsavel_id")
-        documento = request.data.get("documento")
-        if not responsavel_id or not documento:
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        responsavel_id = data.get("proc_enti_clie")
+        assinatura = data.get("proc_enti_assi")
+        if not responsavel_id or not assinatura:
             raise ValidationError(
-                {"detail": "Informe responsavel_id e documento para validar."}
+                {"detail": "Informe responsavel_id e assinatura para validar."}
             )
-        try:
-            assinatura_valida = ValidacaoProcessoService.validar_assinatura(
-                db_alias=cfg["db_alias"],
-                empresa=cfg["empresa"],
-                responsavel_id=responsavel_id,
-                documento_inserido=documento,
-            )
-        except ObjectDoesNotExist:
-            self._not_found("Responsável não encontrado.")
-        if not assinatura_valida:
-            raise ValidationError({"detail": "Documento inválido."})
         dados = ChecklistService._normalizar_dados_respostas(
-            request.data.get("respostas", {})
-        )
-        dados["temp_resp"] = bool(request.data.get("temp_resp", False))
+                    data.get("respostas", {})
+                )
+        dados["temp_resp"] = bool(data.get("temp_resp", False))
+        
         resultado = ValidacaoProcessoService.validar_processo(
             db_alias=cfg["db_alias"],
             empresa=cfg["empresa"],
@@ -297,13 +413,3 @@ class ProcessoViewSet(BaseMultiDBViewSet):
             dados=dados,
         )
         return Response(resultado)
-
-    @action(detail=False, methods=["get"], url_path="responsaveis")
-    def responsaveis(self, request, slug=None):
-        cfg = self._ctx()
-        entidades = ProcessoService.listar_entidades_responsaveis(
-            db_alias=cfg["db_alias"], empresa=cfg["empresa"]
-        )
-        return Response(
-            [{"enti_clie": e.enti_clie, "enti_nome": e.enti_nome} for e in entidades]
-        )

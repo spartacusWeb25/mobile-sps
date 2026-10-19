@@ -1,3 +1,5 @@
+from django.db import transaction
+
 from processos.models import (
     ChecklistItem,
     ChecklistModelo,
@@ -9,14 +11,30 @@ from processos.models import (
 class ChecklistService:
     @staticmethod
     def criar_modelo(
-        *, db_alias, empresa, filial, nome, ativo=True
+        *, db_alias, empresa, filial, nome, ativo=True, itens=[]
     ):
-        return ChecklistModelo.objects.using(db_alias).create(
-            chmo_empr=empresa,
-            chmo_fili=filial,
-            chmo_nome=nome,
-            chmo_ativ=ativo,
-        )
+        if not itens:
+            return
+        try:
+            with transaction.atomic(using=db_alias):
+                modelo = ChecklistModelo.objects.using(db_alias).create(
+                    chmo_empr=empresa,
+                    chmo_fili=filial,
+                    chmo_nome=nome,
+                    chmo_ativ=ativo,
+                )
+                for item in itens:
+                    if item["chit_desc"]:
+                        ChecklistItem.objects.using(db_alias).create(
+                            chit_empr=empresa,
+                            chit_fili=filial,
+                            chit_mode=modelo,
+                            chit_desc=item["chit_desc"],
+                            chit_obri=item["chit_obri"],
+                        )
+            return modelo
+        except Exception as e:
+            raise
 
     @staticmethod
     def criar_item(
@@ -45,14 +63,17 @@ class ChecklistService:
 
     @staticmethod
     def alternar_status_modelo(db_alias, empresa, filial, modelo_id):
-        modelo = ChecklistModelo.objects.using(db_alias).get(
-            id=modelo_id,
-            chmo_empr=empresa,
-            chmo_fili=filial,
-        )
-        modelo.chmo_ativ = not modelo.chmo_ativ
-        modelo.save(using=db_alias, update_fields=["chmo_ativ"])
-        return modelo.chmo_ativ
+        try:
+            modelo = ChecklistModelo.objects.using(db_alias).get(
+                id=modelo_id,
+                chmo_empr=empresa,
+                chmo_fili=filial,
+            )
+            modelo.chmo_ativ = not modelo.chmo_ativ
+            modelo.save(using=db_alias, update_fields=["chmo_ativ"])
+            return modelo.chmo_ativ
+        except:
+            raise
 
     @staticmethod
     def obter_modelo_de_processo(*, db_alias, empresa, filial, processo_id):

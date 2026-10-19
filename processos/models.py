@@ -76,6 +76,7 @@ class Processo(models.Model):
     proc_usro_aber = models.IntegerField(null=True, blank=True)
     proc_usro_vali = models.IntegerField(null=True, blank=True)
     proc_enti_vali = models.IntegerField(null=True, blank=True)
+    proc_enti_assi = models.BinaryField(null=True, blank=True)
     proc_os = models.ForeignKey(
         'O_S.Os',
         on_delete=models.SET_NULL, 

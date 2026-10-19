@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.utils import timezone
 
 from processos.models import Processo, ProcessoChecklistResposta
@@ -20,7 +21,7 @@ class ValidacaoProcessoService:
             return False
 
     @staticmethod
-    def validar_processo(*, db_alias, empresa, filial, processo_id, usuario_id=None, responsavel_id=None, dados={}):
+    def validar_processo(*, db_alias, empresa, filial, processo_id, usuario_id=None, responsavel_id=None, assinatura=None, dados={}):
         processo = Processo.objects.using(db_alias).get(
             id=processo_id,
             proc_empr=empresa,
@@ -36,7 +37,7 @@ class ValidacaoProcessoService:
         )
         erros = []
         respostas_modificadas = []
-        if dados["temp_resp"]:
+        if "temp_resp" in dados and dados["temp_resp"]:
             vers = processo.proc_vers
             for resposta in respostas_proc:
                 if resposta.pchr_vers < vers:
@@ -85,6 +86,8 @@ class ValidacaoProcessoService:
             processo.proc_stat = Processo.STATUS_APROVADO
         processo.proc_usro_vali = usuario_id
         processo.proc_enti_vali = responsavel_id
+        if(assinatura):
+            processo.proc_enti_assi = assinatura
         processo.proc_data_fech = timezone.now()
         processo.proc_vers = vers
         processo.save(using=db_alias)
@@ -94,14 +97,19 @@ class ValidacaoProcessoService:
             resposta.pchr_usro_vali=usuario_id
             resposta.pchr_enti_vali=responsavel_id
             resposta.pchr_vers=vers
-        if dados["temp_resp"]:
-            ProcessoChecklistResposta.objects.using(db_alias).bulk_create(respostas_modificadas)
-        else:
-            ProcessoChecklistResposta.objects.using(db_alias).bulk_update(
-                respostas_modificadas, 
-                fields=["pchr_resp","pchr_obse","pchr_vali","pchr_data_vali", "pchr_usro_vali", "pchr_enti_vali", "pchr_vers"]
-            )
-        return {"aprovado": aprovado, "status": processo.proc_stat, "erros": erros}
+        try:
+            with transaction.atomic(using=db_alias):
+                if "temp_resp" in dados and dados["temp_resp"]:
+                    ProcessoChecklistResposta.objects.using(db_alias).bulk_create(respostas_modificadas)
+                else:
+                    ProcessoChecklistResposta.objects.using(db_alias).bulk_update(
+                        respostas_modificadas, 
+                        fields=["pchr_resp","pchr_obse","pchr_vali","pchr_data_vali", "pchr_usro_vali", "pchr_enti_vali", "pchr_vers"]
+                    )
+            return {"aprovado": aprovado, "status": processo.proc_stat, "erros": erros}
+        except Exception as erro:
+            raise
+        
         
         
         
