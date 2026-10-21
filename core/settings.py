@@ -164,7 +164,7 @@ INSTALLED_APPS = [
     'SpsComissoes',
     'transportes',
     'TrocasDevolucoes',
-    'ocorrencias'
+    'ocorrencias',
     # 'Gerencial',
     'ModeloEtiquetas',
 ]
