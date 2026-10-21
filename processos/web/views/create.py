@@ -26,8 +26,6 @@ logger = logging.getLogger(__name__)
 
 class _BaseProcessoFormView(FormView):
     def _ctx(self):
-        for key, value in self.request.session.items():
-            print(f"{key} => {value}")
         slug = self.kwargs.get("slug")
         return {
             "slug": slug,

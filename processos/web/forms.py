@@ -47,6 +47,7 @@ class ProcessoForm(forms.ModelForm):
         self.fields["proc_mode"].label_from_instance = lambda obj: f"{obj.chmo_nome}"
         self.fields["proc_os"].label_from_instance = lambda obj: f"{obj.os_os} - ({obj.os_data_aber.strftime('%d/%m/%Y')}) - {obj.clie_nome}"
         self.fields['proc_os'].empty_label = "Selecione uma OS"
+        self.fields['proc_os'].required = True
 
 
 class ProcessoRespostaInlineForm(forms.Form):

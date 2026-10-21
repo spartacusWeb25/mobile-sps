@@ -54,6 +54,7 @@ class ProcessoDetailView(DetailView):
         )
         itens_modelo = ChecklistItem.objects.using(ctx["db_alias"]).none()
         temp_resp = False
+        itens_diferenca = False
         if modelo:
             itens_modelo = modelo.itens.using(ctx["db_alias"]).filter(
                 chit_empr=ctx["empresa"],
