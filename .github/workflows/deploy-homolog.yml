@@ -1,0 +1,23 @@
+name: Deploy homolog
+
+on:
+  push:
+    branches: [homolog]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-homolog
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.ORACLE_HOST }}
+          username: ${{ secrets.ORACLE_USER }}
+          key: ${{ secrets.HOMOLOG_SSH_KEY }}
+          command_timeout: 15m
+          script: deploy-homolog

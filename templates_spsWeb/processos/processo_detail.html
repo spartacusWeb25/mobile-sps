@@ -237,9 +237,11 @@
           <i class="bi bi-plus-square"></i> Criar modelo
         </a>
         {% endif %}
+        {% if processo.proc_os %}
         <a href="{% url 'OsWeb:os_detalhe' slug=slug pk=processo.proc_os.os_os %}" class="btn btn-outline-info d-inline-flex align-items-center gap-2">
           <i class="bi bi-tools"></i> Ir Para OS
         </a>
+        {% endif %}
       </div>
     </div>
   </div>
