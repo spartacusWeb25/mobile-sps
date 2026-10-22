@@ -1,14 +1,18 @@
 from rest_framework import serializers
 
+import Entidades
 from Entidades.serializers import EntidadesSerializer
 from O_S.REST.serializers import Base64BinaryField, OsSerializer
 from O_S.models import Os
+from core.utils import get_licenca_db_config
 from processos.models import (
     ChecklistItem,
     ChecklistModelo,
     Processo,
     ProcessoChecklistResposta,
 )
+import logging
+logger = logging.getLogger(__name__)
 
 class ChecklistItemSerializer(serializers.ModelSerializer):
     empresa = serializers.IntegerField(source="chit_empr", read_only=True)
@@ -52,6 +56,7 @@ class ChecklistModeloSerializer(serializers.ModelSerializer):
 
 
 class ProcessoChecklistRespostaSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False, allow_null=True)
     empresa = serializers.IntegerField(source="pchr_empr", read_only=True)
     filial = serializers.IntegerField(source="pchr_fili", read_only=True)
     processo_id = serializers.IntegerField(source="pchr_proc_id", read_only=True)
@@ -105,8 +110,21 @@ class ProcessoReadSerializer(serializers.ModelSerializer):
     data_fechamento = serializers.DateTimeField(source="proc_data_fech", read_only=True)
     versao = serializers.IntegerField(source="proc_vers", read_only=True)
     responsavel_id = serializers.IntegerField(source="proc_enti_vali", required=False, allow_null=True, default=None)
-    responsavel_nome = serializers.CharField(source="proc_enti_vali.enti_nome", read_only=True)
+    responsavel_nome = serializers.SerializerMethodField()
     assinatura_responsavel = Base64BinaryField(source="proc_enti_assi", required=False, allow_null=True)
+
+    def get_responsavel_nome(self, obj):
+        request = self.context.get("request")
+        banco = get_licenca_db_config(request)
+        logger.info(self.context)
+        logger.info(banco)
+        if not banco:
+            return None
+        resp = Entidades.objects.using(banco).filter(
+            enti_clie=obj.proc_enti_vali,
+            enti_empr=obj.proc_empr,
+        ).first()
+        return resp.enti_nome if resp else None
 
     class Meta:
         model = Processo

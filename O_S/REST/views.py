@@ -9,6 +9,7 @@ from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 
+from processos.rest.serializers import ProcessoReadSerializer
 from processos.services.processo_service import ProcessoService
 from ..filters.os import OsFilter, OrdemServicoGeralFilter
 from django.db import transaction, IntegrityError
@@ -581,7 +582,7 @@ class OsViewSet(BaseMultiDBModelViewSet):
 
     @action(detail=True, methods=['get'], url_path='get-processo', permission_classes=[])
     # @modulo_necessario('processo')
-    def get_processo(self, request, pk=None):
+    def get_processo(self, request, pk=None, slug=None):
         banco = self.get_banco()
         empresa = (
             request.query_params.get('os_empr') or 
@@ -599,7 +600,8 @@ class OsViewSet(BaseMultiDBModelViewSet):
             filial= filial,
             os_os = pk
         )
-        return processo
+        serializer = ProcessoReadSerializer(processo)
+        return Response(serializer.data)
     
     
     @action(detail=True, methods=['get'], permission_classes=[])
