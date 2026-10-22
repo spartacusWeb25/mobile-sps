@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-import Entidades
+from Entidades.models import Entidades
 from Entidades.serializers import EntidadesSerializer
 from O_S.REST.serializers import Base64BinaryField, OsSerializer
 from O_S.models import Os
