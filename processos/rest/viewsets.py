@@ -271,37 +271,38 @@ class ProcessoViewSet(BaseMultiDBViewSet):
         
 
     def create(self, request, *args, **kwargs):
-        cfg = self._ctx()
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        data = serializer.validated_data
-        try:
-            os_obj = Os.objects.using(cfg["db_alias"]).get(
-                os_os=data["proc_os_id"],
-                os_empr=cfg["empresa"],
-                os_fili=cfg["filial"],
+            cfg = self._ctx()
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            data = serializer.validated_data
+            os_id = data.get("proc_os_id")
+            try:
+                os_obj = Os.objects.using(cfg["db_alias"]).get(
+                    os_os=os_id,
+                    os_empr=cfg["empresa"],
+                    os_fili=cfg["filial"],
+                )
+            except ObjectDoesNotExist:
+                self._not_found("OS não encontrada para a empresa/filial informada.")
+            if Processo.objects.using(cfg["db_alias"]).filter(
+                proc_empr=cfg["empresa"], proc_fili=cfg["filial"], proc_os=os_obj
+            ).exists():
+                raise ValidationError({"detail": "Esta OS já possui um processo."})
+            try:
+                processo = ProcessoService.criar(
+                    db_alias=cfg["db_alias"],
+                    empresa=cfg["empresa"],
+                    filial=cfg["filial"],
+                    modelo_id=data.get("proc_mode_id"),
+                    descricao=data.get("proc_desc"),
+                    usuario_id=cfg["usuario_id"],
+                    os=os_obj,
+                )
+            except ObjectDoesNotExist:
+                self._not_found("Modelo de checklist não encontrado ou inativo.")
+            return Response(
+                self.get_serializer(processo).data, status=status.HTTP_201_CREATED
             )
-        except ObjectDoesNotExist:
-            self._not_found("OS não encontrada para a empresa/filial informada.")
-        if Processo.objects.using(cfg["db_alias"]).filter(
-            proc_empr=cfg["empresa"], proc_fili=cfg["filial"], proc_os=os_obj
-        ).exists():
-            raise ValidationError({"detail": "Esta OS já possui um processo."})
-        try:
-            processo = ProcessoService.criar(
-                db_alias=cfg["db_alias"],
-                empresa=cfg["empresa"],
-                filial=cfg["filial"],
-                modelo_id=data["proc_mode_id"],
-                descricao=data.get("proc_desc"),
-                usuario_id=cfg["usuario_id"],
-                os=os_obj,
-            )
-        except ObjectDoesNotExist:
-            self._not_found("Modelo de checklist não encontrado ou inativo.")
-        return Response(
-            self.get_serializer(processo).data, status=status.HTTP_201_CREATED
-        )
 
     @action(detail=False, methods=["get"], url_path="os-disponiveis")
     def os_disponiveis(self, request, slug=None):
