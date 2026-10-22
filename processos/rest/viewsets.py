@@ -271,6 +271,7 @@ class ProcessoViewSet(BaseMultiDBViewSet):
         
 
     def create(self, request, *args, **kwargs):
+        try:
             cfg = self._ctx()
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
@@ -302,6 +303,15 @@ class ProcessoViewSet(BaseMultiDBViewSet):
                 self._not_found("Modelo de checklist não encontrado ou inativo.")
             return Response(
                 self.get_serializer(processo).data, status=status.HTTP_201_CREATED
+            )
+        except Exception as exc:
+            return Response(
+                {
+                    "erro": "Ocorreu um erro inesperado no servidor.",
+                    "detalhes": str(exc),
+                    "tipo": type(exc).__name__
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
     @action(detail=False, methods=["get"], url_path="os-disponiveis")
