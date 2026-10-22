@@ -121,51 +121,51 @@ class ChecklistModeloViewSet(BaseMultiDBViewSet):
             )
 
     def partial_update(self, request, *args, **kwargs):
-            cfg = self._ctx()
-            serializer = self.get_serializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
-            data = serializer.validated_data
-            modelo = self.get_object()
-            logger.info(data)
-            itens = data.get("itens", [])
-            if not itens:
-                return Response(
-                    {"detail": "Modelo deve possuir itens"}, 
-                    status=status.HTTP_400_BAD_REQUEST
+        cfg = self._ctx()
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        modelo = self.get_object()
+        logger.info(data)
+        itens = data.get("itens", [])
+        if not itens:
+            return Response(
+                {"detail": "Modelo deve possuir itens"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        try:
+            logger.info(itens)
+            itens_antigos = ChecklistItem.objects.using(cfg["db_alias"]).filter(
+                chit_empr=cfg["empresa"],
+                chit_fili=cfg["filial"],
+                chit_mode=modelo
+            )
+            descricoes = set(item.get("chit_desc").strip() for item in itens)
+            itens_antigos.exclude(chit_desc__in=descricoes).delete()
+            for item in itens:
+                ChecklistService.criar_ou_atualizar_item(
+                    db_alias=cfg["db_alias"],
+                    empresa=cfg["empresa"],
+                    filial=cfg["filial"],
+                    modelo=modelo,
+                    descricao=item.get("chit_desc"),
+                    obrigatorio=item.get("chit_obri"),
                 )
-            try:
-                logger.info(itens)
-                itens_antigos = ChecklistItem.objects.using(cfg["db_alias"]).filter(
-                    chit_empr=cfg["empresa"],
-                    chit_fili=cfg["filial"],
-                    chit_mode=modelo
-                )
-                descricoes = set(item.get("chit_desc").strip() for item in itens)
-                itens_antigos.exclude(chit_desc__in=descricoes).delete()
-                for item in itens:
-                    ChecklistService.criar_ou_atualizar_item(
-                        db_alias=cfg["db_alias"],
-                        empresa=cfg["empresa"],
-                        filial=cfg["filial"],
-                        modelo=modelo,
-                        descricao=item.get("chit_desc"),
-                        obrigatorio=item.get("chit_obri"),
-                    )
-                return Response(
-                    status=status.HTTP_200_OK
-                )
-            except ValueError as e: 
-                return Response(
-                    {"detail": str(e)}, 
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-                
-            except Exception as e:
-                logger.info(e)
-                return Response(
-                    {"detail": "Ocorreu um erro interno ao tentar atualizar o modelo."},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
+            return Response(
+                status=status.HTTP_200_OK
+            )
+        except ValueError as e: 
+            return Response(
+                {"detail": str(e)}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        except Exception as e:
+            logger.info(e)
+            return Response(
+                {"detail": "Ocorreu um erro interno ao tentar atualizar o modelo."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     @action(detail=True, methods=["post"], url_path="toggle_ativo")
     def toggle_ativo(self, request, *args, **kwargs):
@@ -392,7 +392,8 @@ class ProcessoViewSet(BaseMultiDBViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
-        responsavel_id = data.get("proc_enti_clie")
+        logger.info(data)
+        responsavel_id = data.get("proc_enti_vali")
         assinatura = data.get("proc_enti_assi")
         if not responsavel_id or not assinatura:
             raise ValidationError(
@@ -402,7 +403,6 @@ class ProcessoViewSet(BaseMultiDBViewSet):
                     data.get("respostas", {})
                 )
         dados["temp_resp"] = bool(data.get("temp_resp", False))
-        
         resultado = ValidacaoProcessoService.validar_processo(
             db_alias=cfg["db_alias"],
             empresa=cfg["empresa"],
@@ -410,6 +410,7 @@ class ProcessoViewSet(BaseMultiDBViewSet):
             processo_id=pk,
             usuario_id=cfg["usuario_id"],
             responsavel_id=responsavel_id,
-            dados=dados,
+            assinatura=assinatura,
+            dados=dados
         )
         return Response(resultado)
