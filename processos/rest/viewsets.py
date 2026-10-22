@@ -378,13 +378,20 @@ class ProcessoViewSet(BaseMultiDBViewSet):
         )
         return Response(resultado)
 
-    @action(detail=False, methods=["get"], url_path="os_sem_processo")
-    def listar_os_sem_processo(self, request, pk=None, slug=None):
+    action(detail=False, methods=["get"], url_path="os-disponiveis")
+    def os_disponiveis(self, request, slug=None):
         cfg = self._ctx()
-        resultado = ProcessoService.listar_os_sem_processo(
-            db_alias=cfg["db_alias"],
-            empresa=cfg["empresa"],
-            filial=cfg["filial"],
+        os_list = ProcessoService.listar_os_sem_processo(
+            db_alias=cfg["db_alias"], empresa=cfg["empresa"], filial=cfg["filial"]
         )
-        serializer = OsSerializer(resultado, many=True)
-        return Response(serializer.data)
+        return Response(
+            [
+                {
+                    "os_os": o.os_os,
+                    "os_data_aber": o.os_data_aber,
+                    "os_clie": o.os_clie,
+                    "clie_nome": o.clie_nome,
+                }
+                for o in os_list
+            ]
+        )
