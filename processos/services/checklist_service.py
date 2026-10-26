@@ -6,6 +6,9 @@ from processos.models import (
     Processo,
     ProcessoChecklistResposta,
 )
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class ChecklistService:
@@ -146,15 +149,15 @@ class ChecklistService:
 
     @staticmethod
     def _normalizar_dados_respostas(dados):
-        """Aceita payload REST em dict {item_id: {...}} ou lista [{item_id, ...}]."""
+        """Aceita payload REST em dict {id: {...}} ou lista [{id, ...}]."""
         if isinstance(dados, list):
             return {
-                str(item.get("item_id") or item.get("id")): {
+                str(item.get("id")): {
                     "resposta": item.get("resposta"),
                     "observacao": item.get("observacao"),
                 }
                 for item in dados
-                if item.get("item_id") or item.get("id")
+                if item.get("id")
             }
         return dados or {}
 
@@ -166,6 +169,8 @@ class ChecklistService:
         dados = ChecklistService._normalizar_dados_respostas(dados)
         respostas_salvas = []
         for resposta_id, payload in dados.items():
+            logger.info(processo_id)
+            logger.info(resposta_id)
             resposta = ProcessoChecklistResposta.objects.using(db_alias).get(
                 pchr_empr=empresa,
                 pchr_fili=filial,

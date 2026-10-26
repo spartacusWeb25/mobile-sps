@@ -336,6 +336,7 @@ class ProcessoViewSet(BaseMultiDBViewSet):
     def salvar_checklist(self, request, pk=None, slug=None):
         cfg = self._ctx()
         dados = request.data.get("respostas", {})
+        logger.info(dados)
         respostas = ChecklistService.salvar_respostas(
             db_alias=cfg["db_alias"],
             empresa=cfg["empresa"],
@@ -355,30 +356,36 @@ class ProcessoViewSet(BaseMultiDBViewSet):
     @action(detail=True, methods=["post"], url_path="validar")
     def validar(self, request, pk=None, slug=None):
         cfg = self._ctx()
+        processo = self.get_object()
+        if processo.proc_stat == Processo.STATUS_APROVADO:
+            raise ValidationError({"detail": "Processo já foi aprovado."})
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
         logger.info(data)
-        dados={
-            str(r["id"]): {
-                "resposta": r["pchr_resp"],
-                "observacao": r["pchr_obse"]
-            } for r in data.get("respostas")
-            
-        }
+        responsavel_id = data.get("proc_enti_vali")
+        assinatura = data.get("proc_enti_assi")
+        if not responsavel_id or not assinatura:
+            raise ValidationError(
+                {"detail": "Informe responsavel_id e assinatura para validar."}
+            )
+        dados = ChecklistService._normalizar_dados_respostas(
+                    data.get("respostas", {})
+                )
+        dados["temp_resp"] = bool(data.get("temp_resp", False))
         resultado = ValidacaoProcessoService.validar_processo(
             db_alias=cfg["db_alias"],
             empresa=cfg["empresa"],
             filial=cfg["filial"],
             processo_id=pk,
             usuario_id=cfg["usuario_id"],
-            responsavel_id=data.get("proc_enti_vali"),
-            assinatura=data.get("proc_enti_assi"),
+            responsavel_id=responsavel_id,
+            assinatura=assinatura,
             dados=dados
         )
         return Response(resultado)
 
-    action(detail=False, methods=["get"], url_path="os-disponiveis")
+    @action(detail=False, methods=["get"], url_path="os-disponiveis")
     def os_disponiveis(self, request, slug=None):
         cfg = self._ctx()
         os_list = ProcessoService.listar_os_sem_processo(
