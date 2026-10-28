@@ -372,6 +372,7 @@ class ProcessoViewSet(BaseMultiDBViewSet):
         dados = ChecklistService._normalizar_dados_respostas(
                     data.get("respostas", {})
                 )
+        logger.info(dados)
         dados["temp_resp"] = bool(data.get("temp_resp", False))
         resultado = ValidacaoProcessoService.validar_processo(
             db_alias=cfg["db_alias"],

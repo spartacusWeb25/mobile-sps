@@ -52,6 +52,7 @@ class ValidacaoProcessoService:
                         pchr_item=resposta.pchr_item,
                     )
                 resposta_id = str(resposta.id)
+                logger.info(resposta_id)
                 if resposta_id in dados:
                     nova_resposta.pchr_resp = dados[resposta_id]["resposta"]
                     nova_resposta.pchr_obse = dados[resposta_id]["observacao"]

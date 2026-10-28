@@ -153,11 +153,10 @@ class ChecklistService:
         if isinstance(dados, list):
             return {
                 str(item.get("id")): {
-                    "resposta": item.get("resposta"),
-                    "observacao": item.get("observacao"),
+                    "resposta": item.get("resposta") or item.get("pchr_resp"),
+                    "observacao": item.get("observacao") or item.get("pchr_obse"),
                 }
                 for item in dados
-                if item.get("id")
             }
         return dados or {}
 
