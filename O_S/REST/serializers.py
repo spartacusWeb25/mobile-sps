@@ -301,7 +301,7 @@ class OsSerializer(BancoModelSerializer):
     os_data_fech = SafeDateField(required=False, allow_null=True)
     field_log_data = SafeDateField(required=False, allow_null=True, safe_attr='field_log_data_safe')
 
-    cliente_id = serializers.IntegerField(source="os_clie")
+    cliente_id = serializers.IntegerField(source="os_clie", read_only=True)
     cliente_nome = serializers.SerializerMethodField()
     operador_nome = serializers.SerializerMethodField()
     cliente_telefone = serializers.SerializerMethodField()
