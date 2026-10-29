@@ -140,7 +140,7 @@ class ChecklistModeloViewSet(BaseMultiDBViewSet):
                 chit_fili=cfg["filial"],
                 chit_mode=modelo
             )
-            descricoes = set(item.get("chit_desc").strip() for item in itens)
+            descricoes = set(item.get("chit_desc").strip() for item in itens if item.get("chit_desc"))
             itens_antigos.exclude(chit_desc__in=descricoes).delete()
             for item in itens:
                 ChecklistService.criar_ou_atualizar_item(
