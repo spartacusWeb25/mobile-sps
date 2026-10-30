@@ -375,7 +375,7 @@ class ProcessoViewSet(BaseMultiDBViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
-        logger.info(data)
+        logger.info(request.data)
         responsavel_id = data.get("proc_enti_vali")
         assinatura = data.get("proc_enti_assi")
         if not responsavel_id or not assinatura:
@@ -385,8 +385,8 @@ class ProcessoViewSet(BaseMultiDBViewSet):
         dados = ChecklistService._normalizar_dados_respostas(
                     data.get("respostas", {})
                 )
+        dados["temp_resp"] = bool(request.data.get("temp_resp", False))
         logger.info(dados)
-        dados["temp_resp"] = bool(data.get("temp_resp", False))
         resultado = ValidacaoProcessoService.validar_processo(
             db_alias=cfg["db_alias"],
             empresa=cfg["empresa"],
