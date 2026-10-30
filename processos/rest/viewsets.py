@@ -163,7 +163,7 @@ class ChecklistModeloViewSet(BaseMultiDBViewSet):
         except Exception as e:
             logger.info(e)
             return Response(
-                {"detail": "Ocorreu um erro interno ao tentar atualizar o modelo."},
+                {"detail": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
