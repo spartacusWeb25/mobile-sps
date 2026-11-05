@@ -1,76 +1,127 @@
 {# Componente de Scroll Infinito reutilizável #}
-<div id="infinite-sentinel" class="text-center my-3">
+<div id="infinite-sentinel-{{ infinite_id|default:'default' }}" class="infinite-sentinel text-center my-3">
   <span class="text-muted">Carregando mais...</span>
   <div class="spinner-border spinner-border-sm ms-2" role="status" aria-hidden="true"></div>
   <noscript>Ative o JavaScript para carregar mais itens automaticamente.</noscript>
-  <style>
-    #infinite-sentinel { opacity: .7 }
-  </style>
 </div>
+<style>
+  .infinite-sentinel { opacity: .7 }
+</style>
 <script>
-  (function(){
-    const appendSelector = "{{ infinite_append_selector|default:'table tbody' }}";
-    const container = document.querySelector(appendSelector);
-    const sentinel = document.getElementById('infinite-sentinel');
-    const pag = document.querySelector('.pagination');
-    if (!container || !sentinel || !pag) return;
-    let inFlight = false;
-    let done = false;
+document.addEventListener("DOMContentLoaded", function () {
 
-    function nextLinkFrom(doc){
-      const pg = doc ? doc.querySelector('.pagination') : pag;
-      if (!pg) return null;
-      const links = Array.from(pg.querySelectorAll('a.page-link'));
-      return links.find(a => /próxima/i.test(a.textContent || '')) || null;
+  const sentinelId = "infinite-sentinel-{{ infinite_id|default:'default' }}";
+  const appendSelector = "{{ infinite_append_selector|default:'table tbody' }}";
+  const sentinel = document.getElementById(sentinelId);
+
+  if (!sentinel) {
+    console.warn('InfiniteScroll: sentinel não encontrado:', sentinelId);
+    return;
+  }
+
+  // Escopo: procura container e paginação dentro do card mais próximo
+  // do sentinel -- nunca no documento inteiro. Evita colidir com
+  // outras listas paginadas na mesma página (ex.: Itens do Extrato
+  // x Itens do Banco).
+  const escopo = sentinel.closest('.card') || document;
+
+  const container = escopo.querySelector(appendSelector);
+  const pag = escopo.querySelector('.pagination');
+
+  if (!container) {
+    console.warn('InfiniteScroll: container "' + appendSelector + '" não encontrado no escopo de', sentinelId);
+    sentinel.style.display = 'none';
+    return;
+  }
+
+  if (!pag) {
+    // Sem bloco de paginação para esta lista -- nada a carregar,
+    // esconde o sentinel em vez de deixar "Carregando..." preso.
+    sentinel.style.display = 'none';
+    return;
+  }
+
+  let inFlight = false;
+  let done = false;
+
+  function nextLinkFrom(doc) {
+    const pg = doc ? doc.querySelector('.pagination') : pag;
+    if (!pg) return null;
+    const links = Array.from(pg.querySelectorAll('a.page-link'));
+    return links.find(a => /próxima/i.test(a.textContent || '')) || null;
+  }
+
+  function parseHTML(html) {
+    const parser = new DOMParser();
+    return parser.parseFromString(html, 'text/html');
+  }
+
+  function escopoNoDoc(doc) {
+    const s = doc.getElementById(sentinelId);
+    return (s && s.closest('.card')) || doc;
+  }
+
+  async function loadNext() {
+    if (inFlight || done) return;
+
+    const next = nextLinkFrom();
+    if (!next || !next.href) {
+      done = true;
+      sentinel.style.display = 'none';
+      return;
     }
 
-    function parseHTML(html){
-      const parser = new DOMParser();
-      return parser.parseFromString(html, 'text/html');
-    }
+    inFlight = true;
 
-    async function loadNext(){
-      if (inFlight || done) return;
-      const next = nextLinkFrom();
-      if (!next || !next.href) { done = true; sentinel.style.display = 'none'; return; }
-      inFlight = true;
-      try{
-        const resp = await fetch(next.href, { credentials: 'same-origin' });
-        if (!resp.ok) throw new Error('HTTP ' + resp.status);
-        const text = await resp.text();
-        const doc = parseHTML(text);
-        const newContainer = doc.querySelector(appendSelector);
-        if (newContainer) {
-          const frag = document.createDocumentFragment();
-          Array.from(newContainer.children).forEach(ch => frag.appendChild(ch));
-          container.appendChild(frag);
-        }
-        const newPag = doc.querySelector('.pagination');
-        if (newPag && pag) pag.innerHTML = newPag.innerHTML;
-        if (!nextLinkFrom(doc)) { done = true; sentinel.style.display = 'none'; }
-      } catch(e){
-        console.error('InfiniteScroll:', e);
+    try {
+      const resp = await fetch(next.href, { credentials: 'same-origin' });
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+
+      const text = await resp.text();
+      const doc = parseHTML(text);
+      const novoEscopo = escopoNoDoc(doc);
+
+      const newContainer = novoEscopo.querySelector(appendSelector);
+      if (newContainer) {
+        const frag = document.createDocumentFragment();
+        Array.from(newContainer.children).forEach(ch => frag.appendChild(ch));
+        container.appendChild(frag);
+      }
+
+      const newPag = novoEscopo.querySelector('.pagination');
+      if (newPag) {
+        pag.innerHTML = newPag.innerHTML;
+      }
+
+      if (!nextLinkFrom(doc)) {
         done = true;
         sentinel.style.display = 'none';
-      } finally{
-        inFlight = false;
       }
-    }
 
-    if ('IntersectionObserver' in window){
-      const io = new IntersectionObserver((entries) => {
-        entries.forEach(e => {
-          if (e.isIntersecting) loadNext();
-        });
-      }, { rootMargin: '200px' });
-      io.observe(sentinel);
-    } else {
-      // Fallback: scroll handler simples
-      window.addEventListener('scroll', () => {
-        if (done || inFlight) return;
-        const rect = sentinel.getBoundingClientRect();
-        if (rect.top < window.innerHeight + 200) loadNext();
-      });
+    } catch (e) {
+      console.error('InfiniteScroll [' + sentinelId + ']:', e);
+      done = true;
+      sentinel.style.display = 'none';
+
+    } finally {
+      inFlight = false;
     }
-  })();
-  </script>
+  }
+
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) loadNext();
+      });
+    }, { rootMargin: '200px' });
+    io.observe(sentinel);
+  } else {
+    window.addEventListener('scroll', () => {
+      if (done || inFlight) return;
+      const rect = sentinel.getBoundingClientRect();
+      if (rect.top < window.innerHeight + 200) loadNext();
+    });
+  }
+
+});
+</script>
