@@ -1,5 +1,6 @@
 # models.py
 from django.db import models
+from ocorrencias.models import OcorrenciaTransp
 
 FORMAS_RECEBIMENTO = [
    ('00', 'DUPLICATA'),
@@ -59,7 +60,13 @@ class PedidoVenda(models.Model):
     pedi_desc = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
     pedi_liqu = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
     pedi_tipo_oper = models.CharField(max_length=30, choices=TIPO_OPER_CHOICES, default='VENDA') 
-
+    pedi_ocor = models.ForeignKey(
+        OcorrenciaTransp,
+        on_delete=models.PROTECT,
+        db_column="pedi_ocor",
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         db_table = 'pedidosvenda'

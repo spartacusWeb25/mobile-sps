@@ -68,6 +68,44 @@
               <div class="fw-bold fs-5">R$ {{ object.pedi_tota }}</div>
             </div>
           </div>
+
+          <hr>
+          <div class="row ocorrencia_row">
+            {% if object.pedi_ocor %}
+            <div class="col-md-3">
+              <div class="text-muted">Código</div>
+              <div class="fw-bold fs-5">{{ object.pedi_ocor.ocor_codi }}</div>
+            </div>
+            <div class="col-md-6">
+              <div class="text-muted">Descrição</div>
+              <div class="fw-bold fs-5">{{ object.pedi_ocor.ocor_desc }}</div>
+            </div>
+            {% else %}
+            <div class="col-md-9">
+              <div class="fw-bold fs-5">Pedido sem ocorrência</div>
+            </div>
+            {% endif %}
+            <div class="col-md-3 justify-content-end d-flex align-items-center">
+              <button class="btn btn-outline-primary" onclick="alternarEditar()">Editar</button>
+            </div>
+          </div>
+          <div class="row ocorrencia_row d-none">
+            <div class="col-md-9">
+              <div class="text-muted">Ocorrência</div>
+              {% csrf_token %}
+              <select class="form-select" id="ocorrencia_select">
+                {% for o in ocorrencias %}
+                <option value={{o.id}}>{{o}}</option>
+                {% empty %}
+                <option value="">Nenhuma ocorrência disponível</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-3 justify-content-end d-flex align-items-center gap-2">
+              <button class="btn btn-primary" data-url="{% url 'PedidosWeb:atualizar_ocorrencia' slug=slug pk=object.pedi_nume %}" onclick="salvarOcorrencia(this)">Salvar</button>
+              <button class="btn btn-outline-primary" onclick="alternarEditar()">Cancelar Edição</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -147,5 +185,50 @@
       if (e.key.toLowerCase() === 'p') { window.print(); }
     });
   })();
+</script>
+<script>
+  function alternarEditar(){
+    document.querySelectorAll(".ocorrencia_row").forEach((el) => {
+        el.classList.toggle("d-none");
+    });
+  }
+
+  async function salvarOcorrencia(btn){
+    let ocorrenciaId = document.getElementById("ocorrencia_select").value
+    if(!ocorrenciaId){
+      return
+    }
+
+    try {
+      const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+      const url = btn.dataset.url;
+      const response = await fetch(url, {
+        method: 'PATCH',
+        headers: {
+          'X-CSRFToken': csrfToken,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          pedi_ocor: ocorrenciaId,
+        }),
+      });
+
+      if (!response.ok) {
+          console.error('Erro de validação do backend');
+          return;
+      }
+      if (response.status === "success"){
+        console.log('Atualizado com sucesso!');
+        location.reload();
+      }else{
+        console.log('Ocorreu um erro', response.error);
+      }
+      
+      
+      
+    } catch (erro) {
+      console.error('Ocorreu um erro:', erro);
+    }
+  }
 </script>
 {% endblock %}

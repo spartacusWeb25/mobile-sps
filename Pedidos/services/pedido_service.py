@@ -1,7 +1,10 @@
 from django.db import transaction, connections
 import logging
 from decimal import Decimal, InvalidOperation
-from django.db.models import Max
+from django.db.models import Max, ObjectDoesNotExist
+
+from Pedidos.rest.dominio.pedido import Pedido
+from ocorrencias.models import OcorrenciaTransp
 from ..models import PedidoVenda, Itenspedidovenda
 from Produtos.models import SaldoProduto
 from CFOP.services.services import MotorFiscal
@@ -760,6 +763,30 @@ class PedidoVendaService:
 
             return pedido
 
+    @staticmethod
+    def atualizar_ocorrencia(*, banco, empresa, filial, pedido_id, ocorrencia_id):
+        try:
+            pedido = PedidoVenda.objects.using(banco).get(
+                pedi_empr = empresa,
+                pedi_fili = filial,
+                pedi_nume = pedido_id
+            )
+            if not pedido:
+                raise ObjectDoesNotExist
+
+            ocorrencia = OcorrenciaTransp.objects.using(banco).get(
+                ocor_empr = empresa,
+                ocor_fili = filial,
+                id = ocorrencia_id
+            )
+            if not ocorrencia:
+                raise ObjectDoesNotExist
+
+            pedido.pedi_ocor = ocorrencia
+            pedido.save()
+        except Exception as e:
+            PedidoVendaService.logger.error("Ocorreu um erro: ", str(e))
+
 class proximo_pedido_numero:
     @staticmethod
     def get_proximo_numero(banco: str, pedi_empr: int = None, pedi_fili: int = None):
@@ -892,3 +919,4 @@ class OrcamentoService:
         orcamento_obj.save(using=banco)
 
         return orcamento_obj
+

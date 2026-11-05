@@ -1,5 +1,7 @@
 from ..models import OcorrenciaTransp, PerfilOcorrencia
+import logging
 
+logger = logging.getLogger(__name__)
 class OcorrenciaService:
     @staticmethod
     def criar_ocorrencia(*, banco, empresa, filial, codigo, descricao, finalizadora=False):
@@ -48,6 +50,7 @@ class OcorrenciaService:
 
         return perfil
 
+    @staticmethod
     def perfil_toggle_ativar(*, banco, empresa, filial, id):
         try:
             perfil = PerfilOcorrencia.objects.using(banco).prefetch_related("ocorrencias").get(
@@ -60,3 +63,18 @@ class OcorrenciaService:
         perfil.pfoc_ativ = not perfil.pfoc_ativ
         perfil.save(using=banco)
         return perfil
+
+    @staticmethod
+    def listar_ocorrencias(*, banco, empresa, filial, ativo=False):
+        qs = OcorrenciaTransp.objects.using(banco).filter(
+            ocor_empr = empresa,
+            ocor_fili = filial
+        )
+        logger.info(qs)
+        if not ativo:
+            qs = qs.filter(
+                    perfil__pfoc_ativ = ativo
+                ).distinct()
+            logger.info(qs)
+        return qs
+        

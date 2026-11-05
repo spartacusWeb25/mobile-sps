@@ -1,5 +1,10 @@
+import json
+
+from django.contrib import messages
 from django.http import JsonResponse
 from django.db.models import Q
+from pydantic import Json
+from Pedidos.services.pedido_service import PedidoVendaService
 from core.utils import get_licenca_db_config
 from Entidades.services.frete_cidade_service import FreteCidadeService
 
@@ -200,3 +205,29 @@ def lotes_produto(request, slug=None):
         })
     except Exception:
         return JsonResponse({'results': [], 'saldo_total': 0, 'saldo_lotes': 0, 'saldo_sem_lote': 0})
+
+def atualizar_ocorrencia(request, pk, slug=None):
+    banco = get_licenca_db_config(request) or 'default'
+    if not request.body:
+        return JsonResponse({"success": False})
+    try:
+        payload_json = json.loads(request.body.decode('utf-8'))
+        ocorrencia = payload_json.get("pedi_ocor")
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return JsonResponse({"error": "JSON inválido."}, status=400)
+    empresa = request.session.get('empresa_id', 1)
+    filial=request.session.get('filial_id', 1)
+
+    try:
+        pedido = PedidoVendaService.atualizar_ocorrencia(
+            banco=banco,
+            empresa=empresa,
+            filial=filial,
+            pedido_id=pk,
+            ocorrencia_id=ocorrencia
+        )
+        messages.success(request, f"Pedido {pedido.pedi_nume} atualizado com sucesso.")
+        return JsonResponse({"success": True})
+    except Exception as e:
+        messages.error(request, f"Erro ao atualizar pedido: {str(e)}")
+        return JsonResponse({"success": False, "error": str(e)})

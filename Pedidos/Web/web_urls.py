@@ -5,7 +5,7 @@ from .Views.detailView import PedidoDetailView
 from .Views.printView import PedidoPrintView
 from .Views.updateView import PedidoUpdateView
 from .Views.dashboardView import PedidosDashboardView
-from .Views.utils import autocomplete_clientes, autocomplete_vendedores, autocomplete_produtos, preco_produto, lotes_produto, busca_entidades
+from .Views.utils import autocomplete_clientes, autocomplete_vendedores, autocomplete_produtos, preco_produto, lotes_produto, busca_entidades, atualizar_ocorrencia
 from .Views.emissao_nota import PedidoEmitirNFeView
 from .Views.dashboard_ebitida import DashboardEbitdaView
 from .Views.pedido_rentabilidade import PedidoRentabilidadeView
@@ -20,6 +20,7 @@ urlpatterns = [
     path("criar/", PedidoCreateView.as_view(), name="pedido_criar"),
     path("<int:pk>/", PedidoDetailView.as_view(), name="pedido_detalhe"),
     path("<int:pk>/editar/", PedidoUpdateView.as_view(), name="pedido_editar"),
+    path("<int:pk>/atualizar-ocorrencia/", atualizar_ocorrencia, name="atualizar_ocorrencia"),
     path("<int:pk>/imprimir/", PedidoPrintView.as_view(), name="pedido_impressao"),
     path("por-cliente/", PedidosListView.as_view(), name="pedidos_por_cliente"),
     path("autocomplete/clientes/", autocomplete_clientes, name="autocomplete_clientes"),
