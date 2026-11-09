@@ -545,3 +545,36 @@ class PedidoVendaViewSet(viewsets.ModelViewSet, VendedorEntidadeMixin):
                 }, status=status.HTTP_200_OK)
         except Exception as e:
             return tratar_erro(e)
+
+    @action(detail=False, methods=['patch'], url_path='(?P<empresa>[^/.]+)/(?P<filial>[^/.]+)/(?P<numero>[^/.]+)/alterar-ocorrencia')
+    def alterar_ocorrencia(self, request, empresa=None, filial=None, numero=None, **kwargs):
+        try:
+            pedido = PedidoVenda.objects.get(
+                pedi_empr=empresa,
+                pedi_fili=filial,
+                pedi_nume=numero
+            )
+            banco = get_licenca_db_config(request)
+
+            if not banco:
+                return Response({'erro': 'Banco de dados não encontrado'}, status=status.HTTP_404_NOT_FOUND)
+
+            ocorrencia_id = request.data.get("ocorrenciaId")
+            if not ocorrencia_id:
+                return Response({'erro': 'Id da ocorrência faltando'}, status=status.HTTP_400_BAD_REQUEST)
+
+            PedidoVendaService.atualizar_ocorrencia(
+                banco=banco,
+                empresa=empresa,
+                filial=filial,
+                pedido_id=numero,
+                ocorrencia_id=ocorrencia_id
+            )
+
+            return Response({
+                'sucesso': True,
+                'mensagem': f'Pedido {pedido.pedi_nume} atualizado'
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            return tratar_erro(e)
+

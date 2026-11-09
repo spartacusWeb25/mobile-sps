@@ -11,7 +11,7 @@ from .serializers import OcorrenciaSerializer, PerfilSerializer
 from core.utils import get_db_from_slug
 
 class BaseMultiDBViewSet(viewsets.ModelViewSet):
-    """Base REST do app Processos com roteamento por slug + escopo empresa/filial."""
+    """Base REST do app Ocorrências com roteamento por slug + escopo empresa/filial."""
 
     def _scope_value(self, session_key, header_key, query_key):
         return (
@@ -60,8 +60,12 @@ class OcorrenciaTranspViewSet(BaseMultiDBViewSet):
 
     def get_queryset(self):
         cfg = self._ctx()
-        qs = OcorrenciaTransp.objects.using(cfg["db_alias"]).filter(
-            ocor_empr=cfg["empresa"], ocor_fili=cfg["filial"]
+        ativo_param = self.request.GET.get('ativo') or false
+        qs = OcorrenciaService.listar_ocorrencias(
+            banco=cfg["db_alias"],
+            empresa=cfg["empresa"],
+            filial=cfg["filial"],
+            ativo=ativo_param
         )
         codigo_param = (self.request.GET.get('codigo') or '').strip()
         descricao_param = (self.request.GET.get('descricao') or '').strip()

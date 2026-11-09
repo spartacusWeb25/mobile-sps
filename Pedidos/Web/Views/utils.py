@@ -209,7 +209,7 @@ def lotes_produto(request, slug=None):
 def atualizar_ocorrencia(request, pk, slug=None):
     banco = get_licenca_db_config(request) or 'default'
     if not request.body:
-        return JsonResponse({"success": False})
+        return JsonResponse({"success": False, "error": "Body faltando."})
     try:
         payload_json = json.loads(request.body.decode('utf-8'))
         ocorrencia = payload_json.get("pedi_ocor")
@@ -219,14 +219,13 @@ def atualizar_ocorrencia(request, pk, slug=None):
     filial=request.session.get('filial_id', 1)
 
     try:
-        pedido = PedidoVendaService.atualizar_ocorrencia(
+        PedidoVendaService.atualizar_ocorrencia(
             banco=banco,
             empresa=empresa,
             filial=filial,
             pedido_id=pk,
             ocorrencia_id=ocorrencia
         )
-        messages.success(request, f"Pedido {pedido.pedi_nume} atualizado com sucesso.")
         return JsonResponse({"success": True})
     except Exception as e:
         messages.error(request, f"Erro ao atualizar pedido: {str(e)}")

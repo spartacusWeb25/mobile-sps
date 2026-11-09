@@ -103,7 +103,7 @@
                   <select class="form-select" name="ocorrencia_ids" required>
                     <option value="">Selecione uma ocorrência...</option>
                     {% for ocorrencia in todas_ocorrencias %}
-                      <option value="{{ ocorrencia.id }}">{{ ocorrencia }}</option>
+                      <option value="{{ ocorrencia.id }}">{{ocorrencia.ocor_codi}} - {{ocorrencia.ocor_desc}}{% if ocorrencia.ocor_fina %} [F]{% endif %}</option>
                     {% endfor %}
                   </select>
                 </td>

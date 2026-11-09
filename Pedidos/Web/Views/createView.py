@@ -3,6 +3,7 @@ import logging
 from django.shortcuts import redirect
 from django.contrib import messages
 from core.utils import get_licenca_db_config
+from ocorrencias.services.ocorrencia_service import OcorrenciaService
 from ...models import PedidoVenda
 from ...services.pedido_service import PedidoVendaService
 from ..forms import PedidoVendaForm
@@ -33,6 +34,17 @@ class PedidoCreateView(CreateView):
         context = super().get_context_data(**kwargs)
         banco = get_licenca_db_config(self.request) or 'default'
         empresa_id = self.request.session.get('empresa_id', 1)
+
+        try:
+            ocorrencias = OcorrenciaService.listar_ocorrencias(
+                banco=banco,
+                empresa=self.request.session.get('empresa_id', 1),
+                filial=self.request.session.get('filial_id', 1),
+            )
+            logger.info(ocorrencias)
+            context['ocorrencias'] = ocorrencias
+        except Exception:
+            pass
 
         if self.request.POST:
             context['formset'] = ItensPedidoFormSet(
@@ -75,6 +87,13 @@ class PedidoCreateView(CreateView):
                 pedido_data['pedi_fili'] = filial_id
                 pedido_data['pedi_desc'] = pedido_data.get('pedi_desc', 0)
                 pedido_data['pedi_topr'] = pedido_data.get('pedi_topr', 0)
+                ocorrencia_id = self.request.POST.get('ocorrencia_id') 
+                ocorrencia = OcorrenciaTransp.objects.using(banco).get(
+                    ocor_empr=pedido.pedi_empr,
+                    ocor_fili=pedido.pedi_fili,
+                    id=ocorrencia_id
+                )
+                pedido_data['pedi_ocor'] = ocorrencia
 
                 if hasattr(pedido_data.get('pedi_forn'), 'enti_clie'):
                     pedido_data['pedi_forn'] = pedido_data['pedi_forn'].enti_clie

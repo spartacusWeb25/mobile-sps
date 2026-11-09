@@ -4,6 +4,7 @@ from datetime import datetime
 from decimal import Decimal
 from Licencas.models import Empresas
 from Produtos.models import Produtos
+from ocorrencias.rest.serializers import OcorrenciaSerializer
 from ..models import PedidoVenda, Itenspedidovenda, PedidosGeral
 from Entidades.models import Entidades
 from core.serializers import BancoContextMixin
@@ -60,6 +61,7 @@ class PedidoVendaSerializer(BancoContextMixin, serializers.ModelSerializer):
     parametros = serializers.DictField(write_only=True, required=False)
     gerar_titulos = serializers.BooleanField(write_only=True, required=False, default=False)
     financeiro_titulos = serializers.DictField(write_only=True, required=False)
+    ocorrencia = OcorrenciaSerializer(source="pedi_ocor", required=False)
 
     class Meta:
         model = PedidoVenda
@@ -67,7 +69,7 @@ class PedidoVendaSerializer(BancoContextMixin, serializers.ModelSerializer):
             'pedi_empr', 'pedi_fili', 'pedi_data', 'pedi_tota', 'pedi_topr', 'pedi_forn', 'pedi_form_rece',
             'itens', 'itens_input', 'parametros', 'pedi_desc', 'pedi_obse', 'pedi_fina', 'pedi_liqu',
             'valor_total', 'valor_subtotal', 'valor_desconto', 'cliente_nome', 'empresa_nome', 'pedi_nume', 'pedi_stat', 'pedi_vend',
-            'gerar_titulos', 'financeiro_titulos'
+            'gerar_titulos', 'financeiro_titulos', 'ocorrencia'
         ]
 
     @staticmethod

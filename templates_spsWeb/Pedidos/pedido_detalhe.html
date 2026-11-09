@@ -72,11 +72,14 @@
           <hr>
           <div class="row ocorrencia_row">
             {% if object.pedi_ocor %}
+            <div class="col-md-2 d-flex align-items-center">
+              <div class="fw-bold fs-4">Ocorrência:</div>
+            </div>
             <div class="col-md-3">
               <div class="text-muted">Código</div>
               <div class="fw-bold fs-5">{{ object.pedi_ocor.ocor_codi }}</div>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-4">
               <div class="text-muted">Descrição</div>
               <div class="fw-bold fs-5">{{ object.pedi_ocor.ocor_desc }}</div>
             </div>
@@ -94,8 +97,9 @@
               <div class="text-muted">Ocorrência</div>
               {% csrf_token %}
               <select class="form-select" id="ocorrencia_select">
+                <option value="">Selecione uma ocorrência...</option>
                 {% for o in ocorrencias %}
-                <option value={{o.id}}>{{o}}</option>
+                <option {% if o.id == object.pedi_ocor_id %}selected{% endif %} value={{o.id}}>{{o.ocor_codi}} - {{o.ocor_desc}}{% if o.ocor_fina %} [F]{% endif %}</option>
                 {% empty %}
                 <option value="">Nenhuma ocorrência disponível</option>
                 {% endfor %}
@@ -221,7 +225,7 @@
         console.log('Atualizado com sucesso!');
         location.reload();
       }else{
-        console.log('Ocorreu um erro', response.error);
+        console.log('Ocorreu um erro', response.text);
       }
       
       
