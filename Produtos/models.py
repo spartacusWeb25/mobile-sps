@@ -16,7 +16,7 @@ class Ncm(models.Model):
 class NcmAliquota(models.Model):
     nali_id = models.AutoField(primary_key=True)
     nali_empr = models.IntegerField(default=1)
-    nali_ncm = models.OneToOneField(Ncm, on_delete=models.CASCADE, db_column='nali_ncm', to_field='ncm_codi')
+    nali_ncm = models.OneToOneField(Ncm, on_delete=models.CASCADE, db_column='nali_ncm', to_field='ncm_codi', db_constraint=False)
 
     nali_aliq_ipi = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
     nali_aliq_pis = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)

@@ -99,7 +99,7 @@ class Migration(migrations.Migration):
                 ('nali_aliq_cofins', models.DecimalField(blank=True, decimal_places=2, max_digits=6, null=True)),
                 ('nali_aliq_cbs', models.DecimalField(blank=True, decimal_places=2, max_digits=6, null=True)),
                 ('nali_aliq_ibs', models.DecimalField(blank=True, decimal_places=2, max_digits=6, null=True)),
-                ('nali_ncm', models.OneToOneField(db_column='nali_ncm', on_delete=django.db.models.deletion.CASCADE, to='Produtos.Ncm')),
+                ('nali_ncm', models.OneToOneField(db_column='nali_ncm', on_delete=django.db.models.deletion.CASCADE, to='Produtos.Ncm', db_constraint=False)),
             ],
             options={
                 'db_table': 'ncm_aliquotas_ibpt',

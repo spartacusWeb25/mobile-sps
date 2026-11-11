@@ -1,4 +1,4 @@
-from Licencas.utils import atualizar_senha
+from Licencas.utils import atualizar_senha, get_auth_menu_flags
 from pprint import pprint
 from rest_framework.views import APIView
 from rest_framework import viewsets, status
@@ -275,12 +275,15 @@ class LoginView(APIView):
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
 
+        auth_menu_flags = get_auth_menu_flags(usuario)
+        logger.info(auth_menu_flags)
         request.session["usua_codi"] = usuario.usua_codi
         request.session["usua_nome"] = usuario.usua_nome
         request.session["docu"] = docu_digits
         request.session["slug"] = slug_from_docu
         request.session["empresa_id"] = empresa_id_int
         request.session["filial_id"] = filial_id_int
+        request.session["auth_menu_flags"] = auth_menu_flags
         request.session.modified = True
 
         # Garante contexto da licença no thread local durante esta request.

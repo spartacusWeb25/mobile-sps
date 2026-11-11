@@ -78,10 +78,15 @@ def empresa_filial_names(request: HttpRequest) -> Dict[str, Any]:
 
 
 def auth_menu_flags(request: HttpRequest) -> Dict[str, Any]:
-    can_view_admin_menus = False
-    try:
-        if usuario_privilegiado:
-            can_view_admin_menus = usuario_privilegiado(request)
-    except Exception:
-        can_view_admin_menus = False
-    return {"can_view_admin_menus": can_view_admin_menus}
+    auth_menu_flags = request.session.get("auth_menu_flags")
+    if auth_menu_flags is not None:
+        return auth_menu_flags
+    return {}
+    
+    # can_view_admin_menus = False
+    # try:
+    #     if usuario_privilegiado:
+    #         can_view_admin_menus = usuario_privilegiado(request)
+    # except Exception:
+    #     can_view_admin_menus = False
+    # return {"can_view_admin_menus": can_view_admin_menus}
