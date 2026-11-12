@@ -129,27 +129,32 @@ def get_auth_menu_flags(usuario):
         "app_label": "series",
         "model": "series"
     },{
-        "nome": "importador de produtos",
+        "nome": "importador_produtos",
         "acao": "criar",
         "app_label": "Produtos",
         "model": "produtos"
     },{
-        "nome": "importador de entidades",
+        "nome": "importador_entidades",
         "acao": "criar",
         "app_label": "Entidades",
         "model": "entidades"
     },{
-        "nome": "perfis/usuários",
+        "nome": "perfil_usuarios",
         "acao": "listar",
         "app_label": "Licencas",
         "model": "usuarios"
     },{
-        "nome": "parametrizações de módulos",
+        "nome": "ocorrencias",
+        "acao": "listar",
+        "app_label": "ocorrencias",
+        "model": "ocorrenciatransp"
+    },{
+        "nome": "parametrizacoes_modulos",
         "acao": "listar",
         "app_label": "parametros_admin",
         "model": "modulos"
     },{
-        "nome": "parametrizações de parâmetros",
+        "nome": "parametrizacoes",
         "acao": "listar",
         "app_label": "parametros_admin",
         "model": "parametrossistema"

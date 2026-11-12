@@ -89,8 +89,8 @@
                     </ul>
                 </div>
             </li>
-
-            {% if can_view_admin_menus %}
+            
+            {% if auth_menu_flags.empresas or auth_menu_flags.filiais or auth_menu_flags.cfop or auth_menu_flags.series or auth_menu_flags.importador_produtos or auth_menu_flags.importador_entidades or auth_menu_flags.perfil_usuarios or auth_menu_flags.ocorrencias %}
             <li class="nav-item" data-modulo="parametros_admin">
                 <a class="nav-link collapsed" data-bs-toggle="collapse" href="#" role="button"
                     data-bs-target="#collapseParametrizacoes" aria-expanded="false"
@@ -99,17 +99,24 @@
                 </a>
                 <div class="collapse" id="collapseParametrizacoes">
                     <ul class="list-unstyled ps-4">
+                        {% if auth_menu_flags.empresas %}
                         <li>
                             <a class="nav-link" href="/web/login/"
                                 data-slug-route="/web/{slug}/licencas/empresas/">Empresas</a>
                         </li>
+                        {% endif %}
+                        {% if auth_menu_flags.filiais %}
                         <li>
                             <a class="nav-link" href="/web/login/"
                                 data-slug-route="/web/{slug}/licencas/filiais/">Filiais</a>
                         </li>
+                        {% endif %}
+                        {% if auth_menu_flags.cfop %}
                         <li>
                             <a class="nav-link" href="/web/login/" data-slug-route="/web/{slug}/cfop/">CFOP</a>
                         </li>
+                        {% endif %}
+                        {% if auth_menu_flags.series %}
                         <li>
                             <div class="d-flex align-items-center">
                                 <a class="nav-link flex-grow-1" href="/web/login/"
@@ -120,6 +127,8 @@
                                 </a>
                             </div>
                         </li>
+                        {% endif %}
+                        {% if auth_menu_flags.importador_produtos %}
                         <li>
                             <div class="d-flex align-items-center">
                                 <a class="nav-link flex-grow-1" href="/web/login/"
@@ -130,13 +139,16 @@
                                 </a>
                             </div>
                         </li>
+                        {% endif %}
+                        {% if auth_menu_flags.importador_entidades %}
                         <li>
                             <div class="d-flex align-items-center">
                                 <a class="nav-link flex-grow-1" href="/web/login/"
                                     data-slug-route="/web/{slug}/importador/entidades/">Importador de Entidades</a>
                             </div>
                         </li>
-
+                        {% endif %}
+                        {% if auth_menu_flags.perfil_usuarios %}
                         <li class="nav-item">
                             <div class="d-flex align-items-center">
                                 <a class="nav-link flex-grow-1" href="/web/login/"
@@ -145,7 +157,12 @@
                                 </a>
                             </div>
                         </li>
-
+                        {% endif %}
+                        {% if auth_menu_flags.ocorrencias %}
+                        <li class="nav-item"><a class="nav-link" href="/web/login/"
+                            data-slug-route="/web/{slug}/ocorrencias/">Ocorrências</a>
+                        </li>
+                        {% endif %}
                     </ul>
                 </div>
             </li>

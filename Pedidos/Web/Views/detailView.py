@@ -85,6 +85,23 @@ class PedidoDetailView(DetailView):
                 produtos = Produtos.objects.using(banco).filter(prod_codi__in=codigos)
                 prod_map = {p.prod_codi: {'nome': p.prod_nome, 'has_foto': bool(p.prod_foto)} for p in produtos}
 
+                STATUS_PEDIDOS = {
+                    0: 'Pendente',
+                    1: 'Processando',
+                    2: 'Enviado',
+                    3: 'Concluído',
+                    4: 'Cancelado'
+                }
+                context['status'] = STATUS_PEDIDOS[pedido.pedi_stat]
+                MAP_CORES_PED = {
+                    0: '#FFC107',
+                    1: '#007BFF',
+                    2: '#20C997',
+                    3: '#28A745',
+                    4: '#DC3545',
+                }
+                context['status_cor'] = MAP_CORES_PED[pedido.pedi_stat]
+
                 status_map = obter_status_fiscal_produtos(
                     banco=banco,
                     empresa=int(pedido.pedi_empr),

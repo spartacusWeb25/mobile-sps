@@ -1,11 +1,15 @@
-{% if can_view_admin_menus %}
+{% if auth_menu_flags.parametrizacoes_modulos or auth_menu_flags.parametrizacoes %}
 <li class="nav-item">
+    {% if auth_menu_flags.parametrizacoes_modulos%}
     <a class="nav-link" data-slug-route="/web/{slug}/parametros-admin/" data-modulo="parametros_admin">
         <i class="bi bi-gear fs-3"></i> Parametrizações de Módulos
     </a>
+    {% endif %}
+    {% if auth_menu_flags.parametrizacoes %}
     <a class="nav-link" data-slug-route="/web/{slug}/parametros-admin/parametros/"
         data-modulo="parametros_admin_parametros">
         <i class="bi bi-gear fs-3"></i> Parametrizações de Parâmetros
     </a>
+    {% endif %}
 </li>
 {% endif %}

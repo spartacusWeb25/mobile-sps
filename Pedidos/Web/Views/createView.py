@@ -3,6 +3,7 @@ import logging
 from django.shortcuts import redirect
 from django.contrib import messages
 from core.utils import get_licenca_db_config
+from ocorrencias.models import OcorrenciaTransp
 from ocorrencias.services.ocorrencia_service import OcorrenciaService
 from ...models import PedidoVenda
 from ...services.pedido_service import PedidoVendaService
@@ -89,8 +90,8 @@ class PedidoCreateView(CreateView):
                 pedido_data['pedi_topr'] = pedido_data.get('pedi_topr', 0)
                 ocorrencia_id = self.request.POST.get('ocorrencia_id') 
                 ocorrencia = OcorrenciaTransp.objects.using(banco).get(
-                    ocor_empr=pedido.pedi_empr,
-                    ocor_fili=pedido.pedi_fili,
+                    ocor_empr=empresa_id,
+                    ocor_fili=filial_id,
                     id=ocorrencia_id
                 )
                 pedido_data['pedi_ocor'] = ocorrencia

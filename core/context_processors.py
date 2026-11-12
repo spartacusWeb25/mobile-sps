@@ -18,6 +18,9 @@ try:
 except Exception:
     get_licenca_db_config = None
 
+import logging
+logger = logging.getLogger(__name__)
+
 def empresa_filial_names(request: HttpRequest) -> Dict[str, Any]:
     """
     Adiciona ao contexto os nomes de Empresa e Filial, quando disponíveis.
@@ -78,10 +81,8 @@ def empresa_filial_names(request: HttpRequest) -> Dict[str, Any]:
 
 
 def auth_menu_flags(request: HttpRequest) -> Dict[str, Any]:
-    auth_menu_flags = request.session.get("auth_menu_flags")
-    if auth_menu_flags is not None:
-        return auth_menu_flags
-    return {}
+    auth_menu_flags = request.session.get("auth_menu_flags", {})
+    return { "auth_menu_flags" : auth_menu_flags}
     
     # can_view_admin_menus = False
     # try:

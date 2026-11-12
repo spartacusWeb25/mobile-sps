@@ -40,15 +40,7 @@
             <div class="col-md-3">
               <div class="text-muted">Status</div>
               <div>
-                {% if object.pedi_stat == 'A' %}
-                <span class="badge bg-warning text-dark">Aberto</span>
-                {% elif object.pedi_stat == 'F' %}
-                <span class="badge bg-success">Faturado</span>
-                {% elif object.pedi_stat == 'C' %}
-                <span class="badge bg-secondary">Cancelado</span>
-                {% else %}
-                <span class="badge bg-light text-dark">{{ object.pedi_stat }}</span>
-                {% endif %}
+                <span class="badge" style="background-color: {{status_cor}};{% if object.pedi_stat == 0 or object.pedi_stat == 2 %} color: #131313;{% endif %}">{{ status }}</span>
               </div>
             </div>
           </div>
