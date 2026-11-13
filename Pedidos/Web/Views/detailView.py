@@ -2,6 +2,9 @@ from django.views.generic import DetailView
 from django.http import Http404
 import logging
 from core.utils import get_licenca_db_config
+from ocorrencias.models import OcorrenciaTransp
+from ocorrencias.services import ocorrencia_service
+from ocorrencias.services.ocorrencia_service import OcorrenciaService
 from ...models import PedidoVenda
 
 logger = logging.getLogger(__name__)
@@ -41,8 +44,19 @@ class PedidoDetailView(DetailView):
             from CFOP.services.fiscal_status_service import obter_status_fiscal_produtos
             banco = get_licenca_db_config(self.request) or 'default'
             pedido = context.get('object')
-
             if pedido:
+                try:
+                    ocorrencias = OcorrenciaService.listar_ocorrencias(
+                        banco=banco,
+                        empresa=int(pedido.pedi_empr),
+                        filial=int(pedido.pedi_fili),
+                    )
+                    logger.info(ocorrencias)
+                    context['ocorrencias'] = ocorrencias
+                except Exception:
+                    pass
+                
+
                 cliente = Entidades.objects.using(banco).filter(
                     enti_clie=pedido.pedi_forn
                 ).values('enti_nome', 'enti_tipo_enti', 'enti_esta').first()
@@ -70,6 +84,23 @@ class PedidoDetailView(DetailView):
                 codigos = [i.iped_prod for i in itens_qs]
                 produtos = Produtos.objects.using(banco).filter(prod_codi__in=codigos)
                 prod_map = {p.prod_codi: {'nome': p.prod_nome, 'has_foto': bool(p.prod_foto)} for p in produtos}
+
+                STATUS_PEDIDOS = {
+                    0: 'Pendente',
+                    1: 'Processando',
+                    2: 'Enviado',
+                    3: 'Concluído',
+                    4: 'Cancelado'
+                }
+                context['status'] = STATUS_PEDIDOS[pedido.pedi_stat]
+                MAP_CORES_PED = {
+                    0: '#FFC107',
+                    1: '#007BFF',
+                    2: '#20C997',
+                    3: '#28A745',
+                    4: '#DC3545',
+                }
+                context['status_cor'] = MAP_CORES_PED[pedido.pedi_stat]
 
                 status_map = obter_status_fiscal_produtos(
                     banco=banco,

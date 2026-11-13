@@ -4,6 +4,7 @@ from urllib.parse import quote_plus
 from django.db.models import Subquery, OuterRef, BigIntegerField, Sum, Count
 from django.db.models.functions import Cast
 from core.utils import get_licenca_db_config
+from ocorrencias.services.ocorrencia_service import OcorrenciaService
 from ...models import PedidoVenda
 from core.decorator import ModuloRequeridoMixin
 
@@ -92,6 +93,8 @@ class PedidosListView(ModuloRequeridoMixin, ListView):
             pedi_empr=self.request.session.get('empresa_id', 1),
             pedi_fili=self.request.session.get('filial_id', 1),
         )
+
+        
 
         cliente_param = (self.request.GET.get('cliente') or '').strip()
         vendedor_param = (self.request.GET.get('vendedor') or '').strip()

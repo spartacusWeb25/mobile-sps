@@ -27,11 +27,11 @@
           <div class="row" role="group" aria-label="Metadados do pedido">
             <div class="col-md-3">
               <div class="text-muted">Empresa</div>
-              <div class="fw-semibold">{{ object.pedi_empr }}</div>
+              <div class="fw-semibold">{{ empresa_nome }}</div>
             </div>
             <div class="col-md-3">
               <div class="text-muted">Filial</div>
-              <div class="fw-semibold">{{ object.pedi_fili }}</div>
+              <div class="fw-semibold">{{ filial_nome }}</div>
             </div>
             <div class="col-md-3">
               <div class="text-muted">Data</div>
@@ -40,15 +40,7 @@
             <div class="col-md-3">
               <div class="text-muted">Status</div>
               <div>
-                {% if object.pedi_stat == 'A' %}
-                <span class="badge bg-warning text-dark">Aberto</span>
-                {% elif object.pedi_stat == 'F' %}
-                <span class="badge bg-success">Faturado</span>
-                {% elif object.pedi_stat == 'C' %}
-                <span class="badge bg-secondary">Cancelado</span>
-                {% else %}
-                <span class="badge bg-light text-dark">{{ object.pedi_stat }}</span>
-                {% endif %}
+                <span class="badge" style="background-color: {{status_cor}};{% if object.pedi_stat == 0 or object.pedi_stat == 2 %} color: #131313;{% endif %}">{{ status }}</span>
               </div>
             </div>
           </div>
@@ -66,6 +58,48 @@
             <div class="col-md-2 text-md-end">
               <div class="text-muted">Total</div>
               <div class="fw-bold fs-5">R$ {{ object.pedi_tota }}</div>
+            </div>
+          </div>
+
+          <hr>
+          <div class="row ocorrencia_row">
+            {% if object.pedi_ocor %}
+            <div class="col-md-2 d-flex align-items-center">
+              <div class="fw-bold fs-4">Ocorrência:</div>
+            </div>
+            <div class="col-md-3">
+              <div class="text-muted">Código</div>
+              <div class="fw-bold fs-5">{{ object.pedi_ocor.ocor_codi }}</div>
+            </div>
+            <div class="col-md-4">
+              <div class="text-muted">Descrição</div>
+              <div class="fw-bold fs-5">{{ object.pedi_ocor.ocor_desc }}</div>
+            </div>
+            {% else %}
+            <div class="col-md-9">
+              <div class="fw-bold fs-5">Pedido sem ocorrência</div>
+            </div>
+            {% endif %}
+            <div class="col-md-3 justify-content-end d-flex align-items-center">
+              <button class="btn btn-outline-primary" onclick="alternarEditar()">Editar</button>
+            </div>
+          </div>
+          <div class="row ocorrencia_row d-none">
+            <div class="col-md-9">
+              <div class="text-muted">Ocorrência</div>
+              {% csrf_token %}
+              <select class="form-select" id="ocorrencia_select">
+                <option value="">Selecione uma ocorrência...</option>
+                {% for o in ocorrencias %}
+                <option {% if o.id == object.pedi_ocor_id %}selected{% endif %} value={{o.id}}>{{o.ocor_codi}} - {{o.ocor_desc}}{% if o.ocor_fina %} [F]{% endif %}</option>
+                {% empty %}
+                <option value="">Nenhuma ocorrência disponível</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-3 justify-content-end d-flex align-items-center gap-2">
+              <button class="btn btn-primary" data-url="{% url 'PedidosWeb:atualizar_ocorrencia' slug=slug pk=object.pedi_nume %}" onclick="salvarOcorrencia(this)">Salvar</button>
+              <button class="btn btn-outline-primary" onclick="alternarEditar()">Cancelar Edição</button>
             </div>
           </div>
         </div>
@@ -147,5 +181,50 @@
       if (e.key.toLowerCase() === 'p') { window.print(); }
     });
   })();
+</script>
+<script>
+  function alternarEditar(){
+    document.querySelectorAll(".ocorrencia_row").forEach((el) => {
+        el.classList.toggle("d-none");
+    });
+  }
+
+  async function salvarOcorrencia(btn){
+    let ocorrenciaId = document.getElementById("ocorrencia_select").value
+    if(!ocorrenciaId){
+      return
+    }
+
+    try {
+      const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+      const url = btn.dataset.url;
+      const response = await fetch(url, {
+        method: 'PATCH',
+        headers: {
+          'X-CSRFToken': csrfToken,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          pedi_ocor: ocorrenciaId,
+        }),
+      });
+
+      if (!response.ok) {
+          console.error('Erro de validação do backend');
+          return;
+      }
+      if (response.status === "success"){
+        console.log('Atualizado com sucesso!');
+        location.reload();
+      }else{
+        console.log('Ocorreu um erro', response.text);
+      }
+      
+      
+      
+    } catch (erro) {
+      console.error('Ocorreu um erro:', erro);
+    }
+  }
 </script>
 {% endblock %}

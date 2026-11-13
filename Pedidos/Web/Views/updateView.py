@@ -3,7 +3,10 @@ from django.http import Http404
 import logging
 from django.shortcuts import redirect
 from django.contrib import messages
+from Licencas.forms import EmpresaForm
 from core.utils import get_licenca_db_config
+from ocorrencias.models import OcorrenciaTransp
+from ocorrencias.services.ocorrencia_service import OcorrenciaService
 from ...models import PedidoVenda
 from ...services.pedido_service import PedidoVendaService
 from ..forms import PedidoVendaForm
@@ -64,6 +67,17 @@ class PedidoUpdateView(UpdateView):
                 from Entidades.models import Entidades
                 from Produtos.models import Produtos
                 pedido = self.object
+                try:
+                    ocorrencias = OcorrenciaService.listar_ocorrencias(
+                        banco=banco,
+                        empresa=self.request.session.get('empresa_id', 1),
+                        filial=self.request.session.get('filial_id', 1),
+                    )
+                    logger.info(ocorrencias)
+                    context['ocorrencias'] = ocorrencias
+                except Exception:
+                    pass
+
                 logger.debug("[PedidoUpdateView.get_context_data] carregando itens do pedido=%s", getattr(pedido, 'pedi_nume', None))
                 itens_qs = Itenspedidovenda.objects.using(banco).filter(
                     iped_empr=pedido.pedi_empr,
@@ -124,6 +138,13 @@ class PedidoUpdateView(UpdateView):
                 pedido = self.object
                 pedido_updates = form.cleaned_data.copy()
 
+                ocorrencia_id = self.request.POST.get('ocorrencia_id') 
+                ocorrencia = OcorrenciaTransp.objects.using(banco).get(
+                    ocor_empr=pedido.pedi_empr,
+                    ocor_fili=pedido.pedi_fili,
+                    id=ocorrencia_id
+                )
+                pedido_updates['pedi_ocor'] = ocorrencia
                 if hasattr(pedido_updates.get('pedi_forn'), 'enti_clie'):
                     pedido_updates['pedi_forn'] = pedido_updates['pedi_forn'].enti_clie
                 if hasattr(pedido_updates.get('pedi_vend'), 'enti_clie'):

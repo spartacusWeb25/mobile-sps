@@ -3,6 +3,8 @@ from django.contrib.auth.hashers import make_password
 from core.middleware import get_licenca_slug
 from core.registry import get_licenca_db_config
 from django.http import HttpRequest
+
+from perfilweb.services import get_perfil_ativo, tem_permissao
 from .models import Usuarios, Empresas, Filiais
 from django.db.models import Max
 
@@ -98,3 +100,71 @@ def buscar_endereco(cep):
 def buscar_endereco_por_cep(cep):
     """Alias para compatibilidade: retorna o mesmo que buscar_endereco"""
     return buscar_endereco(cep)
+
+def get_auth_menu_flags(usuario):
+    perfil = get_perfil_ativo(usuario)
+    AUTH_MENU_FLAGS = [{
+        "nome": "perfis",
+        "acao": "listar",
+        "app_label": "Licencas",
+        "model": "usuarios"
+    },{
+        "nome": "empresas",
+        "acao": "listar",
+        "app_label": "Licencas",
+        "model": "empresas"
+    },{
+        "nome": "filiais",
+        "acao": "listar",
+        "app_label": "Licencas",
+        "model": "filiais"
+    },{
+        "nome": "cfop",
+        "acao": "listar",
+        "app_label": "cfop",
+        "model": "cfop"
+    },{
+        "nome": "series",
+        "acao": "listar",
+        "app_label": "series",
+        "model": "series"
+    },{
+        "nome": "importador_produtos",
+        "acao": "criar",
+        "app_label": "Produtos",
+        "model": "produtos"
+    },{
+        "nome": "importador_entidades",
+        "acao": "criar",
+        "app_label": "Entidades",
+        "model": "entidades"
+    },{
+        "nome": "perfil_usuarios",
+        "acao": "listar",
+        "app_label": "Licencas",
+        "model": "usuarios"
+    },{
+        "nome": "ocorrencias",
+        "acao": "listar",
+        "app_label": "ocorrencias",
+        "model": "ocorrenciatransp"
+    },{
+        "nome": "parametrizacoes_modulos",
+        "acao": "listar",
+        "app_label": "parametros_admin",
+        "model": "modulos"
+    },{
+        "nome": "parametrizacoes",
+        "acao": "listar",
+        "app_label": "parametros_admin",
+        "model": "parametrossistema"
+    }]
+
+    return { flag["nome"]: tem_permissao(
+            perfil=perfil,
+            app_label=flag["app_label"],
+            model=flag["model"],
+            acao=flag["acao"]
+        ) 
+        for flag in AUTH_MENU_FLAGS }
+        
