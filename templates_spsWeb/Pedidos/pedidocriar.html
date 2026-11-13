@@ -99,9 +99,9 @@
           
           <div class="col-md-3">
             <label class="form-label fw-semibold" for="{{ form.pedi_stat.id_for_label }}"><i
-                class="bi bi-flag-fill me-1"></i>Ocorrência</label>
+                class="bi bi-flag-fill me-1"></i>Ocorrência (opcional)</label>
             <select class="form-select" name="ocorrencia_id" id="ocorrencia_select">
-              <option value="">Selecione uma ocorrência...</option>
+              <option value="">Nenhuma</option>
               {% for o in ocorrencias %}
               <option {% if o.id == object.pedi_ocor_id %}selected{% endif %} value={{o.id}}>{{o.ocor_codi}} - {{o.ocor_desc}}{% if o.ocor_fina %} [F]{% endif %}</option>
               {% empty %}
