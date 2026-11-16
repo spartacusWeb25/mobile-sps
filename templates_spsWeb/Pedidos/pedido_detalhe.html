@@ -65,7 +65,7 @@
           <div class="row ocorrencia_row">
             {% if object.pedi_ocor %}
             <div class="col-md-2 d-flex align-items-center">
-              <div class="fw-bold fs-4">Ocorrência:</div>
+              <div class="fw-bold fs-5">Ocorrência:</div>
             </div>
             <div class="col-md-3">
               <div class="text-muted">Código</div>
@@ -75,12 +75,16 @@
               <div class="text-muted">Descrição</div>
               <div class="fw-bold fs-5">{{ object.pedi_ocor.ocor_desc }}</div>
             </div>
+            <div class="col-md-2">
+              <div class="text-muted">Finalizadora</div>
+              <div class="fw-bold fs-5">{% if object.pedi_ocor.ocor_fina %}Sim{% else %}Não{% endif %}</div>
+            </div>
             {% else %}
-            <div class="col-md-9">
+            <div class="col-md-10">
               <div class="fw-bold fs-5">Pedido sem ocorrência</div>
             </div>
             {% endif %}
-            <div class="col-md-3 justify-content-end d-flex align-items-center">
+            <div class="col-md-1 justify-content-end d-flex align-items-center">
               <button class="btn btn-outline-primary" onclick="alternarEditar()">Editar</button>
             </div>
           </div>
