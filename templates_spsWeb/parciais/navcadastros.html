@@ -90,7 +90,7 @@
                 </div>
             </li>
             
-            {% if auth_menu_flags.empresas or auth_menu_flags.filiais or auth_menu_flags.cfop or auth_menu_flags.series or auth_menu_flags.importador_produtos or auth_menu_flags.importador_entidades or auth_menu_flags.perfil_usuarios or auth_menu_flags.ocorrencias %}
+            {% if auth_menu_flags.empresas or auth_menu_flags.filiais or auth_menu_flags.cfop or auth_menu_flags.series or auth_menu_flags.importador_produtos or auth_menu_flags.importador_entidades or auth_menu_flags.perfil_usuarios %}
             <li class="nav-item" data-modulo="parametros_admin">
                 <a class="nav-link collapsed" data-bs-toggle="collapse" href="#" role="button"
                     data-bs-target="#collapseParametrizacoes" aria-expanded="false"
@@ -156,11 +156,6 @@
                                     <i class="bi bi-person"></i> Perfil / Usuários
                                 </a>
                             </div>
-                        </li>
-                        {% endif %}
-                        {% if auth_menu_flags.ocorrencias %}
-                        <li class="nav-item"><a class="nav-link" href="/web/login/"
-                            data-slug-route="/web/{slug}/ocorrencias/">Ocorrências</a>
                         </li>
                         {% endif %}
                     </ul>
