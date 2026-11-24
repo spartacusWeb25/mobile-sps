@@ -366,6 +366,7 @@ class AuditoriaMiddleware:
                          'cfops': ['cfop'],
                         'gestao-obras': ['gestaoobras'],
                         'gestaoobras': ['gestao-obras'],
+                        'pedidos': ['ocorrencias'],
                     }
                     candidates = {app_slug, app_slug_us, app_slug_dash}
                     for alt in aliases.get(app_slug, []):
