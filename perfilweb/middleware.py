@@ -28,7 +28,6 @@ from core.utils import get_db_from_slug
 
 from Licencas.models import Usuarios
 from Licencas.permissions import (
-    usuario_privilegiado,
     get_nome_usuario,
 )
 
@@ -352,7 +351,8 @@ class PerfilPermissionMiddleware:
                 if (
                     banco
                     and banco not in EXCLUDED_DBS
-                    and usuario_privilegiado(request)
+                    and False
+                    # and usuario_privilegiado(request)
                 ):
 
                     from django.core.cache import cache

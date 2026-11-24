@@ -61,4 +61,3 @@ class UsuarioSerializer(BancoContextMixin, serializers.ModelSerializer):
         usua_codi = get_proximo_usuario(banco)
         validated_data['usua_codi'] = usua_codi
         return Usuarios.objects.using(banco).create(**validated_data)
-

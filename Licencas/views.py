@@ -1,3 +1,5 @@
+from rest_framework.exceptions import NotFound
+
 from Licencas.utils import atualizar_senha, get_auth_menu_flags
 from pprint import pprint
 from rest_framework.views import APIView
@@ -11,6 +13,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from Licencas.models import Empresas, Filiais, Licencas, Usuarios
+from core.dominio_handler import tratar_erro
 from licencas_web.models import LicencaWeb
 from Licencas.crypto import encrypt_bytes, encrypt_str
 from cryptography.hazmat.primitives.serialization.pkcs12 import load_key_and_certificates
@@ -36,7 +39,11 @@ from django.db.models.functions import Lower, Trim
 from core.utils import get_db_from_slug
 from core.cache_service import build_cache_key, cache_get_or_set
 from django.core.cache import cache
+from perfilweb.models import Perfil, PermissaoPerfil
+from perfilweb.serializers import PermissaoPerfilDetalhadoSerializer
+from perfilweb.services import get_perfil_ativo, listar_permissoes
 from planos.models import Plano
+from django.contrib.contenttypes.models import ContentType
 
 logger = logging.getLogger(__name__)
 SETOR_OBRIGATORIO_SLUGS = {"savexml144", "saveweb144"}
@@ -632,6 +639,31 @@ class UsuariosViewSet(viewsets.ModelViewSet):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['get'], url_path="get-permissoes")
+    def get_permissoes(self, request, pk, slug=None):
+        try:
+            empresa = self.kwargs.get('empresa') or self.kwargs.get('usua_empr')
+            filial = self.kwargs.get('filial') or self.kwargs.get('usua_fili')
+
+            if not empresa:
+                empresa = request.query_params.get('empresa') or request.query_params.get('usua_empr')
+            if not filial:
+                filial = request.query_params.get('filial') or request.query_params.get('usua_fili')
+            logger.info(pk)
+            banco = get_licenca_db_config(request)
+            if not banco:
+                raise NotFound("Banco de dados não encontrado.")
+            usuario = self.get_object()
+            
+            perfil = get_perfil_ativo(usuario)
+
+            permissoes = listar_permissoes(perfil)
+            logger.info(permissoes)
+            serializer = PermissaoPerfilDetalhadoSerializer(permissoes, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return tratar_erro(e)
 
 class EmpresasViewSet(viewsets.ModelViewSet):
     serializer_class = EmpresaDetailSerializer

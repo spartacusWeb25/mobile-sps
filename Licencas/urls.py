@@ -7,7 +7,7 @@ router = DefaultRouter()
 router.register(r'usuarios', UsuariosViewSet, basename='usuario')
 router.register(r'empresas', EmpresasViewSet, basename='empresas')
 router.register(r'filiais-crud', FiliaisViewSet, basename='filiais-crud')
-
+router.register(r'perfis', FiliaisViewSet, basename='perfis')
 
 
 urlpatterns = [
