@@ -136,7 +136,6 @@ class ProcessoReadSerializer(serializers.ModelSerializer):
             "modelo_nome",
             "descricao",
             "status",
-            "versao",
             "respostas",
             "data_abertura",
             "data_fechamento",
