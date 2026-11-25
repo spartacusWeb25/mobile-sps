@@ -400,7 +400,6 @@ class AuditoriaMiddleware:
                                 'licenca': licenca_slug,
                                 'empresa': empresa,
                                 'filial': filial,
-                                'candidates': candidates
                             },
                             status=403,
                         )
