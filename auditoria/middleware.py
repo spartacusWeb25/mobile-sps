@@ -1,4 +1,5 @@
 from django.utils import timezone
+from phonenumbers import can_be_internationally_dialled
 from .models import LogAcao
 from core.middleware import get_licenca_slug, get_modulos_disponiveis
 from rest_framework.request import Request
@@ -399,6 +400,7 @@ class AuditoriaMiddleware:
                                 'licenca': licenca_slug,
                                 'empresa': empresa,
                                 'filial': filial,
+                                'candidates': candidates
                             },
                             status=403,
                         )
