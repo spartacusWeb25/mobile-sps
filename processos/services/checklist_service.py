@@ -27,6 +27,8 @@ class ChecklistService:
                     chmo_ativ=ativo,
                 )
                 for item in itens:
+                    if "chit_desc" not in item:
+                        raise Exception('propriedade "chit_desc" não encontrada')
                     if item["chit_desc"]:
                         ChecklistItem.objects.using(db_alias).create(
                             chit_empr=empresa,
