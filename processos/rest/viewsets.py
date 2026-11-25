@@ -9,7 +9,6 @@ from rest_framework.response import Response
 from O_S.REST.serializers import OsSerializer
 from O_S.models import Os
 from core.utils import get_db_from_slug
-from O_S.models import Os
 from processos.models import ChecklistItem, ChecklistModelo, Processo
 from processos.rest.serializers import (
     ChecklistItemSerializer,
