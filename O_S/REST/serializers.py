@@ -375,6 +375,7 @@ class OsSerializer(BancoModelSerializer):
     def get_cliente_nome(self, obj):
         banco = self.context.get("banco")
         if not banco:
+            logger.info("Sem banco")
             return None
         cli = Entidades.objects.using(banco).filter(
             enti_clie=obj.os_clie,

@@ -191,22 +191,6 @@ class ChecklistModeloViewSet(BaseMultiDBViewSet):
             )
 
 
-    # def update(self, request, *args, **kwargs):
-    #     cfg = self._ctx()
-    #     serializer = self.get_serializer(data=request.data)
-    #     serializer.is_valid(raise_exception=True)
-    #     modelo = self.get_object()
-    #     ChecklistService.criar_ou_atualizar_item(
-    #         db_alias=cfg["db_alias"],
-    #         empresa=cfg["empresa"],
-    #         filial=cfg["filial"],
-    #         modelo_id = modelo.id
-    #     )
-    #     return Response(
-    #         self.get_serializer(modelo).data, status=status.HTTP_200_SUCCESS
-    #     )
-
-
 class ChecklistItemViewSet(BaseMultiDBViewSet):
     serializer_class = ChecklistItemSerializer
 
@@ -255,7 +239,13 @@ class ProcessoViewSet(BaseMultiDBViewSet):
             return ProcessoWriteSerializer
         logger.info("ProcessoReadSerializer")
         return ProcessoReadSerializer
-    
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        cfg = self._ctx()
+        context['banco'] = cfg["db_alias"]
+        return context
+
     def get_queryset(self):
         cfg = self._ctx()
         qs = (Processo.objects.using(cfg["db_alias"])
