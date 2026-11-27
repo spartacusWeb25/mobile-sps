@@ -7,7 +7,8 @@ from core.utils import get_licenca_db_config
 from ocorrencias.services.ocorrencia_service import OcorrenciaService
 from ...models import PedidoVenda
 from core.decorator import ModuloRequeridoMixin
-
+from django.http import HttpResponse
+import traceback
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +19,18 @@ class PedidosListView(ModuloRequeridoMixin, ListView):
     context_object_name = 'pedidos'
     paginate_by = 50
     modulo_requerido = 'Pedidos'
+
+    def dispatch(self, request, *args, **kwargs):
+        try:
+            return super().dispatch(request, *args, **kwargs)
+        except Exception as exc:
+            debug_payload = (
+                f"Exception: {type(exc).__name__}: {exc}\n\n"
+                f"{traceback.format_exc()}"
+            )
+            response = HttpResponse(debug_payload, content_type="text/plain; charset=utf-8", status=500)
+            response["X-Debug-Exception"] = f"{type(exc).__name__}: {str(exc)[:200]}"
+            return response
 
     def get_queryset(self):
         banco = get_licenca_db_config(self.request) or 'default'
